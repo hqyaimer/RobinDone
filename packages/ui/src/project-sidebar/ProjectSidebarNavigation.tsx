@@ -2,14 +2,12 @@ import { Blocks, CalendarClock } from "lucide-react";
 import { TID_AUTOMATIONS_OPEN } from "@robinrun/shared/test-ids";
 import type { ProjectSidebarProps } from "@/project-sidebar/contract.js";
 import { Button } from "@/components/ui/button.js";
-import { NewTaskButtonGroup } from "@/NewTaskButtonGroup.js";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { WebRemoteControlDeviceHeader } from "@/web-remote-control/WebRemoteControlDeviceHeader.js";
 
-/** 顶部导航只展示 Shell 的选中状态，路由仍由 Shell 唯一持有。 */
+/** 顶部导航只展示 Shell 的选中状态，路由仍由 Shell 唯一持有。新建会话入口收敛在智能体组内。 */
 export function ProjectSidebarNavigation({
   props,
-  onCreate,
 }: {
   props: Pick<
     ProjectSidebarProps,
@@ -20,7 +18,6 @@ export function ProjectSidebarNavigation({
     | "pluginStoreActive"
     | "webRemoteControlWorkspaceSwitcher"
   >;
-  onCreate(): void;
 }) {
   const { intl } = useRobinRunIntl();
   const deviceNavigation = props.webRemoteControlWorkspaceSwitcher?.deviceNavigation;
@@ -31,7 +28,6 @@ export function ProjectSidebarNavigation({
     >
       {/* Relay V2 远控：当前电脑是项目与任务的上一级，放在导航首行；手机端占用原顶部留白。 */}
       {deviceNavigation ? <WebRemoteControlDeviceHeader navigation={deviceNavigation} /> : null}
-      <NewTaskButtonGroup onCreateTask={onCreate} />
       {/* 远控主视图会把自动化和插件市场重置为聊天；入口必须一同隐藏，避免点击无效。 */}
       {!props.isWebRemoteControl && props.onOpenAutomations ? (
         <Button

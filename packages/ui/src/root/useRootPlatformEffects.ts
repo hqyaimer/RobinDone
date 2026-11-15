@@ -3,7 +3,12 @@ import { getConversationShareErrorDetails } from "@/lib/conversationShareError.j
 import { useEffect, useRef, useState } from "react";
 import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
 import type { CreateTaskOptions } from "@/app-shell/types.js";
-import type { IPlatformService, RobinRunTaskClientMode } from "@robinrun/shared";
+import type {
+  IPlatformService,
+  RobinRunProjectEntry,
+  RobinRunTaskClientMode,
+} from "@robinrun/shared";
+import { sortRobinrunProjectsByRecency } from "@/robinrun/projectRegistry.js";
 import { readV4ComposerDraft, V4_DRAFT_SCOPE_ROOT } from "@/v4/composer/composerDraftStore.js";
 import { readComposerWorkspaceScope } from "@/v4/composer/composerDraftStore.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
@@ -56,6 +61,7 @@ export function useRootPlatformEffects({
   hasCompletedFullTabRestore = true,
   intl,
   isRestoringOAuthSession,
+  robinrunProjects = null,
 }: {
   initialWorkspaceAbsPath?: string;
   initialWorkspaceIdentity?: string;
@@ -95,6 +101,8 @@ export function useRootPlatformEffects({
   hasCompletedFullTabRestore?: boolean;
   intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinRunIntl>["intl"];
   isRestoringOAuthSession: boolean;
+  /** 项目注册表；null 表示 settings 尚未读出（保持启动屏障等待）。 */
+  robinrunProjects?: RobinRunProjectEntry[] | null;
 }) {
   const didBootstrapInitialWorkspaceRef = useRef(false);
   const baseServices = useOptionalBaseWorkspaceServices();
@@ -179,7 +187,12 @@ export function useRootPlatformEffects({
     // 如果这里仍然等首屏先按默认空 tab 渲染一次，窗口会先闪出打开工作区中间页，
     // 再异步补上目标 workspace，视觉上像是“打开错页再跳转”。
     // 这里把初始工作区注入也纳入启动保护期，等首个 tab 准备好后再渲染正式内容。
-    setIsBootstrappingInitialWorkspace(false);
+    // RobinRun（2026-11-15 去启动台裁决）：桌面主链路（desktop-continuous）无注入路径时
+    // 不再在这里放行启动屏障，改由下方“自动打开最近项目”effect 收尾，避免加载屏和
+    // 首建页之间的闪烁；非桌面入口与手机远控根（web-remote-replayable）保持立即放行。
+    if (!isDesktop || clientMode !== "desktop-continuous") {
+      setIsBootstrappingInitialWorkspace(false);
+    }
   }, [
     addTab,
     openWorkspacePath,
@@ -194,6 +207,72 @@ export function useRootPlatformEffects({
     initialWorkspacePurpose,
     setIsBootstrappingInitialWorkspace,
     startDraftInWorkspace,
+  ]);
+
+  // RobinRun 去启动台裁决（2026-11-15）：冷启动不再停靠项目启动台。无 deep link/argv
+  // 注入且注册表有项目时，自动打开最近使用的项目——中间聊天区必须绑定 workspace 才能
+  // 渲染，这是“什么都不开”需要更深层壳层改造前的最小落法。注册表为空或目录全部失效时
+  // 放行启动屏障，回落到 Root 的首建启动台分支（仅零项目时可见）。
+  const didAutoOpenRobinrunProjectRef = useRef(false);
+  useEffect(() => {
+    if (clientMode !== "desktop-continuous" || !isDesktop || initialWorkspaceAbsPath) {
+      return;
+    }
+    if (didAutoOpenRobinrunProjectRef.current || !canBootstrapInitialWorkspace) {
+      return;
+    }
+    if (robinrunProjects === null) {
+      // settings 尚未读出：Root 的启动屏障初始即 true，这里保持等待。
+      return;
+    }
+    didAutoOpenRobinrunProjectRef.current = true;
+    const candidates = sortRobinrunProjectsByRecency(robinrunProjects);
+    if (candidates.length === 0) {
+      setIsBootstrappingInitialWorkspace(false);
+      return;
+    }
+    void (async () => {
+      try {
+        let openCandidates = candidates;
+        const statEntry = baseServices?.fileService?.stat;
+        if (statEntry) {
+          // 注册表条目可能已被删除/移动：先做目录校验，跳过失效条目，避免为不存在的
+          // 目录接纳项目。注意必须用 stat 判目录（checkFilesExist 的语义是 isFile，
+          // 项目目录会恒判 false——2026-11-15 冷启动停在启动台的根因）；stat 失败时
+          // 不拦截，退回逐条尝试打开的既有错误处理。
+          const results = await Promise.all(
+            candidates.map(async (entry) => ({
+              entry,
+              ok: await statEntry({ path: entry.path })
+                .then((fileStat) => fileStat.type === "directory")
+                .catch(() => false),
+            })),
+          );
+          openCandidates = results.filter((item) => item.ok).map((item) => item.entry);
+        }
+        const target = openCandidates[0];
+        if (!target) {
+          logger.info("[Root] 注册表项目目录均已失效，回落首建启动台", {
+            count: candidates.length,
+          });
+          return;
+        }
+        await Promise.resolve(openWorkspacePath(target.path));
+      } catch (error) {
+        logger.warn("[Root] 自动打开最近项目失败，回落首建启动台", error);
+      } finally {
+        setIsBootstrappingInitialWorkspace(false);
+      }
+    })();
+  }, [
+    baseServices,
+    canBootstrapInitialWorkspace,
+    clientMode,
+    initialWorkspaceAbsPath,
+    isDesktop,
+    openWorkspacePath,
+    robinrunProjects,
+    setIsBootstrappingInitialWorkspace,
   ]);
 
   useEffect(() => {

@@ -11,7 +11,6 @@ import {
   moveGroupAroundTopLevelNode,
   moveTaskToGroupEnd,
   moveTaskToGroupStart,
-  moveTaskToRootAroundGroup,
   moveTaskOverTask,
 } from "@/project-sidebar/grouped/view.js";
 export function findNearestScrollableAncestor(element: HTMLElement): HTMLElement | null {
@@ -107,14 +106,20 @@ export type GroupedTaskDragDirectionPosition = "before" | "after";
 export const groupedTaskCollisionDetection: CollisionDetection = (args) => {
   const activeType = getGroupedTaskDragType(args.active.data.current);
   const droppableContainers =
-    activeType === "grouped-group"
-      ? args.droppableContainers.filter((container) => {
-          const type = getGroupedTaskDragType(container.data.current);
-          return type === "grouped-task" || type === "grouped-group-over";
-        })
-      : args.droppableContainers.filter(
-          (container) => getGroupedTaskDragType(container.data.current) !== "grouped-group-over",
-        );
+    activeType === "grouped-project"
+      ? // 项目行拖拽只考虑其他项目行的 sortable 落点。
+        args.droppableContainers.filter(
+          (container) => getGroupedTaskDragType(container.data.current) === "grouped-project",
+        )
+      : activeType === "grouped-group"
+        ? args.droppableContainers.filter((container) => {
+            const type = getGroupedTaskDragType(container.data.current);
+            return type === "grouped-task" || type === "grouped-group-over";
+          })
+        : args.droppableContainers.filter((container) => {
+            const type = getGroupedTaskDragType(container.data.current);
+            return type !== "grouped-group-over" && type !== "grouped-project";
+          });
   return closestCenter({
     ...args,
     droppableContainers,
@@ -141,37 +146,31 @@ export function getGroupedTaskOverTaskPreviewView(
 export function getGroupedTaskOverCollapsedGroupPreviewView(
   view: RobinRunGroupedTaskView,
   event: DragOverEvent,
-  position: GroupedTaskDragDirectionPosition,
+  _position: GroupedTaskDragDirectionPosition,
 ): RobinRunGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskCollapsedOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
     return view;
   }
-  return moveTaskToRootAroundGroup(view, {
+  // 一级=智能体后不再有"根层"落点：拖到收起的智能体上 = 进入该智能体（末尾）。
+  return moveTaskToGroupEnd(view, {
     activeTaskKey,
     groupId: overGroupId,
-    position,
   });
 }
 
 export function getGroupedTaskOverGroupHeaderPreviewView(
   view: RobinRunGroupedTaskView,
   event: DragOverEvent,
-  position: GroupedTaskDragDirectionPosition,
+  _position: GroupedTaskDragDirectionPosition,
 ): RobinRunGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskHeaderOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
     return view;
   }
-  if (position === "before") {
-    return moveTaskToRootAroundGroup(view, {
-      activeTaskKey,
-      groupId: overGroupId,
-      position: "before",
-    });
-  }
+  // 智能体头的上/下两半都进入该智能体顶部；"移出"统一走菜单或未分组伪组。
   return moveTaskToGroupStart(view, {
     activeTaskKey,
     groupId: overGroupId,
@@ -181,23 +180,17 @@ export function getGroupedTaskOverGroupHeaderPreviewView(
 export function getGroupedTaskOverGroupFooterPreviewView(
   view: RobinRunGroupedTaskView,
   event: DragOverEvent,
-  position: GroupedTaskDragDirectionPosition,
+  _position: GroupedTaskDragDirectionPosition,
 ): RobinRunGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskFooterOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
     return view;
   }
-  if (position === "before") {
-    return moveTaskToGroupEnd(view, {
-      activeTaskKey,
-      groupId: overGroupId,
-    });
-  }
-  return moveTaskToRootAroundGroup(view, {
+  // 智能体尾的上/下两半都进入该智能体末尾。
+  return moveTaskToGroupEnd(view, {
     activeTaskKey,
     groupId: overGroupId,
-    position: "after",
   });
 }
 

@@ -306,6 +306,7 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
   onResolveConversationWorkspace,
   onOpenWorkspace,
   onOpenFolderFromWorkspaceMenu,
+  onOpenProject,
   onOpenRemoteWorkspace,
   allowOpenWorkspace = true,
   webRemoteControlWorkspaceSwitcher,
@@ -2198,6 +2199,7 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
       onCreateConversationTask={onCreateConversationTask ?? handleCreateTaskInChat}
       onCreateConversationTaskOnSource={onCreateConversationTaskOnSource}
       onOpenFolderFromWorkspaceMenu={onOpenFolderFromWorkspaceMenu}
+      onOpenProject={onOpenProject}
       onOpenRemoteWorkspace={onOpenRemoteWorkspace}
       webRemoteControlWorkspaceSwitcher={webRemoteControlWorkspaceSwitcher}
       theme={theme}

@@ -107,8 +107,12 @@ describe("protocol slash command surface", () => {
       expect(prompt).toContain(join(workspace, ".robinrun", "AGENTS.md"));
       expect(prompt).toContain(join(workspace, ".agents", "AGENTS.md"));
       expect(prompt).toContain("they already have an instructions file");
-      expect(prompt).not.toContain("Do not create CLAUDE.md or AGNENTS.md");
+      expect(prompt).not.toContain("Do not create CLAUDE.md or AGENTS.md");
       expect(prompt).toContain("include pnpm scripts");
+      // /init 扩展：AGENTS.md 之后按分工脚手架常驻子智能体定义。
+      expect(prompt).toContain(join(workspace, ".robinrun", "agents"));
+      expect(prompt).toContain("resident agent");
+      expect(prompt).toContain("development agent and an operations agent");
       expect(resolveRobinRunBuiltinPromptCommand("/review", { workingDirectory: workspace })).toBe(
         undefined,
       );

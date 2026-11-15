@@ -1,4 +1,5 @@
 import { TASK_GROUP_ADMISSIONS_SQL } from "#src/task-groups/migration-v6.js";
+import { TASK_GROUP_PROJECT_BINDING_SQL } from "#src/task-groups/migration-v7.js";
 import { basename, dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 import { databaseMigrationIdSchema, type DatabaseMigrationFacts } from "@robinrun/shared";
@@ -117,6 +118,14 @@ const definitions = [
     touchedTables: ["task_group_admissions"],
     checksumInput: [TASK_GROUP_ADMISSIONS_SQL],
     apply: (db: DatabaseSync) => db.exec(TASK_GROUP_ADMISSIONS_SQL),
+  },
+  {
+    // 智能体绑定项目（RobinRun 产品模型：项目 → 智能体 → 会话 三级组织）。
+    // 列只增可空；数据回填走 TaskIndexRepo.initialize 的启动对账（项目表此时已就绪）。
+    id: "0007_task_group_project_binding",
+    touchedTables: ["task_groups"],
+    checksumInput: [TASK_GROUP_PROJECT_BINDING_SQL],
+    apply: (db: DatabaseSync) => db.exec(TASK_GROUP_PROJECT_BINDING_SQL),
   },
 ] as const;
 

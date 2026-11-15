@@ -29,6 +29,7 @@ import {
   type ProjectMigrationContext,
 } from "#src/project-storage/index.js";
 import { runTasksDatabaseMigrations } from "#src/session/tasksDatabase/migrations.js";
+import { backfillTaskGroupProjectBinding } from "#src/task-groups/migration-v7.js";
 
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require("node:sqlite") as typeof import("node:sqlite");
@@ -410,6 +411,8 @@ export class TaskIndexRepo {
     });
     this.migrationBackupSkipped = taskMigration.backupSkipped || migration.backupSkipped;
     this.backfillOffPeakTaskMarkers();
+    // 智能体绑定项目的存量回填：必须在 projectStorage.migrate（projects/project_roots 建表）之后。
+    this.backfillTaskGroupProjectBinding();
     // Bugfix: z-code-2 早期列表 task_id 是 wrapper id，真实 RobinRun session id 在旧列
     // acp_session_id。直接运行时映射会让 read/send/subscribe 到处变成双 ID 兜底；
     // 初始化时把索引行迁到真实 session id，后续统一走新协议正常路径。
@@ -450,6 +453,20 @@ export class TaskIndexRepo {
           )`,
       )
       .run();
+  }
+
+  /**
+   * 智能体（task_groups）绑定项目的存量回填（幂等，每次 bootstrap 自愈）：
+   * 0007 迁移只加列；推导规则见 backfillTaskGroupProjectBinding（全部成员命中同一
+   * 未删除项目才绑定，歧义保持 NULL 不猜）。项目表由 projectStorage.migrate 先建好。
+   */
+  private backfillTaskGroupProjectBinding(): void {
+    const db = this.getDatabase();
+    const hasGroupsTable = db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='task_groups'")
+      .get();
+    if (!hasGroupsTable) return;
+    backfillTaskGroupProjectBinding(db);
   }
 
   private migrateLegacyAcpTaskIds(): void {

@@ -2197,6 +2197,10 @@ export function createLocalServices(options: {
     repository: () => taskIndexRepo.getProjectRepository(),
     workspaceDirectory: join(projectDataRoot(), "workspace"),
     afterChange: publishProjectChange,
+    // 主智能体自举端口：taskGroupService 在下方创建；端口只在 saveProject 命令执行时取用。
+    ensureMainAgentGroup: async (projectId) => {
+      await taskGroupService.ensureMainAgentGroup({ projectId });
+    },
     // robinrunAgentService 在下方创建；端口只在命令执行时取用它。
     data: {
       repository: () => taskIndexRepo.getProjectDataRepository(),

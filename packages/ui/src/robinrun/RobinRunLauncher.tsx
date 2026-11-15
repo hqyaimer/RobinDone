@@ -3,23 +3,23 @@ import type { RobinRunProjectEntry } from "@robinrun/shared";
 import { useSettings } from "@/hooks/useSettingService.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import {
+  basenameOf,
+  sortRobinrunProjectsByRecency,
+  upsertRobinrunProjectEntry,
+} from "@/robinrun/projectRegistry.js";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
 import { logger } from "@/logger.js";
 
 /**
- * RobinRunLauncher —— 项目启动台
+ * RobinRunLauncher —— 项目首建页（2026-11-15 去启动台裁决后的残留职责）
  *
- * RobinRun 的冷启动入口：进入程序先创建或选择一个运营项目，项目独占主界面。
+ * 正常冷启动由 Root 的“自动打开最近项目”effect 直接落到主界面；本组件只在
+ * 注册表为零项目（或候选目录全部失效）时作为首次创建项目的入口出现。
  * 项目注册表持久化在 AppSettings.robinrunProjects（setting.json），路径同时作为
  * workspace identity 的本地键。项目打开复用 Root 的 handleSelectProject 链路。
  */
-
-function basenameOf(path: string): string {
-  const normalized = path.replace(/[\\/]+$/, "");
-  const segments = normalized.split(/[\\/]/);
-  return segments[segments.length - 1] || normalized;
-}
 
 export interface RobinRunLauncherProps {
   /** 打开已注册/新选中的项目工作空间（Root 的 handleSelectProject）。 */
@@ -38,29 +38,15 @@ export function RobinRunLauncher({ onOpenProject, onOpenWorkspaceViaPicker }: Ro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const projects = useMemo(() => {
-    const list = settings?.robinrunProjects ?? [];
-    return [...list].sort((a, b) => b.lastOpenedAt - a.lastOpenedAt);
-  }, [settings?.robinrunProjects]);
+  const projects = useMemo(
+    () => sortRobinrunProjectsByRecency(settings?.robinrunProjects ?? []),
+    [settings?.robinrunProjects],
+  );
 
   const registerAndOpen = useCallback(
     async (path: string, name: string) => {
       const current = settings?.robinrunProjects ?? [];
-      const existing = current.find((p) => p.path === path);
-      const now = Date.now();
-      const next: RobinRunProjectEntry[] = existing
-        ? current.map((p) => (p.id === existing.id ? { ...p, lastOpenedAt: now, name } : p))
-        : [
-            ...current,
-            {
-              id: crypto.randomUUID(),
-              name,
-              path,
-              createdAt: now,
-              lastOpenedAt: now,
-            },
-          ];
-      await update({ robinrunProjects: next });
+      await update({ robinrunProjects: upsertRobinrunProjectEntry(current, path, name) });
       onOpenProject(path);
     },
     [onOpenProject, settings?.robinrunProjects, update],

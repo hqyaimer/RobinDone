@@ -6102,3 +6102,41 @@ CLI 定向回归已通过：V4 两种投递模式的并发 workspace 隔离、�
 桌面/手机交互沿用 HF01–02 和 SLR 综合候选。本轮实跑 covered：`desktop-e2e-20261102054133648-p182647-caa0869ba42a5410`，Linux Electron 与 390×844 触屏 Chromium，2 spec / 3 test 全通过，无 skipped 或自动重试。没有新增 UI 行为，既有 case 断言保持不变；不自动晋升 formal/CI。
 
 已就绪实例 identity 预检补全回归（2026-11-02）：CLI 协议验证仅替换/删除 identity 的 ensureReady/restart 均拒绝，原实例不关闭且 generation 不变；3 文件 183 项通过。正常 HF01–02 / SLR 交互 covered：`desktop-e2e-20261102060952670-p190384-9867bbf844a8e3cd`，Linux Electron 与触屏 Chromium，2 spec / 3 test 全通过，无自动重试。矛盾 identity 参数由协议回归覆盖，不宣称原生 SSH/WSL E2E。
+
+## 智能体列表重构影响（2026-11-15）
+
+侧栏改为「一级=项目文件夹、二级=智能体、三级=会话」的单一智能体树（见
+`docs/ui/task-grouped-view.md` 2026-11-15 裁决）后，以下既有用例引用的视图切换器
+（`sidebar-view-menu` / `sidebar-view-projects|grouped|timeline|unread`）与
+`readProjectSidebarView` 已随 UI 移除，相关断言在下次运行必然失败，按本节标记为
+blocked-by-restructure：
+
+- `conversation-session-task-groups.test.ts`（偏好升级、视图切换、分组 CRUD、吸顶）
+- `conversation-session-virtual-project-mobile.test.ts`（手机筛选菜单、项目/时间线切换）
+- `conversation-session-rpn-project-navigation.test.ts`（时间线视图导航）
+- `conversation-session-chat-remote-folder.test.ts`（视图切换辅助步骤）
+- `conversation-session-project-behavior.test.ts`（manual-review/pending）
+- `ui-shell/command-center-focus.test.ts`、`ui-shell/sidebar-tooltips.test.ts`
+- `packages/ui/test/browser/manual-review/pending/new-task-rendering.test.mjs`、
+  `sidebar-tooltips.test.mjs`（顶部新建任务块已移除）
+
+以上用例保持原位；需要按新树重写断言（项目文件夹头、智能体组、未分组伪组、
+组内新建会话）后重跑并更新对应行。本轮未实跑桌面/手机 GUI，不据此变更任何
+covered 结论。新结构的新增覆盖（主智能体自举、跨项目拖拽守卫、未分组收纳）
+尚未立项，待产品验收后进 catalog。
+
+### 项目列表导航裁决追加影响（2026-11-15 二）
+
+同日"项目列表导航"裁决（`docs/ui/task-grouped-view.md` 2026-11-15（二））进一步改变了
+侧栏一级渲染：桌面端一级=平铺项目列表（行 testid 由 `virtual-project-toggle` 变为
+`virtual-project-open`，不渲染子内容），点击项目进入单项目智能体页，头部新增
+`sidebar-project-back` 返回按钮；启动台退役为零项目首建页，冷启动自动打开最近项目。
+因此上一节 blocked-by-restructure 的用例**重写范围再扩大**：凡断言"多项目文件夹
+常驻同树 / 项目行展开 / `sidebar-list-title` 恒为智能体列表 / 冷启动经启动台"的步骤
+都需按两级导航重写（项目列表页 → 进入 → 智能体页 → 返回）。新增待立项覆盖：
+冷启动自动打开最近项目（含失效目录跳过）、两级导航与返回、平铺列表排序/置顶、
+零项目首建页、远程项目进入不切工作区、项目行新建会话落主智能体并进入项目、
+智能体列表紧凑间距（组间零纵向间距）。验收实测还确认了两类回归点须纳入用例：
+冷启动目录校验必须判目录（`checkFilesExist` 的 isFile 语义曾致恒回落启动台）、
+列表页 DndContext 必须带 `distance:6` 约束（否则行点击被拖拽手势吞掉）。
+本轮仍未实跑 GUI 自动化，不据此变更任何 covered 结论。

@@ -3,6 +3,11 @@ import type { DatabaseSync } from "node:sqlite";
 import {
   CRON_DEFAULT_GROUP_ID,
   OFF_PEAK_DEFAULT_GROUP_ID,
+  MAIN_AGENT_GROUP_COLOR,
+  MAIN_AGENT_GROUP_PREFIX,
+  MAIN_AGENT_GROUP_TITLE,
+  isMainAgentGroupId,
+  mainAgentGroupId,
   resolveWorkspaceKey,
 } from "@robinrun/shared";
 import type {
@@ -56,7 +61,7 @@ export class TaskGroupRepository {
       const result = {
         groups: this.db
           .prepare(
-            "SELECT group_id AS id,title,coalesce(color,'gray') AS color,created_at AS createdAt,updated_at AS updatedAt FROM task_groups ORDER BY created_at,group_id",
+            "SELECT group_id AS id,title,coalesce(color,'gray') AS color,project_id AS projectId,created_at AS createdAt,updated_at AS updatedAt FROM task_groups ORDER BY created_at,group_id",
           )
           .all() as unknown as TaskGroup[],
         members: this.db
@@ -129,24 +134,36 @@ export class TaskGroupRepository {
       }
     });
   }
-  save(input: { id?: string; title?: string; color?: TaskGroup["color"] }): TaskGroup {
+  save(input: {
+    id?: string;
+    title?: string;
+    color?: TaskGroup["color"];
+    projectId?: string | null;
+  }): TaskGroup {
     return this.transaction(() => {
       const previous = input.id
         ? this.read().groups.find((group) => group.id === input.id)
         : undefined;
       if (input.id && !previous) throw new Error("task-group.not-found");
+      // 主智能体组的归属由项目 id 派生，save 不允许改绑（id 前缀即权威）。
+      const projectId = input.id && isMainAgentGroupId(input.id)
+        ? mainAgentGroupId(input.id.slice(MAIN_AGENT_GROUP_PREFIX.length))
+        : input.projectId !== undefined
+          ? input.projectId
+          : (previous?.projectId ?? null);
       const group: TaskGroup = {
         id: previous?.id ?? randomUUID(),
         title: input.title?.trim() ?? previous?.title ?? "New group",
         color: input.color ?? previous?.color ?? "gray",
+        projectId,
         createdAt: previous?.createdAt ?? this.now(),
         updatedAt: this.now(),
       };
       if (!group.title) throw new Error("task-group.title-required");
       this.db
-        .prepare(`INSERT INTO task_groups(group_id,title,color,created_at,updated_at) VALUES(?,?,?,?,?)
-        ON CONFLICT(group_id) DO UPDATE SET title=excluded.title,color=excluded.color,updated_at=excluded.updated_at`)
-        .run(group.id, group.title, group.color, group.createdAt, group.updatedAt);
+        .prepare(`INSERT INTO task_groups(group_id,title,color,project_id,created_at,updated_at) VALUES(?,?,?,?,?,?)
+        ON CONFLICT(group_id) DO UPDATE SET title=excluded.title,color=excluded.color,project_id=excluded.project_id,updated_at=excluded.updated_at`)
+        .run(group.id, group.title, group.color, group.projectId, group.createdAt, group.updatedAt);
       if (!previous)
         this.writeOrder(
           [
@@ -158,8 +175,43 @@ export class TaskGroupRepository {
       return group;
     });
   }
+  /**
+   * 项目标配主智能体：确定性 id 幂等自举，重开项目（saveProject reuseExistingRoot）重复调用安全。
+   * 新建时置顶根层排序；展示顺序在 UI 内按项目归拢后再将主智能体排最前。
+   */
+  ensureMainAgentGroup(projectId: string): TaskGroup {
+    return this.transaction(() => {
+      const id = mainAgentGroupId(projectId);
+      const existing = this.read().groups.find((group) => group.id === id);
+      if (existing) return existing;
+      const now = this.now();
+      const group: TaskGroup = {
+        id,
+        title: MAIN_AGENT_GROUP_TITLE,
+        color: MAIN_AGENT_GROUP_COLOR,
+        projectId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.db
+        .prepare(
+          "INSERT INTO task_groups(group_id,title,color,project_id,created_at,updated_at) VALUES(?,?,?,?,?,?)",
+        )
+        .run(group.id, group.title, group.color, group.projectId, group.createdAt, group.updatedAt);
+      this.writeOrder(
+        [
+          { type: "group", key: group.id },
+          ...this.children(null).filter((node) => node.key !== group.id),
+        ],
+        null,
+      );
+      return group;
+    });
+  }
   ungroup(id: string): void {
     this.transaction(() => {
+      // 主智能体是项目标配（ACD 裁决：禁止删除），服务层/UI 均不提供入口，仓储兜底拒绝。
+      if (isMainAgentGroupId(id)) throw new Error("task-group.protected");
       if (!this.hasGroup(id)) return;
       const members = this.children(id);
       const root = this.children(null).flatMap((node) =>

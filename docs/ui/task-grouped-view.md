@@ -1,6 +1,82 @@
 # Task Grouped View
 
-## 2026-10-13 恢复裁决（当前）
+## 2026-11-15（二）项目列表导航裁决（当前，覆盖同日上一节的视图层级与入口部分）
+
+用户再裁决：**一个窗口承载所有项目，启动页退役**。侧栏一级改为平铺的项目列表
+（不显示智能体和会话），点击项目进入该项目专属的智能体页（仅该项目 + 未绑定/系统组 +
+未分组伪组），返回按钮回到项目列表。同日上一节的数据层裁决（project_id 绑定、主智能体
+自举、未分组伪组、跨项目守卫）全部继续有效；本节覆盖其"一级=项目文件夹常驻树"的渲染方式。
+
+- **两级导航**：`ProjectSidebar` 持有 `enteredProjectKey` 导航状态（null=项目列表页）。
+  桌面端（`isDesktop && onOpenProject` 存在）启用导航；web 远控/mobile home-only 保持
+  旧一棵树渲染（`taskList.title` 标题保留给该回退形态）。
+- **项目列表页**：`ProjectList.tsx` 平铺全部项目（空项目也渲染；与 `buildAgentTreeLayout`
+  跳过空项目不同），行复用 `ProjectSidebarNode` 新增的 `navigation` 变体——标题点击=进入
+  项目（testid `virtual-project-open`），不渲染子内容、不接收会话拖放；保留置顶/未读点/
+  状态标签/悬停菜单/拖拽排序（独立 DndContext，sortable 全为 `grouped-project` 类型）。
+  头部标题=`project.listTitle`，工具槽只有"新建项目"（`ProjectCreation` 对话框沿用，
+  创建成功后由用户自行进入）。
+- **智能体页**：`TaskGroupedView` 收到 `projects=[进入的项目]`（单 section），
+  `newAgentProject` 指定新建智能体落点（可为远程项目）；未绑定区（cron/闲时/无主组）与
+  未分组伪组仍渲染在该页底部（同日上一节裁决的位置）。项目文件夹行强制展开、不可折叠；
+  工具槽只剩"折叠全部"+"新建智能体"。头部=返回箭头（`project.back`）+ 项目名。
+- **项目行新建会话落主智能体**（2026-11-15 验收补充）：项目行（列表页与智能体页一致）的
+  新建会话入口创建到该项目的**主智能体**下（`taskGroupId = mainAgentGroupId(projectId)`，
+  本地项目；主智能体由 saveProject 幂等自举必然存在）；列表页创建时同时进入该项目，
+  让草稿立即可见。远程项目没有本地主智能体，保持未归属（null）。
+- **紧凑间距**：智能体列表纵向不留组间距——`TASK_GROUP_CONTAINER_CLASS` 去掉 `pt-2.5`、
+  内容包装去掉 `pt-1`，行与行紧密排列；相邻智能体靠悬停背景与内容左边线区分。
+  首个智能体贴住项目行，行缩进 `pl-2` 表达从属。
+- **进入语义**：本地项目点击=`onOpenProject(rootPath)`（Root 的 `handleSelectProject`：
+  Host 项目接纳 → 跨窗口去重 → tab 激活 → 草稿初始化，壳层不重挂载）+ 进入其智能体页；
+  远程项目点击=仅进入其智能体页（不切换本地工作区），会话点击走既有跨工作区导航/远端连接。
+  已进入状态下工作区被外部切换（深链/跨工作区任务导航）→ 智能体页跟随新工作区所属项目；
+  进入的项目被删除 → 回落项目列表。
+- **启动编排**：`RobinRunLauncher` 退役为零项目首建页（注册表为空或候选目录全部失效时
+  才出现）；`Root` 桌面冷启动停在启动加载屏（`isBootstrappingInitialWorkspace` 初始即 true），
+  `useRootPlatformEffects` 按 `robinrunProjects.lastOpenedAt` 自动打开最近项目。目录校验必须用
+  `fileService.stat` 判**目录**（`checkFilesExist` 语义是 `isFile`，项目目录恒判失效——
+  2026-11-15 验收实测踩坑）。注册表由 `handleSelectProject` 统一 bump（`upsertRobinrunProjectEntry`，
+  `packages/ui/src/robinrun/projectRegistry.ts`，模块 `robinrun-launcher`）。
+  `startupWorkspace.ts` 的 `restoreSession:false` 不变；深链/argv 直开路径不变。
+  侧栏列表页 DndContext 与智能体树同样必须配 `PointerSensor + distance:6`（无约束的默认
+  sensor 会在 pointerdown 吞掉行点击）。
+
+## 2026-11-15 智能体列表裁决（数据层与主智能体继续有效）
+
+RobinRun 产品结构改为 **一级=项目文件夹、二级=智能体、三级=会话**；侧栏改名"智能体列表"。
+本节覆盖 2026-10-13 恢复裁决中与视图切换、顶层任务行、新建入口相关的结论；组织数据链路、
+placement/首发、服务校验、吸顶与渲染稳定性等其余裁决继续有效。
+
+- **视图收敛**：侧栏只有智能体树一个视图。视图切换下拉（按项目/按分组/最近更新/按未读）、
+  全局置顶任务区与顶层未分组任务行全部移除；`ProjectSidebarView`/`readProjectSidebarView` 已删除。
+  会话未读/时间线能力仍由行级状态承载，后续如需筛选再以智能体树内的过滤形态回归。
+- **项目绑定**：`task_groups` 新增可空 `project_id`（migration `0007_task_group_project_binding`，
+  只增列 + 回填；回填规则=组成员 workspace_path 全部命中同一未删除项目的 root 才绑定，歧义保持 NULL）。
+  `projectId` 为空或指向已删除项目的组渲染在文件夹区之后的"未绑定区"（cron/闲时系统组永远在此区）。
+- **项目文件夹是纯展示投影**：智能体平面（`RobinRunGroupedTaskView`）保持扁平，
+  拖拽/预览/命令数学不变；文件夹行复用项目视图 `ProjectSidebarNode`（children 插槽替代平铺任务行），
+  项目排序/置顶/展开偏好沿用原机制。空项目（尚未打开、无主智能体）不渲染文件夹头。
+- **主智能体**：项目标配（确定性 id `robinrun-main-agent-<projectId>`，saveProject 幂等自举，
+  重开旧项目自动补齐）；置顶展示于项目文件夹内第一位；禁止解散（仓储按 id 前缀拒绝 `ungroup`，
+  UI 隐藏入口），重命名/改色/排序允许；`title` 落规范值 `main-agent`，展示走 `taskGroup.mainAgent`
+  本地化（用户重命名后以自定义名为准）。
+- **未分组伪组**：未归属任何智能体的会话收入固定"未分组"节点（UI id `robinrun-ungrouped-agent`，
+  不落库；move 命令中对应 `groupId=null`）。伪组**始终存在于智能体平面**（菜单移出/拖出预览要能
+  计算 diff），仅在有未归属会话时渲染；不提供新建/重命名/改色/解散入口。置顶会话改为智能体内置顶，
+  不再有全局置顶区。
+- **新建入口收敛**：顶部"新建任务"块移除（保留自动化/插件市场按钮）；顶层"新建任务"草稿行移除；
+  新建会话只从智能体头/菜单进入（draft placement 机制不变，`groupId=null` 的未指定归属会话
+  由继承逻辑落到活动任务所在智能体或草稿意图）。工具栏新增：新建项目（`project.new`）、
+  新建智能体（落在当前工作区所属项目；找不到所属项目时禁用）。
+- **拖拽语义**：拖到智能体头（上/下半）= 进入该智能体顶部；拖到组尾/收起组 = 进入该智能体末尾；
+  旧"根层逃逸"语义废除——移出智能体统一走右键菜单"移出智能体"或拖入"未分组"。
+  **跨项目守卫**：会话只能进入同项目智能体或未分组（按任务 projectId 与目标组 projectId 比对，
+  违规 toast 拒绝）；智能体不能跨项目重排（锚点组 scope 不同则拒绝）。scope 缺席
+  （未归类 workspace、系统组）按宽松处理。
+- **本地化**：`taskList.title`=智能体列表；"分组"措辞清理为"智能体"（重命名/解散/拖入空态等）。
+
+## 2026-10-13 恢复裁决（组织链路仍有效）
 
 状态：已实现，GUI 用例保持 manual-review/pending。以下裁决覆盖本文后面的历史实现说明。
 

@@ -9,14 +9,16 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type RefObject,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
-import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { Hash, Maximize2, Minimize2 } from "lucide-react";
+import { DndContext, DragOverlay, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { FolderPlus, Hash, Maximize2, Minimize2 } from "lucide-react";
 import { OFF_PEAK_DEFAULT_GROUP_ID } from "@robinrun/shared";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
@@ -28,27 +30,33 @@ import type {
   ProjectSidebarProps,
   MoveGroupNode,
   TaskGroupColor,
+  VirtualProject,
 } from "@/project-sidebar/contract.js";
-import { groupTaskRef } from "@/project-sidebar/grouped-view.js";
+import { groupTaskRef, taskGroupKey } from "@/project-sidebar/grouped-view.js";
 import {
   readGroupedTaskCollapsedGroupIds,
   persistGroupedTaskCollapsedGroupIds,
 } from "@/project-sidebar/grouped-expansion.js";
-import { buildGroupedTaskView, groupedMoveCommand } from "@/project-sidebar/grouped/model.js";
+import {
+  buildAgentTreeLayout,
+  buildGroupedTaskView,
+  groupedMoveCommand,
+  type AgentGroupNode,
+} from "@/project-sidebar/grouped/model.js";
 import { GroupItem } from "@/project-sidebar/grouped/group-item.js";
 import { GroupedTaskItem } from "@/project-sidebar/grouped/task-item.js";
-import { GroupedDraftTaskRow } from "@/project-sidebar/grouped/draft-task-row.js";
 import { GroupDragOverlay } from "@/project-sidebar/grouped/group-drag-overlay.js";
 import { StickyGroupHeader } from "@/project-sidebar/grouped/sticky-group-header.js";
 import { StickyGroupHeaderSlot } from "@/project-sidebar/grouped/sticky-group-header-slot.js";
-import { VirtualizedGroupedTopLevelList } from "@/project-sidebar/grouped/virtualized-top-level-list.js";
 import { useGroupedDrag } from "@/project-sidebar/grouped/useGroupedDrag.js";
 import {
   GROUPED_TASK_DROP_ANIMATION,
   findNearestScrollableAncestor,
+  getGroupedTaskDragType,
   resolveStickyGroupedTaskGroupId,
 } from "@/project-sidebar/grouped/drag.js";
 import { taskKey } from "@/project-sidebar/grouped/ids.js";
+import { projectKey } from "@/project-sidebar/view.js";
 import {
   findTaskInGroupedView,
   moveTaskByMenu,
@@ -68,6 +76,12 @@ import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
 import { logger } from "@/logger.js";
 
+/**
+ * 智能体列表（一级=项目文件夹、二级=智能体、三级=会话）。
+ * 智能体平面本身保持扁平（拖拽/预览/命令数学不变），项目文件夹是纯展示投影：
+ * 组上的 projectId 决定它落在哪个文件夹；未绑定项目/系统的组与"未分组"伪组渲染在文件夹区之后。
+ */
+
 /** 恢复删除前的组件与手势（fd2f4f38a4a^1）；仅将旧事实缓存/applyOrder 改接当前 owner。 */
 export function TaskGroupedView({
   tasks,
@@ -80,6 +94,11 @@ export function TaskGroupedView({
   toolbarTarget,
   stickyTarget,
   scrollRef,
+  projects,
+  renderProject,
+  onReorderProjects,
+  onAddProject,
+  newAgentProject = null,
 }: {
   tasks: ProjectTask[];
   onSelect: ProjectSidebarProps["onSelectTask"];
@@ -91,6 +110,17 @@ export function TaskGroupedView({
   toolbarTarget: HTMLElement | null;
   stickyTarget: HTMLElement | null;
   scrollRef: RefObject<HTMLDivElement | null>;
+  /** 项目展示顺序（置顶在前，沿用现有项目排序偏好）。 */
+  projects: VirtualProject[];
+  /** 项目文件夹行复用项目视图的 ProjectSidebarNode；children 为该项目的智能体列表。 */
+  renderProject(project: VirtualProject, children: ReactNode): ReactNode;
+  onReorderProjects(active: string, over: string): void;
+  onAddProject?: () => void;
+  /**
+   * RobinRun 项目列表导航（2026-11-15 裁决）：智能体页只渲染进入的项目，
+   * 新建智能体落点随之取进入的项目（可为远程项目），不再按 workspacePath 反推。
+   */
+  newAgentProject?: VirtualProject | null;
 }) {
   const { groups: organization, loading } = useProjectDirectory();
   const { intl } = useRobinRunIntl();
@@ -106,9 +136,6 @@ export function TaskGroupedView({
   );
   const activeTaskId = useRobinRunSessionStore(
     (state) => state.workspaces[workspaceKey]?.activeTaskId ?? null,
-  );
-  const draftFocusVersion = useRobinRunSessionStore(
-    (state) => state.workspaces[workspaceKey]?.draftFocusVersion,
   );
   // 空正文不再持久化；分组行订阅现有内存草稿，不能靠 localStorage 或手动重绘维持归属。
   const currentDraftGroupId = useRobinRunSessionStore(
@@ -126,7 +153,7 @@ export function TaskGroupedView({
   useEffect(() => {
     persistGroupedTaskCollapsedGroupIds(collapsed);
   }, [collapsed]);
-  const [newGroupSetupId, setNewGroupSetupId] = useState<string | null>(null);
+  const [newAgentSetupId, setNewAgentSetupId] = useState<string | null>(null);
   const [renamingTask, setRenamingTask] = useState<ProjectTask | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -165,8 +192,36 @@ export function TaskGroupedView({
   const action = (work: () => Promise<unknown>, messageId?: string) => {
     void work().catch((error) => report(error, messageId));
   };
+  // 跨项目规则（产品裁决）：会话只能进入同项目的智能体或"未分组"伪组；
+  // 智能体不能拖越项目文件夹。scope 缺席（未归类 workspace/系统组/伪组）按宽松处理。
+  const taskProjectByTaskKey = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const task of tasks) map.set(taskGroupKey(task), task.projectId ?? null);
+    return map;
+  }, [tasks]);
   const move = async (command: MoveGroupNode) => {
     try {
+      const scopeByGroup = new Map(
+        organization.structure.groups.map((group) => [group.id, group.projectId]),
+      );
+      const agentScope = (groupId: string | null) =>
+        groupId ? (scopeByGroup.get(groupId) ?? null) : null;
+      if (command.node.type === "task") {
+        const taskScope = taskProjectByTaskKey.get(taskGroupKey(command.node.task)) ?? null;
+        const targetScope = agentScope(command.groupId);
+        if (taskScope && targetScope && targetScope !== taskScope) {
+          report(new Error("task-group.cross-project-task"), "taskGroup.crossProjectTask");
+          return;
+        }
+      } else {
+        const activeScope = agentScope(command.node.groupId);
+        const anchorScope =
+          command.anchor?.node.type === "group" ? agentScope(command.anchor.node.groupId) : null;
+        if (activeScope && anchorScope && activeScope !== anchorScope) {
+          report(new Error("task-group.cross-project-agent"), "taskGroup.crossProjectAgent");
+          return;
+        }
+      }
       await organization.move(command);
     } catch (error) {
       report(error);
@@ -179,6 +234,10 @@ export function TaskGroupedView({
     onCollapsedGroupIdsChange: changeCollapsed,
     onMove: move,
   });
+  const layout = useMemo(
+    () => buildAgentTreeLayout(drag.view, projects),
+    [drag.view, projects],
+  );
   const selectGroups = useShallow((nodes: typeof drag.view.nodes) =>
     nodes.flatMap((node) => (node.type === "group" ? [node.group] : [])),
   );
@@ -208,14 +267,6 @@ export function TaskGroupedView({
     clearV4ComposerDraftTaskGroup(workspacePath, workspaceIdentity, draftScope);
     useRobinRunSessionStore.getState().clearDraftTaskGroup(workspacePath, workspaceIdentity);
   };
-  useEffect(() => {
-    if (draftGroupId !== null || !drag.root.current) return;
-    const root = drag.root.current;
-    const frame = requestAnimationFrame(() =>
-      findNearestScrollableAncestor(root)?.scrollTo({ top: 0 }),
-    );
-    return () => cancelAnimationFrame(frame);
-  }, [draftFocusVersion, draftGroupId, drag.root]);
   const mutate = async (task: ProjectTask, mutation: ProjectTaskMutation) => {
     const result = await mutateProjectTask(
       { service, controller },
@@ -343,7 +394,7 @@ export function TaskGroupedView({
       window.removeEventListener("resize", schedule);
       observer.disconnect();
     };
-  }, [scrollRef, drag.root, drag.dragging, drag.view.nodes, collapsed, draftGroupId]);
+  }, [scrollRef, drag.root, drag.dragging, drag.view.nodes, collapsed, newAgentSetupId]);
   const sticky = drag.view.nodes.find(
     (node) => node.type === "group" && node.group.id === stickyId,
   );
@@ -357,6 +408,80 @@ export function TaskGroupedView({
   const toggleLabel = intl.formatMessage({
     id: allExpanded ? "taskGroup.collapseAll" : "taskGroup.expandAll",
   });
+  // 新建智能体落点：智能体页（项目列表导航）显式指定进入的项目；树模式（导航未启用）
+  // 仍按当前工作区所属项目反推，找不到时禁用，避免造出无主智能体。
+  const activeProject = useMemo(
+    () =>
+      newAgentProject ??
+      projects.find(
+        (project) =>
+          project.hostId === "local" &&
+          project.roots.some((root) => root.rootPath === workspacePath),
+      ) ??
+      null,
+    [newAgentProject, projects, workspacePath],
+  );
+  const createAgent = () => {
+    if (!activeProject) return;
+    action(async () => {
+      const group = await organization.save({
+        title: intl.formatMessage({ id: "taskGroup.defaultTitle" }),
+        projectId: activeProject.id,
+      });
+      setNewAgentSetupId(group.id);
+    }, "taskGroup.createFailed");
+  };
+  // 项目行拖拽（type=grouped-project，ProjectNode 的 sortable data）路由到项目排序；
+  // 其余（智能体/会话）交回既有手势收口，提交单节点移动命令。
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (getGroupedTaskDragType(event.active.data.current) === "grouped-project") {
+      const overId = event.over?.id;
+      if (overId && event.active.id !== overId)
+        onReorderProjects(String(event.active.id), String(overId));
+      return;
+    }
+    drag.dnd.onDragEnd(event);
+  };
+  const renderAgent = (agent: AgentGroupNode) => (
+    <div key={agent.group.id} data-grouped-layout-key={`group:${agent.group.id}`}>
+      <GroupItem
+        {...rowCallbacks}
+        activeWorkspacePath={workspacePath}
+        activeWorkspaceIdentity={workspaceIdentity}
+        activeTaskId={activeTaskId}
+        mobileActiveTaskKey={presentation.mobileActiveTaskKey}
+        node={agent}
+        getTaskRemoteSessionId={getTaskRemoteSessionId}
+        getTaskWorkspaceLabel={getWorkspaceLabel}
+        onCreateTask={() => createTask(agent.group.id)}
+        hasDraftTask={draftGroupId === agent.group.id}
+        draftTaskActive={!activeTaskId}
+        draftWorkspaceLabel={getWorkspaceLabel({ workspacePath })}
+        onSelectDraftTask={() => createTask(agent.group.id)}
+        onCloseDraftTask={closeDraft}
+        onRenameGroup={(id, title) =>
+          action(() => organization.save({ id, title }), "taskGroup.renameFailed")
+        }
+        onUpdateGroupColor={updateColor}
+        onUngroupGroup={ungroup}
+        newGroupSetup={newAgentSetupId === agent.group.id}
+        onNewGroupSetupStarted={(id) =>
+          setNewAgentSetupId((current) => (current === id ? null : current))
+        }
+        collapsed={collapsed.has(agent.group.id)}
+        onToggleCollapsed={toggleCollapsed}
+        activeDragTaskKey={drag.activeTaskKey}
+        activeDragGroupId={drag.activeGroupId}
+        tooltipsDisabled={drag.dragging}
+      />
+    </div>
+  );
+  // 智能体容器已不带纵向间距（TASK_GROUP_CONTAINER_CLASS 去除 pt-2.5），列表首尾与
+  // 组间都贴紧项目行；缩进保留 pl-2 表达从属关系。
+  const renderAgentList = (agents: AgentGroupNode[]): ReactNode =>
+    agents.length > 0 ? <div className="pl-2">{agents.map(renderAgent)}</div> : null;
+  const emptyAgents =
+    layout.sections.length === 0 && layout.unbound.length === 0 && !loading;
   return (
     <>
       {toolbarTarget &&
@@ -383,6 +508,20 @@ export function TaskGroupedView({
                 )}
               </Button>
             </ControlHintTooltip>
+            {onAddProject ? (
+              <ControlHintTooltip title={intl.formatMessage({ id: "project.new" })}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0 text-foreground-subtle hover:text-foreground"
+                  data-testid="agent-tree-add-project"
+                  aria-label={intl.formatMessage({ id: "project.new" })}
+                  onClick={onAddProject}
+                >
+                  <FolderPlus className="size-3.5" />
+                </Button>
+              </ControlHintTooltip>
+            ) : null}
             <ControlHintTooltip title={intl.formatMessage({ id: "taskGroup.newGroup" })}>
               <Button
                 variant="ghost"
@@ -390,15 +529,8 @@ export function TaskGroupedView({
                 className="shrink-0 text-foreground-subtle hover:text-foreground"
                 data-testid="task-group-add"
                 aria-label={intl.formatMessage({ id: "taskGroup.newGroup" })}
-                disabled={!organization.available}
-                onClick={() =>
-                  action(async () => {
-                    const group = await organization.save({
-                      title: intl.formatMessage({ id: "taskGroup.defaultTitle" }),
-                    });
-                    setNewGroupSetupId(group.id);
-                  }, "taskGroup.createFailed")
-                }
+                disabled={!organization.available || !activeProject}
+                onClick={createAgent}
               >
                 <Hash className="size-3.5" />
               </Button>
@@ -443,71 +575,33 @@ export function TaskGroupedView({
           }, "taskList.renameFailed")
         }
       />
-      <DndContext {...drag.dnd}>
+      {/* 单一 DndContext 承载三类拖拽（项目行/智能体/会话），碰撞检测按 active.data.type 分流；
+          项目行是独立的 SortableContext（verticalListSortingStrategy），智能体/会话沿用既有手势。
+          不嵌套第二个 DndContext：嵌套时文件夹内的 GroupItem 会绑到最近的项目排序上下文而失效。 */}
+      <DndContext {...drag.dnd} onDragEnd={handleDragEnd}>
         <div ref={drag.root} className="px-2 pb-4" data-testid="task-grouped-view">
-          {draftGroupId === null && (
-            <GroupedDraftTaskRow
-              active={!activeTaskId}
-              workspaceLabel={getWorkspaceLabel({ workspacePath })}
-              onSelect={() => createTask(null)}
-              onClose={closeDraft}
-            />
-          )}
-          <VirtualizedGroupedTopLevelList
-            nodes={drag.view.nodes}
-            isGroupCollapsed={(id) => collapsed.has(id)}
-            renderNode={(node) =>
-              node.type === "group" ? (
-                <div key={node.group.id} data-grouped-layout-key={`group:${node.group.id}`}>
-                  <GroupItem
-                    {...rowCallbacks}
-                    activeWorkspacePath={workspacePath}
-                    activeWorkspaceIdentity={workspaceIdentity}
-                    activeTaskId={activeTaskId}
-                    mobileActiveTaskKey={presentation.mobileActiveTaskKey}
-                    node={node}
-                    getTaskRemoteSessionId={getTaskRemoteSessionId}
-                    getTaskWorkspaceLabel={getWorkspaceLabel}
-                    onCreateTask={() => createTask(node.group.id)}
-                    hasDraftTask={draftGroupId === node.group.id}
-                    draftTaskActive={!activeTaskId}
-                    draftWorkspaceLabel={getWorkspaceLabel({ workspacePath })}
-                    onSelectDraftTask={() => createTask(node.group.id)}
-                    onCloseDraftTask={closeDraft}
-                    onRenameGroup={(id, title) =>
-                      action(() => organization.save({ id, title }), "taskGroup.renameFailed")
-                    }
-                    onUpdateGroupColor={updateColor}
-                    onUngroupGroup={ungroup}
-                    newGroupSetup={newGroupSetupId === node.group.id}
-                    onNewGroupSetupStarted={(id) =>
-                      setNewGroupSetupId((current) => (current === id ? null : current))
-                    }
-                    collapsed={collapsed.has(node.group.id)}
-                    onToggleCollapsed={toggleCollapsed}
-                    activeDragTaskKey={drag.activeTaskKey}
-                    activeDragGroupId={drag.activeGroupId}
-                  />
-                </div>
-              ) : (
-                <GroupedTaskItem
-                  {...rowCallbacks}
-                  key={taskKey(node.task)}
-                  {...rowSelection(node.task)}
-                  task={node.task}
-                  remoteSessionId={getTaskRemoteSessionId(node.task)}
-                  workspaceLabel={getWorkspaceLabel(node.task)}
-                  dragId={taskKey(node.task)}
-                  dragging={drag.activeTaskKey === taskKey(node.task)}
-                />
-              )
-            }
-          />
-          {drag.view.nodes.length === 0 && draftGroupId === undefined && !loading && (
+          {/* 一级：项目文件夹（复用项目视图的行组件与排序）；二级：文件夹内的智能体。 */}
+          <SortableContext
+            items={layout.sections.map((section) => projectKey(section.project))}
+            strategy={verticalListSortingStrategy}
+          >
+            {layout.sections.map((section) =>
+              renderProject(section.project, renderAgentList(section.agents)),
+            )}
+          </SortableContext>
+          {/* 未绑定项目/系统全局的智能体（cron、闲时、旧数据）。 */}
+          {layout.unbound.length > 0 ? (
+            <div className="mt-3">{layout.unbound.map(renderAgent)}</div>
+          ) : null}
+          {/* 固定"未分组"伪组：收纳未归属任何智能体的会话，永远在最末。 */}
+          {layout.ungrouped && layout.ungrouped.tasks.length > 0
+            ? renderAgent(layout.ungrouped)
+            : null}
+          {emptyAgents ? (
             <div className="px-3 py-2 text-ui-base text-foreground-subtle">
-              {intl.formatMessage({ id: "taskList.noTasks" })}
+              {intl.formatMessage({ id: "taskGroup.noGroups" })}
             </div>
-          )}
+          ) : null}
           {organization.error && (
             <p role="alert" className="px-3 text-ui-sm text-destructive">
               {organization.error}

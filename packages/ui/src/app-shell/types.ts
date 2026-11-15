@@ -182,6 +182,8 @@ export interface AppProps {
     workspaceIdentity?: string;
   }>;
   onOpenWorkspace: () => void;
+  /** RobinRun 项目列表导航：侧栏点击项目行 → 打开（或激活）该项目工作区（Root 的 handleSelectProject）。 */
+  onOpenProject?: (workspacePath: string) => void;
   onOpenFolderFromWorkspaceMenu: () => void;
   onOpenRemoteWorkspace?: (preference?: RemoteConnectionOpenPreference) => void | boolean;
   remoteConnectionInProgress?: boolean;

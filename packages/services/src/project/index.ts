@@ -13,6 +13,7 @@ import type {
   VirtualProject,
 } from "#src/project/contract.js";
 import { createProjectDataCommands } from "#src/project/data/project-data.js";
+import { createServiceLogger } from "#src/logger/serviceLogger.js";
 export {
   createProjectDataPort,
   type ProjectSessionDataAgent,
@@ -130,6 +131,12 @@ export function createProjectService(options: {
   /** 只解析现有连接；连接缺失拒绝，不创建替代 Host。 */
   resolveHost?: (hostId: string) => Promise<IProjectService>;
   afterChange?: () => Promise<void>;
+  /**
+   * 项目标配主智能体自举端口：saveProject（新建与 reuseExistingRoot 重开）后幂等调用。
+   * task-groups 服务在装配处晚于本服务创建，端口只取方法引用、由 node.ts 惰性接线。
+   * 自举失败不阻断项目打开（尽力而为，下次打开重试），但必须留下日志便于排查。
+   */
+  ensureMainAgentGroup?: (projectId: string) => Promise<void>;
   /** 彻底删除数据：副作用端口与同一 Host 的行操作；缺省时两条命令报 project.data-unavailable。 */
   data?: { port: ProjectDataPort; repository(): Promise<ProjectDataRepositoryContract> };
 }): IProjectService {
@@ -219,6 +226,14 @@ export function createProjectService(options: {
         roots,
         ...(input.primaryRoot ? { primaryRoot: normalize(input.primaryRoot) } : {}),
       });
+      // 项目标配主智能体（含重开旧项目的补齐）：失败只记日志，不阻断项目打开。
+      if (options.ensureMainAgentGroup) {
+        try {
+          await options.ensureMainAgentGroup(result.id);
+        } catch (error) {
+          createServiceLogger("project").warn("main agent bootstrap failed", { error });
+        }
+      }
       await changed();
       return result;
     },

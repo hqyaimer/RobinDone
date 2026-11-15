@@ -11,7 +11,6 @@ export {
   moveTaskToTopByMenu,
   moveTaskToGroupEnd,
   moveTaskToGroupStart,
-  moveTaskToRootAroundGroup,
   moveTaskOverTask,
   pruneCollapsedGroupedTaskGroupIds,
   removeTaskFromGroupedView,

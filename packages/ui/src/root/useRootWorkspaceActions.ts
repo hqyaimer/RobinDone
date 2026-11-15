@@ -1,5 +1,4 @@
 import { stageV4ComposerDraftAttachments } from "@/v4/composer/composerDraftWorkspaceTransfer.js";
-import { readProjectSidebarView } from "@/project-sidebar/index.js";
 /* eslint-disable max-lines -- Root workspace action hook 集中编排项目、远程和 conversation 入口；合并期保持动作边界完整，后续按领域拆分。 */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
@@ -21,6 +20,7 @@ import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { resolveLogoutProviderFamilyDomain } from "@/lib/providerFamilyDomainSettings.js";
 import { isRendererReloadNavigation } from "@/lib/rendererNavigation.js";
 import { parseWslUncWorkspacePath } from "@/lib/wslUncWorkspace.js";
+import { upsertRobinrunProjectEntry } from "@/robinrun/projectRegistry.js";
 import { logger } from "@/logger.js";
 import { toast } from "@/components/ui/toast.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
@@ -274,11 +274,11 @@ export function useRootWorkspaceActions({
           })());
       try {
         // 在第一次 await 前捕获活动任务/草稿；快捷键和侧栏新建共用同一组织意图。
+        // 侧栏已固定为智能体列表（任务必有归属），未显式指定归属时一律继承当前上下文。
         const requestOptions = typeof request === "string" ? { provider: request } : { ...request };
         if (
           requestOptions.taskGroupId === undefined &&
           requestOptions.projectId === undefined &&
-          readProjectSidebarView() === "grouped" &&
           activeWorkspacePath
         ) {
           const taskId = originWorkspace?.activeTaskId;
@@ -542,6 +542,25 @@ export function useRootWorkspaceActions({
     userId,
   ]);
 
+  // RobinRun 项目注册表（AppSettings.robinrunProjects）只服务启动编排的“最近使用”语义：
+  // 2026-11-15 去启动台裁决后，冷启动按 lastOpenedAt 自动打开最近项目，因此所有桌面
+  // 打开入口（侧栏项目列表/深链/Dock）都要在这里统一 bump。读取走 settingService.get()
+  // 取最新事实，避免快照陈旧覆盖并发更新；失败只记日志，不阻断打开流程。
+  const syncRobinrunProjectRegistry = useCallback(
+    async (path: string) => {
+      if (!isDesktop || !services.settingService) return;
+      try {
+        const current = await services.settingService.get();
+        await updateAppSettings({
+          robinrunProjects: upsertRobinrunProjectEntry(current.robinrunProjects ?? [], path),
+        });
+      } catch (error) {
+        logger.warn("[Root] 维护项目注册表失败（不影响打开流程）", error);
+      }
+    },
+    [isDesktop, services.settingService, updateAppSettings],
+  );
+
   const handleSelectProject = useCallback(
     async (path: string, activateOtherWindow = true) => {
       logger.info("[Root] handleSelectProject called with path:", path);
@@ -602,6 +621,8 @@ export function useRootWorkspaceActions({
           projectId = (
             await services.projectService.saveProject({ roots: [path], reuseExistingRoot: true })
           ).id;
+          // RobinRun：桌面打开入口统一 bump 最近使用（冷启动自动打开依赖，见上方注册表说明）。
+          void syncRobinrunProjectRegistry(path);
         }
         if (!isCurrent()) return;
         // 桌面端：检查是否已有其他窗口打开了该目录，如果是则激活该窗口对应 tab
@@ -636,6 +657,7 @@ export function useRootWorkspaceActions({
       services.projectService,
       isDesktop,
       startDraftInWorkspace,
+      syncRobinrunProjectRegistry,
       tabStoreApi,
     ],
   );

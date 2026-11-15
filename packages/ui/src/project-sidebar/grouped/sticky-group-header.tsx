@@ -25,9 +25,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID } from "@robinrun/shared";
+import {
+  CRON_DEFAULT_GROUP_ID,
+  OFF_PEAK_DEFAULT_GROUP_ID,
+  isMainAgentGroupId,
+} from "@robinrun/shared";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
+import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import {
   TASK_GROUP_COLORS,
   TaskGroupColorDot,
@@ -55,15 +60,25 @@ export function StickyGroupHeader({
 }) {
   const { intl } = useRobinRunIntl();
   const taskCount = node.tasks.length;
-  // 系统分组（cron / 闲时）标题按语言环境本地化展示，与 GroupItem 保持一致。
+  // 系统分组/主智能体/未分组伪组的标题按语言环境本地化展示，与 GroupItem 保持一致。
+  const isUngroupedGroup = node.group.id === UNGROUPED_AGENT_ID;
   const displayTitle = getTaskGroupDisplayTitle(node.group, {
     cron: intl.formatMessage({ id: "taskGroup.cronGroupName" }),
     offPeak: intl.formatMessage({ id: "offPeak.sidebar.groupTitle" }),
+    ...(isMainAgentGroupId(node.group.id)
+      ? { mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }) }
+      : {}),
+    ...(isUngroupedGroup
+      ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) }
+      : {}),
   });
-  // sticky header 的右键菜单要和 GroupItem 一样裁剪系统分组的“解散”项，
-  // 否则 cron/闲时组滚动吸顶时可被误解散。系统分组一律不提供解散入口。
+  // sticky header 的右键菜单要和 GroupItem 一样裁剪保护组的「解散」项：
+  // cron/闲时/主智能体滚动吸顶时不可被误解散；伪组额外隐藏改色与新建入口。
   const isSystemGroup =
-    node.group.id === CRON_DEFAULT_GROUP_ID || node.group.id === OFF_PEAK_DEFAULT_GROUP_ID;
+    node.group.id === CRON_DEFAULT_GROUP_ID ||
+    node.group.id === OFF_PEAK_DEFAULT_GROUP_ID ||
+    isMainAgentGroupId(node.group.id) ||
+    isUngroupedGroup;
   const handleToggle = () => onToggleCollapsed(node.group.id);
   const handleGroupColorChange = (color: string) => {
     onUpdateGroupColor(node.group.id, color as RobinRunTaskGroupColor);
@@ -115,6 +130,7 @@ export function StickyGroupHeader({
               handleToggle();
             }}
           >
+            {isUngroupedGroup ? null : (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
@@ -151,6 +167,7 @@ export function StickyGroupHeader({
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
             <div className="flex min-w-0 flex-1 items-center gap-1">
               <SidebarNativeTooltip>
                 <span
@@ -175,13 +192,15 @@ export function StickyGroupHeader({
             <span className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-tag/50 px-1.5 py-0.5 text-ui-sm font-medium leading-none text-foreground-subtle">
               {taskCount}
             </span>
-            {newTaskAction}
+            {isUngroupedGroup ? null : newTaskAction}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-44">
-          <ContextMenuItem onSelect={onCreateTask}>
-            {intl.formatMessage({ id: "taskGroup.newTask" })}
-          </ContextMenuItem>
+          {isUngroupedGroup ? null : (
+            <ContextMenuItem onSelect={onCreateTask}>
+              {intl.formatMessage({ id: "taskGroup.newTask" })}
+            </ContextMenuItem>
+          )}
           <ContextMenuSeparator />
           <ContextMenuSub>
             <ContextMenuSubTrigger>

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { shallow } from "zustand/shallow";
 import { Plug } from "lucide-react";
+import { mainAgentGroupId } from "@robinrun/shared";
 import type {
   IProjectService,
   IRemoteProjectService,
@@ -37,6 +38,8 @@ type Props = Pick<
   | "hasUnread"
   | "availability"
   | "tasks"
+  | "children"
+  | "navigation"
   | "onSelect"
   | "refresh"
 > &
@@ -68,6 +71,7 @@ export const ProjectSidebarNode = memo(
     onEdit,
     onViewFiles,
     remoteActions,
+    navigation,
     ...display
   }: Props) {
     const { intl } = useRobinRunIntl();
@@ -84,6 +88,7 @@ export const ProjectSidebarNode = memo(
     return (
       <ProjectNode
         {...display}
+        navigation={navigation}
         project={project}
         remoteHost={remoteHost}
         hideDeviceName={hideDeviceName}
@@ -141,9 +146,13 @@ export const ProjectSidebarNode = memo(
         }
         onCreate={() =>
           runProjectAction(async () => {
+            // 项目行的新建会话落在主智能体下（主智能体由 saveProject 幂等自举，本地项目
+            // 打开即存在；远程项目没有本地主智能体，保持未归属）。导航列表页创建时同时
+            // 进入该项目，让草稿立刻可见。
+            navigation?.onOpen();
             onCreateTask({
               projectId: project.id,
-              taskGroupId: null,
+              taskGroupId: project.hostId === "local" ? mainAgentGroupId(project.id) : null,
               ...(isWebRemoteControl || remoteHost ? { hostId: project.hostId } : {}),
             });
           })

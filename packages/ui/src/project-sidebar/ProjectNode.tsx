@@ -9,15 +9,17 @@ import { projectKey } from "@/project-sidebar/view.js";
 import { parseWorkbenchSessionDragPayload } from "@/v4/workbenchDragDrop.js";
 
 export function ProjectNode(props: ProjectNodeProps) {
-  const { project, expanded, onExpandedChange, onMove } = props;
+  const { project, expanded, onExpandedChange, onMove, navigation } = props;
   const { isWebRemoteControl = false } = useContext(ProjectTaskListContext);
   const online = props.availability?.online ?? true;
   const editable = online && !project.legacySingleRoot;
+  // 导航模式（项目列表页）不接收会话拖放：落点语义归智能体页，列表行只承担排序与进入。
+  const sessionDropEnabled = editable && !navigation;
   const [sessionDropOver, setSessionDropOver] = useState(false);
   const dragDepth = useRef(0);
-  const sessionDropTarget = editable && sessionDropOver;
+  const sessionDropTarget = sessionDropEnabled && sessionDropOver;
   useEffect(() => {
-    if (!editable) {
+    if (!sessionDropEnabled) {
       dragDepth.current = 0;
       setSessionDropOver(false);
     }
@@ -33,12 +35,18 @@ export function ProjectNode(props: ProjectNodeProps) {
       document.removeEventListener("dragend", clear, true);
       document.removeEventListener("drop", clear, true);
     };
-  }, [editable, sessionDropTarget]);
+  }, [sessionDropEnabled, sessionDropTarget]);
   // 主目录失效限制新建和文件入口，历史消息由独立存储读取；不能把目录存在性当作折叠开关。
   const canOpen = online;
   const isOpen = canOpen && expanded;
   const data = useMemo(
-    () => ({ hostId: project.hostId, pinned: project.pinned }),
+    () => ({
+      hostId: project.hostId,
+      pinned: project.pinned,
+      // 智能体树与项目排序共用一个 DndContext：type 让碰撞检测按拖拽对象分流落点，
+      // onDragEnd 据此把项目行拖拽路由到项目排序，其余仍走任务/智能体移动。
+      type: "grouped-project",
+    }),
     [project.hostId, project.pinned],
   );
   const {
@@ -101,7 +109,7 @@ export function ProjectNode(props: ProjectNodeProps) {
         data-primary-root-status={project.primaryRootStatus}
         className={`min-w-0 rounded-xl ${sessionDropTarget ? "bg-accent" : ""}`}
         onDragEnter={(event) => {
-          if (!editable || !parseWorkbenchSessionDragPayload(event.dataTransfer)) return;
+          if (!sessionDropEnabled || !parseWorkbenchSessionDragPayload(event.dataTransfer)) return;
           dragDepth.current++;
           setSessionDropOver(true);
         }}
@@ -111,7 +119,7 @@ export function ProjectNode(props: ProjectNodeProps) {
           if (dragDepth.current === 0) setSessionDropOver(false);
         }}
         onDragOver={(event) => {
-          if (!editable) return;
+          if (!sessionDropEnabled) return;
           if (parseWorkbenchSessionDragPayload(event.dataTransfer)) {
             event.preventDefault();
             event.dataTransfer.dropEffect = "move";
@@ -120,7 +128,7 @@ export function ProjectNode(props: ProjectNodeProps) {
         onDrop={(event) => {
           dragDepth.current = 0;
           setSessionDropOver(false);
-          if (!editable) return;
+          if (!sessionDropEnabled) return;
           event.preventDefault();
           const task = parseWorkbenchSessionDragPayload(event.dataTransfer);
           if (task)

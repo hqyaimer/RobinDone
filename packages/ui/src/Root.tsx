@@ -23,6 +23,7 @@ import {
   DesktopCommandIds,
   appRuntimePreferencesChangedBroadcastPayloadSchema,
 } from "@robinrun/shared";
+import type { RobinRunProjectEntry } from "@robinrun/shared";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
@@ -277,9 +278,17 @@ function RootInner({
   const markOAuthSuccess = useRobinRunStore((state) => state.markOAuthSuccess);
   const {
     settings: appSettings,
+    loading: settingsLoading,
     refresh: refreshAppSettings,
     update: updateAppSettings,
   } = useSettings();
+  // RobinRun 去启动台裁决（2026-11-15）：注册表是冷启动“自动打开最近项目”的唯一候选来源。
+  // null 表示 settings 尚未就绪（启动加载屏继续等待）；读取失败时按空注册表回落首建启动台，
+  // 不把启动卡死在加载屏。
+  const robinrunProjectRegistry = useMemo<RobinRunProjectEntry[] | null>(() => {
+    if (appSettings) return appSettings.robinrunProjects ?? [];
+    return settingsLoading ? null : [];
+  }, [appSettings, settingsLoading]);
   // docs/dynamic-workflow/launch.md「The user's choice」：设置里的动态工作流选择变化后，通知本窗口
   // 的 Host 重发 CLI 策略（并转发给远程 Host），再重读灰度快照。
   useDynamicWorkflowUserModeSync({
@@ -325,7 +334,11 @@ function RootInner({
   const { connectionLogs: remoteConnectionLogs, resetConnectionLogs: resetRemoteConnectionLogs } =
     useRemoteConnectionLogs(remoteConnectionRequestId);
   const [isBootstrappingInitialWorkspace, setIsBootstrappingInitialWorkspace] = useState(
-    Boolean(initialWorkspaceAbsPath),
+    // RobinRun（2026-11-15 去启动台裁决）：桌面主链路冷启动一律先停在启动加载屏，
+    // 等自动打开最近项目的 effect 落地（打开成功 / 零项目回落首建页）再放行；
+    // 手机远控根与带注入路径的入口保持原判定。
+    Boolean(initialWorkspaceAbsPath) ||
+      (isDesktop === true && !webRemoteControlWorkspaceSwitcher),
   );
   const acknowledgingReleaseNotesVersionRef = useRef<string | null>(null);
   const previousRemoteConnectionInProgressRef = useRef(false);
@@ -1034,6 +1047,7 @@ function RootInner({
     hasCompletedFullTabRestore: hasCompletedFullRestore,
     intl,
     isRestoringOAuthSession: isResolvingStartupAuthState || providerStartupSyncPending,
+    robinrunProjects: robinrunProjectRegistry,
   });
 
   useEffect(() => {
@@ -1584,9 +1598,24 @@ function RootInner({
         </RootShell>
       );
     }
-    // RobinRun：没有打开的工作空间时进入项目启动台（仅桌面端；web 远控保持原行为）。
-    // 启动台负责创建/选择运营项目，项目独占主界面（见 robinrun/RobinRunLauncher.tsx）。
-    if (isDesktop) {
+    // RobinRun（2026-11-15 去启动台裁决）：冷启动由“自动打开最近项目”effect 接管，
+    // 有项目时不再出现启动台。这里只剩三种残留态：
+    // 1) settings 未就绪或自动打开仍在进行 → 维持启动加载屏（屏障由 isBootstrappingInitialWorkspace 驱动）；
+    // 2) 注册表为空 / 候选目录全部失效 → 启动台退役为“仅首建页”（RobinRunLauncher）；
+    // 3) 手机远控根（web-remote-replayable）不渲染桌面启动台，保持原行为。
+    if (isDesktop && !webRemoteControlWorkspaceSwitcher) {
+      if (isBootstrappingInitialWorkspace || robinrunProjectRegistry === null) {
+        const loadingLabel = intl.formatMessage({ id: "common.loading" });
+        return (
+          <RootShell>
+            {rootModelSelectionErrorNode}
+            {requestSecurityBridgeNode}
+            {remoteConnectionDialogOpen ? remoteConnectionDialog : null}
+            {directoryBrowserDialog}
+            <RootStartupLoading label={loadingLabel} />
+          </RootShell>
+        );
+      }
       return (
         <RootShell>
           {requestSecurityBridgeNode}
@@ -1652,6 +1681,7 @@ function RootInner({
                 handleResolveConversationWorkspace={handleResolveConversationWorkspaceForShell}
                 handleOpenWorkspace={handleOpenWorkspace}
                 handleOpenFolderFromWorkspaceMenu={handleOpenFolderFromWorkspaceMenu}
+                handleOpenProject={handleSelectProject}
                 handleOpenRemoteWorkspace={
                   allowRemoteWorkspace ? handleOpenRemoteConnection : undefined
                 }

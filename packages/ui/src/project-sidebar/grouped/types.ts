@@ -36,8 +36,10 @@ const TASK_GROUP_BORDER_COLOR_CLASS: Record<RobinRunTaskGroupColor, string> = {
   blue: "border-sky-500/70 dark:border-sky-400/52",
   purple: "border-violet-500/70 dark:border-violet-400/52",
 };
+// RobinRun 智能体列表（2026-11-15 裁决）：组间不留纵向间距，行高节奏由 header/行自身决定；
+// 悬停背景与内容左边线已足够区分相邻智能体。
 const TASK_GROUP_CONTAINER_CLASS =
-  "relative pt-2.5 pb-0 transition-[width,max-width] duration-200 ease-out";
+  "relative pb-0 transition-[width,max-width] duration-200 ease-out";
 const TASK_GROUP_HEADER_CLASS =
   "mb-0.5 flex h-8 items-center gap-1 rounded-lg border border-transparent pl-1.5 pr-1 text-ui-base text-foreground transition-[background-color,border-color,box-shadow] hover:bg-surface-hover";
 const TASK_GROUP_TITLE_CLASS =

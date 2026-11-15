@@ -5,6 +5,7 @@ import type {
   GroupedDraftTaskPlacement,
 } from "@/project-sidebar/grouped/types.js";
 
+import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import { taskKey } from "@/project-sidebar/grouped/ids.js";
 
 function cloneView(view: RobinRunGroupedTaskView): RobinRunGroupedTaskView {
@@ -340,44 +341,6 @@ function moveTaskOverTask(
   return insertTaskNearTask(nextView, task, params.overTaskKey, params.position);
 }
 
-function insertTaskAroundGroup(
-  view: RobinRunGroupedTaskView,
-  task: RobinRunTaskMeta,
-  groupId: string,
-  position: GroupedTaskInsertPosition,
-): RobinRunGroupedTaskView {
-  const nodes = cloneNodes(view);
-  const groupIndex = nodes.findIndex((node) => node.type === "group" && node.group.id === groupId);
-  if (groupIndex < 0) {
-    return { nodes };
-  }
-  nodes.splice(groupIndex + (position === "after" ? 1 : 0), 0, { type: "task", task });
-  return { nodes };
-}
-
-function moveTaskToRootAroundGroup(
-  view: RobinRunGroupedTaskView,
-  params: {
-    activeTaskKey: string;
-    groupId: string;
-    position: GroupedTaskInsertPosition;
-  },
-): RobinRunGroupedTaskView {
-  const groupNode = view.nodes.find(
-    (node) => node.type === "group" && node.group.id === params.groupId,
-  );
-  if (!groupNode || groupNode.type !== "group") {
-    return view;
-  }
-
-  const { nextView, task } = removeTaskFromView(view, params.activeTaskKey);
-  if (!task) {
-    return view;
-  }
-
-  return insertTaskAroundGroup(nextView, task, params.groupId, params.position);
-}
-
 function moveTaskToGroupStart(
   view: RobinRunGroupedTaskView,
   params: {
@@ -473,37 +436,6 @@ function moveGroupAroundTopLevelNode(
   return { nodes };
 }
 
-function getNodeIdAfterGroup(
-  view: RobinRunGroupedTaskView,
-  groupId: string,
-): RobinRunGroupedTaskViewNode | null {
-  const groupIndex = view.nodes.findIndex(
-    (node) => node.type === "group" && node.group.id === groupId,
-  );
-  return groupIndex >= 0 ? (view.nodes[groupIndex + 1] ?? null) : null;
-}
-
-function insertTaskBeforeTopLevelNode(
-  view: RobinRunGroupedTaskView,
-  task: RobinRunTaskMeta,
-  beforeNode: RobinRunGroupedTaskViewNode | null,
-): RobinRunGroupedTaskView {
-  const nodes = cloneNodes(view);
-  const insertIndex =
-    beforeNode === null
-      ? nodes.length
-      : nodes.findIndex((node) =>
-          beforeNode.type === "group"
-            ? node.type === "group" && node.group.id === beforeNode.group.id
-            : node.type === "task" && taskKey(node.task) === taskKey(beforeNode.task),
-        );
-  nodes.splice(insertIndex < 0 ? nodes.length : insertIndex, 0, {
-    type: "task",
-    task,
-  });
-  return { nodes };
-}
-
 function moveTaskByMenu(
   view: RobinRunGroupedTaskView,
   targetTask: RobinRunTaskMeta,
@@ -523,9 +455,8 @@ function moveTaskByMenu(
     return insertTaskIntoGroup(nextView, task, targetGroupId, null);
   }
 
-  // 菜单移出分组时把 task 放到原 group 后面，避免用户刚操作完就丢失空间上下文。
-  const beforeNode = currentGroupId ? getNodeIdAfterGroup(view, currentGroupId) : null;
-  return insertTaskBeforeTopLevelNode(nextView, task, beforeNode);
+  // 菜单"移出智能体"= 进入固定"未分组"伪组（平面末尾）；顶层独立会话行已取消。
+  return insertTaskIntoGroup(nextView, task, UNGROUPED_AGENT_ID, null);
 }
 
 function moveTaskToTopByMenu(
@@ -558,9 +489,8 @@ function moveTaskToTopByMenu(
     return insertTaskIntoGroup(nextView, task, location.groupId, firstTaskKey);
   }
 
-  return {
-    nodes: [{ type: "task", task }, ...nextView.nodes],
-  };
+  // 顶层独立会话行已取消；防御分支保持视图不变，等待结构刷新收敛。
+  return view;
 }
 
 export {
@@ -574,7 +504,6 @@ export {
   moveTaskToTopByMenu,
   moveTaskToGroupEnd,
   moveTaskToGroupStart,
-  moveTaskToRootAroundGroup,
   moveTaskOverTask,
   pruneCollapsedGroupedTaskGroupIds,
   removeTaskFromGroupedView,

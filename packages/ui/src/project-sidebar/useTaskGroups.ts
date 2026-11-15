@@ -87,7 +87,13 @@ export function useTaskGroups(tree: ProjectTree) {
     return service;
   }, [service]);
   const save = useCallback(
-    async (input: { id?: string; title?: string; color?: TaskGroup["color"] }) => {
+    async (input: {
+      id?: string;
+      title?: string;
+      color?: TaskGroup["color"];
+      /** 新建智能体时声明所属项目（智能体树一级=项目文件夹）。 */
+      projectId?: string | null;
+    }) => {
       const result = await required().save(input);
       await refresh();
       return result;

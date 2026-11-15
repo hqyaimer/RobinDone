@@ -1,7 +1,7 @@
 import { SidebarNativeTooltip, ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { RemoteIdentityHoverCard } from "@/project-sidebar/RemoteIdentityHoverCard.js";
 import { remoteHostLabel } from "@/project-sidebar/RemoteHostSection.js";
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import type { useSortable } from "@dnd-kit/sortable";
 import {
   Ellipsis,
@@ -61,6 +61,16 @@ export type ProjectNodeProps = {
   expanded: boolean;
   onExpandedChange(value: boolean): void;
   tasks: ProjectTask[];
+  /**
+   * 智能体列表树（一级=项目文件夹）插槽：提供时替代项目内平铺会话行，
+   * 由调用方渲染该项目文件夹下的智能体列表；缺省保持原平铺行为。
+   */
+  children?: ReactNode;
+  /**
+   * RobinRun 项目列表导航模式（2026-11-15 裁决）：项目行是“进入项目”入口而非展开
+   * 容器——标题点击改为打开项目，不渲染子内容，也不接收会话拖放。
+   */
+  navigation?: { onOpen(): void; openLabel: string };
   hasUnread?: boolean;
   additionalActions?: ProjectRowAction[];
   onCreate(): void;
@@ -88,6 +98,8 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
   hideDeviceName = false,
   diagnostics,
   tasks,
+  children,
+  navigation,
   hasUnread = false,
   onCreate,
   onViewFiles,
@@ -198,6 +210,78 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
       : []),
     ...management,
   ];
+  // 导航模式（项目列表页）与树模式共用同一份标题内容；外壳只在点击语义与测试 id 上分叉。
+  const titleBody = (
+    <>
+      {/* 置顶提示复用左侧固定槽位；仅悬停时替换图标，避免名称右侧常驻钉子占位。 */}
+      <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+        <span className={cn("inline-flex", project.pinned && "group-hover/project-row:hidden")}>
+          {remotePresentation ? (
+            <RemoteConnectionStateIcon presentation={remotePresentation} project />
+          ) : (
+            <ProjectFolderIcon
+              rootCount={project.roots.length}
+              open={isOpen}
+              className="size-4 shrink-0 text-foreground-subtle"
+            />
+          )}
+        </span>
+        {project.pinned ? (
+          <Pin className="hidden size-4 text-foreground-subtle group-hover/project-row:block" />
+        ) : null}
+      </span>
+      {/* 不同字号按框居中会让设备名基线上浮；文字单独对齐基线，外层图标仍居中。 */}
+      <span className="flex min-w-0 items-baseline gap-2">
+        <span className="truncate text-ui-base text-foreground-subtle">{project.name}</span>
+        {remoteHost && !hideDeviceName ? (
+          <span
+            data-testid="project-device"
+            className="max-w-24 truncate text-ui-sm text-remote-foreground-muted"
+          >
+            {deviceLabel || remoteHostLabel(remoteHost)}
+          </span>
+        ) : null}
+      </span>
+      {!isOpen && availability.online && hasUnread ? (
+        <span
+          data-testid="virtual-project-unread"
+          data-workspace-unread-indicator="true"
+          role="img"
+          aria-label={intl.formatMessage({ id: "project.hasUnread" })}
+          className="size-1.5 shrink-0 rounded-full bg-icon-blue"
+        />
+      ) : null}
+      {project.legacySingleRoot ? (
+        <SidebarNativeTooltip>
+          <span
+            className="shrink-0 text-ui-sm text-foreground-subtle"
+            title={msg("legacySingleRoot")}
+          >
+            {msg("legacySingleRoot")}
+          </span>
+        </SidebarNativeTooltip>
+      ) : null}
+      {/* 修复原因：待处理设备曾统一显示“离线”，与普通离线无法区分；改为展示模型短状态。
+          连接中/失败同样曾落入“离线”分支，出现图标在转、文字写离线的矛盾；只有普通离线显示“离线”。 */}
+      {!availability.online ? (
+        <span
+          data-testid="project-status-label"
+          className={cn(
+            "text-ui-sm",
+            remotePresentation?.status === "pending" && !availability.unresolved
+              ? remotePresentation.foreground
+              : "text-foreground-subtle",
+          )}
+        >
+          {availability.unresolved
+            ? msg("unresolved")
+            : remotePresentation && remotePresentation.status !== "offline"
+              ? intl.formatMessage({ id: remotePresentation.shortMessageId })
+              : msg("offline")}
+        </span>
+      ) : null}
+    </>
+  );
   return (
     <>
       <ContextMenu modal={false}>
@@ -230,9 +314,9 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
               }}
               className="group/project-row ml-2 flex h-8 min-w-0 items-center gap-1 rounded-lg pr-1 hover:bg-surface-hover"
             >
-              {/* 标题仍可展开历史；失效提示仅绑定禁用的操作按钮，避免悬停整行也弹出。 */}
+              {/* 标题在树模式下展开历史、导航模式下进入项目；失效提示仅绑定禁用的操作按钮，避免悬停整行也弹出。 */}
               <span className="flex min-w-0 flex-1 shrink-0">
-                <CollapsibleTrigger asChild>
+                {navigation ? (
                   <Button
                     ref={setActivatorNodeRef}
                     {...(dragEnabled ? attributes : {})}
@@ -243,89 +327,34 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
                       "flex h-8 min-w-0 flex-1 justify-start gap-2 rounded-lg pl-2.5 pr-1 text-left text-foreground hover:bg-transparent hover:text-foreground aria-expanded:bg-transparent aria-expanded:text-foreground",
                       primaryRootDisabledReason && "opacity-50",
                     )}
-                    data-testid="virtual-project-toggle"
+                    data-testid="virtual-project-open"
+                    aria-label={navigation.openLabel}
                     // dnd-kit 的 attributes 按可排序性给出 aria-disabled，不能覆盖标题本身的不可用状态。
                     aria-disabled={false}
+                    onClick={navigation.onOpen}
                   >
-                    {/* 置顶提示复用左侧固定槽位；仅悬停时替换图标，避免名称右侧常驻钉子占位。 */}
-                    <span
-                      className="flex size-4 shrink-0 items-center justify-center"
-                      aria-hidden="true"
-                    >
-                      <span
-                        className={cn(
-                          "inline-flex",
-                          project.pinned && "group-hover/project-row:hidden",
-                        )}
-                      >
-                        {remotePresentation ? (
-                          <RemoteConnectionStateIcon presentation={remotePresentation} project />
-                        ) : (
-                          <ProjectFolderIcon
-                            rootCount={project.roots.length}
-                            open={isOpen}
-                            className="size-4 shrink-0 text-foreground-subtle"
-                          />
-                        )}
-                      </span>
-                      {project.pinned ? (
-                        <Pin className="hidden size-4 text-foreground-subtle group-hover/project-row:block" />
-                      ) : null}
-                    </span>
-                    {/* 不同字号按框居中会让设备名基线上浮；文字单独对齐基线，外层图标仍居中。 */}
-                    <span className="flex min-w-0 items-baseline gap-2">
-                      <span className="truncate text-ui-base text-foreground-subtle">
-                        {project.name}
-                      </span>
-                      {remoteHost && !hideDeviceName ? (
-                        <span
-                          data-testid="project-device"
-                          className="max-w-24 truncate text-ui-sm text-remote-foreground-muted"
-                        >
-                          {deviceLabel || remoteHostLabel(remoteHost)}
-                        </span>
-                      ) : null}
-                    </span>
-                    {!isOpen && availability.online && hasUnread ? (
-                      <span
-                        data-testid="virtual-project-unread"
-                        data-workspace-unread-indicator="true"
-                        role="img"
-                        aria-label={intl.formatMessage({ id: "project.hasUnread" })}
-                        className="size-1.5 shrink-0 rounded-full bg-icon-blue"
-                      />
-                    ) : null}
-                    {project.legacySingleRoot ? (
-                      <SidebarNativeTooltip>
-                        <span
-                          className="shrink-0 text-ui-sm text-foreground-subtle"
-                          title={msg("legacyUpgradeRequired")}
-                        >
-                          {msg("legacySingleRoot")}
-                        </span>
-                      </SidebarNativeTooltip>
-                    ) : null}
-                    {/* 修复原因：待处理设备曾统一显示“离线”，与普通离线无法区分；改为展示模型短状态。
-                        连接中/失败同样曾落入“离线”分支，出现图标在转、文字写离线的矛盾；只有普通离线显示“离线”。 */}
-                    {!availability.online ? (
-                      <span
-                        data-testid="project-status-label"
-                        className={cn(
-                          "text-ui-sm",
-                          remotePresentation?.status === "pending" && !availability.unresolved
-                            ? remotePresentation.foreground
-                            : "text-foreground-subtle",
-                        )}
-                      >
-                        {availability.unresolved
-                          ? msg("unresolved")
-                          : remotePresentation && remotePresentation.status !== "offline"
-                            ? intl.formatMessage({ id: remotePresentation.shortMessageId })
-                            : msg("offline")}
-                      </span>
-                    ) : null}
+                    {titleBody}
                   </Button>
-                </CollapsibleTrigger>
+                ) : (
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      ref={setActivatorNodeRef}
+                      {...(dragEnabled ? attributes : {})}
+                      {...(dragEnabled ? listeners : {})}
+                      variant="ghost"
+                      className={cn(
+                        dragEnabled ? "touch-none" : "touch-pan-y",
+                        "flex h-8 min-w-0 flex-1 justify-start gap-2 rounded-lg pl-2.5 pr-1 text-left text-foreground hover:bg-transparent hover:text-foreground aria-expanded:bg-transparent aria-expanded:text-foreground",
+                        primaryRootDisabledReason && "opacity-50",
+                      )}
+                      data-testid="virtual-project-toggle"
+                      // dnd-kit 的 attributes 按可排序性给出 aria-disabled，不能覆盖标题本身的不可用状态。
+                      aria-disabled={false}
+                    >
+                      {titleBody}
+                    </Button>
+                  </CollapsibleTrigger>
+                )}
               </span>
               <div
                 data-testid="virtual-project-actions"
@@ -409,12 +438,17 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
         </ContextMenuContent>
       </ContextMenu>
       {/* 直接条件卸载曾跳过收起动画；复用旧侧栏的受控高度/透明度生命周期。 */}
-      <CollapsibleContent data-testid="virtual-project-tasks">
-        {/* 原因：旧任务文字的 34px 缩进外只需 8px 留白，空态与项目名称保持对齐。 */}
-        <div className="pl-2 pt-1">
-          <ProjectTaskRows tasks={tasks} onSelect={onSelect} refresh={refresh} />
-        </div>
-      </CollapsibleContent>
+      {/* 导航模式不承载子内容：列表页没有子级，智能体页由外层 TaskGroupedView 直接装配。 */}
+      {navigation ? null : (
+        <CollapsibleContent data-testid="virtual-project-tasks">
+          {/* 原因：旧任务文字的 34px 缩进外只需 8px 留白，空态与项目名称保持对齐。
+              顶部不再加 pt：首项与项目行之间的空隙由智能体容器自身的节奏类决定，
+              叠加 pt 会在智能体页项目行和首个智能体之间留出明显空白。 */}
+          <div className="pl-2">
+            {children ?? <ProjectTaskRows tasks={tasks} onSelect={onSelect} refresh={refresh} />}
+          </div>
+        </CollapsibleContent>
+      )}
     </>
   );
 });

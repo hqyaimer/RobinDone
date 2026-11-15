@@ -8,6 +8,11 @@ export interface TaskGroup {
   color: TaskGroupColor;
   createdAt: number;
   updatedAt: number;
+  /**
+   * 所属项目（RobinRun 产品模型：项目 → 智能体 → 会话 三级组织）。
+   * NULL 表示未绑定：系统全局组（cron/闲时）、旧数据回填歧义的组。主智能体组由自举写入，永为绑定态。
+   */
+  projectId: string | null;
 }
 export interface GroupTaskRef {
   hostId: string;
@@ -36,7 +41,13 @@ export type GroupTaskFact = GroupTaskRef &
   };
 export interface ITaskGroupService {
   read(): Promise<TaskGroupStructure>;
-  save(input: { id?: string; title?: string; color?: TaskGroupColor }): Promise<TaskGroup>;
+  save(input: {
+    id?: string;
+    title?: string;
+    color?: TaskGroupColor;
+    /** 创建/移动时声明所属项目；主智能体组的绑定不可改写。 */
+    projectId?: string | null;
+  }): Promise<TaskGroup>;
   ungroup(id: string): Promise<void>;
   move(input: MoveGroupNode): Promise<void>;
   /** Host 验证存在性和类型后首次登记；读取结构本身不写数据。 */
@@ -44,6 +55,11 @@ export interface ITaskGroupService {
     tasks: GroupTaskRef[];
     placement?: { task: GroupTaskRef; groupId: string | null; creationId: string };
   }): Promise<void>;
+  /**
+   * 项目标配主智能体：确定性 id（robinrun-main-agent-<projectId>）幂等自举，已存在直接返回。
+   * saveProject（含 reuseExistingRoot 重开）都会调用，旧项目打开时自动补齐。
+   */
+  ensureMainAgentGroup(input: { projectId: string }): Promise<TaskGroup>;
 }
 export const ITaskGroupService = createServiceDescriptor<ITaskGroupService>(
   ServiceChannels.TaskGroups,

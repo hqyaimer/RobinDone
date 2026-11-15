@@ -1,15 +1,14 @@
 import { SidebarTooltipProvider } from "@/ControlHintTooltip.js";
-export { readProjectSidebarView } from "@/project-sidebar/view-preference.js";
-import { SortableProjects } from "@/project-sidebar/SortableProjects.js";
 export { ArchiveManagement } from "@/project-sidebar/ArchiveManagement.js";
 export { useWebRemoteControlRendererActions } from "@/project-sidebar/useWebRemoteControlRendererActions.js";
 export { ProjectManagement } from "@/project-sidebar/ProjectManagement.js";
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ScrollFadeViewport } from "@/components/ui/scroll-fade-viewport.js";
 import { TID_SIDEBAR } from "@robinrun/shared/test-ids";
 import { remoteHostIdFromWorkspaceIdentity } from "@/project-sidebar/contract.js";
 import type {
   ProjectSidebarProps,
+  ProjectTask,
   VirtualProject,
   Locale,
   Theme,
@@ -31,15 +30,14 @@ export { ProjectComposerMenu } from "@/project-sidebar/ProjectComposerMenu.js";
 import { useProjectTaskNavigation } from "@/project-sidebar/useProjectTaskNavigation.js";
 import { useProjectFileTree } from "@/project-sidebar/useProjectFileTree.js";
 import {
-  selectProjectRows,
   selectSortedProjects,
   projectKey,
   projectHasUnread,
   projectSourceServerId,
 } from "@/project-sidebar/view.js";
 import { TaskGroupedView } from "@/project-sidebar/TaskGroupedView.js";
+import { ProjectList } from "@/project-sidebar/ProjectList.js";
 import { taskGroupKey } from "@/project-sidebar/grouped-view.js";
-import { ProjectTaskRows } from "@/project-sidebar/ProjectTaskRows.js";
 import {
   ProjectSidebarNode,
   runProjectAction as action,
@@ -47,7 +45,6 @@ import {
 import { ProjectCreation } from "@/project-sidebar/ProjectCreation.js";
 import { ProjectEditor } from "@/project-sidebar/ProjectEditor.js";
 import { RemoteProjectPicker } from "@/project-sidebar/RemoteProjectPicker.js";
-import { ProjectSections } from "@/project-sidebar/ProjectSections.js";
 import { ProjectSidebarListHeader } from "@/project-sidebar/ProjectSidebarListHeader.js";
 import { ProjectSidebarNavigation } from "@/project-sidebar/ProjectSidebarNavigation.js";
 import { HomeOnlyWorkspaceRows } from "@/project-sidebar/HomeOnlyWorkspaceRows.js";
@@ -64,6 +61,9 @@ export type {
   SidebarFileTreeOpenRequest,
   ProjectSidebarProps,
 } from "@/project-sidebar/contract.js";
+
+// 项目文件夹行在智能体树中不再平铺项目会话（children 插槽渲染智能体列表）；行组件仍要求 tasks prop。
+const NO_PROJECT_TASKS: ProjectTask[] = [];
 
 // 右侧面板显隐曾让所有项目的菜单和 Tooltip 重渲染；只隔离无关父更新，保留目录/context 订阅。
 export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebarProps) {
@@ -89,7 +89,6 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
   const tabStore = useTabStoreApi();
   const setTheme = useRobinRunStore((state) => state.setTheme);
   const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  const { view, setView } = preferences;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [groupedToolbar, setGroupedToolbar] = useState<HTMLDivElement | null>(null);
   const [groupedSticky, setGroupedSticky] = useState<HTMLDivElement | null>(null);
@@ -131,37 +130,33 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
       openTaskFiles,
     ],
   );
-  const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
   const start = async (projectId?: string, hostId?: string, taskGroupId?: string | null) => {
-    const activeTaskId = useRobinRunSessionStore
+    const workspaceState = useRobinRunSessionStore
       .getState()
-      .getWorkspaceState(props.workspacePath, props.workspaceIdentity).activeTaskId;
-    const inheritedGroup =
-      view === "grouped" && !projectId && activeTaskId
-        ? (groups.parents.get(
-            taskGroupKey({
-              taskId: activeTaskId,
-              workspacePath: props.workspacePath,
-              workspaceIdentity: props.workspaceIdentity,
-            }),
-          ) ?? null)
-        : view === "grouped" && !projectId
-          ? (useRobinRunSessionStore
-              .getState()
-              .getWorkspaceState(props.workspacePath, props.workspaceIdentity).draftTaskGroupId ??
-            null)
-          : null;
+      .getWorkspaceState(props.workspacePath, props.workspaceIdentity);
+    // 侧栏已固定为智能体列表：未显式指定归属时继承活动任务的智能体，否则继承草稿意图。
+    const inheritedGroup = !projectId
+      ? (workspaceState.activeTaskId
+          ? (groups.parents.get(
+              taskGroupKey({
+                taskId: workspaceState.activeTaskId,
+                workspacePath: props.workspacePath,
+                workspaceIdentity: props.workspaceIdentity,
+              }),
+            ) ?? null)
+          : (workspaceState.draftTaskGroupId ?? null))
+      : null;
     props.onCreateTask({
       projectId: projectId ?? null,
       taskGroupId: taskGroupId === undefined ? inheritedGroup : taskGroupId,
       ...(hostId ? { hostId } : {}),
     });
   };
-  const projects = preferences.sort(selectSortedProjects(tree));
-  const expandableProjects = projects.filter(
-    (project) => availability.get(projectKey(project))?.online !== false,
-  );
-  const hasExpandedProjects = expandableProjects.some(preferences.isExpanded);
+  // 智能体树不再有独立置顶区；置顶项目以稳定排序浮到最前（reorder 守卫仍限制同层内移动）。
+  const projects = useMemo(() => {
+    const sorted = preferences.sort(selectSortedProjects(tree));
+    return [...sorted].sort((a, b) => Number(b.pinned) - Number(a.pinned));
+  }, [preferences, tree]);
   const reorder = (active: string, over: string) => {
     const source = projects.find((item) => projectKey(item) === active);
     const target = projects.find((item) => projectKey(item) === over);
@@ -172,22 +167,77 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
       over,
     );
   };
-  const renderProject = (project: VirtualProject) => (
+  // RobinRun 项目列表导航（2026-11-15 裁决）：桌面端侧栏一级平铺所有项目（不显示智能体
+  // 和会话），点击项目进入该项目的智能体页；返回按钮回到项目列表。导航未启用（web 远控）
+  // 保持 P2 的“所有项目一棵树”渲染。null = 项目列表页。
+  const navigationEnabled = props.isDesktop === true && Boolean(props.onOpenProject);
+  const [enteredProjectKey, setEnteredProjectKey] = useState<string | null>(null);
+  const enteredProject = useMemo(
+    () =>
+      enteredProjectKey
+        ? (projects.find((project) => projectKey(project) === enteredProjectKey) ?? null)
+        : null,
+    [enteredProjectKey, projects],
+  );
+  useEffect(() => {
+    // 进入的项目被删除/不再可见：回落项目列表页。
+    if (enteredProjectKey !== null && enteredProject === null) {
+      setEnteredProjectKey(null);
+    }
+  }, [enteredProject, enteredProjectKey]);
+  const enteredProjectKeyRef = useRef<string | null>(null);
+  enteredProjectKeyRef.current = enteredProjectKey;
+  const activeProjectKey = useMemo(() => {
+    if (!navigationEnabled) return null;
+    const match = projects.find(
+      (project) =>
+        project.hostId === "local" &&
+        project.roots.some((root) => root.rootPath === props.workspacePath),
+    );
+    return match ? projectKey(match) : null;
+  }, [navigationEnabled, projects, props.workspacePath]);
+  const lastWorkspacePathRef = useRef(props.workspacePath);
+  useEffect(() => {
+    const previous = lastWorkspacePathRef.current;
+    if (previous === props.workspacePath) return;
+    lastWorkspacePathRef.current = props.workspacePath;
+    // 工作区被外部切换（深链/跨工作区任务导航）且已进入智能体页：跟随新工作区所属项目。
+    // 远程项目进入不切换工作区（previous === now 提前返回），不会被这里覆盖回本地项目。
+    if (!navigationEnabled || enteredProjectKeyRef.current === null) return;
+    if (activeProjectKey !== null && activeProjectKey !== enteredProjectKeyRef.current) {
+      setEnteredProjectKey(activeProjectKey);
+    }
+  }, [activeProjectKey, navigationEnabled, props.workspacePath]);
+  const openProjectRow = (project: VirtualProject) => {
+    setEnteredProjectKey(projectKey(project));
+    // 仅本地项目切换工作区（进入 = 打开）；远程项目只进入其智能体页，
+    // 会话点击仍走既有跨工作区导航/远端连接流程。
+    if (project.hostId === "local") {
+      const rootPath = project.roots[0]?.rootPath;
+      if (rootPath) props.onOpenProject?.(rootPath);
+    }
+  };
+  // 项目文件夹行复用项目视图的完整行组件；children 是该文件夹下的智能体列表（由智能体树装配）。
+  // 导航列表页改为“进入项目”入口：expanded 固定收起、无子内容，点击交给 navigation.onOpen。
+  const agentPageMode = navigationEnabled && enteredProject !== null;
+  const openProjectLabel = intl.formatMessage({ id: "project.open" });
+  const renderProject = (project: VirtualProject, children?: ReactNode) => (
     <ProjectSidebarNode
       key={projectKey(project)}
       project={project}
       deviceLabel={deviceNames.get(projectSourceServerId(project) ?? "")}
       remoteHost={directory.hosts.find((host) => host.id === project.hostId)}
       diagnostics={diagnostics.get(project.hostId)}
-      expanded={preferences.isExpanded(project)}
+      expanded={agentPageMode ? true : navigationEnabled ? false : preferences.isExpanded(project)}
       onExpandedChange={preferences.setExpanded}
       hasUnread={projectHasUnread(authoritativeTree, project)}
       availability={availability.get(projectKey(project))}
-      tasks={selectProjectRows(tree, {
-        kind: "project",
-        projectId: project.id,
-        hostId: project.hostId,
-      })}
+      navigation={
+        navigationEnabled && !agentPageMode
+          ? { onOpen: () => openProjectRow(project), openLabel: openProjectLabel }
+          : undefined
+      }
+      tasks={NO_PROJECT_TASKS}
       onSelect={onSelectTask}
       refresh={refresh}
       service={service}
@@ -199,7 +249,9 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
       onEdit={setEditor}
       onViewFiles={openFiles}
       remoteActions={remoteSync.actions}
-    />
+    >
+      {children}
+    </ProjectSidebarNode>
   );
   const openSettings = useCallback(() => {
     tabStore.getState().openSettingsTab();
@@ -231,17 +283,23 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
               data-project-sidebar-panel="navigation"
               className="absolute inset-0 flex min-h-0 flex-col"
             >
-              {/* 原因：顶层新建显式传 null 会抹掉当前项目；省略归属，让 Root 与快捷键共用继承路径。 */}
-              <ProjectSidebarNavigation props={props} onCreate={() => props.onCreateTask()} />
+              <ProjectSidebarNavigation props={props} />
               <div
                 data-testid="sidebar-task-list-region"
                 className="flex min-h-0 flex-1 flex-col border-t border-border/50 pt-3 [anchor-name:--sidebar-task-list-divider]"
               >
                 <ProjectSidebarListHeader
                   onOpenCommandCenter={props.onOpenCommandCenter}
-                  view={view}
-                  onViewChange={setView}
                   groupedActionsRef={setGroupedToolbar}
+                  title={
+                    enteredProject
+                      ? enteredProject.name
+                      : navigationEnabled
+                        ? intl.formatMessage({ id: "project.listTitle" })
+                        : intl.formatMessage({ id: "taskList.title" })
+                  }
+                  onBack={agentPageMode ? () => setEnteredProjectKey(null) : undefined}
+                  backLabel={intl.formatMessage({ id: "project.back" })}
                 />
                 {/* 原因：仅设 overflow-y:auto 会让拖拽位移打开水平滚动；列表始终只允许纵向滚动。 */}
                 {/* 原因：项目侧栏迁移后普通滚动容器遗漏边缘渐隐；复用统一 mask，随实际滚动边界更新。 */}
@@ -251,69 +309,44 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                     <div className="flex flex-col gap-3 pb-3">
                       {homeOnlySwitcher ? (
                         <HomeOnlyWorkspaceRows switcher={homeOnlySwitcher} />
-                      ) : view === "projects" ? (
-                        <>
-                          <ProjectTaskRows
-                            kind="pinned"
-                            tasks={selectProjectRows(tree, { kind: "pinned" })}
-                            onSelect={onSelectTask}
-                            refresh={refresh}
-                          />
-                          <SortableProjects
-                            projects={projects.filter((project) => project.pinned)}
-                            renderProject={renderProject}
-                            onReorder={reorder}
-                          />
-                          <ProjectSections
-                            tree={tree}
-                            projects={projects}
-                            directory={directory}
-                            renderProject={renderProject}
-                            onReorder={reorder}
-                            loading={loading}
-                            onSelect={onSelectTask}
-                            refresh={refresh}
-                            onCreate={() => action(() => start())}
-                            onAddProject={() => setCreating(true)}
-                            hasExpandedProjects={hasExpandedProjects}
-                            canToggleProjects={expandableProjects.length > 0}
-                            onToggleProjects={() =>
-                              preferences.setAllExpanded(expandableProjects, !hasExpandedProjects)
-                            }
-                          />
-                        </>
-                      ) : view === "grouped" ? (
-                        <>
-                          <ProjectTaskRows
-                            kind="pinned"
-                            tasks={selectProjectRows(tree, { kind: "pinned" })}
-                            onSelect={onSelectTask}
-                            refresh={refresh}
-                          />
-                          <TaskGroupedView
-                            tasks={tree.tasks}
-                            onSelect={onSelectTask}
-                            refresh={refresh}
-                            scrollRef={scrollRef}
-                            toolbarTarget={groupedToolbar}
-                            stickyTarget={groupedSticky}
-                            workspacePath={props.workspacePath}
-                            workspaceIdentity={props.workspaceIdentity}
-                            onOpenAutomations={props.onOpenAutomations}
-                            onCreate={(groupId) =>
-                              action(() => start(undefined, undefined, groupId))
-                            }
-                          />
-                        </>
+                      ) : navigationEnabled && !agentPageMode ? (
+                        <ProjectList
+                          projects={projects}
+                          renderProject={renderProject}
+                          onReorderProjects={reorder}
+                          onAddProject={
+                            service && remoteService ? () => setCreating(true) : undefined
+                          }
+                          addProjectLabel={intl.formatMessage({ id: "project.new" })}
+                          emptyLabel={intl.formatMessage({ id: "project.listEmpty" })}
+                          loading={loading}
+                          toolbarTarget={groupedToolbar}
+                        />
                       ) : (
-                        <ProjectTaskRows
-                          key={view}
-                          kind={view}
-                          tasks={selectProjectRows(view === "unread" ? authoritativeTree : tree, {
-                            kind: view,
-                          })}
+                        <TaskGroupedView
+                          tasks={tree.tasks}
                           onSelect={onSelectTask}
                           refresh={refresh}
+                          scrollRef={scrollRef}
+                          toolbarTarget={groupedToolbar}
+                          stickyTarget={groupedSticky}
+                          workspacePath={props.workspacePath}
+                          workspaceIdentity={props.workspaceIdentity}
+                          onOpenAutomations={props.onOpenAutomations}
+                          onCreate={(groupId) =>
+                            action(() => start(undefined, undefined, groupId))
+                          }
+                          projects={agentPageMode && enteredProject ? [enteredProject] : projects}
+                          renderProject={renderProject}
+                          onReorderProjects={reorder}
+                          onAddProject={
+                            agentPageMode
+                              ? undefined
+                              : service && remoteService
+                                ? () => setCreating(true)
+                                : undefined
+                          }
+                          newAgentProject={agentPageMode ? enteredProject : null}
                         />
                       )}
                       {loading && !homeOnlySwitcher ? (

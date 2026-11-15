@@ -114,6 +114,7 @@ export function App({
   onResolveConversationWorkspace,
   onOpenWorkspace,
   onOpenFolderFromWorkspaceMenu,
+  onOpenProject,
   onOpenRemoteWorkspace,
   remoteConnectionInProgress = false,
   onReturnToWorkspace,
@@ -1206,6 +1207,7 @@ export function App({
           onResolveConversationWorkspace={onResolveConversationWorkspace}
           onOpenWorkspace={onOpenWorkspace}
           onOpenFolderFromWorkspaceMenu={onOpenFolderFromWorkspaceMenu}
+          onOpenProject={onOpenProject}
           onOpenRemoteWorkspace={onOpenRemoteWorkspace}
           remoteConnectionInProgress={remoteConnectionInProgress}
           allowOpenWorkspace={allowOpenWorkspace}

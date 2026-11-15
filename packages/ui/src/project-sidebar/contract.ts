@@ -68,7 +68,6 @@ export interface ProjectAvailability {
   unresolved?: boolean;
 }
 export type { Locale, Theme };
-export type ProjectSidebarView = "projects" | "grouped" | "timeline" | "unread";
 export interface SidebarFileTreeTarget {
   workspacePath: string;
   workspaceName: string;
@@ -103,6 +102,8 @@ export interface ProjectSidebarProps {
   onCreateConversationTask: () => void;
   onCreateConversationTaskOnSource?: (sourceServerId: string) => void;
   onOpenFolderFromWorkspaceMenu: () => void;
+  /** RobinRun 项目列表导航：项目行点击 → 打开/激活该项目工作区（Root 的 handleSelectProject）。 */
+  onOpenProject?: (workspacePath: string) => void;
   onOpenRemoteWorkspace?: AppProps["onOpenRemoteWorkspace"];
   webRemoteControlWorkspaceSwitcher?: import("@/root/types.js").WebRemoteControlWorkspaceSwitcherApi;
   theme: Theme;

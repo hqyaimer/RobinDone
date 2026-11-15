@@ -48,6 +48,29 @@ export const CRON_DEFAULT_GROUP_ID = "robinrun-default-group-cron";
 /** 闲时任务已派发会话默认归入的系统分组固定 id（与 cron 分组同构）。 */
 export const OFF_PEAK_DEFAULT_GROUP_ID = "robinrun-default-group-off-peak";
 
+/**
+ * 主智能体分组的 id 前缀：每个项目一个主智能体（项目标配、禁止删除）。
+ * id 确定性派生为 `${MAIN_AGENT_GROUP_PREFIX}${projectId}`，自举用 INSERT OR IGNORE 即可幂等；
+ * UI 与仓储都按前缀识别主智能体组并施保护，title 存规范值 "main-agent"，渲染走 i18n 本地化。
+ */
+export const MAIN_AGENT_GROUP_PREFIX = "robinrun-main-agent-";
+
+/** 主智能体组的规范 title（落库值；展示文案走 taskGroup.mainAgent 本地化）。 */
+export const MAIN_AGENT_GROUP_TITLE = "main-agent";
+
+/** 主智能体组的自举初始颜色（UI 仍允许用户改色，此值只是落库初值）。 */
+export const MAIN_AGENT_GROUP_COLOR = "purple" as const;
+
+/** 由项目 id 派生该项目主智能体分组的确定性 id。 */
+export function mainAgentGroupId(projectId: string): string {
+  return `${MAIN_AGENT_GROUP_PREFIX}${projectId}`;
+}
+
+/** 判断一个分组 id 是否是某个项目的主智能体组。 */
+export function isMainAgentGroupId(groupId: string): boolean {
+  return groupId.startsWith(MAIN_AGENT_GROUP_PREFIX);
+}
+
 type CronTaskIdentity = Pick<RobinRunTaskMeta, "cronAutomationId"> & {
   automationId?: string;
 };

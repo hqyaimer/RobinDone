@@ -51,6 +51,7 @@ export function createTaskGroupService(options: {
           id: z.string().min(1).optional(),
           title: z.string().trim().min(1).max(200).optional(),
           color: z.enum(["gray", "red", "orange", "yellow", "green", "blue", "purple"]).optional(),
+          projectId: z.string().min(1).nullable().optional(),
         })
         .strict()
         .parse(input);
@@ -60,6 +61,13 @@ export function createTaskGroupService(options: {
     },
     async ungroup(id) {
       await changed((repo) => repo.ungroup(z.string().min(1).parse(id)));
+    },
+    async ensureMainAgentGroup(input) {
+      const parsed = z.object({ projectId: z.string().min(1) }).strict().parse(input);
+      const result = (await repository()).ensureMainAgentGroup(parsed.projectId);
+      // 已存在时是幂等空操作；广播无副作用，UI 侧刷新一遍结构即可。
+      await options.afterChange();
+      return result;
     },
     async move(input) {
       const parsed = z

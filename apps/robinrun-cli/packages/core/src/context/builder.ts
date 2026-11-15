@@ -25,6 +25,7 @@ import { buildDesktopContextSection } from "./sections/desktop.js";
 import {
   buildContextManagementSection,
   buildDynamicBehaviorSection,
+  buildMultiAgentCollaborationSection,
   buildSessionGuidanceSection,
 } from "./dynamic-sections.js";
 
@@ -142,6 +143,9 @@ export class ContextBuilder {
       // behaviour part right after stable sp...
       if (!isWorkflowActor) {
         sections.push(buildDynamicBehaviorSection());
+        // RobinRun 产品级多智能体协作约定（主智能体分流 + 常驻子智能体管理）；
+        // 仅顶层交互会话注入：workflow actor 与子代理不经过本分支。
+        sections.push(buildMultiAgentCollaborationSection());
       }
 
       // Session-specific guidance

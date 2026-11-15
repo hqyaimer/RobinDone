@@ -42,11 +42,12 @@ export const BUILTIN_ROBINRUN_SLASH_COMMAND_HELP_ENTRIES: readonly BuiltinRobinR
   {
     details: [
       "Runs a normal agent turn that inspects the current workspace and creates or updates AGENTS.md.",
-      "Existing AGENTS.md files should be edited rather than overwritten.",
+      "Then scaffolds resident agent definitions in .robinrun/agents/ for the workspace's division of labor (an operations project gets at least development and operations agents).",
+      "Existing AGENTS.md and agent definitions are edited rather than overwritten.",
       "This command targets the workspace root, not the user default ~/.robinrun/AGENTS.md.",
     ],
     name: "init",
-    summary: "Create or update workspace AGENTS.md instructions.",
+    summary: "Create workspace AGENTS.md and resident agent definitions.",
     usage: "/init [notes]",
   },
   {

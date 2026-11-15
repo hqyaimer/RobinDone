@@ -869,10 +869,12 @@ describe("ContextBuilder meta user context", () => {
       injectionTarget: section.injectionTarget,
       cacheHint: section.cacheHint,
     }));
-    expect(sectionTargets.slice(0, 4)).toEqual([
+    expect(sectionTargets.slice(0, 5)).toEqual([
       { name: "CLI Prefix", injectionTarget: "system", cacheHint: "stable" },
       { name: "Agent Identity", injectionTarget: "system", cacheHint: "stable" },
       { name: "Dynamic Behavior", injectionTarget: "system", cacheHint: "dynamic" },
+      // RobinRun 多智能体协作约定：主智能体分流 + 常驻子智能体管理（dynamic 段，随行为演进）。
+      { name: "Multi-agent collaboration", injectionTarget: "system", cacheHint: "dynamic" },
       { name: "Context Management", injectionTarget: "system", cacheHint: "dynamic" },
     ]);
     expect(sectionTargets).toEqual(

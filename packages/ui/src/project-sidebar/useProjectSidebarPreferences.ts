@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   ProjectAvailability,
-  ProjectSidebarView,
   VirtualProject,
 } from "@/project-sidebar/contract.js";
 import { projectKey } from "@/project-sidebar/view.js";
@@ -10,13 +9,10 @@ import { readWorkspaceExpansionState } from "@/lib/workspaceExpansionPreference.
 
 import { reconcileProjectOrder, moveProjectOrder } from "@/project-sidebar/projectOrder.js";
 
-import { readProjectSidebarView } from "@/project-sidebar/view-preference.js";
-
 const KEY = "robinrun-project-sidebar-preferences";
 const EMPTY_AVAILABILITY: ReadonlyMap<string, ProjectAvailability> = new Map();
 interface Preferences {
   order: string[];
-  view: ProjectSidebarView;
   expanded: Record<string, boolean>;
 }
 function read(key: string): Record<string, unknown> {
@@ -58,8 +54,6 @@ export function useProjectSidebarPreferences(
         loading ? [] : projects.map(projectKey),
         upgradeKeys,
       ),
-      // 视图兼容旧选择；项目/时间线沿用各自排序，分组使用 Host 的手动顺序。
-      view: readProjectSidebarView(),
       expanded:
         saved.expanded && typeof saved.expanded === "object"
           ? Object.fromEntries(
@@ -79,10 +73,6 @@ export function useProjectSidebarPreferences(
         setPreferences((previous) => ({
           ...previous,
           order: [...new Set(value.order)],
-          view:
-            value.view === "timeline" || value.view === "grouped" || value.view === "unread"
-              ? value.view
-              : "projects",
           expanded:
             value.expanded && typeof value.expanded === "object"
               ? Object.fromEntries(
@@ -140,7 +130,6 @@ export function useProjectSidebarPreferences(
       }),
     [],
   );
-  const setView = useCallback((view: ProjectSidebarView) => update({ view }), [update]);
   return useMemo(
     () => ({
       order: preferences.order,
@@ -159,8 +148,6 @@ export function useProjectSidebarPreferences(
       },
       reorder: (section: VirtualProject[], active: string, over: string) =>
         changeOrder((order) => moveProjectOrder(order, section.map(projectKey), active, over)),
-      view: preferences.view,
-      setView,
       isExpanded: (project: VirtualProject) =>
         preferences.expanded[projectKey(project)] ??
         // 重构不能丢掉旧单目录的收起偏好；远端与多 root 不以本机路径猜身份。
@@ -190,6 +177,6 @@ export function useProjectSidebarPreferences(
           return next;
         }),
     }),
-    [preferences, changeOrder, setView, legacyExpansion, upgradeKeys],
+    [preferences, changeOrder, legacyExpansion, upgradeKeys],
   );
 }

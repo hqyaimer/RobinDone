@@ -8,10 +8,11 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { KeyboardEvent } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 
-import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID } from "@robinrun/shared";
+import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID, isMainAgentGroupId } from "@robinrun/shared";
 import { ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
+import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -36,6 +37,7 @@ import { isImeComposingKeyEvent } from "@/lib/imeComposition.js";
 import { EmptyGroupDropZone } from "@/project-sidebar/grouped/task-item.js";
 import { GroupedDraftTaskRow } from "@/project-sidebar/grouped/draft-task-row.js";
 import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
+import { GroupTitleEditor } from "@/project-sidebar/grouped/group-title-editor.js";
 import { VirtualizedGroupedTaskList } from "@/project-sidebar/grouped/virtualized-group-task-list.js";
 import {
   TASK_GROUP_BORDER_COLOR_CLASS,
@@ -132,17 +134,28 @@ export function GroupItem({
   const [titleEditorWidth, setTitleEditorWidth] = useState<number | null>(null);
   const groupContentId = useId();
   const [shouldRenderGroupContent, setShouldRenderGroupContent] = useState(() => !collapsed);
-  const shouldShowEmptyDropZone = !hasDraftTask && node.tasks.length === 0;
   const visualCollapsed = collapsed;
   const titleEditorText = renameDraft || node.group.title;
   // 系统分组（cron / 闲时）：固定归类，禁止重命名与删除(解散)；颜色可改（与 cron 既有行为一致）。
   const isCronGroup = node.group.id === CRON_DEFAULT_GROUP_ID;
   const isOffPeakGroup = node.group.id === OFF_PEAK_DEFAULT_GROUP_ID;
   const isSystemGroup = isCronGroup || isOffPeakGroup;
+  // 主智能体是项目标配（仓储层兜底拒绝解散）；"未分组"是 UI 伪组：
+  // 只承接未归属会话的收纳与拖出，不提供新建/重命名/改色/解散入口。
+  const isMainAgentGroup = isMainAgentGroupId(node.group.id);
+  const isUngroupedGroup = node.group.id === UNGROUPED_AGENT_ID;
+  const isProtectedGroup = isSystemGroup || isMainAgentGroup || isUngroupedGroup;
+  const shouldShowEmptyDropZone = !hasDraftTask && node.tasks.length === 0 && !isUngroupedGroup;
   // 系统分组的标题按语言环境本地化展示，忽略 DB 里存的固定占位标题（'cron' / 'off-peak'）。
   const displayTitle = getTaskGroupDisplayTitle(node.group, {
     cron: intl.formatMessage({ id: "taskGroup.cronGroupName" }),
     offPeak: intl.formatMessage({ id: "offPeak.sidebar.groupTitle" }),
+    ...(isMainAgentGroup
+      ? { mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }) }
+      : {}),
+    ...(isUngroupedGroup
+      ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) }
+      : {}),
   });
   const dragging = activeDragGroupId === node.group.id;
   const groupDraggable = useDraggable({
@@ -532,6 +545,8 @@ export function GroupItem({
             onClick={handleHeaderClick}
             onKeyDown={handleHeaderKeyDown}
           >
+            {/* 未分组伪组没有真实颜色语义，头部不提供改色入口。 */}
+            {isUngroupedGroup ? null : (
             <DropdownMenu
               open={colorMenuOpen}
               onOpenChange={handleColorMenuOpenChange}
@@ -577,52 +592,32 @@ export function GroupItem({
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
             <div className="flex min-w-0 flex-1 items-center gap-1">
               {renaming ? (
-                <label
-                  className="relative min-w-6 max-w-full shrink overflow-hidden align-middle"
-                  onClick={(event) => event.stopPropagation()}
-                  style={titleEditorWidth ? { width: `${titleEditorWidth}px` } : undefined}
-                >
-                  <span className="sr-only">{intl.formatMessage({ id: "taskGroup.rename" })}</span>
-                  <button
-                    ref={titleMeasureButtonRef}
-                    type="button"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-0 top-0 invisible overflow-hidden rounded-sm px-1 text-left text-ui-base text-foreground"
-                    // 测量节点不能跟随 label 的 max-w-full，否则输入变长时会被当前宽度反向卡住。
-                    // 外层 label 继续用 max-w-full 负责视觉裁剪，这里只测真实内容宽度。
-                    style={{ whiteSpace: "pre" }}
-                  >
-                    {titleEditorText}
-                  </button>
-                  <input
-                    data-testid="task-group-title-input"
-                    ref={titleInputRef}
-                    autoFocus
-                    className="w-full min-w-0 truncate rounded-sm border-0 bg-transparent px-1 py-0 text-left text-ui-base leading-normal text-foreground outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-input-border-focused"
-                    value={renameDraft}
-                    onBlur={handleRenameBlur}
-                    onChange={(event) => setRenameDraft(event.target.value)}
-                    onCompositionEnd={() => {
-                      renameCompositionActiveRef.current = false;
-                    }}
-                    onCompositionStart={() => {
-                      renameCompositionActiveRef.current = true;
-                    }}
-                    onFocus={(event) => {
-                      // 菜单收尾的迟到回焦不能全选已输入内容，否则后续按键会覆盖名称前缀。
-                      if (event.currentTarget.value === node.group.title)
-                        event.currentTarget.select();
-                    }}
-                    onKeyDown={handleRenameKeyDown}
-                    onMouseDown={(event) => event.stopPropagation()}
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onTouchStart={(event) => event.stopPropagation()}
-                    placeholder={node.group.title}
-                  />
-                </label>
+                <GroupTitleEditor
+                  srLabel={intl.formatMessage({ id: "taskGroup.rename" })}
+                  titleEditorText={titleEditorText}
+                  renameDraft={renameDraft}
+                  width={titleEditorWidth}
+                  measureButtonRef={titleMeasureButtonRef}
+                  inputRef={titleInputRef}
+                  placeholder={node.group.title}
+                  onBlur={handleRenameBlur}
+                  onChange={setRenameDraft}
+                  onCompositionEnd={() => {
+                    renameCompositionActiveRef.current = false;
+                  }}
+                  onCompositionStart={() => {
+                    renameCompositionActiveRef.current = true;
+                  }}
+                  onFocus={(event) => {
+                    // 菜单收尾的迟到回焦不能全选已输入内容，否则后续按键会覆盖名称前缀。
+                    if (event.currentTarget.value === node.group.title)
+                      event.currentTarget.select();
+                  }}
+                  onKeyDown={handleRenameKeyDown}
+                />
               ) : (
                 <SidebarNativeTooltip>
                   <button
@@ -650,14 +645,16 @@ export function GroupItem({
             <span className={TASK_GROUP_COUNT_BADGE_CLASS}>
               {node.tasks.length + (hasDraftTask ? 1 : 0)}
             </span>
-            {newTaskAction}
+            {isUngroupedGroup ? null : newTaskAction}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-44" onCloseAutoFocus={handleContextMenuCloseAutoFocus}>
-          <ContextMenuItem onSelect={onCreateTask}>
-            {intl.formatMessage({ id: "taskGroup.newTask" })}
-          </ContextMenuItem>
-          {isSystemGroup ? null : (
+          {isUngroupedGroup ? null : (
+            <ContextMenuItem onSelect={onCreateTask}>
+              {intl.formatMessage({ id: "taskGroup.newTask" })}
+            </ContextMenuItem>
+          )}
+          {isSystemGroup || isUngroupedGroup ? null : (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem data-testid="task-group-rename" onSelect={startRenameFromMenu}>
@@ -665,24 +662,26 @@ export function GroupItem({
               </ContextMenuItem>
             </>
           )}
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              {intl.formatMessage({ id: "taskGroup.changeColor" })}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent
-              className="w-40"
-              onClick={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              {TASK_GROUP_COLORS.map((color) => (
-                <ContextMenuItem key={color} onSelect={() => handleGroupColorChange(color)}>
-                  <TaskGroupColorDot color={color} />
-                  <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
-                </ContextMenuItem>
-              ))}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          {isSystemGroup ? null : (
+          {isUngroupedGroup ? null : (
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                {intl.formatMessage({ id: "taskGroup.changeColor" })}
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent
+                className="w-40"
+                onClick={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                {TASK_GROUP_COLORS.map((color) => (
+                  <ContextMenuItem key={color} onSelect={() => handleGroupColorChange(color)}>
+                    <TaskGroupColorDot color={color} />
+                    <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          )}
+          {isProtectedGroup ? null : (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem

@@ -63,6 +63,26 @@ export function buildDynamicBehaviorSection(): ContextSection {
   );
 }
 
+// RobinRun 产品级约定：会话的顶层 agent 即项目主智能体，负责简单/复杂任务分流与常驻子智能体管理。
+// 文案遵循 system-prompt-contract：英文、祈使句、紧凑 bullet；稳定措辞放在常量里，便于契约测试锁定。
+const MULTI_AGENT_COLLABORATION_PROMPT = [
+  "# Multi-agent collaboration",
+  "You are the project's main agent. Route work by complexity:",
+  " - Simple tasks with no matching resident agent: do them yourself, in this session.",
+  " - Complex tasks with a clear division of labor (for example development vs operations): delegate to resident agents, creating them if needed. Define each resident agent in `.robinrun/agents/<name>.md` (frontmatter with name, description, and tools, followed by its prompt); keep the set minimal — merge roles when the work doesn't justify more agents.",
+  " - Resident agents report to you, and they talk to each other only through you: relay between them. You may also spawn temporary subagents for one-off work; they report only to their creator.",
+  " - When a resident agent reports completion, verify the deliverables lightly (check the produced files and the action log) before treating the task as done; reopen it if the work falls short.",
+  " - At the start of a project, recommend running `/init`: it creates AGENTS.md and scaffolds resident agent definitions.",
+].join("\n");
+
+export function buildMultiAgentCollaborationSection(): ContextSection {
+  return createDynamicSection(
+    "Multi-agent collaboration",
+    "multi_agent_collaboration",
+    MULTI_AGENT_COLLABORATION_PROMPT,
+  );
+}
+
 export function buildContextManagementSection(): ContextSection {
   return createDynamicSection(
     "Context Management",

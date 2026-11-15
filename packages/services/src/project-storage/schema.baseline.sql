@@ -160,7 +160,7 @@ CREATE TABLE task_groups (
         color TEXT NOT NULL DEFAULT 'gray',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
-      );
+      , project_id TEXT);
 
 CREATE TABLE tasks (
         workspace_key TEXT NOT NULL,

@@ -47,10 +47,30 @@ docs/ specs/           # 上游历史文档与 spec（保留原名，未改名�
 - 智能体侧栏：左侧栏默认"智能体"视图 = 任务组（TaskGroup）承载智能体（M1 映射），智能体下折叠会话列表；新建/重命名/颜色/拖拽复用任务组基建。
 - 登录流程已隐藏（启动不再强制连接 Z.ai/BigModel；手动登录入口与 `setLoginEntryOpen` 门禁接入点保留，供未来自有账号体系使用）。
 
+**已完成（P2 智能体列表重构，2026-11-15）**，详见 `docs/ui/task-grouped-view.md` 顶部裁决：
+
+- 侧栏改为 **一级=项目文件夹、二级=智能体、三级=会话** 的单一"智能体列表"视图；顶部"新建任务"块与视图切换移除，新建会话入口收敛到智能体组内。
+- `task_groups` 绑定项目（migration 0007 加列 + 回填）；**新建/重开项目幂等自举"主智能体"组**（确定性 id `robinrun-main-agent-<projectId>`，置顶、禁止解散、可重命名改色）。
+- 固定"未分组"伪组收纳未归属会话（UI 约定 id，不落库）；置顶会话改为智能体内置顶。
+- 跨项目拖拽守卫：会话只能进同项目智能体或未分组；智能体不能跨项目重排。
+- CLI 系统提示词新增 Multi-agent collaboration section（主智能体简单任务直做/复杂任务建子智能体分流、沟通经主智能体转达、完成后轻量验收、推荐 /init）；`/init` 扩展为创建 AGENTS.md + 按分工脚手架常驻子智能体定义（`.robinrun/agents/<name>.md`）。
+
+**已完成（P2.1 项目列表导航，2026-11-15）**，详见 `docs/ui/task-grouped-view.md` 顶部"（二）项目列表导航裁决"：
+
+- **一个窗口承载所有项目，启动页退役**：侧栏一级改为平铺项目列表（不显示智能体/会话），点击项目进入该项目专属智能体页（项目 + 未绑定/系统组 + 未分组），返回按钮回项目列表；web 远控保持旧一棵树回退。
+- **启动编排**：桌面冷启动停在启动加载屏，按 `robinrunProjects.lastOpenedAt` 自动打开最近项目（目录失效条目跳过）；`RobinRunLauncher` 仅在零项目首建时出现。注册表由 `handleSelectProject` 统一 bump（`packages/ui/src/robinrun/projectRegistry.ts`，架构模块 `robinrun-launcher`）。
+- **进入语义**：本地项目=切换工作区（`handleSelectProject`：接纳/去重/tab/草稿，壳层不重挂载）；远程项目=仅进入其智能体页（不切工作区）。外部工作区切换时已进入状态跟随新项目。
+- **验收修复（同日实测反馈）**：
+  - 冷启动目录校验不能用 `fileService.checkFilesExist`（语义是 `isFile`，项目目录恒判失效导致每次都回落启动台）——改用 `stat` + `type === "directory"`；
+  - `ProjectList` 的 DndContext 必须配 `PointerSensor + distance:6`（与 `useGroupedDrag` 一致），否则默认 sensor 在 pointerdown 立即激活，项目行点击被吞；
+  - 项目行"新建会话"落到该项目的**主智能体**（本地项目；列表页创建时同时进入项目）；
+  - 智能体列表纵向间距全部去除：`TASK_GROUP_CONTAINER_CLASS` 去掉 `pt-2.5`，内容包装去掉 `pt-1`，行与行紧密排列（悬停背景 + 内容左边线区分相邻智能体）。
+- **验证盲区教训**：根 `pnpm typecheck` 不覆盖 `apps/robinrun-cli`——CLI 包改动必须单独跑 `pnpm -F <pkg> exec tsc --noEmit`（P2 的 `ContextSource` 漏项直到 dev:desktop 的 CLI 构建才爆）。
+
 **已知待改（下一里程碑优先）**：
 
 - **会话结构重构**：当前会话/任务数据结构有结构性问题（用户验收反馈），需要重新设计后再接多智能体运行时。
-- 智能体 = 任务组仅为 M1 映射；提示词/角色元数据待落 `.agents/<id>/`（需先设计 host 侧窄写入通道）。
+- 智能体 = 任务组仅为 M1 映射：`/init` 创建的 `.robinrun/agents/*.md` 子智能体定义**暂不会自动出现在侧栏**（侧栏智能体仍是手动建的组）；提示词/角色元数据待落 `.agents/<id>/`（需先设计 host 侧窄写入通道）。
 
 **未落地（按里程碑推进）**：常驻多智能体运行时（robinrun-cli subagent 体系扩展）、触发器系统、审核流程、任务系统 UI、`.agents/` 脚手架通道、会议、邮件、后端。
 
