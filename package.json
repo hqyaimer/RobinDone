@@ -1,7 +1,8 @@
 {
   "name": "robinrun",
-  "version": "3.17.2",
+  "version": "0.0.1",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev:web": "concurrently -k -n server,web -c blue,green \"pnpm --filter @robinrun/server dev\" \"pnpm --filter @robinrun/web dev\"",
@@ -90,9 +91,9 @@
   "devDependencies": {
     "@jridgewell/trace-mapping": "0.3.31",
     "@release-it/conventional-changelog": "^10.0.6",
+    "@robinrun/robinrun-cua": "workspace:*",
     "@tanstack/react-virtual": "^3.13.23",
     "@types/node": "^25.5.0",
-    "@robinrun/robinrun-cua": "workspace:*",
     "concurrently": "^9.1.2",
     "conventional-changelog-conventionalcommits": "^9.3.1",
     "conventional-changelog-writer": "^8.4.0",
@@ -136,6 +137,5 @@
       "@aiden0z/pptx-renderer@1.2.4": "patches/@aiden0z__pptx-renderer@1.2.4.patch",
       "@extend-ai/react-xlsx@0.16.0": "patches/@extend-ai__react-xlsx@0.16.0.patch"
     }
-  },
-  "license": "Apache-2.0"
+  }
 }
