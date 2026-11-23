@@ -35,14 +35,17 @@ function toAbsoluteAssetUrl(value, base) {
 }
 
 async function main() {
+  // 选项名用 kebab-case：CI 调用按 --out-root 传参；node:util parseArgs 的选项键
+  // 是字面量匹配，camelCase 键会报 ERR_PARSE_ARGS_UNKNOWN_OPTION（v0.0.1 首跑实测教训）。
   const { values } = parseArgs({
     options: {
       manifest: { type: "string", required: true },
       platform: { type: "string", required: true },
       base: { type: "string", required: true },
-      outRoot: { type: "string", required: true },
+      "out-root": { type: "string", required: true },
     },
   });
+  const outRoot = values["out-root"];
 
   const source = resolve(values.manifest);
   const raw = await readFile(source, "utf8");
@@ -61,8 +64,8 @@ async function main() {
   }
 
   // 落位文件名统一为 latest.yml（客户端静态 feed 固定请求该文件名）。
-  const target = resolve(values.outRoot, values.platform, "latest.yml");
-  await mkdir(resolve(values.outRoot, values.platform), { recursive: true });
+  const target = resolve(outRoot, values.platform, "latest.yml");
+  await mkdir(resolve(outRoot, values.platform), { recursive: true });
   await writeFile(target, `${outputLines.join("\n")}`, "utf8");
   console.log(`[rewrite-update-manifests] ${source} -> ${target} (rewritten=${rewritten})`);
 }

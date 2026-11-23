@@ -150,8 +150,13 @@ jobs:
 
       - name: Create GitHub release and upload assets
         run: |
-          gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
-          gh release upload "$TAG" release-files/*
+          # 幂等重跑（v0.0.1 首跑实测教训）：release job 在清单改写环节失败时，Release 与
+          # 资产已经存在；重跑必须复用而非 create（existing 报 422）。上传用 --clobber
+          # 覆盖同名资产；删 tag 重打会把已发布 Release 退回草稿，最后统一转正。
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" release-files/* --clobber
+          gh release edit "$TAG" --draft=false
 
       - name: Rewrite update manifests for static feed
         run: |
