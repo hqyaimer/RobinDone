@@ -39,13 +39,17 @@ export function extractPrebuiltArchive({ archivePath, archiveExt, extractDir, cw
   mkdirSync(extractDir, { recursive: true });
   if (archiveExt === "zip") {
     if (process.platform === "win32") {
-      runCommand("powershell.exe", [
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        `Expand-Archive -LiteralPath '${archivePath.replaceAll("'", "''")}' -DestinationPath '${extractDir.replaceAll("'", "''")}' -Force`,
+      // Bugfix（2026-11-23 CI 实测）：GitHub windows-latest 镜像更新后，powershell.exe 继承的
+      // PSModulePath 会加载到 pwsh7 的 Microsoft.PowerShell.Archive 模块，其 Expand-Archive
+      // 调用 ExtractToDirectory 三参重载在 5.1 的程序集上解析失败（"argument count: 3"），
+      // ugrep/bfs 预编译 zip 解压即崩。改用 Windows 10+ 自带的 System32 bsdtar：原生支持 zip，
+      // 绝对路径调用不受 PATH 上 Git GNU tar 干扰（GNU tar 读不了 zip），与仓库 bsdtar 约定一致。
+      const windowsRoot = (process.env.SystemRoot ?? "C:\\Windows").replaceAll("\\", "/");
+      runCommand(`${windowsRoot}/System32/tar.exe`, [
+        "-xf",
+        toTarPosixPath(archivePath),
+        "-C",
+        toTarPosixPath(extractDir),
       ]);
       return;
     }

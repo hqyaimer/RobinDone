@@ -60,6 +60,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     env:
+      # 产品身份（首跑实测教训）：CI 没有 .env 文件，ROBINRUN_ENV 缺省会回落 test，
+      # 整条链（tsup/vite define + electron-builder 身份）随之打成 "RobinRun Preview" +
+      # _TEST 产物后缀，且 Preview 身份在客户端整体禁用自动更新——发布构建必须显式 production。
+      ROBINRUN_ENV: production
       # 构建期可选能力（scripts/build-time-config.mjs → define 注入）：
       # 开启自动更新并把静态 feed base 钉进安装包；不设 ROBINRUN_MAC_AUTO_UPDATE
       # （未签名 mac 自动更新禁用，见文件头注释）。
@@ -77,10 +81,11 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      # linux rpm 产物由 fpm 驱动，构建机必须提供 rpmbuild（xz runner 自带）。
-      - name: Install rpm build tools
+      # linux 产物工具链（首跑实测教训）：rpm 由 fpm 驱动需要 rpmbuild；pacman 产物的
+      # .MTREE 由 fpm 调 bsdtar 生成（bash exit 127 = 命令不存在），libarchive-tools 提供它。
+      - name: Install rpm and pacman build tools
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y rpm
+        run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
 
       - name: Install dependencies
         run: |
