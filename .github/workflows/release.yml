@@ -89,7 +89,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm install
+          # pnpm 并发链接偶发 _tmp rename 竞态（ERR_PNPM_ENOENT rename ... -> esbuild），
+          # 调度型 flake、与提交内容无关（同一 lockfile 首跑成功二跑失败）；失败自动重试一次。
+          pnpm install || (sleep 15 && pnpm install)
           pnpm bootstrap
 
       - name: Bundle desktop installer
