@@ -75,3 +75,30 @@ packages/desktop/resources/macos-window-bounds/
 __pycache__/
 *.pyc
 .robinrun-runtime
+# SQLite 迁移备份（migration-runner 按 dataRoot/backup 落盘；开发期以包目录为 cwd 运行时
+# 会把备份写进 apps/robinrun-cli/packages/adapters/backup/，含本机会话数据，不入库）。
+**/backup/
+# 开发期运行日志（dev:desktop 重定向输出、临时调试日志；.run-logs/ 只覆盖其专用目录）。
+*.log
+
+# 2026-11-23 裁决：源码上传只保留公开可用部分，RobinRun 内部开发材料（进度/裁决/设计文档与
+# agent 指南）不入库。AGENTS.md 与 docs/ui/task-grouped-view.md 原被跟踪，已 git rm --cached
+# 解除跟踪（文件保留本地，agent 注入不受影响）；其余 8 篇为新设计文档，防 git add -A 误卷入。
+/AGENTS.md
+/docs/progress.md
+/docs/init-flow.md
+/docs/message-origin.md
+/docs/task-checklist.md
+/docs/trigger-system.md
+/docs/trigger-python-runtime.md
+/docs/worker-roster.md
+/docs/worker-session-model.md
+/docs/ui/task-grouped-view.md
+# 本机临时工作文件与调试截图。
+/tmp/
+/f3-v4.png
+/page-f1.png
+# husky 运行时生成文件（源配置 husky/ 入库，_ 下自动生成物不入库）。
+.husky/_/
+# 上游 ZCode 只读参考基线（原记录在 .git/info/exclude 仅本机生效，挪入共享 ignore 随仓库走）。
+/reference/
