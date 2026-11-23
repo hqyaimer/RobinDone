@@ -66,7 +66,9 @@ const agent = {
 };
 const services = {
   robinrunAgentService: agent,
-  robinrunTaskService: { onDynamicWorkspaceEvent: () => (handler: any) => subscribe("task", handler) },
+  robinrunTaskService: {
+    onDynamicWorkspaceEvent: () => (handler: any) => subscribe("task", handler),
+  },
   pluginUiBridgeService: proxy(harness.bridge),
   pluginUiSamplingService: proxy(harness.bridge),
   pluginUiAppToolsService: proxy(harness.appTools),

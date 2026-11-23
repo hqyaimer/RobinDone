@@ -91,8 +91,9 @@ describe("PLUS composer context menu", () => {
     await $(`${panel} ${plugin}`).click();
     await browser.waitUntil(
       async () =>
-        (await getV4ComposerText())?.includes("plugin://skill-creator@robinrun-plugins-official") ===
-        true,
+        (await getV4ComposerText())?.includes(
+          "plugin://skill-creator@robinrun-plugins-official",
+        ) === true,
     );
     expect(await getV4ComposerText()).toContain("E2E_PLUS_MENU ");
     const before = await getV4ComposerText();
@@ -122,8 +123,9 @@ describe("PLUS composer context menu", () => {
     await $(plugin).click();
     await browser.waitUntil(
       async () =>
-        (await getV4ComposerText())?.includes("plugin://skill-creator@robinrun-plugins-official") ===
-        true,
+        (await getV4ComposerText())?.includes(
+          "plugin://skill-creator@robinrun-plugins-official",
+        ) === true,
     );
     expect(await getV4ComposerText()).toContain("E2E_PLUS_MENU replacement ");
     expect(await getV4ComposerText()).not.toContain("old draft");

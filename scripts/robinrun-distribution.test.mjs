@@ -154,7 +154,13 @@ test("installer creates robinrun and the installed command defaults to CLI", asy
   const downloads = join(directory, "downloads");
   const releaseDir = join(downloads, "releases/1.2.3");
   await mkdir(releaseDir, { recursive: true });
-  await exec("tar", ["-czf", join(releaseDir, "robinrun-1.2.3.tar.gz"), "-C", directory, "robinrun"]);
+  await exec("tar", [
+    "-czf",
+    join(releaseDir, "robinrun-1.2.3.tar.gz"),
+    "-C",
+    directory,
+    "robinrun",
+  ]);
   await writeFile(
     join(downloads, "latest.json"),
     JSON.stringify({ version: "1.2.3", tarball: "robinrun-1.2.3.tar.gz" }),

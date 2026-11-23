@@ -49,7 +49,8 @@ export async function collectUserSkillCandidates(): Promise<UserSkillCandidate[]
   const seenSkillRealpaths = new Set<string>();
   const userRobinrunSkillRoot = getUserRobinrunSkillRoot();
   const rawRobinrunCandidates = await collectUserSkillCandidatesInRoot(userRobinrunSkillRoot);
-  const robinrunDirectoryNames = await collectCoveredSkillDirectoryNamesInRoot(userRobinrunSkillRoot);
+  const robinrunDirectoryNames =
+    await collectCoveredSkillDirectoryNamesInRoot(userRobinrunSkillRoot);
   const robinrunSkillNameKeys = new Set(
     rawRobinrunCandidates.map((candidate) => normalizeSkillNameKey(candidate.name)),
   );

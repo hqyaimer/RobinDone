@@ -63,7 +63,9 @@ const ROBINRUN_FILE_CITATION_SYNTAX = {
   allowTripleColon: true,
 } as const;
 
-export function extractRobinRunFileCitationDirectives(content: string): RobinRunFileCitationDirective[] {
+export function extractRobinRunFileCitationDirectives(
+  content: string,
+): RobinRunFileCitationDirective[] {
   return extractAssistantDirectives(
     content,
     ROBINRUN_FILE_CITATION_DIRECTIVE_NAME,

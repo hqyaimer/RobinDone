@@ -104,7 +104,10 @@ try {
           viewport: { width, height: 1000 },
           reducedMotion: "reduce",
         });
-        await context.addInitScript((value) => localStorage.setItem("robinrun-theme", value), theme);
+        await context.addInitScript(
+          (value) => localStorage.setItem("robinrun-theme", value),
+          theme,
+        );
         const page = await context.newPage();
         const errors = [];
         const unexpected = [];

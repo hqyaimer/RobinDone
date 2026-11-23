@@ -319,7 +319,9 @@ export function canRestartAutomation(
   return automation.lifecycleStatus === "failed";
 }
 
-export function canToggleAutomation(automation: Pick<RobinRunAutomation, "lifecycleStatus">): boolean {
+export function canToggleAutomation(
+  automation: Pick<RobinRunAutomation, "lifecycleStatus">,
+): boolean {
   return automation.lifecycleStatus !== "completed" && automation.lifecycleStatus !== "failed";
 }
 
@@ -1021,7 +1023,11 @@ export function AutomationsSection({
       workspaceIdentity: targetIdentity,
     }: AutomationEditSubmit) => {
       if (view.mode === "edit") {
-        const ok = await updateAutomation(view.automation.automationId, input, robinrunAgentService);
+        const ok = await updateAutomation(
+          view.automation.automationId,
+          input,
+          robinrunAgentService,
+        );
         if (!ok) {
           toast(
             intl.formatMessage({

@@ -1,4 +1,5 @@
 import type { GenUiModelContext } from "@robinrun/shared/gen-ui";
+import type { SystemStatusPayload } from "@robinrun/shared";
 import type { RuntimeInputPresentation } from "./runtime-input-presentation.js";
 // ============================================================
 // Session Ports - Core interfaces for session management
@@ -302,6 +303,12 @@ export interface TurnSteerInput {
   traceContext?: TraceContext;
   /** Host 准入注入的可信 automation 身份；不能从 inputId/queryId 推断。 */
   automationId?: string;
+  /**
+   * P2.6 消息来源区块：本条输入的发送方身份（master 插话 / 用户插话 / 触发器…）。
+   * 随 pending input 进入 entry metadata.systemStatus，provider 渲染层据此注入
+   * <system-status> 区块；per-message 标注，修复 sink 固定 initiator 的错标。
+   */
+  systemStatus?: SystemStatusPayload;
   /** 当前输入消费时不向 provider 暴露的工具名。 */
   toolDisallowlist?: readonly string[];
 }
@@ -464,6 +471,8 @@ export interface PendingTurnInput {
   attachments?: PendingTurnAttachment[];
   /** Host 准入注入的可信 automation 身份；队列编辑和提升必须原样保留。 */
   automationId?: string;
+  /** P2.6 消息来源身份（见 TurnSteerInput.systemStatus）；队列编辑和提升必须原样保留。 */
+  systemStatus?: SystemStatusPayload;
   /** 当前 pending input drain 后不向 provider 暴露的工具名。 */
   toolDisallowlist?: readonly string[];
   turnId: TurnId;

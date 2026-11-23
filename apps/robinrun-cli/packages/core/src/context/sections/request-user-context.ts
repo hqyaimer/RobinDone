@@ -34,6 +34,33 @@ export function buildRequestUserContextSection(input: {
   };
 }
 
+/**
+ * 项目说明段（2026-11-19 /init 裁决，docs/init-flow.md §4）：workspace scope 的指令文件
+ * （项目 AGENTS.md）注入 system 提示词——个体规则在前、项目说明在后，同处 system 消息区，
+ * 每轮由 config 重建，压缩后仍在。meta_user 的 request user context 只保留 user scope。
+ */
+export function buildProjectInstructionsSection(input: {
+  userInstructions?: ResolvedUserInstructions;
+}): ContextSection | null {
+  if (!input.userInstructions) return null;
+  const content = normalizedInstructionSources(input.userInstructions)
+    .filter((source) => source.scope === "workspace")
+    .map((source) => buildInstructionSourceContent(source))
+    .filter((section): section is string => section !== null)
+    .join("\n\n");
+  if (!content) return null;
+  return {
+    name: "Project Instructions",
+    source: "project_instructions",
+    injectionTarget: "system",
+    cacheHint: "stable",
+    chars: content.length,
+    tokens: estimateTokens(content),
+    content,
+    preview: content.slice(0, 100),
+  };
+}
+
 function buildRequestUserContextContent(input: {
   userInstructions?: ResolvedUserInstructions;
   memoryIndexContent?: string;
@@ -83,7 +110,10 @@ function buildProjectMemoryIndexContent(
 }
 
 function buildInstructionContent(instructions: ResolvedUserInstructions): string | null {
+  // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace scope（项目 AGENTS.md）已迁入
+  // system 段（buildProjectInstructionsSection），meta_user 块只保留 user scope 等其余来源。
   const sections = normalizedInstructionSources(instructions)
+    .filter((source) => source.scope !== "workspace")
     .map((source) => buildInstructionSourceContent(source))
     .filter((content): content is string => content !== null);
 

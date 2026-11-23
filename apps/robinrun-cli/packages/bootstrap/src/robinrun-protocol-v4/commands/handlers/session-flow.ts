@@ -62,6 +62,36 @@ async function sendText(
   ) {
     throw new V4InputAdmissionRejectedError("proto.invalidPayload", "input must not be empty");
   }
+  // P2.5 用户协同 worker 会话：worker_child 的输入不经本会话 runtime 起轮——那会丢
+  // roster profile（define.md 职责定义 + agents.md 规则、worker 工具面）。统一交派发者
+  // subagentPort：运行中 steer（user_steer）/ 已结束 resume，user 发起会武装脱钩（延迟返回）。
+  if (record.taskType === "worker_child") {
+    if (!host.routeWorkerSessionInput) {
+      throw new V4InputAdmissionRejectedError(
+        "fault.command.inputRejected",
+        "worker session routing is unavailable",
+      );
+    }
+    const routed = await host.routeWorkerSessionInput({
+      childSessionId: envelope.sessionId ?? record.app.sessionId,
+      text: rawPayload.text,
+      // 路由成功后凭它收口子会话账本行（queue_<commandId>）——否则行永远停在 admitted，
+      // 重启后被收口并回报 inputDiscardedOnRestart，UI 每次重启都弹「已提交的输入没有
+      // 进入对话」恢复条（输入实际已被 worker 消费）。见 v4-bridge routeWorkerSessionInput。
+      sourceCommandId: envelope.commandId,
+    });
+    if (!routed.ok) {
+      throw new V4InputAdmissionRejectedError(
+        "fault.command.inputRejected",
+        routed.error ?? "worker session routing failed",
+      );
+    }
+    return {
+      type: "inputAccepted",
+      delivery: "startNow",
+      inputId: envelope.commandId,
+    };
+  }
   const activeAutomationId = resolveTurnAutomationId({
     automationId: rawPayload.automationId,
   });
@@ -258,6 +288,8 @@ async function sendText(
       intent,
       ...(payload.context_refs ? { sharedContextRefs: payload.context_refs } : {}),
       ...turnBackgroundAttributionOf(payload),
+      // P3 触发器投递（2026-11-19 验收）：host 携带的完整来源身份优先于 automationId 合成。
+      ...(payload.systemStatus ? { systemStatus: payload.systemStatus } : {}),
       ...(payload.botDeliveryTarget ? { botDeliveryTarget: payload.botDeliveryTarget } : {}),
       toolDisallowlist: payload.toolDisallowlist,
       ...(payload.modelExecution
@@ -303,6 +335,29 @@ async function stop(
 ): Promise<CommandResult | undefined> {
   const record = requireRecord(host, envelope.sessionId);
   const payload = envelope.payload as CommandPayloadMap["stop"];
+  // P2.5 用户协同 worker 会话：worker_child 的打断双路——先试本会话前台停（宿主
+  // 物化 runtime 自己驱动的用户轮）；父 runtime 驱动的运行在本 runtime 上 idle，
+  // 交派发者 subagentPort 按 user 停（武装脱钩，通知暂缓）。
+  if (record.taskType === "worker_child" && host.routeWorkerSessionStop) {
+    const ownStop = record.app.runtime?.stopActiveForegroundExecution?.({
+      expectedForegroundExecutionId: payload.expectedForegroundExecutionId,
+      reason: "v4 worker session stopped",
+    });
+    if (ownStop?.kind === "stopped") return undefined;
+    if (ownStop?.kind === "mismatch") {
+      throw new V4CommandNoopError("guard.stopTargetChanged");
+    }
+    const routed = await host.routeWorkerSessionStop({
+      childSessionId: envelope.sessionId ?? record.app.sessionId,
+    });
+    if (!routed.ok && routed.error !== "worker_task_not_found") {
+      host.logger?.warn?.("v4 worker session stop route failed", {
+        error: routed.error,
+        sessionId: record.app.sessionId,
+      });
+    }
+    return undefined;
+  }
   const runtimeStop = record.app.runtime?.stopActiveForegroundExecution?.({
     expectedForegroundExecutionId: payload.expectedForegroundExecutionId,
     reason: "v4 session stopped",

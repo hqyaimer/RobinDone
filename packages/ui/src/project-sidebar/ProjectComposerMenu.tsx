@@ -1,5 +1,6 @@
 import { ComposerSubmissionPendingContext } from "@/project-sidebar/ComposerSubmissionPendingContext.js";
 import { ChatRemoteFolderSelection } from "@/project-sidebar/ChatRemoteFolderSelection.js";
+import { useWorkers } from "@/project-sidebar/useWorkers.js";
 import { RemoteIdentityHoverCard } from "@/project-sidebar/RemoteIdentityHoverCard.js";
 import { remoteHostLabel } from "@/project-sidebar/RemoteHostSection.js";
 import type { ReactNode } from "react";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu.js";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group.js";
 import {
+  Bot,
   ChevronDownIcon,
   Cloud,
   FolderPlus,
@@ -24,11 +26,18 @@ import {
   X,
 } from "lucide-react";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useComposerClientNamespace } from "@/hooks/useServices.js";
 import { useRemoteConnectionEntryVisibility } from "@/hooks/useRemoteConnectionEntryVisibility.js";
 import { cn } from "@/components/lib/utils.js";
 import { logger } from "@/logger.js";
-import { buildServerRemoteWorkspaceIdentity } from "@robinrun/shared";
 import {
+  buildServerRemoteWorkspaceIdentity,
+  isMainAgentGroupId,
+  isWorkerGroupId,
+  workerGroupId,
+} from "@robinrun/shared";
+import {
+  TID_COMPOSER_AGENT_TRIGGER,
   TID_COMPOSER_PROJECT_DETACH,
   TID_COMPOSER_REMOTE_CONNECTION,
   TID_COMPOSER_WORK_OUTSIDE_PROJECT,
@@ -36,14 +45,28 @@ import {
 } from "@robinrun/shared/test-ids";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 
-import type { ProjectSidebarProps, RemoteProjectHost } from "@/project-sidebar/contract.js";
+import type {
+  ProjectSidebarProps,
+  RemoteProjectHost,
+  VirtualProject,
+} from "@/project-sidebar/contract.js";
 import { remoteHostIdFromWorkspaceIdentity } from "@/project-sidebar/contract.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { ProjectEditor } from "@/project-sidebar/ProjectEditor.js";
 import { ProjectCreation } from "@/project-sidebar/ProjectCreation.js";
 import { ProjectFolderIcon } from "@/project-sidebar/ProjectFolderIcon.js";
 import { projectKey, projectSourceServerId } from "@/project-sidebar/view.js";
-import { useProjectSelectionDirectory } from "@/project-sidebar/ProjectDirectoryProvider.js";
+import {
+  useProjectDirectory,
+  useProjectSelectionDirectory,
+} from "@/project-sidebar/ProjectDirectoryProvider.js";
+import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
+import {
+  persistV4ComposerDraft,
+  readV4ComposerDraft,
+  resolveComposerScope,
+  V4_DRAFT_SCOPE_ROOT,
+} from "@/v4/composer/composerDraftStore.js";
 import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
 
 export function ProjectComposerMenu({
@@ -104,7 +127,9 @@ export function ProjectComposerMenu({
     refresh,
   } = useProjectSelectionDirectory();
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const projectId = useRobinRunSessionStore((state) => state.workspaces[workspaceKey]?.draftProjectId);
+  const projectId = useRobinRunSessionStore(
+    (state) => state.workspaces[workspaceKey]?.draftProjectId,
+  );
   const activeTaskId = useRobinRunSessionStore(
     (state) => state.workspaces[workspaceKey]?.activeTaskId,
   );
@@ -115,8 +140,9 @@ export function ProjectComposerMenu({
             ...request,
             // 远程目录确认曾遗漏草稿分组；两个项目入口必须从同一草稿 owner 读取组织意图。
             taskGroupId: !activeTaskId
-              ? useRobinRunSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
-                  .draftTaskGroupId
+              ? useRobinRunSessionStore
+                  .getState()
+                  .getWorkspaceState(workspacePath, workspaceIdentity).draftTaskGroupId
               : null,
           }
         : request,
@@ -594,6 +620,14 @@ export function ProjectComposerMenu({
   return (
     <>
       {menu}
+      {/* 智能体下拉只在已选项目的草稿里出现；非项目工作区没有对话对象可选。 */}
+      {currentProject ? (
+        <ComposerAgentMenu
+          project={currentProject}
+          workspacePath={workspacePath}
+          workspaceIdentity={workspaceIdentity}
+        />
+      ) : null}
       {children}
       {canEditProject ? (
         <ControlHintTooltip title={intl.formatMessage({ id: "project.edit" })}>
@@ -626,5 +660,119 @@ export function ProjectComposerMenu({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * Composer 项目 chip 右侧的智能体（任务组）选择器（2026-11-15 裁决）：草稿态选取本次
+ * 对话的智能体，选中即改草稿组织意图（显式意图在发送冻结与 admit 链路中优先级最高）。
+ * 单独成组件：智能体名册读全量目录 Context（任务活动会高频穿透广播），隔离重渲染
+ * 范围，避免 ProjectComposerMenu 的项目 chip 与菜单跟着目录每秒重绘。
+ */
+function ComposerAgentMenu({
+  project,
+  workspacePath,
+  workspaceIdentity,
+}: {
+  project: VirtualProject;
+  workspacePath: string;
+  workspaceIdentity?: string;
+}) {
+  const { intl } = useRobinRunIntl();
+  const composerClientNamespace = useComposerClientNamespace();
+  const {
+    groups: { structure },
+  } = useProjectDirectory();
+  const workspaceKey = workspaceIdentity?.trim() || workspacePath;
+  const draftTaskGroupId = useRobinRunSessionStore(
+    (state) => state.workspaces[workspaceKey]?.draftTaskGroupId,
+  );
+  // 停用即隐藏（2026-11-17 裁决）：下拉与侧栏同一投影口径，只列 active worker 的组。
+  const { workers } = useWorkers(workspacePath);
+  const agents = useMemo(() => {
+    const activeWorkerGroupIds = new Set(workers.map((worker) => workerGroupId(worker.id)));
+    const own = structure.groups.filter(
+      (group) =>
+        group.projectId === project.id &&
+        (!isWorkerGroupId(group.id) || activeWorkerGroupIds.has(group.id)),
+    );
+    // 排序同 buildAgentTreeLayout：主智能体置顶，worker 组（编制物化）次之，其余智能体保持用户顺序。
+    return [...own].sort(
+      (a, b) =>
+        Number(isMainAgentGroupId(b.id)) - Number(isMainAgentGroupId(a.id)) ||
+        Number(isWorkerGroupId(a.id)) - Number(isWorkerGroupId(b.id)),
+    );
+  }, [structure.groups, project.id, workers]);
+  const localizedSystemTitles = useMemo(
+    () => ({
+      cron: intl.formatMessage({ id: "taskGroup.cronGroupName" }),
+      offPeak: intl.formatMessage({ id: "offPeak.sidebar.groupTitle" }),
+      mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }),
+    }),
+    [intl],
+  );
+  const selected = agents.find((agent) => agent.id === draftTaskGroupId) ?? null;
+  const selectAgent = (taskGroupId: string) => {
+    // 草稿组织意图双写：store 字段是发送时 SessionPane 冻结的事实源；持久草稿立即
+    // 跟进一次，覆盖"改完即刷新"的窗口。不 bump draftFocusVersion——正文与预热保持，
+    // 且 useDraftConfigControl 的 placement 读到最新 store 值后随键入继续回写。
+    const scope = resolveComposerScope(project.id, workspaceIdentity, composerClientNamespace);
+    const saved = readV4ComposerDraft(workspacePath, workspaceIdentity, V4_DRAFT_SCOPE_ROOT, scope);
+    persistV4ComposerDraft(
+      workspacePath,
+      workspaceIdentity,
+      V4_DRAFT_SCOPE_ROOT,
+      { ...(saved ?? { text: "" }), projectId: project.id, taskGroupId },
+      scope,
+    );
+    useRobinRunSessionStore
+      .getState()
+      .setDraftTaskGroup(workspacePath, taskGroupId, workspaceIdentity);
+    logger.info("[ProjectComposerMenu] 选择对话智能体", { projectId: project.id, taskGroupId });
+  };
+  // 项目还没自举出任何智能体（主智能体由 saveProject 幂等创建）时无对象可选，不渲染。
+  if (agents.length === 0) return null;
+  const selectedTitle = selected
+    ? getTaskGroupDisplayTitle(selected, localizedSystemTitles)
+    : intl.formatMessage({ id: "chat.empty.agentMenu" });
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="default"
+          className="min-w-0 rounded-full bg-transparent px-2 text-ui-base/relaxed hover:bg-surface-hover"
+          aria-label={intl.formatMessage({ id: "chat.empty.agentMenu" })}
+          data-testid={TID_COMPOSER_AGENT_TRIGGER}
+        >
+          <Bot className="size-4 shrink-0 text-foreground-subtle" />
+          <span className="block max-w-[10rem] truncate">{selectedTitle}</span>
+          <ChevronDownIcon className="size-3.5 text-foreground-subtle" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        data-testid="composer-agent-menu"
+        align="start"
+        side="top"
+        className="flex w-60 flex-col p-1"
+      >
+        {agents.map((agent) => {
+          const title = getTaskGroupDisplayTitle(agent, localizedSystemTitles);
+          return (
+            <DropdownMenuCheckboxItem
+              key={agent.id}
+              data-task-group-id={agent.id}
+              data-agent-name={title}
+              checked={selected?.id === agent.id}
+              onSelect={() => selectAgent(agent.id)}
+            >
+              <Bot className="size-4 shrink-0 text-foreground-subtle" />
+              <span className="min-w-0 flex-1 truncate">{title}</span>
+            </DropdownMenuCheckboxItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

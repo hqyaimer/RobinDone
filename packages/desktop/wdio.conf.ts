@@ -227,7 +227,10 @@ const E2E_LOCAL_ENV_FILES = [
 // 代理、证书和缓存配置。所有读取 process.env 的 runner 初始化都必须位于该调用之后。
 loadE2ELocalEnv();
 const BUILD_DESKTOP_AGENT_SCRIPT = resolve(REPO_ROOT, "scripts/build-desktop-agent-cli.mjs");
-const ROBINRUN_CLI_ENTRYPOINT = resolve(REPO_ROOT, "apps/robinrun-cli/packages/cli/dist/robinrun.cjs");
+const ROBINRUN_CLI_ENTRYPOINT = resolve(
+  REPO_ROOT,
+  "apps/robinrun-cli/packages/cli/dist/robinrun.cjs",
+);
 const E2E_HOME_DIR = resolve(
   process.env.ROBINRUN_E2E_HOME_DIR?.trim() ||
     // 修复原因：多个 WDIO 本地并发时会互相清理默认 .e2e-home，导致窗口白屏、
@@ -1241,7 +1244,8 @@ async function startCodingPlanTeamMockIfNeeded(specs: string[] = []) {
   const offPeakTeam = isOffPeakTeamPlanSpec(specs);
   if (offPeakTeam) {
     // 通用产品 mock 会替换成个人假凭证，无法验证 Team。只在测试进程替代 HTTP 服务端。
-    const { startOffPeakMockGateway, createServiceLogger } = await import("@robinrun/services/node");
+    const { startOffPeakMockGateway, createServiceLogger } =
+      await import("@robinrun/services/node");
     offPeakTeamGateway = await startOffPeakMockGateway(
       {
         logger: createServiceLogger("e2e-offpeak-team", { isDebugEnabled: false }),
@@ -2518,7 +2522,8 @@ async function startOffPeakE2EMock(specs: string[] = []): Promise<void> {
     const port = Number(process.env.ROBINRUN_OFFPEAK_MOCK_PORT);
     if (!port) throw new Error("Team 闲时 E2E 网关未由 launcher 准备");
     await materializeOffPeakMockRobinRunBuiltinProviderConfig(port, "GLM-5.3");
-    process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE = E2E_OFFPEAK_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
+    process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE =
+      E2E_OFFPEAK_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
     return;
   }
   if (isOffPeakSpec) {
@@ -2559,14 +2564,16 @@ async function startOffPeakE2EMock(specs: string[] = []): Promise<void> {
       Number(process.env.ROBINRUN_OFFPEAK_MOCK_PORT),
       isSubagentInheritanceSpec ? "GLM-5.3" : "GLM-5.2",
     );
-    process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE = E2E_OFFPEAK_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
+    process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE =
+      E2E_OFFPEAK_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
   } else {
     delete process.env.ROBINRUN_OFFPEAK_MOCK;
     delete process.env.ROBINRUN_OFFPEAK_MOCK_AVAILABILITY_BLOCK_MS;
     delete process.env.ROBINRUN_OFFPEAK_MOCK_PORT;
     delete process.env.ROBINRUN_OFFPEAK_MOCK_SCENARIO;
     if (INITIAL_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE) {
-      process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE = INITIAL_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
+      process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE =
+        INITIAL_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
     } else {
       delete process.env.ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE;
     }
@@ -4590,7 +4597,8 @@ export const config: WebdriverIO.Config = {
     ROBINRUN_AGENT_SERVER_COMMAND: "",
     ROBINRUN_DATA_BASE_DIR: E2E_HOME_DIR,
     ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE:
-      INITIAL_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE ?? E2E_DEFAULT_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE,
+      INITIAL_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE ??
+      E2E_DEFAULT_ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE,
     ROBINRUN_DESKTOP_APPLICATION_NAME: "RobinRun E2E",
     ROBINRUN_DESKTOP_HOME_DIR: E2E_HOME_DIR,
     ROBINRUN_DESKTOP_USE_ELECTRON_DEFAULT_USER_DATA: "1",
@@ -4605,7 +4613,8 @@ export const config: WebdriverIO.Config = {
     ...getE2EProviderEndpointEnv(configuredE2ESpecs, e2eProviderPresetName, upstreamE2EHttpMode),
     ...(process.env.ROBINRUN_TELEMETRY_PARITY_CAPTURE_PATH?.trim()
       ? {
-          ROBINRUN_TELEMETRY_PARITY_CAPTURE_PATH: process.env.ROBINRUN_TELEMETRY_PARITY_CAPTURE_PATH,
+          ROBINRUN_TELEMETRY_PARITY_CAPTURE_PATH:
+            process.env.ROBINRUN_TELEMETRY_PARITY_CAPTURE_PATH,
         }
       : {}),
     ...(process.env.ROBINRUN_TELEMETRY_PARITY_VARIANT?.trim()

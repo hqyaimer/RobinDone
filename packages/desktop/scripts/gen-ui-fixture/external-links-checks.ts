@@ -144,7 +144,9 @@ export async function checkExternalLinks(
     "data:text/plain,test",
   ]) {
     assert.match(
-      await read(`window.robinrun.openExternal({href:${JSON.stringify(href)}}).then(()=>'',String)`),
+      await read(
+        `window.robinrun.openExternal({href:${JSON.stringify(href)}}).then(()=>'',String)`,
+      ),
       /URL|HTTP/i,
     );
   }

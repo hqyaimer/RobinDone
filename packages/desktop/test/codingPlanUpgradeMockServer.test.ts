@@ -107,7 +107,9 @@ describe("Coding Plan upgrade E2E mock server", () => {
     server = await startCodingPlanUpgradeMockServer("manual-claim-experience", {
       marketingTouch: true,
     });
-    const pending = fetch(`${server.baseUrl}/api/v1/robinrun-plan/billing/claim`, { method: "POST" });
+    const pending = fetch(`${server.baseUrl}/api/v1/robinrun-plan/billing/claim`, {
+      method: "POST",
+    });
     await fetch(`${server.baseUrl}/__e2e/marketing/release`, { method: "POST" });
     expect((await pending).ok).toBe(true);
   });

@@ -18,7 +18,11 @@ import {
   getAgentActivityContent,
   getAgentPrimaryText,
   getAgentPrompt,
+  getWorkerDisplayName,
+  getWorkerDispatchId,
+  isWorkerDispatchToolCall,
   readBackgroundAgentInfo,
+  useWorkerRosterName,
 } from "./agentHelpers.js";
 
 const AGENT_TOOL_ICON = <BotIcon className="size-4 shrink-0 text-foreground-subtle" />;
@@ -214,12 +218,28 @@ export function AgentToolCallBlock(context: ToolCallBlockRenderContext) {
   const fallbackLabel = formatAgentMessage(intl, "chat.toolCall.agent.fallback", "SubAgent");
   const primaryText = getAgentPrimaryText(toolCall, fallbackLabel);
   const agentName = getAgentKindLabel(toolCall, "", context.authoritativeAgentType);
-  const configuredAgentColor = useToolPresentationCapabilities().agentColor?.(agentName);
-  const agentColor = agentName
-    ? (configuredAgentColor ?? getAgentColor(toolCall) ?? resolveSubagentColorFromName(agentName))
+  // key/name 裁决（2026-11-17）+ 2026-11-18 验收修复：worker 派发行标签用「工作者」，
+  // 名称芯片显示用户可读名而非寻址 id（wkr-* 对用户不可读）。判定按工具名（DispatchWorker），
+  // 不再依赖输出带 workerName——失败行/流式未完成/历史快照同样正确标注；显示名优先取
+  // 输出 workerName，缺席时经编制注册表回退 id → 显示名。
+  const isWorkerDispatch = isWorkerDispatchToolCall(toolCall);
+  const rosterName = useWorkerRosterName(
+    context.workspacePath,
+    isWorkerDispatch ? getWorkerDispatchId(toolCall) : undefined,
+  );
+  const workerDisplayName = isWorkerDispatch
+    ? (getWorkerDisplayName(toolCall) ?? rosterName)
+    : undefined;
+  const kindLabel = isWorkerDispatch
+    ? formatAgentMessage(intl, "chat.toolCall.agent.workerLabel", "worker")
+    : fallbackLabel;
+  const displayName = workerDisplayName ?? agentName;
+  const configuredAgentColor = useToolPresentationCapabilities().agentColor?.(displayName);
+  const agentColor = displayName
+    ? (configuredAgentColor ?? getAgentColor(toolCall) ?? resolveSubagentColorFromName(displayName))
     : null;
   const agentNameDetail =
-    agentName && agentColor ? <AgentNameText color={agentColor} name={agentName} /> : null;
+    displayName && agentColor ? <AgentNameText color={agentColor} name={displayName} /> : null;
   // Agent 父块的完成/进行中边界只由父 Agent tool 决定。
   // 子 tool 是展开区明细，不能反向续住父块运行态，否则父 Agent completed 后
   // 仍会显示渐变和子工具摘要，和协议里的父工具生命周期不一致。
@@ -347,8 +367,8 @@ export function AgentToolCallBlock(context: ToolCallBlockRenderContext) {
         summaryAction={summaryAction}
         // 产品边界：Agent/Task 在父对话中只保留单行摘要；完整 child timeline 统一从
         // 右侧 tab / 手机抽屉查看，因此这里既不自动展开，也不提供手动展开入口。
-        kindLabel={fallbackLabel}
-        expandedKindLabel={fallbackLabel}
+        kindLabel={kindLabel}
+        expandedKindLabel={kindLabel}
         kindDetail={agentNameDetail}
         expandedKindDetail={agentNameDetail}
         sourceLabel={sourceLabel}

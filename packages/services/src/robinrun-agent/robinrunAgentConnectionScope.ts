@@ -202,7 +202,9 @@ function frameBytes(frame: RoutedTopicFrame): number {
   return new TextEncoder().encode(JSON.stringify(frame)).byteLength;
 }
 
-function deliveryProfileFor(clientMode: RobinRunAgentV4ClientMode): HelloMessage["deliveryProfile"] {
+function deliveryProfileFor(
+  clientMode: RobinRunAgentV4ClientMode,
+): HelloMessage["deliveryProfile"] {
   return clientMode === "desktop-continuous" ? "continuous" : "replayable";
 }
 
@@ -306,8 +308,11 @@ export function createRobinRunAgentConnectionScope(
     subscriptionId: string,
     connectionId: string,
   ) => `${kind}\0${workspaceKey(target)}\0${topic}\0${subscriptionId}\0${connectionId}`;
-  const ownershipKey = (kind: SubscriptionKind, target: RobinRunAgentWorkspaceTarget, topic: string) =>
-    `${kind}\0${workspaceKey(target)}\0${topic}`;
+  const ownershipKey = (
+    kind: SubscriptionKind,
+    target: RobinRunAgentWorkspaceTarget,
+    topic: string,
+  ) => `${kind}\0${workspaceKey(target)}\0${topic}`;
   const routedEventKey = (kind: SubscriptionKind, target: RobinRunAgentWorkspaceTarget) =>
     `${kind}\0${workspaceKey(target)}`;
   const flowRouteKey = (target: RobinRunAgentWorkspaceTarget, connectionId: string) =>

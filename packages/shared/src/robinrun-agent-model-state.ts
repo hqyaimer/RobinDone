@@ -8,7 +8,10 @@
 // getRobinRunAgentAvailableModes / getRobinRunAgentModeSelectOptions / normalizeAvailableRobinRunMode）。
 // 波次3 删除这些导出前必须先把模式目录迁到非 legacy 位置，不能连带删掉目录本身。
 import { formatModelPickerValue } from "./model-selection.js";
-import type { RobinRunSessionMode, RobinRunSessionSettingsState } from "./robinrun-protocol/index.js";
+import type {
+  RobinRunSessionMode,
+  RobinRunSessionSettingsState,
+} from "./robinrun-protocol/index.js";
 import type { RobinRunConfigOption, RobinRunTaskModeInfo } from "./robinrun-task-types-core.js";
 const MODEL_CONFIG_ID = "model";
 const MODEL_CONFIG_CATEGORY = "model";

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RobinRunSessionEndedSubagent, RobinRunSessionSubagentsResult } from "@robinrun/shared";
+import type {
+  RobinRunSessionEndedSubagent,
+  RobinRunSessionSubagentsResult,
+} from "@robinrun/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 
@@ -37,9 +40,7 @@ export function resolveEndedSubagentRefreshTargetCount(options: {
   requestedCount: number;
 }): number {
   if (options.loadedItemCount === 0) return options.requestedCount;
-  return (
-    options.requestedCount + Math.max(0, options.nextTotal - options.previousTotal)
-  );
+  return options.requestedCount + Math.max(0, options.nextTotal - options.previousTotal);
 }
 
 export function useSessionSubagents(options: {

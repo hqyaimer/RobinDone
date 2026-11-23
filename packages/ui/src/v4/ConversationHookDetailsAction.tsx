@@ -12,7 +12,10 @@ import {
   TID_V4_HOOK_DETAILS_TRIGGER,
   testId,
 } from "@robinrun/shared/test-ids";
-import type { HookExecutionProjection, HookInvocationRow } from "@robinrun/shared/robinrun-protocol-v4";
+import type {
+  HookExecutionProjection,
+  HookInvocationRow,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.js";

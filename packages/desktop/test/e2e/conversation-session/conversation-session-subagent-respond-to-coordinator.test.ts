@@ -6,7 +6,10 @@ import {
 import { assertIncomingMessage } from "../helpers/incoming-message-evidence.js";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { TID_TOOL_SUMMARY_TRIGGER, TID_V4_SUBAGENT_OPEN_SIDE_PANE } from "@robinrun/shared/test-ids";
+import {
+  TID_TOOL_SUMMARY_TRIGGER,
+  TID_V4_SUBAGENT_OPEN_SIDE_PANE,
+} from "@robinrun/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import type { E2ENetworkCaptureArtifact } from "../helpers/network-capture-proxy.js";
 import {

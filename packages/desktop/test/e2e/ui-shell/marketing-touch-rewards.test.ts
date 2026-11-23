@@ -214,7 +214,9 @@ describe("Rewards website embedded integration", () => {
         ) as Promise<boolean>,
       { timeout: 60000 },
     );
-    expect(await guestValue(`typeof window.robinrunBridge.notifyPurchaseComplete`)).toBe("undefined");
+    expect(await guestValue(`typeof window.robinrunBridge.notifyPurchaseComplete`)).toBe(
+      "undefined",
+    );
     expect(await guestValue(`window.robinrunBridge.getAuthState().status`)).toBe("ready");
     const firstHeaders = await browser.electron.execute(
       () =>

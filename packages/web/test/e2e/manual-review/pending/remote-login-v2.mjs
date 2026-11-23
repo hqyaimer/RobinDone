@@ -148,7 +148,9 @@ try {
       name: "Alice’s MacBook",
     });
     assert.equal(
-      await selection.page.evaluate(() => localStorage.getItem("robinrun-web-remote-last-device-sid")),
+      await selection.page.evaluate(() =>
+        localStorage.getItem("robinrun-web-remote-last-device-sid"),
+      ),
       "e2e-device",
     );
     await selection.page.reload();
@@ -188,7 +190,10 @@ try {
     assert.deepEqual(Object.fromEntries(new URL(other.page.url()).searchParams), {
       app_version: "3.13.0",
     });
-    assert.equal(await other.page.evaluate(() => localStorage.getItem("robinrunjwttoken")), "e2e-jwt");
+    assert.equal(
+      await other.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+      "e2e-jwt",
+    );
     await other.page.getByRole("button", { name: "切换", exact: true }).click();
     await other.page.getByRole("button", { name: "退出并切换", exact: true }).click();
     await other.page.getByRole("button", { name: /连接 Z.ai 继续使用/ }).waitFor();
@@ -478,7 +483,10 @@ try {
       releaseStale();
       await assertEventually(() => h.traffic.bootstraps === 1);
       assert.deepEqual(authorizations, ["Bearer e2e-jwt", "Bearer e2e-jwt-2"]);
-      assert.equal(await h.page.evaluate(() => localStorage.getItem("robinrunjwttoken")), "e2e-jwt-2");
+      assert.equal(
+        await h.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+        "e2e-jwt-2",
+      );
       assert.equal(await h.page.getByRole("button", { name: /连接 Z.ai 继续使用/ }).count(), 0);
       assert.equal(h.traffic.sockets, 1);
       assert.equal(h.page.url(), `${origin}${qrPath}`);

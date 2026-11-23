@@ -39,7 +39,10 @@ import {
   buildCodingPlanUsageSources,
   resolveSidebarCurrentCodingPlanUsageSource,
 } from "@/lib/codingPlanUsageSources.js";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 import { parseCustomProviderIdFromSupplierKey } from "@/lib/modelConfigSync.js";
 import { setPendingSettingsUsageIntent } from "@/lib/settingsNavigation.js";
 import {

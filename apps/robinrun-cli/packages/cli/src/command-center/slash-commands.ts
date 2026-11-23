@@ -121,23 +121,26 @@ export function parseSlashCommand(input: string): SlashCommand | null {
     };
   }
 
-  if (rawName === "login") {
-    return {
-      args,
-      name: "login",
-      rawName,
-      type: "known",
-    };
-  }
-
-  if (rawName === "logout") {
-    return {
-      args,
-      name: "logout",
-      rawName,
-      type: "known",
-    };
-  }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「/login /logout 解析分支」——上游 Coding Plan OAuth
+  // 不可用（帮助条目已注释），命令落入未知命令提示。恢复时取消本段注释
+  // if (rawName === "login") {
+  //   return {
+  //     args,
+  //     name: "login",
+  //     rawName,
+  //     type: "known",
+  //   };
+  // }
+  //
+  // if (rawName === "logout") {
+  //   return {
+  //     args,
+  //     name: "logout",
+  //     rawName,
+  //     type: "known",
+  //   };
+  // }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
   if (rawName === "locale" || rawName === "language") {
     return {

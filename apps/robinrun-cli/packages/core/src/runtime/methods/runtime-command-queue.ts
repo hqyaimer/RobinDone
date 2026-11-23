@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { TRIGGER_ID_PREFIX, uuidv7 } from "@robinrun/shared";
 import {
   backgroundBatchTelemetryAttributes,
   telemetryInputOrigin,
@@ -5,14 +8,18 @@ import {
 } from "./input-intent-persistence.js";
 import { traceContextToLogContext } from "../deps.js";
 import { refreshOffPeakWork } from "../off-peak/runtime.js";
-import type { RuntimeCommand, TaskNotificationRuntimeCommand } from "../command-queue.js";
-import { uuidv7 } from "@robinrun/shared";
+import type {
+  PromptRuntimeCommand,
+  RuntimeCommand,
+  TaskNotificationRuntimeCommand,
+} from "../command-queue.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import {
   persistBackgroundTaskNotificationBatch,
   shouldSuppressTaskNotificationRuntimeCommand,
 } from "./background-notifications.js";
 import { persistSubagentMessageCommand } from "./subagent-messages.js";
+import { agentContactTakeoverReply } from "../../subagent/agent-contact.js";
 import { runControlOnlyTurnCommand } from "./control-only-turn.js";
 import { createTurnCancelledError } from "../helpers/index.js";
 import { executeTargetContinuationCommand } from "./target.js";
@@ -235,6 +242,26 @@ async function runRuntimeCommand(
         command.reject(createTurnCancelledError(command.options?.abortSignal?.reason));
         return;
       }
+      // agent 消息（2026-11-19 话语权裁决）：真实用户 prompt 起跑 = 用户介入接收方会话，
+      // 其在途 ContactAgent 请求在轮起跑前以合成回复解除（介入瞬间切换的落地时刻——
+      // 排队输入必然晚于被介入轮的终态捕获或随取消路径解除，这里只结算仍存活的条目）。
+      // 真实用户判据与 turn.ts 的 real_user 规则一致：无来源标注的普通可见输入。
+      // worker 会话同构化后本解除点对 master/worker 会话同构生效（进程共享登记表）。
+      if (isRealUserPromptCommand(command)) {
+        const contactDisplayName =
+          this.config.workerIdentity?.workerName ?? "the main agent (master)";
+        this.agentContactRegistry?.resolveReceiverSynthetic({
+          receiverSessionId: this.sessionId,
+          synthetic: {
+            text: agentContactTakeoverReply(contactDisplayName),
+            receiverDisplayName: contactDisplayName,
+          },
+        });
+      }
+      // 触发器专属会话（2026-11-19 验收裁决）：触发器投递轮（automationId=trg-*）首次
+      // 到达时读盘缓存触发器 README——之后每轮系统提示词都携带（压缩后仍在），投递
+      // 消息正文只承载事件内容。读取失败只标记已加载（防重复 IO），不阻断投递。
+      await ensureTriggerSessionReadme.call(this, command.options?.automationId);
       try {
         const result = await this.executeTurnCommand(
           command.input,
@@ -401,6 +428,10 @@ async function runTaskNotificationBatch(
       ...(persisted.backgroundSource ? { backgroundSource: persisted.backgroundSource } : {}),
       inputSource: "background_task",
       inputVisibility: "model-only",
+      // P2.6 验收修复第二轮（2026-11-18）：worker/subagent 通知轮带上发送方身份，
+      // TurnStarted 据此下发 inputSender/Label/SessionId，投影落可见 mailbox 行；
+      // bash/workflow 批没有 systemStatus（混合批不标），保持既有标题行渲染。
+      ...(persisted.systemStatus ? { systemStatus: persisted.systemStatus } : {}),
       ...(persisted.originMeta ? { originMeta: persisted.originMeta } : {}),
       recordedInputMessageId: persisted.messageId,
       skipInputRecord: true,
@@ -516,4 +547,46 @@ export function stopActiveForegroundExecution(
 
 export function getActiveForegroundExecutionId(this: AgentRuntimeInternal): string | undefined {
   return this.activeForegroundExecution?.foregroundExecutionId;
+}
+
+/**
+ * 触发器 README 读盘缓存（2026-11-19 验收裁决，仅触发器投递轮调用）：
+ * automationId 为 trg- 前缀（TRIGGER_ID_PREFIX，与上游 cron automation 的
+ * automation-<uuid> 互斥）且尚未加载时，读工作区 `.robinrun/triggers/<id>/README.md`
+ * 缓存到 runtime 级状态。README 缺失/读失败同样标记已加载——系统提示词 section 缺席
+ * 即可，不能反复 IO，更不能阻断投递轮。
+ */
+async function ensureTriggerSessionReadme(
+  this: AgentRuntimeInternal,
+  automationId: string | undefined,
+): Promise<void> {
+  if (this.triggerSessionReadmeLoaded) return;
+  if (automationId === undefined || !automationId.startsWith(TRIGGER_ID_PREFIX)) return;
+  this.triggerSessionReadmeLoaded = true;
+  try {
+    const readme = await readFile(
+      join(this.workspaceRoot, ".robinrun", "triggers", automationId, "README.md"),
+      "utf8",
+    );
+    if (readme.trim().length > 0) this.triggerSessionReadme = readme;
+  } catch {
+    // README 缺失（创建时未写/被删）：无说明也可运行，事件自带 summary 语义。
+  }
+}
+
+/**
+ * 真实用户 prompt 判据（与 turn.ts 的 real_user 落章规则同源）：无来源标注、无
+ * automation/off-peak 身份、非 model-only 的可见普通输入才算用户亲手介入。
+ * coordinator（含 ContactAgent 管线）、trigger、goal 续跑等系统轮都不触发话语权切换。
+ */
+function isRealUserPromptCommand(command: PromptRuntimeCommand): boolean {
+  const options = command.options;
+  return (
+    options?.systemStatus === undefined &&
+    options?.inputSource === undefined &&
+    options?.inputVisibility !== "model-only" &&
+    options?.skipInputRecord !== true &&
+    options?.automationId === undefined &&
+    options?.offPeakTaskId === undefined
+  );
 }

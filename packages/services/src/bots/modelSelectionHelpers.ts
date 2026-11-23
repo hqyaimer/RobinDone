@@ -1,6 +1,4 @@
-import {
-  type RobinRunProvider,
-} from "@robinrun/shared";
+import { type RobinRunProvider } from "@robinrun/shared";
 
 const BOT_NATIVE_MODEL_PROVIDER_PREFIX = "native:";
 

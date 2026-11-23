@@ -27,6 +27,15 @@ import { resolveMarketplaceDisplayName } from "@/settings/pluginSourceLabel.js";
 // 分类/市场分组手动收起后的展示数量；默认完整展示，避免较少的插件又被自动隐藏。
 const CATEGORY_VISIBLE_LIMIT = 6;
 const RETIRED_STORE_PLUGIN_ID = `restore-legacy-sessions@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`;
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Sites 部署 / 上游搜图」插件——定义已从
+// official-plugin-definitions.ts 注释移除；把 id 加进退役过滤防止 CDN manifest 残留条目重新出现在商店。
+// 恢复时从 RETIRED 列表移除并还原官方插件定义
+const RETIRED_STORE_PLUGIN_IDS = [
+  RETIRED_STORE_PLUGIN_ID,
+  `robinrun-site@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
+  `image-search@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
+];
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
 export type { PluginStoreSegment } from "@/settings/pluginStoreListing.js";
 import type { PluginStoreSegment } from "@/settings/pluginStoreListing.js";
@@ -61,8 +70,9 @@ export function PluginStoreListView({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   // 旧版会话恢复入口退出市场；统一过滤所有浏览投影，旧缓存/精选也不能重新露出。
   // 完整 ID 只命中官方插件，插件管理页继续使用原始条目管理已有安装。
+  // RobinRun(2026-11-22): [hide-upstream-account] 过滤清单扩展为 RETIRED_STORE_PLUGIN_IDS
   const items = useMemo(
-    () => allItems.filter((item) => item.id !== RETIRED_STORE_PLUGIN_ID),
+    () => allItems.filter((item) => !RETIRED_STORE_PLUGIN_IDS.includes(item.id)),
     [allItems],
   );
 

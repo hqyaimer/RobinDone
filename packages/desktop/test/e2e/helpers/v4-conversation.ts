@@ -1317,7 +1317,8 @@ export function getV4DraftThoughtState(workspacePath: string): Promise<{
         };
       };
       const options =
-        e2eWindow.__robinrunSessionStoreE2E?.getState().getWorkspaceState?.(path).configOptions ?? [];
+        e2eWindow.__robinrunSessionStoreE2E?.getState().getWorkspaceState?.(path).configOptions ??
+        [];
       const model = options.find((option) => option.category === "model");
       const thought = options.find((option) => option.category === "thought_level");
       const v4Config = document.querySelector<HTMLElement>(`[data-testid="${modelTestId}"]`);

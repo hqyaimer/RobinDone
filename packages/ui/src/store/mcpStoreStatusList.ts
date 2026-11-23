@@ -1,4 +1,8 @@
-import type { McpServerStatus, RobinRunMcpServer, RobinRunMcpServerStatusSnapshot } from "@robinrun/shared";
+import type {
+  McpServerStatus,
+  RobinRunMcpServer,
+  RobinRunMcpServerStatusSnapshot,
+} from "@robinrun/shared";
 
 type MappedMcpServerStatus = {
   authorization?: RobinRunMcpServerStatusSnapshot["authorization"];

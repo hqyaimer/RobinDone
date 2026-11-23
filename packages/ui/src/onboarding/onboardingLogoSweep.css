@@ -1,4 +1,4 @@
-/* 掩膜只保留 1px 描边，旋转光场不影响品牌图标本体。 */
+/* 掩膜只保留 1px 描边，旋转光场不影响品牌图标本体。底座改白底瓦片后光场同步改深色，否则白扫白不可见。 */
 .onboarding-logo-sweep {
   position: absolute;
   inset: 0;
@@ -18,8 +18,8 @@
   background: conic-gradient(
     from 0deg,
     transparent 0deg 240deg,
-    rgb(255 255 255 / 8%) 280deg,
-    rgb(255 255 255 / 65%) 350deg,
+    rgb(0 0 0 / 4%) 280deg,
+    rgb(0 0 0 / 28%) 350deg,
     transparent 360deg
   );
   animation: onboarding-logo-border-sweep 5s linear infinite;

@@ -1,4 +1,7 @@
-import { downloadRobinRunBuiltinRelease, type RobinRunBuiltinRelease } from "@robinrun/provider-node";
+import {
+  downloadRobinRunBuiltinRelease,
+  type RobinRunBuiltinRelease,
+} from "@robinrun/provider-node";
 import type { ApiClient } from "@robinrun/shared";
 
 export interface FetchRobinRunBuiltinRemoteReleaseOptions {

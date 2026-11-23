@@ -632,6 +632,11 @@ async function persistSession(
       parentID: this.config.parentSessionId,
       traceID: traceContext.traceId,
       taskType: this.config.taskType,
+      // 创建来源（P2.5）：runtime 创建时固定；缺省兜底 user（历史行为等价）。
+      creationOrigin: this.config.creationOrigin ?? { kind: "user" },
+      // agent 会话身份（worker 会话同构化）：worker 会话随创建落库，冷恢复据此回填
+      // runtime config 重建注入段（同 taskType 的随行语义）。master 会话缺席。
+      workerIdentity: this.config.workerIdentity,
       slug: slugify(this.sessionId),
       directory: persistedWorkspacePath,
       path: persistedWorkspacePath,

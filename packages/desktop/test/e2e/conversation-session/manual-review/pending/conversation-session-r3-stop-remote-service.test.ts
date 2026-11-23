@@ -256,7 +256,9 @@ describe(`${CASE_MARKER}: 设备卡停止远端服务`, () => {
       /此设备当前没有运行中的任务|设备未提供任务清单|No tasks are running|didn't provide a task list/u,
     );
     expect(confirmText).toMatch(/其他电脑上的 RobinRun|RobinRun on another computer/u);
-    expect(confirmText).toMatch(/下次打开 RobinRun 时会重新启动远端服务|next time you open RobinRun/u);
+    expect(confirmText).toMatch(
+      /下次打开 RobinRun 时会重新启动远端服务|next time you open RobinRun/u,
+    );
     facts.confirmText = confirmText;
     const focused = await browser.execute(() => document.activeElement?.textContent ?? "");
     expect(["取消", "Cancel"].some((label) => focused.includes(label))).toBe(true);

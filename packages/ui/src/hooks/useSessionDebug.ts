@@ -35,7 +35,8 @@ export function useSessionDebug({
           workspaceIdentity,
           sessionId: taskId,
         });
-        if (!disposed) setResult({ key: scopeKey, service: robinrunAgentService, data, error: false });
+        if (!disposed)
+          setResult({ key: scopeKey, service: robinrunAgentService, data, error: false });
       } catch {
         if (!disposed)
           setResult((previous) => ({
@@ -58,6 +59,7 @@ export function useSessionDebug({
       clearTimeout(timer);
     };
   }, [enabled, scopeKey, taskId, workspaceIdentity, workspacePath, robinrunAgentService]);
-  const current = result?.key === scopeKey && result.service === robinrunAgentService ? result : null;
+  const current =
+    result?.key === scopeKey && result.service === robinrunAgentService ? result : null;
   return { ...(current?.data ?? EMPTY_DEBUG), error: current?.error ?? false };
 }

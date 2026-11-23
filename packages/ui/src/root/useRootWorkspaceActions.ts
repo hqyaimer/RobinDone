@@ -3,6 +3,7 @@ import { stageV4ComposerDraftAttachments } from "@/v4/composer/composerDraftWork
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   DesktopCommandIds,
+  mainAgentGroupId,
   remoteHostIdFromWorkspaceIdentity,
   type AppSettings,
   type IPlatformService,
@@ -37,11 +38,7 @@ import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
 import { notifyTaskNavigationCommitted } from "@/store/robinrunSessionStoreNavigation.js";
 import { type TabStore, type TabStoreState } from "@/store/tabStore.js";
 import type { RootProps } from "@/root/types.js";
-import {
-  hadPersistedPaneLayoutAtModuleLoad,
-  INITIAL_PANE_LAYOUT,
-  usePaneLayoutStore,
-} from "@/v4/paneLayoutStore.js";
+import { hadPersistedPaneLayoutAtModuleLoad, usePaneLayoutStore } from "@/v4/paneLayoutStore.js";
 import { resolveWorkbenchNewTaskTarget } from "@/conversation-workspace-target/workbenchTarget.js";
 import type { WorkbenchNewTaskTarget } from "@/conversation-workspace-target/workbenchTarget.js";
 import { useWorkbenchGroupStore } from "@/v4/workbenchGroupStore.js";
@@ -187,10 +184,16 @@ export function useRootWorkspaceActions({
         V4_DRAFT_SCOPE_ROOT,
         scope,
       );
+      // 2026-11-15 裁决：智能体下不再有"新建会话"块，右侧直接发起的会话默认归当前项目
+      // 主智能体（本地项目；主智能体在项目打开时经 saveProject 幂等自举）。显式选定的
+      // 智能体与已保存的草稿意图仍然优先；无项目工作区与远程项目保持未归属。
       const taskGroupId =
         options?.taskGroupId !== undefined
           ? options.taskGroupId
-          : (savedDraft?.taskGroupId ?? null);
+          : (savedDraft?.taskGroupId ??
+            (projectId && !remoteHostIdFromWorkspaceIdentity(workspaceIdentity ?? "")
+              ? mainAgentGroupId(projectId)
+              : null));
       rememberComposerWorkspaceScope(workspacePath, workspaceIdentity, scope);
       if (options?.draftId) bindPendingTaskDraft(scope, options.draftId, workspacePath);
       persistV4ComposerDraft(

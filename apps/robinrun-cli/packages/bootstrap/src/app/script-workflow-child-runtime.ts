@@ -148,6 +148,8 @@ export function createScriptWorkflowAgentRuntime(input: {
       parentSessionId: input.deps.sessionId,
       subagents: { enabled: false },
       taskType: "workflow_child",
+      // 创建来源（P2.5）：agent 编排派生，ref = 编排会话 id。
+      creationOrigin: { kind: "agent", ref: input.deps.sessionId },
       // actor 只存在于一次 run 之下，天然「已激活」（launch.md「On demand: activation」Children 段）：
       // 不继承父会话的按需标志，否则 spread 会把 onDemand 带进来而子会话里没有任何激活入口。
       dynamicWorkflowToolsOnDemand: false,

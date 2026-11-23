@@ -17,7 +17,10 @@ import { buildIdentitySection } from "./sections/identity.js";
 import { buildWorkflowActorIdentitySection } from "./sections/workflow-actor.js";
 import { buildEnvironmentSections, buildGitSystemContextSection } from "./sections/env-info.js";
 import { buildSkillsSection } from "./sections/skills.js";
-import { buildRequestUserContextSection } from "./sections/request-user-context.js";
+import {
+  buildProjectInstructionsSection,
+  buildRequestUserContextSection,
+} from "./sections/request-user-context.js";
 import { buildCurrentDateSection } from "./sections/current-date.js";
 import { buildMemorySection } from "./sections/memory.js";
 import { ACTIVE_PROJECT_MEMORY_RETRIEVAL_BRANCH } from "../memory/project-memory-retrieval-branch.js";
@@ -26,7 +29,9 @@ import {
   buildContextManagementSection,
   buildDynamicBehaviorSection,
   buildMultiAgentCollaborationSection,
+  buildScriptRuntimeSection,
   buildSessionGuidanceSection,
+  buildTriggerSessionSection,
 } from "./dynamic-sections.js";
 
 // -----------------------------------------------
@@ -123,6 +128,46 @@ export class ContextBuilder {
       sections.push(buildIdentitySection(activeOutputStyle, midConversationSystem));
     }
 
+    // 2.5 Individual rules before the project briefing（2026-11-19 /init 裁决，docs/init-flow.md
+    // §4）：个体规则在前、项目说明（AGENTS.md）在后，相邻拼进 system stable 组——
+    // 每轮由 config 重建，压缩后仍在；meta_user 块只剩 user scope 与 memory 索引。
+    // 注入分流（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+    // master 会话注入 master agents.md（masterInstructions），worker 会话在同一槽位注入
+    // worker 注入段（workerInstructions = define.md → agents.md → 预定义段），两者互斥——
+    // 第④段项目 AGENTS.md 走下方的 project instructions，两种身份同源同位。
+    if (this.config.masterInstructions?.content.trim()) {
+      sections.push(
+        createSection({
+          name: "Master Instructions",
+          source: "master_instructions",
+          injectionTarget: "system",
+          cacheHint: "stable",
+          content: [
+            `Contents of ${this.config.masterInstructions.filePath} (master agent rules):`,
+            "",
+            this.config.masterInstructions.content.trim(),
+          ].join("\n"),
+        }),
+      );
+    }
+    if (this.config.workerInstructions?.content.trim()) {
+      sections.push(
+        createSection({
+          name: "Worker Instructions",
+          source: "worker_instructions",
+          injectionTarget: "system",
+          cacheHint: "stable",
+          content: this.config.workerInstructions.content.trim(),
+        }),
+      );
+    }
+    const projectInstructionsSection = buildProjectInstructionsSection({
+      userInstructions: this.config.userInstructions,
+    });
+    if (projectInstructionsSection) {
+      sections.push(projectInstructionsSection);
+    }
+
     // 环境与模型是运行时公告（meta_user），不进 system；使用自定义 prompt 时也照常发送。
     const environmentSections = buildEnvironmentSections(
       this.config.envInfo,
@@ -143,9 +188,25 @@ export class ContextBuilder {
       // behaviour part right after stable sp...
       if (!isWorkflowActor) {
         sections.push(buildDynamicBehaviorSection());
-        // RobinRun 产品级多智能体协作约定（主智能体分流 + 常驻子智能体管理）；
-        // 仅顶层交互会话注入：workflow actor 与子代理不经过本分支。
-        sections.push(buildMultiAgentCollaborationSection());
+        // RobinRun 产品级多智能体协作约定（主智能体分流 + 名册/派发管理）。注入分流
+        // （2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+        // 仅 master 会话注入——worker 会话是主智能体级并行会话，master 身份材料与名册
+        // 管理职责不得沾染；workflow actor 与子代理同样不经过本分支。
+        if (this.config.workerInstructions === undefined) {
+          sections.push(buildMultiAgentCollaborationSection());
+          // 脚本触发器运行时提示（2026-11-22 python 主运行时改造）：按引擎状态文件投影
+          // 注入 python/node 双模式文案——python 可用时只暴露 python 协议（node 字样
+          // 不出现），不可用/未探测时注入 node 桥接文案。worker 会话的对应提示在
+          // worker 注入段内（worker-prompt.ts），workflow actor 与子代理不注入。
+          if (this.config.scriptRuntimeHint !== undefined) {
+            sections.push(buildScriptRuntimeSection(this.config.scriptRuntimeHint));
+          }
+        }
+        // 触发器专属会话说明（2026-11-19 验收裁决）：README 进系统提示词（压缩后仍在），
+        // 投递消息只承载事件；runtime 在首个触发器投递轮读盘缓存后，后续轮次持续在场。
+        if (this.config.triggerSessionReadme !== undefined) {
+          sections.push(buildTriggerSessionSection(this.config.triggerSessionReadme));
+        }
       }
 
       // Session-specific guidance

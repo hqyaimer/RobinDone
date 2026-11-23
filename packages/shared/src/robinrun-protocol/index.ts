@@ -71,10 +71,15 @@ export const robinrunTopicResourceReadResultSchema = z
 export const robinrunTopicResourceCancelParamsSchema = z
   .object({ requestId: z.string().min(1).max(256), taskId: z.string().min(1).max(256) })
   .strict();
-export const robinrunTopicResourceCancelResultSchema = z.object({ cancelled: z.boolean() }).strict();
+export const robinrunTopicResourceCancelResultSchema = z
+  .object({ cancelled: z.boolean() })
+  .strict();
 export type RobinRunTopicResourceReadParams = z.infer<typeof robinrunTopicResourceReadParamsSchema>;
 export type RobinRunTopicResourceReadResult = z.infer<typeof robinrunTopicResourceReadResultSchema>;
-export { activeWorkSummarySchema, type ActiveWorkSummary } from "../robinrun-protocol-v4/snapshot.js";
+export {
+  activeWorkSummarySchema,
+  type ActiveWorkSummary,
+} from "../robinrun-protocol-v4/snapshot.js";
 // browser-use 命令/结果契约单一来源：agent 构造、协议校验和 main executor 共用同一 schema。
 import {
   browserBackendListResultSchema,
@@ -398,7 +403,9 @@ export const robinrunTopicResourceRelayRequestSchema = robinrunTopicResourceRead
     trace: robinrunProtocolTraceSchema.optional(),
   })
   .strict();
-export type RobinRunTopicResourceRelayRequest = z.infer<typeof robinrunTopicResourceRelayRequestSchema>;
+export type RobinRunTopicResourceRelayRequest = z.infer<
+  typeof robinrunTopicResourceRelayRequestSchema
+>;
 export const robinrunTopicResourceRelayKeySchema = robinrunTopicResourceCancelParamsSchema;
 export const robinrunTopicResourceRelayChunkRequestSchema = robinrunTopicResourceRelayKeySchema
   .extend({
@@ -977,7 +984,9 @@ export const robinrunMcpUiCancelSamplingParamsSchema = z
   .strict();
 export const robinrunMcpUiSamplingResultSchema = mcpAppsSamplingResultSchema;
 export type RobinRunMcpUiSamplingParams = z.infer<typeof robinrunMcpUiSamplingParamsSchema>;
-export type RobinRunMcpUiCancelSamplingParams = z.infer<typeof robinrunMcpUiCancelSamplingParamsSchema>;
+export type RobinRunMcpUiCancelSamplingParams = z.infer<
+  typeof robinrunMcpUiCancelSamplingParamsSchema
+>;
 
 export const robinrunMcpUiCallToolParamsSchema = z
   .object({
@@ -1000,7 +1009,9 @@ export type RobinRunMcpUiCancelCallResult = z.infer<typeof robinrunMcpUiCancelCa
 export const robinrunMcpUiListResourcesParamsSchema = z
   .object({ ...robinrunMcpUiPluginScopeShape, cursor: nonEmptyString.max(2048).optional() })
   .strict();
-export type RobinRunMcpUiListResourcesParams = z.infer<typeof robinrunMcpUiListResourcesParamsSchema>;
+export type RobinRunMcpUiListResourcesParams = z.infer<
+  typeof robinrunMcpUiListResourcesParamsSchema
+>;
 const robinrunMcpUiResourceDescriptorSchema = z
   .object({
     uri: z.string(),
@@ -1018,7 +1029,9 @@ export const robinrunMcpUiListResourcesResultSchema = z
     nextCursor: z.string().optional(),
   })
   .strict();
-export type RobinRunMcpUiListResourcesResult = z.infer<typeof robinrunMcpUiListResourcesResultSchema>;
+export type RobinRunMcpUiListResourcesResult = z.infer<
+  typeof robinrunMcpUiListResourcesResultSchema
+>;
 export const robinrunMcpUiListResourceTemplatesResultSchema = z
   .object({
     resourceTemplates: z.array(
@@ -1096,8 +1109,12 @@ export const robinrunMcpUiClaimAppToolCallParamsSchema = z
 export type RobinRunMcpUiClaimAppToolCallParams = z.infer<
   typeof robinrunMcpUiClaimAppToolCallParamsSchema
 >;
-export const robinrunMcpUiAppToolAcceptedResultSchema = z.object({ accepted: z.boolean() }).strict();
-export type RobinRunMcpUiAppToolAcceptedResult = z.infer<typeof robinrunMcpUiAppToolAcceptedResultSchema>;
+export const robinrunMcpUiAppToolAcceptedResultSchema = z
+  .object({ accepted: z.boolean() })
+  .strict();
+export type RobinRunMcpUiAppToolAcceptedResult = z.infer<
+  typeof robinrunMcpUiAppToolAcceptedResultSchema
+>;
 export const robinrunMcpUiResolveAppToolCallParamsSchema = z
   .object({
     ...robinrunMcpUiAppToolInstanceShape,
@@ -1465,38 +1482,45 @@ const robinrunComputerUseOperationEventBaseSchema = z
   })
   .strict();
 
-const robinrunComputerUseTurnStartedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-started"),
-  turnId: nonEmptyString,
-});
-const robinrunComputerUseTurnCompletedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-completed"),
-  turnId: nonEmptyString,
-});
-const robinrunComputerUseTurnFailedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-failed"),
-  turnId: nonEmptyString,
-});
-const robinrunComputerUseToolScheduledEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("tool-scheduled"),
-  turnId: nonEmptyString,
-  toolCallId: nonEmptyString,
-  toolName: nonEmptyString,
-  // 这个 cell 是否在用 Computer Use。只表达布尔事实，不再携带动作名——旧的
-  // operationAction 靠从模型源码里抽取动作名得到，SDK 面一变就整体失配（见
-  // bootstrap/src/robinrun-protocol/computer-use-operation-event.ts 的 usesComputerUse）。
-  // 只挂在 scheduled 上：ToolCallStartedPayload 没有 input，start 时已拿不到模型源码。
-  computerUse: z.literal(true).optional(),
-});
-const robinrunComputerUseToolStartedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("tool-started"),
-  turnId: nonEmptyString.optional(),
-  toolCallId: nonEmptyString,
-  toolName: nonEmptyString.optional(),
-});
-const robinrunComputerUseSessionClosedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("session-closed"),
-});
+const robinrunComputerUseTurnStartedEventSchema =
+  robinrunComputerUseOperationEventBaseSchema.extend({
+    kind: z.literal("turn-started"),
+    turnId: nonEmptyString,
+  });
+const robinrunComputerUseTurnCompletedEventSchema =
+  robinrunComputerUseOperationEventBaseSchema.extend({
+    kind: z.literal("turn-completed"),
+    turnId: nonEmptyString,
+  });
+const robinrunComputerUseTurnFailedEventSchema = robinrunComputerUseOperationEventBaseSchema.extend(
+  {
+    kind: z.literal("turn-failed"),
+    turnId: nonEmptyString,
+  },
+);
+const robinrunComputerUseToolScheduledEventSchema =
+  robinrunComputerUseOperationEventBaseSchema.extend({
+    kind: z.literal("tool-scheduled"),
+    turnId: nonEmptyString,
+    toolCallId: nonEmptyString,
+    toolName: nonEmptyString,
+    // 这个 cell 是否在用 Computer Use。只表达布尔事实，不再携带动作名——旧的
+    // operationAction 靠从模型源码里抽取动作名得到，SDK 面一变就整体失配（见
+    // bootstrap/src/robinrun-protocol/computer-use-operation-event.ts 的 usesComputerUse）。
+    // 只挂在 scheduled 上：ToolCallStartedPayload 没有 input，start 时已拿不到模型源码。
+    computerUse: z.literal(true).optional(),
+  });
+const robinrunComputerUseToolStartedEventSchema =
+  robinrunComputerUseOperationEventBaseSchema.extend({
+    kind: z.literal("tool-started"),
+    turnId: nonEmptyString.optional(),
+    toolCallId: nonEmptyString,
+    toolName: nonEmptyString.optional(),
+  });
+const robinrunComputerUseSessionClosedEventSchema =
+  robinrunComputerUseOperationEventBaseSchema.extend({
+    kind: z.literal("session-closed"),
+  });
 
 export const robinrunComputerUseOperationEventSchema = z.discriminatedUnion("kind", [
   robinrunComputerUseTurnStartedEventSchema,
@@ -1506,7 +1530,9 @@ export const robinrunComputerUseOperationEventSchema = z.discriminatedUnion("kin
   robinrunComputerUseToolStartedEventSchema,
   robinrunComputerUseSessionClosedEventSchema,
 ]);
-export type RobinRunComputerUseOperationEvent = z.infer<typeof robinrunComputerUseOperationEventSchema>;
+export type RobinRunComputerUseOperationEvent = z.infer<
+  typeof robinrunComputerUseOperationEventSchema
+>;
 
 export const robinrunSessionEventTypeSchema = z.enum([
   "session.created",
@@ -1602,7 +1628,10 @@ export const robinrunTurnStartedEventPayloadSchema = z
     attachments: z.array(jsonObjectSchema).optional(),
   })
   .strict();
-const robinrunTurnSteerSourceSchema = z.enum(["plan_approval_feedback", "workflow_refine_feedback"]);
+const robinrunTurnSteerSourceSchema = z.enum([
+  "plan_approval_feedback",
+  "workflow_refine_feedback",
+]);
 const robinrunTurnSteerCommandKindSchema = z.enum(["sendText", "sendGoalCommand", "compact"]);
 const robinrunTurnSteerDeliverySchema = z.enum(["queue", "guide"]);
 
@@ -1864,7 +1893,10 @@ export const robinrunSessionEventSchema = z.discriminatedUnion("type", [
   robinrunSessionEventEnvelopeFor("session.created", robinrunSessionCreatedEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("session.resumed", robinrunSessionResumedEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("session.updated", jsonObjectSchema),
-  robinrunSessionEventEnvelopeFor("session.titleUpdated", robinrunSessionTitleUpdatedEventPayloadSchema),
+  robinrunSessionEventEnvelopeFor(
+    "session.titleUpdated",
+    robinrunSessionTitleUpdatedEventPayloadSchema,
+  ),
   robinrunSessionEventEnvelopeFor("session.closed", robinrunSessionClosedEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("turn.started", robinrunTurnStartedEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("turn.steerQueued", robinrunTurnSteerQueuedEventPayloadSchema),
@@ -1879,10 +1911,22 @@ export const robinrunSessionEventSchema = z.discriminatedUnion("type", [
   robinrunSessionEventEnvelopeFor("part.removed", robinrunMessagePartRemovedEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("model.streaming", robinrunModelStreamingEventPayloadSchema),
   robinrunSessionEventEnvelopeFor("tool.updated", robinrunToolUpdatedEventPayloadSchema),
-  robinrunSessionEventEnvelopeFor("permission.requested", robinrunPermissionRequestedEventPayloadSchema),
-  robinrunSessionEventEnvelopeFor("permission.resolved", robinrunPermissionResolvedEventPayloadSchema),
-  robinrunSessionEventEnvelopeFor("userInput.requested", robinrunUserInputRequestedEventPayloadSchema),
-  robinrunSessionEventEnvelopeFor("userInput.resolved", robinrunUserInputResolvedEventPayloadSchema),
+  robinrunSessionEventEnvelopeFor(
+    "permission.requested",
+    robinrunPermissionRequestedEventPayloadSchema,
+  ),
+  robinrunSessionEventEnvelopeFor(
+    "permission.resolved",
+    robinrunPermissionResolvedEventPayloadSchema,
+  ),
+  robinrunSessionEventEnvelopeFor(
+    "userInput.requested",
+    robinrunUserInputRequestedEventPayloadSchema,
+  ),
+  robinrunSessionEventEnvelopeFor(
+    "userInput.resolved",
+    robinrunUserInputResolvedEventPayloadSchema,
+  ),
   robinrunSessionEventEnvelopeFor("checkpoint.created", jsonObjectSchema),
   robinrunSessionEventEnvelopeFor("rewind.triggered", jsonObjectSchema),
   robinrunSessionEventEnvelopeFor("streamRecovery.updated", jsonObjectSchema),
@@ -1910,7 +1954,9 @@ export const robinrunStateUpdatedNotificationSchema = z
     patch: z.unknown(),
   })
   .strict();
-export type RobinRunStateUpdatedNotification = z.infer<typeof robinrunStateUpdatedNotificationSchema>;
+export type RobinRunStateUpdatedNotification = z.infer<
+  typeof robinrunStateUpdatedNotificationSchema
+>;
 
 export const robinrunSessionSubscribeParamsSchema = z
   .object({
@@ -1983,6 +2029,23 @@ export const robinrunSessionCreateParamsSchema = z
     sessionId: nonEmptyString.optional(),
     workspace: robinrunWorkspaceRefSchema,
     parentSessionId: nonEmptyString.optional(),
+    // 创建来源（P2.5）：host 按 cron/off-peak 等入口下发 trigger/system；CLI 缺省补 user。
+    // 内部处理机制，UI 不展示。与 validation.ts 的 robinrunSessionCreationOriginSchema 同形。
+    creationOrigin: z
+      .object({
+        kind: z.enum(["user", "agent", "trigger", "system"]),
+        ref: nonEmptyString.optional(),
+      })
+      .strict()
+      .optional(),
+    // agent 会话身份（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md）：
+    // 主会话路径创建 worker 会话（触发器投递 / ContactAgent 投递）时下发 wkr-id；
+    // 缺席 = master 会话。worker 的显示名由 CLI 按名册（workers.json）解析——注册表是
+    // 身份唯一事实源，协议只传 id，不重复携带可变元数据。
+    agentIdentity: z
+      .object({ kind: z.literal("worker"), workerId: nonEmptyString })
+      .strict()
+      .optional(),
     mode: robinrunSessionModeSchema.optional(),
     model: modelSelectionSchema.optional(),
     persistence: robinrunSessionPersistenceSchema.optional(),
@@ -2119,6 +2182,105 @@ export const robinrunSubagentsReadRuntimeConfigParamsSchema = z
   .object({ sessionId: nonEmptyString, workspace: robinrunWorkspaceRefSchema.optional() })
   .strict();
 
+// agentContact/dispatch（2026-11-20 worker 会话同构化）：CLI→Host 反向请求。ContactAgent
+// master↔worker 投递落到桌面任务服务（寻址创建/唤醒目标会话 + sendPrompt，机制同触发器
+// 投递）；Host 回填目标会话 id 供续聊寻址与回复登记。
+export const robinrunAgentContactDispatchParamsSchema = z
+  .object({
+    sessionId: nonEmptyString,
+    workspace: robinrunWorkspaceRefSchema.optional(),
+    /** 目标智能体 id："master" 或 wkr-*。 */
+    targetAgentId: nonEmptyString,
+    /** 续聊目标会话 id；缺席 = 目标当前/最新会话，不存在则按身份创建。 */
+    targetSessionId: nonEmptyString.optional(),
+    /** 发起方会话 id（<system-status> fromSessionId）。 */
+    fromSessionId: nonEmptyString,
+    senderKind: z.enum(["master", "worker"]),
+    /** 发起方身份 id（worker = wkr-id；master 缺省，地址由 fromSessionId 承载）。 */
+    senderId: nonEmptyString.optional(),
+    /** 发起方显示名（<system-status> senderName，Host 侧再清洗）。 */
+    senderDisplayName: nonEmptyString,
+    /** 裸消息正文（2026-11-21 裸投递：原文原样，包装已移除；回复语义走 systemStatus）。 */
+    message: nonEmptyString,
+    needReply: z.boolean(),
+  })
+  .strict();
+export type RobinRunAgentContactDispatchParams = z.infer<
+  typeof robinrunAgentContactDispatchParamsSchema
+>;
+
+// session/clearMessages（2026-11-20 触发器会话清空）：Host→CLI 请求。清空会话的全部
+// 消息（会话主记录/标题/绑定保留），并把持久化身份重置为触发器当前订阅者——这是
+// 旧会话身份纠偏的正道（只清消息不改身份，历史会话仍按旧身份装配）。workerIdentity
+// null = 回到 master 会话；对象 = 落库指定身份；缺席 = 身份不动。运行中的会话拒绝
+// 清空（返回 running，避免与在途 turn 写库互踩）。
+export const robinrunSessionClearMessagesParamsSchema = z
+  .object({
+    sessionId: nonEmptyString,
+    workerIdentity: z
+      .object({ workerId: nonEmptyString, workerName: nonEmptyString.optional() })
+      .strict()
+      .nullable()
+      .optional(),
+  })
+  .strict();
+export type RobinRunSessionClearMessagesParams = z.infer<
+  typeof robinrunSessionClearMessagesParamsSchema
+>;
+
+export const robinrunSessionClearMessagesResultSchema = z
+  .object({
+    cleared: z.boolean(),
+    /** 会话正在运行（含在途交互）时拒绝清空，宿主转译为可读错误。 */
+    running: z.boolean().optional(),
+    clearedMessages: z.number().int().nonnegative(),
+  })
+  .strict();
+export type RobinRunSessionClearMessagesResult = z.infer<
+  typeof robinrunSessionClearMessagesResultSchema
+>;
+
+export const robinrunAgentContactDispatchResultSchema = z
+  .object({
+    status: z.enum(["delivered", "failed"]),
+    /** 目标会话 id（创建/唤醒后的实际地址）。 */
+    sessionId: nonEmptyString.optional(),
+    error: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunAgentContactDispatchResult = z.infer<
+  typeof robinrunAgentContactDispatchResultSchema
+>;
+
+// triggerRuntime/installPackages（2026-11-22 python 主运行时改造）：CLI→Host 反向请求。
+// ManageTriggers install_packages 落到触发器引擎（解释器/venv ensure + pip + 依赖台账 +
+// 重启活跃 python 脚本）。分钟级网络操作——宿主侧无超时约束（请求在途直至完成/失败）。
+export const robinrunTriggerRuntimeInstallParamsSchema = z
+  .object({
+    sessionId: nonEmptyString,
+    workspace: robinrunWorkspaceRefSchema.optional(),
+    /** pip 包 spec 数组（contracts schema 已限非空、单条 ≤256、总数 ≤32）。 */
+    packages: z.array(nonEmptyString).min(1).max(32),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeInstallParams = z.infer<
+  typeof robinrunTriggerRuntimeInstallParamsSchema
+>;
+
+export const robinrunTriggerRuntimeInstallResultSchema = z
+  .object({
+    ok: z.boolean(),
+    packages: z.array(nonEmptyString).optional(),
+    error: nonEmptyString.optional(),
+    outputTail: nonEmptyString.optional(),
+    replayFailures: z.array(nonEmptyString).optional(),
+    restartedTriggerIds: z.array(nonEmptyString).optional(),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeInstallResult = z.infer<
+  typeof robinrunTriggerRuntimeInstallResultSchema
+>;
+
 export const ROBINRUN_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS = 15_000;
 
 export const robinrunSessionRequestRuntimePreferencesParamsSchema = z
@@ -2138,7 +2300,9 @@ export const DEFAULT_ROBINRUN_MODEL_CONTEXT_BUDGET_STRATEGY = "preflight-v1" as 
 
 // 3.12.2：legacy 仅为旧协议接收兼容；Runtime 一律归一为上面的共享默认策略。
 export const robinrunModelContextBudgetStrategySchema = z.enum(["legacy", "preflight-v1"]);
-export type RobinRunModelContextBudgetStrategy = z.infer<typeof robinrunModelContextBudgetStrategySchema>;
+export type RobinRunModelContextBudgetStrategy = z.infer<
+  typeof robinrunModelContextBudgetStrategySchema
+>;
 
 export const robinrunSessionRuntimePreferencesResultSchema = z
   .object({
@@ -3020,7 +3184,13 @@ export type RobinRunPluginUserConfigOption = z.infer<typeof robinrunPluginUserCo
 
 // 组件类型与详情弹窗/市场详情共用的分组顺序保持一致：agent / command / skill / hook / mcp。
 // 注意：这三个 schema 必须定义在 robinrunPluginInfoSchema 之前，因为后者（.strict()）的 components 字段引用了它们。
-export const robinrunPluginComponentKindSchema = z.enum(["agent", "command", "skill", "hook", "mcp"]);
+export const robinrunPluginComponentKindSchema = z.enum([
+  "agent",
+  "command",
+  "skill",
+  "hook",
+  "mcp",
+]);
 export type RobinRunPluginComponentKind = z.infer<typeof robinrunPluginComponentKindSchema>;
 
 export const robinrunPluginComponentItemSchema = z
@@ -3198,7 +3368,9 @@ export const robinrunSkillReferenceCatalogEntrySchema = z
     pluginName: nonEmptyString.optional(),
   })
   .strict();
-export type RobinRunSkillReferenceCatalogEntry = z.infer<typeof robinrunSkillReferenceCatalogEntrySchema>;
+export type RobinRunSkillReferenceCatalogEntry = z.infer<
+  typeof robinrunSkillReferenceCatalogEntrySchema
+>;
 
 export const robinrunSkillsReferenceCatalogParamsSchema = z
   .object({
@@ -3271,7 +3443,9 @@ export type RobinRunSavedWorkflowEntry = z.infer<typeof robinrunSavedWorkflowEnt
 export const robinrunSavedWorkflowInvalidEntrySchema = z
   .object({ path: nonEmptyString, reason: nonEmptyString })
   .strict();
-export type RobinRunSavedWorkflowInvalidEntry = z.infer<typeof robinrunSavedWorkflowInvalidEntrySchema>;
+export type RobinRunSavedWorkflowInvalidEntry = z.infer<
+  typeof robinrunSavedWorkflowInvalidEntrySchema
+>;
 /** 名字非法 / 未找到 / frontmatter 坏 / 读错——与 core store 的 resolve 失败四态逐字对应。 */
 export const robinrunSavedWorkflowFailureReasonSchema = z.enum([
   "invalid_name",
@@ -3279,7 +3453,9 @@ export const robinrunSavedWorkflowFailureReasonSchema = z.enum([
   "parse_error",
   "read_error",
 ]);
-export type RobinRunSavedWorkflowFailureReason = z.infer<typeof robinrunSavedWorkflowFailureReasonSchema>;
+export type RobinRunSavedWorkflowFailureReason = z.infer<
+  typeof robinrunSavedWorkflowFailureReasonSchema
+>;
 const robinrunSavedWorkflowFailureSchema = z
   .object({
     ok: z.literal(false),
@@ -3341,12 +3517,16 @@ export const robinrunWorkflowsUpdateMetaParamsSchema = z
     scope: robinrunSavedWorkflowScopeSchema.optional(),
   })
   .strict();
-export type RobinRunWorkflowsUpdateMetaParams = z.infer<typeof robinrunWorkflowsUpdateMetaParamsSchema>;
+export type RobinRunWorkflowsUpdateMetaParams = z.infer<
+  typeof robinrunWorkflowsUpdateMetaParamsSchema
+>;
 export const robinrunWorkflowsUpdateMetaResultSchema = z.union([
   z.object({ ok: z.literal(true), path: nonEmptyString }).strict(),
   robinrunSavedWorkflowFailureSchema,
 ]);
-export type RobinRunWorkflowsUpdateMetaResult = z.infer<typeof robinrunWorkflowsUpdateMetaResultSchema>;
+export type RobinRunWorkflowsUpdateMetaResult = z.infer<
+  typeof robinrunWorkflowsUpdateMetaResultSchema
+>;
 
 export const robinrunWorkflowsDeleteParamsSchema = z
   .object({
@@ -3542,7 +3722,9 @@ export type RobinRunWorkflowsSaveResult = z.infer<typeof robinrunWorkflowsSaveRe
 export const robinrunWorkflowsForRunCandidateSchema = z
   .object({ name: nonEmptyString, scope: robinrunSavedWorkflowScopeSchema.optional() })
   .strict();
-export type RobinRunWorkflowsForRunCandidate = z.infer<typeof robinrunWorkflowsForRunCandidateSchema>;
+export type RobinRunWorkflowsForRunCandidate = z.infer<
+  typeof robinrunWorkflowsForRunCandidateSchema
+>;
 /** 候选上界：一次 run 在一段对话里被存过的次数远小于它。 */
 export const ROBINRUN_WORKFLOWS_FOR_RUN_MAX_CANDIDATES = 8;
 export const robinrunWorkflowsForRunParamsSchema = z
@@ -3706,7 +3888,9 @@ export const robinrunPluginMarketplaceSummarySchema = z
       .optional(),
   })
   .strict();
-export type RobinRunPluginMarketplaceSummary = z.infer<typeof robinrunPluginMarketplaceSummarySchema>;
+export type RobinRunPluginMarketplaceSummary = z.infer<
+  typeof robinrunPluginMarketplaceSummarySchema
+>;
 
 export const robinrunAvailablePluginSummarySchema = z
   .object({
@@ -3899,7 +4083,9 @@ export const robinrunPluginsResetConfigParamsSchema = z
     scope: robinrunPluginScopeSchema.optional(),
   })
   .strict();
-export type RobinRunPluginsResetConfigParams = z.infer<typeof robinrunPluginsResetConfigParamsSchema>;
+export type RobinRunPluginsResetConfigParams = z.infer<
+  typeof robinrunPluginsResetConfigParamsSchema
+>;
 
 export const robinrunPluginsValidateParamsSchema = z
   .object({
@@ -3965,7 +4151,9 @@ export const robinrunAutomationScheduleRuleSchema = z
     monthlyMode: z.enum(["date", "weekday"]).optional(),
   })
   .strict();
-export type RobinRunAutomationScheduleRuleProtocol = z.infer<typeof robinrunAutomationScheduleRuleSchema>;
+export type RobinRunAutomationScheduleRuleProtocol = z.infer<
+  typeof robinrunAutomationScheduleRuleSchema
+>;
 
 /** 会话侧长间隔周期 carrier 的 unit 枚举（与 scheduleRule.unit 同集）。 */
 export const robinrunAutomationIntervalUnitSchema = z.enum([
@@ -4037,12 +4225,16 @@ export const robinrunAutomationCreateParamsSchema = z
     message: "intervalUnit is a recurring carrier and cannot combine with maxRuns",
     path: ["maxRuns"],
   });
-export type RobinRunAutomationCreateProtocolParams = z.infer<typeof robinrunAutomationCreateParamsSchema>;
+export type RobinRunAutomationCreateProtocolParams = z.infer<
+  typeof robinrunAutomationCreateParamsSchema
+>;
 
 export const robinrunAutomationCreateResultSchema = z
   .object({ automation: robinrunAutomationProtocolSchema })
   .strict();
-export type RobinRunAutomationCreateProtocolResult = z.infer<typeof robinrunAutomationCreateResultSchema>;
+export type RobinRunAutomationCreateProtocolResult = z.infer<
+  typeof robinrunAutomationCreateResultSchema
+>;
 
 export const robinrunAutomationUpdateParamsSchema = z
   .object({
@@ -4096,20 +4288,28 @@ export const robinrunAutomationUpdateParamsSchema = z
       path: ["maxRuns"],
     },
   );
-export type RobinRunAutomationUpdateProtocolParams = z.infer<typeof robinrunAutomationUpdateParamsSchema>;
+export type RobinRunAutomationUpdateProtocolParams = z.infer<
+  typeof robinrunAutomationUpdateParamsSchema
+>;
 export const robinrunAutomationUpdateResultSchema = z
   .object({ automation: robinrunAutomationProtocolSchema })
   .strict();
-export type RobinRunAutomationUpdateProtocolResult = z.infer<typeof robinrunAutomationUpdateResultSchema>;
+export type RobinRunAutomationUpdateProtocolResult = z.infer<
+  typeof robinrunAutomationUpdateResultSchema
+>;
 
 export const robinrunAutomationListParamsSchema = z
   .object({ workspace: robinrunWorkspaceRefSchema.optional() })
   .strict();
-export type RobinRunAutomationListProtocolParams = z.infer<typeof robinrunAutomationListParamsSchema>;
+export type RobinRunAutomationListProtocolParams = z.infer<
+  typeof robinrunAutomationListParamsSchema
+>;
 export const robinrunAutomationListResultSchema = z
   .object({ automations: z.array(robinrunAutomationProtocolSchema) })
   .strict();
-export type RobinRunAutomationListProtocolResult = z.infer<typeof robinrunAutomationListResultSchema>;
+export type RobinRunAutomationListProtocolResult = z.infer<
+  typeof robinrunAutomationListResultSchema
+>;
 
 export const robinrunAutomationCheckTaskBindingParamsSchema = z
   .object({ workspace: robinrunWorkspaceRefSchema.optional(), targetTaskId: nonEmptyString })
@@ -4127,18 +4327,26 @@ export type RobinRunAutomationCheckTaskBindingProtocolResult = z.infer<
 export const robinrunAutomationDeleteParamsSchema = z
   .object({ workspace: robinrunWorkspaceRefSchema.optional(), automationId: nonEmptyString })
   .strict();
-export type RobinRunAutomationDeleteProtocolParams = z.infer<typeof robinrunAutomationDeleteParamsSchema>;
+export type RobinRunAutomationDeleteProtocolParams = z.infer<
+  typeof robinrunAutomationDeleteParamsSchema
+>;
 export const robinrunAutomationDeleteResultSchema = z.object({ deleted: z.boolean() }).strict();
-export type RobinRunAutomationDeleteProtocolResult = z.infer<typeof robinrunAutomationDeleteResultSchema>;
+export type RobinRunAutomationDeleteProtocolResult = z.infer<
+  typeof robinrunAutomationDeleteResultSchema
+>;
 
 // 执行轮自暂停（CronPauseSelf）：automationId 来自 CLI loop state，Host 只在当前 workspace
 // 内做条件暂停（active 且 enabled 才转 paused）并回报是否生效。
 export const robinrunAutomationPauseParamsSchema = z
   .object({ workspace: robinrunWorkspaceRefSchema.optional(), automationId: nonEmptyString })
   .strict();
-export type RobinRunAutomationPauseProtocolParams = z.infer<typeof robinrunAutomationPauseParamsSchema>;
+export type RobinRunAutomationPauseProtocolParams = z.infer<
+  typeof robinrunAutomationPauseParamsSchema
+>;
 export const robinrunAutomationPauseResultSchema = z.object({ paused: z.boolean() }).strict();
-export type RobinRunAutomationPauseProtocolResult = z.infer<typeof robinrunAutomationPauseResultSchema>;
+export type RobinRunAutomationPauseProtocolResult = z.infer<
+  typeof robinrunAutomationPauseResultSchema
+>;
 
 // ---- Off-Peak（闲时任务）会话内创建协议----
 // 与 automation 兄弟并列（独立域，禁止互相复用标记/表）。workspace 由 host 端从
@@ -4151,7 +4359,9 @@ export const robinrunOffPeakPermissionModeSchema = z.enum([
   "yolo",
   "guarded",
 ]);
-export type RobinRunOffPeakProtocolPermissionMode = z.infer<typeof robinrunOffPeakPermissionModeSchema>;
+export type RobinRunOffPeakProtocolPermissionMode = z.infer<
+  typeof robinrunOffPeakPermissionModeSchema
+>;
 
 export const robinrunOffPeakCreateParamsSchema = z
   .object({
@@ -4262,6 +4472,10 @@ export const robinrunProtocolMethods = {
   sessionSubagents: "session/subagents",
   sessionRequestRuntimePreferences: "session/requestRuntimePreferences",
   subagentsReadRuntimeConfig: "subagents/readRuntimeConfig",
+  // agentContact/dispatch（2026-11-20 worker 会话同构化）：CLI→Host 反向请求。
+  agentContactDispatch: "agentContact/dispatch",
+  // triggerRuntime/installPackages（2026-11-22 python 主运行时改造）：CLI→Host 反向请求。
+  triggerRuntimeInstallPackages: "triggerRuntime/installPackages",
   sessionRead: "session/read",
   sessionMessages: "session/messages",
   sessionEvents: "session/events",
@@ -4282,6 +4496,7 @@ export const robinrunProtocolMethods = {
   sessionFork: "session/fork",
   sessionCompact: "session/compact",
   sessionGoal: "session/goal",
+  sessionClearMessages: "session/clearMessages",
   sessionClose: "session/close",
   // setModel 仍被 robinrunSessionService 的 desktop 旧链路消费；replayable
   // switchModelConfig 已直接由目标 Environment Registry 解析 Selection。
@@ -4390,7 +4605,8 @@ export const robinrunProtocolMethods = {
   interactionBrowserExecute: "interaction/browserExecute",
 } as const;
 
-export type RobinRunProtocolMethod = (typeof robinrunProtocolMethods)[keyof typeof robinrunProtocolMethods];
+export type RobinRunProtocolMethod =
+  (typeof robinrunProtocolMethods)[keyof typeof robinrunProtocolMethods];
 
 export const robinrunProtocolEmptyResultSchema = z.object({}).strict();
 
@@ -4510,7 +4726,10 @@ export const robinrunStoragePreparationFrameSchema = z.discriminatedUnion("metho
     .object({ method: z.literal("startup/storagePrepared"), params: z.object({}).strict() })
     .strict(),
   z
-    .object({ method: z.literal("startup/storageState"), params: robinrunStorageStartupStateSchema })
+    .object({
+      method: z.literal("startup/storageState"),
+      params: robinrunStorageStartupStateSchema,
+    })
     .strict(),
 ]);
 export const robinrunStoragePathReadySchema = z

@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+import { workerRegistryFileName, workerRegistrySchema } from "@robinrun/shared";
 import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import type { ToolCallBlockRenderContext } from "@/ToolCallBlocks/shared.js";
 import { isSubagentColor } from "@/lib/subagentColors.js";
 
@@ -134,6 +137,8 @@ function readAgentNameFromRecord(value: Record<string, unknown> | null): string 
         "agent_type",
         "subagentType",
         "subagent_type",
+        // P2.6 工具分离：DispatchWorker 的寻址字段是 worker（wkr-id）。
+        "worker",
         "name",
         "nickname",
       ])
@@ -187,6 +192,33 @@ export function getAgentColor(toolCall: AgentToolCall) {
 
 function readAgentColorFromRecord(value: Record<string, unknown> | null): string | undefined {
   return value ? readStringField(value, ["color", "agentColor", "agent_color"]) : undefined;
+}
+
+/** P2.6 工具分离：DispatchWorker 是 worker 派发的专名工具；Agent 派一次性 subagent。 */
+export function isWorkerDispatchToolCall(toolCall: AgentToolCall): boolean {
+  return toolCall.toolName?.trim().toLowerCase() === "dispatchworker";
+}
+
+/**
+ * worker 派发的寻址 id：输入 worker 字段（wkr-id）。输出/元数据缺 workerName 时
+ * （失败行、流式未完成、历史快照），UI 用它经名册回退查显示名。
+ */
+export function getWorkerDispatchId(toolCall: AgentToolCall): string | undefined {
+  const inputRecord = isPlainRecord(toolCall.input) ? toolCall.input : null;
+  const outputRecord = readRecordFromUnknown(toolCall.output);
+  return (
+    readStringField(outputRecord ?? {}, ["workerId", "worker_id"]) ??
+    (inputRecord ? readStringField(inputRecord, ["worker"]) : undefined)
+  );
+}
+
+/**
+ * key/name 裁决（2026-11-17）：worker 派发的输出带用户可读显示名（agentType 是寻址 id，
+ * 一次性 subagent 无此字段）——有值即 worker 派发，行标签与名称芯片都用它。
+ */
+export function getWorkerDisplayName(toolCall: AgentToolCall): string | undefined {
+  const outputRecord = readRecordFromUnknown(toolCall.output);
+  return outputRecord ? readStringField(outputRecord, ["workerName", "worker_name"]) : undefined;
 }
 
 export function readBackgroundAgentInfo(toolCall: AgentToolCall) {
@@ -244,7 +276,7 @@ export function getAgentPrimaryText(toolCall: AgentToolCall, fallbackLabel: stri
       return description;
     }
 
-    const subagentType = readStringField(toolCall.input, ["subagent_type"]);
+    const subagentType = readStringField(toolCall.input, ["subagent_type", "worker"]);
     if (subagentType) {
       return subagentType;
     }
@@ -282,4 +314,94 @@ export function getAgentPrompt(toolCall: AgentToolCall) {
   }
 
   return undefined;
+}
+
+// ---- worker 派发行的 id → 显示名回退（2026-11-18 验收修复） ----
+
+interface RosterNameCache {
+  names: Map<string, string>;
+  loadedAt: number;
+}
+
+const ROSTER_TTL_MS = 10_000;
+const rosterCache = new Map<string, RosterNameCache>();
+const rosterInflight = new Map<string, Promise<Map<string, string>>>();
+
+function registryPathFor(workspacePath: string): string {
+  return `${workspacePath.replace(/[\\/]+$/, "")}/.robinrun/agents/${workerRegistryFileName}`;
+}
+
+function parseRosterNames(content: string): Map<string, string> {
+  const parsed = workerRegistrySchema.safeParse(JSON.parse(content) as unknown);
+  if (!parsed.success) return new Map();
+  // 名称字典包含全部状态（deactivated 也在内）：这里做的是历史行的显示名回退，
+  // 不是可派发名册——停用 worker 的旧派发行同样要显示人读名。
+  return new Map(parsed.data.workers.map((worker) => [worker.id, worker.name]));
+}
+
+async function loadRosterNames(
+  workspacePath: string,
+  fileService: ReturnType<typeof useBaseWorkspaceServices>["fileService"],
+): Promise<Map<string, string>> {
+  const path = registryPathFor(workspacePath);
+  try {
+    const read = await fileService.readTextFile({ path });
+    return parseRosterNames(read.content);
+  } catch {
+    // 注册表缺失 = 项目还没有编制（合法空态）；remote 工作区读不到同样静默为空。
+    return new Map();
+  }
+}
+
+async function resolveNames(
+  workspacePath: string,
+  fileService: ReturnType<typeof useBaseWorkspaceServices>["fileService"],
+): Promise<Map<string, string>> {
+  const cached = rosterCache.get(workspacePath);
+  if (cached && Date.now() - cached.loadedAt < ROSTER_TTL_MS) return cached.names;
+  const inflight = rosterInflight.get(workspacePath);
+  if (inflight) return inflight;
+  const pending = loadRosterNames(workspacePath, fileService)
+    .then((names) => {
+      rosterCache.set(workspacePath, { names, loadedAt: Date.now() });
+      return names;
+    })
+    .finally(() => {
+      rosterInflight.delete(workspacePath);
+    });
+  rosterInflight.set(workspacePath, pending);
+  return pending;
+}
+
+/**
+ * worker 派发行名称芯片的 id → 显示名回退。DispatchWorker 成功时输出带 workerName，
+ * 行标签/名称芯片直接用它；但失败行（如派发被拦）、流式未完成行、历史快照行的输出里
+ * 没有 workerName，只有输入的 wkr-id——对用户不可读（key/name 裁决：id 是寻址句柄，
+ * 显示名才是人读的）。按工作区读 `.robinrun/agents/workers.json`（编制唯一事实源）；
+ * 渲染器逐行调用，用模块级缓存收敛文件读取：TTL 内复用，miss/过期才重读。
+ */
+export function useWorkerRosterName(
+  workspacePath: string | undefined,
+  workerId: string | undefined,
+): string | undefined {
+  const { fileService } = useBaseWorkspaceServices();
+  const [name, setName] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!workspacePath || !workerId) {
+      setName(undefined);
+      return;
+    }
+    let cancelled = false;
+    void resolveNames(workspacePath, fileService).then((names) => {
+      if (cancelled) return;
+      const resolved = names.get(workerId);
+      setName(resolved && resolved.trim().length > 0 ? resolved : undefined);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fileService, workspacePath, workerId]);
+
+  return name;
 }

@@ -49,6 +49,10 @@ const HIDDEN_SETTINGS_SECTIONS = new Set<SettingsSectionId>([
   // 工作区搜索（.robinrunignore）设置入口先隐藏：规则文件仍生效并可手动编辑，
   // 编辑页代码保留，放开时从这里移除即可。
   "workspaceFileSearch",
+  // RobinRun(2026-11-22): [hide-upstream-account] 用量统计分区已隐藏（上游 Coding Plan 套餐用量，依赖登录
+  // entitlement）；加入此 Set 让所有 usage 意图导航回落 general。恢复时从 settingsPageConfig.ts 取消
+  // usage 分区注释并移除本行
+  "usage",
 ]);
 
 export interface SettingsSectionIntentEventDetail {

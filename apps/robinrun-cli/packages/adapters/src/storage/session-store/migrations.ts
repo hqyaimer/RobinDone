@@ -5,6 +5,7 @@ import { SESSION_DATABASE_IDENTITY_MIGRATION } from "@robinrun/shared/sqlite-mig
 
 import { OFFICIAL_GLM_SELECTION_MIGRATION_SQL } from "./migrations/0021-official-glm-selection.js";
 import { BACKFILLED_SESSION_REASONING_MIGRATION_SQL } from "./migrations/0022-backfilled-session-reasoning.js";
+import { WORKER_SESSION_IDENTITY_MIGRATION_SQL } from "./migrations/0026-worker-session-identity.js";
 
 export const SQLITE_MIGRATIONS: readonly SqliteMigration[] = [
   {
@@ -983,5 +984,50 @@ export const SQLITE_MIGRATIONS: readonly SqliteMigration[] = [
       alter table session add column last_outcome text;
     `,
   },
+  // shared 的 0024_session_database_identity 编号被上游固定（legacy.ts）；本地 0025/0026
+  // 排其后（表间无依赖，执行序变化无影响），保证 id 数值递增断言成立。
   { ...SESSION_DATABASE_IDENTITY_MIGRATION, touchedTables: ["robinrun_database_identity"] },
+  {
+    // P2.5 会话创建来源（2026-11-16）：session.creation_origin JSON 文本列。
+    // 历史行保持 NULL（读侧默认 user），不做回填——来源是创建时事实，无法可靠推断。
+    // 曾编为 0024_session_creation_origin，与 shared 的 0024_session_database_identity
+    // 撞号（uniqueness 门禁拦截）；2026-11-20 重编为 0025，previousIds 沿用旧记账
+    // （checksum 未变，已按旧 id 落账的库不再执行）。
+    appVersion: "0.16.9",
+    id: "0025_session_creation_origin",
+    previousIds: ["0024_session_creation_origin"],
+    touchedTables: ["session"],
+    apply: (db) => {
+      const columns = new Set(
+        db
+          .prepare("pragma table_info(session)")
+          .all()
+          .map((row) => row.name),
+      );
+      if (!columns.has("creation_origin"))
+        db.exec("alter table session add column creation_origin text");
+    },
+    sql: `
+      alter table session add column creation_origin text;
+    `,
+  },
+  {
+    // worker 会话身份持久化（2026-11-20 同构化补漏）：契约层早有 workerIdentity，
+    // 但 sqlite 从未落列——身份只在创建时进内存，冷恢复读不到即退化为 master。
+    // 取值 JSON {workerId, workerName?}；master 会话 NULL。详见迁移文件头注。
+    appVersion: "0.16.9",
+    id: "0026_worker_session_identity",
+    touchedTables: ["session"],
+    apply: (db) => {
+      const columns = new Set(
+        db
+          .prepare("pragma table_info(session)")
+          .all()
+          .map((row) => row.name),
+      );
+      if (!columns.has("worker_identity"))
+        db.exec("alter table session add column worker_identity text");
+    },
+    sql: WORKER_SESSION_IDENTITY_MIGRATION_SQL,
+  },
 ];

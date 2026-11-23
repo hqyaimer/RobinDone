@@ -140,7 +140,10 @@ describe("项目主目录失效", () => {
           await button.parentElement().moveTo({ xOffset: 2 });
           await waitForReason();
           await browser.saveScreenshot(
-            join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `missing-primary-files-${name}-${theme}.png`),
+            join(
+              process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+              `missing-primary-files-${name}-${theme}.png`,
+            ),
           );
           await browser.execute(
             (selector) => {
@@ -366,7 +369,10 @@ describe("项目主目录失效", () => {
           expect(bounds.hintLeft).toBeGreaterThanOrEqual(0);
           expect(bounds.hintRight).toBeLessThanOrEqual(390);
           await browser.saveScreenshot(
-            join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `missing-primary-390-${testId}-${theme}.png`),
+            join(
+              process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+              `missing-primary-390-${testId}-${theme}.png`,
+            ),
           );
         }
       }
@@ -380,7 +386,9 @@ describe("项目主目录失效", () => {
 
 async function readTaskState(path: string) {
   return browser.execute((path) => {
-    const state = (window as TestWindow).__robinrunSessionStoreE2E!.getState().getWorkspaceState(path);
+    const state = (window as TestWindow)
+      .__robinrunSessionStoreE2E!.getState()
+      .getWorkspaceState(path);
     return {
       task: state.activeTaskId,
       project: state.draftProjectId,
@@ -391,7 +399,8 @@ async function readTaskState(path: string) {
 
 async function waitForNewTaskToastToClose() {
   await browser.waitUntil(
-    () => browser.execute(() => !document.getElementById("robinrun-toast-host")?.textContent?.trim()),
+    () =>
+      browser.execute(() => !document.getElementById("robinrun-toast-host")?.textContent?.trim()),
     { timeout: 5_000 },
   );
 }

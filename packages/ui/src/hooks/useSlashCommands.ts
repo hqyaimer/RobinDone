@@ -3,7 +3,10 @@
  *
  * 返回当前 workspace 下 Agent 广播的可用 slash commands 列表。
  */
-import { useRobinRunSessionStore, selectWorkspaceRobinRunState } from "../store/robinrunSessionStore.js";
+import {
+  useRobinRunSessionStore,
+  selectWorkspaceRobinRunState,
+} from "../store/robinrunSessionStore.js";
 
 export function useSlashCommands(workspacePath: string, workspaceIdentity?: string) {
   return useRobinRunSessionStore(

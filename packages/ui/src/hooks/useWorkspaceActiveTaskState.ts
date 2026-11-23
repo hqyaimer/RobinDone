@@ -6,7 +6,10 @@ import { useTaskNativeSessionLogFile } from "@/hooks/useTaskNativeSessionLogFile
 import { useTaskSessionFilePath } from "@/hooks/useTaskSessionFilePath.js";
 import { logger } from "@/logger.js";
 import { resolveWorkspaceHeaderProvider } from "@/lib/workspaceHeaderProvider.js";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 
 interface UseWorkspaceActiveTaskStateParams {
   workspaceAbsPath: string;

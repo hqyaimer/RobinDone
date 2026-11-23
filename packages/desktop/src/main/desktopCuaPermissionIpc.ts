@@ -196,7 +196,9 @@ function waitForCuaApplicationReturn({
     observationTimer = setTimeout(
       () =>
         finish(
-          new Error(`System Settings did not return to RobinRun within ${Math.max(1, timeoutMs)}ms`),
+          new Error(
+            `System Settings did not return to RobinRun within ${Math.max(1, timeoutMs)}ms`,
+          ),
         ),
       Math.max(1, timeoutMs),
     );

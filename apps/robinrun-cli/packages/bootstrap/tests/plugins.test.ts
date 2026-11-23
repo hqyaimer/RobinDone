@@ -240,7 +240,9 @@ describe("RobinRun plugins", () => {
         workingDirectory: root,
       });
       expect(outcome.plugins.find((plugin) => plugin.name === "documents")?.enabled).toBe(false);
-      for (const name of ["pdf", "presentations", "spreadsheets", "image-search"])
+      // RobinRun(2026-11-22): [hide-upstream-account] image-search 官方插件已隐藏（definition 注释移除，
+      // 默认不再 seed/启用）；恢复时把 "image-search" 加回本清单
+      for (const name of ["pdf", "presentations", "spreadsheets"])
         expect(outcome.plugins.find((plugin) => plugin.name === name)?.enabled).toBe(true);
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -614,7 +616,8 @@ describe("RobinRun plugins", () => {
             id: "robinrun-plugins-official",
             isOfficial: true,
             name: "robinrun-plugins-official",
-            pluginCount: 15,
+            // RobinRun(2026-11-22): [hide-upstream-account] robinrun-site / image-search 已隐藏，15 → 13；恢复时改回 15
+            pluginCount: 13,
             source: {
               source: "url",
               url: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",
@@ -2395,7 +2398,9 @@ describe("RobinRun plugins", () => {
       expect(
         overview.marketplaces.find((marketplace) => marketplace.id === "robinrun-plugins-official"),
       ).toMatchObject({
-        pluginCount: 15,
+        // RobinRun(2026-11-22): [hide-upstream-account] robinrun-site / image-search 官方插件已隐藏，
+        // listing 总数 15 → 13；恢复时改回 15
+        pluginCount: 13,
         source: {
           source: "url",
           url: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",

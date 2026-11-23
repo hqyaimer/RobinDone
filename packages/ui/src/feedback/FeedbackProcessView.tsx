@@ -21,7 +21,11 @@ export function FeedbackProcessView({
 }) {
   const { intl } = useRobinRunIntl();
   const formatMessage = intl.formatMessage;
-  const timelineItems = getFeedbackTimelineItems(ticket.events ?? [], ticket.comments, formatMessage);
+  const timelineItems = getFeedbackTimelineItems(
+    ticket.events ?? [],
+    ticket.comments,
+    formatMessage,
+  );
   const latestItem = timelineItems.at(-1);
 
   return (

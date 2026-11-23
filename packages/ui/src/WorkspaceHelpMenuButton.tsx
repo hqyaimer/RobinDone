@@ -6,16 +6,18 @@ import {
 } from "@robinrun/shared/test-ids";
 import {
   ActivityIcon,
-  BookOpenIcon,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「帮助菜单上游外链项」的图标——恢复时取消本段注释
+  // BookOpenIcon,
+  // LightbulbIcon,
+  // MessageSquareIcon,
+  // ShieldAlertIcon,
+  // UsersIcon,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   CircleHelpIcon,
   CopyIcon,
   DownloadIcon,
-  LightbulbIcon,
   InfoIcon,
-  MessageSquareIcon,
-  UsersIcon,
   RefreshCwIcon,
-  ShieldAlertIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
@@ -31,7 +33,9 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { useFeedbackStore } from "@/feedback/feedbackStore.js";
 import { useDesktopUpdateMenu } from "@/hooks/useDesktopUpdateMenu.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useVulnerabilityReportUrl } from "@/hooks/useVulnerabilityReportUrl.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「漏洞上报远程 URL」——URL 由上游远程下发，恢复时取消本段注释
+// import { useVulnerabilityReportUrl } from "@/hooks/useVulnerabilityReportUrl.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { createHelpMenuActionHandlers } from "@/lib/helpMenuActions.js";
 import { toast } from "@/components/ui/toast.js";
@@ -50,20 +54,26 @@ export function WorkspaceHelpMenuButton({
   const { intl } = useRobinRunIntl();
   const platform = usePlatform();
   const [open, setOpen] = useState(false);
-  const { url: vulnerabilityReportUrl, loading: vulnerabilityReportLoading } =
-    useVulnerabilityReportUrl(open);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「漏洞上报 URL / 产品建议入口」——恢复时取消本段注释
+  // const { url: vulnerabilityReportUrl, loading: vulnerabilityReportLoading } =
+  //   useVulnerabilityReportUrl(open);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const updateMenu = useDesktopUpdateMenu(isDesktop);
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
-  const openFeatureRequest = useFeedbackStore((state) => state.openFeatureRequest);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「产品建议入口」——恢复时取消本行注释
+  // const openFeatureRequest = useFeedbackStore((state) => state.openFeatureRequest);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const helpMenuLabel = intl.formatMessage({ id: "workspaceHeader.help.menu" });
   const helpMenuActions = createHelpMenuActionHandlers({
     platform,
     intl,
     openSubmit: openFeedbackSubmit,
   });
-  const handleOpenCommunity = () => {
-    void platform.openCommunity();
-  };
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用户社群入口」——恢复时取消本段注释
+  // const handleOpenCommunity = () => {
+  //   void platform.openCommunity();
+  // };
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const handleOpenResourceManager = () => {
     void platform.executeDesktopCommand(DesktopCommandIds.OpenResourceManager);
   };
@@ -110,7 +120,9 @@ export function WorkspaceHelpMenuButton({
         align="end"
         className="min-w-0 w-max [&_[data-slot=dropdown-menu-item]]:pr-6"
       >
-        <DropdownMenuItem onSelect={helpMenuActions.openProductDocs}>
+        {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「产品文档 / 用户社群 / 问题上报 / 漏洞上报 / 产品建议」
+            五个上游触达菜单项（内容均为 ZCode 官方），恢复时取消本段注释 */}
+        {/* <DropdownMenuItem onSelect={helpMenuActions.openProductDocs}>
           <BookOpenIcon className="size-4" />
           {intl.formatMessage({ id: "workspaceHeader.help.docs" })}
         </DropdownMenuItem>
@@ -140,6 +152,8 @@ export function WorkspaceHelpMenuButton({
           <LightbulbIcon className="size-4" />
           {intl.formatMessage({ id: "workspaceHeader.help.productRequest" })}
         </DropdownMenuItem>
+        */}
+        {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
         {/* Windows/Linux 没有原生菜单栏，自绘标题栏箭头菜单也已下线，
             资源管理器只能从这里进；Web 端没有该窗口，不渲染。 */}
         {isDesktop ? (

@@ -1,5 +1,6 @@
 import type { IRemoteProjectService } from "#src/remote-projects/contract.js";
 import type { ITaskGroupService } from "#src/task-groups/contract.js";
+import type { ITriggerEngineService } from "#src/trigger-engine/contract.js";
 import type { WindowProjectDirectoryServices } from "#src/window-project-directory/contract.js";
 import type { IProjectService } from "#src/project/contract.js";
 import type { IGenUiService } from "./gen-ui/contract.js";
@@ -59,6 +60,8 @@ import type { IConversationShareService } from "./conversation-share/conversatio
 /** UI 层消费的统一服务接口 */
 export interface IServiceAccessor {
   readonly taskGroupService?: ITaskGroupService;
+  /** 触发器引擎（desktop host 常驻服务）；远端/旧 wire 可不提供，UI 据此隐藏触发器文件夹。 */
+  readonly triggerEngineService?: ITriggerEngineService;
   readonly projectService?: IProjectService;
   readonly remoteProjectService?: IRemoteProjectService;
   readonly windowProjectDirectory?: WindowProjectDirectoryServices;

@@ -11,7 +11,10 @@ export const ROBINRUN_MODE_OPTION_LABEL_IDS: Record<RobinRunProvider, Record<str
   },
 };
 
-export const ROBINRUN_MODE_OPTION_DESCRIPTION_IDS: Record<RobinRunProvider, Record<string, string>> = {
+export const ROBINRUN_MODE_OPTION_DESCRIPTION_IDS: Record<
+  RobinRunProvider,
+  Record<string, string>
+> = {
   glm: {
     default: "mode.description.glm.default",
     build: "mode.description.glm.build",

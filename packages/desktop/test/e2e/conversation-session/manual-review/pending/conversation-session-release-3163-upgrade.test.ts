@@ -3,7 +3,11 @@ import { createReadStream } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
-import { TID_SETTINGS_BACK_BUTTON, TID_SETTINGS_SECTION_NAV, testId } from "@robinrun/shared/test-ids";
+import {
+  TID_SETTINGS_BACK_BUTTON,
+  TID_SETTINGS_SECTION_NAV,
+  testId,
+} from "@robinrun/shared/test-ids";
 import { clearAppData, clickTestIdByDom, getE2EAppDataPaths } from "#e2e/helpers/desktop-app";
 import { stageE2EAppOutput } from "#e2e/helpers/e2e-app-output-stage";
 import { reloadElectronSessionPreservingBrowserProfile } from "#e2e/helpers/e2e-electron-reload";

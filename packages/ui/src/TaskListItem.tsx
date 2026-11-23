@@ -95,7 +95,9 @@ function areJsonFieldsEqual(left: unknown, right: unknown) {
 }
 
 function getTaskAutomationIdentity(task: RobinRunTaskMeta): string | undefined {
-  return task.cronAutomationId ?? (task as RobinRunTaskMeta & { automationId?: string }).automationId;
+  return (
+    task.cronAutomationId ?? (task as RobinRunTaskMeta & { automationId?: string }).automationId
+  );
 }
 
 function areTaskListItemTaskFieldsEqual(left: RobinRunTaskMeta, right: RobinRunTaskMeta) {

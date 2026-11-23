@@ -21,14 +21,16 @@ export const AgentInputSchema = z.object({
   subagent_type: z
     .string()
     .optional()
-    .describe("The type of specialized agent to use for this task"),
+    .describe(
+      "The type of one-off subagent to use. Built-in types: general-purpose and Explore; user/plugin-defined types are also listed in the system reminder. Roster workers (wkr-… ids) are NOT dispatched here — hand tasks to them via the ContactAgent tool.",
+    ),
   // subagent 模型由 Settings / Markdown profile 统一决定；若把调用级
   // model 暴露给父模型，历史 tool call 会持续生成旧 override 并覆盖当前配置。
   run_in_background: z
     .boolean()
     .optional()
     .describe(
-      "Set to true to run this agent in the background. You will be notified when it completes.",
+      "Set to true to run this subagent in the background (async — you'll be notified on completion); omit or set false to block until it finishes. One-off subagents default to blocking.",
     ),
 });
 
@@ -52,6 +54,13 @@ export interface AgentCompletedOutput {
   totalDurationMs: number;
   totalTokens?: number;
   usage?: ModelUsage;
+  /** key/name 裁决：worker 派发时带用户可读显示名（agentType 是寻址 id）；一次性 subagent 无。 */
+  workerName?: string;
+  /**
+   * 子会话汇报轮 turnId（2026-11-18 mailbox 跳转）：完成通知经 originMeta 透传到 master
+   * 会话的 mailbox 行，作为跳回子会话的精确滚动锚点。缺席 = 老链路/无 turnId。
+   */
+  sourceTurnId?: string;
 }
 
 export interface AgentBackgroundedOutput {
@@ -65,6 +74,8 @@ export interface AgentBackgroundedOutput {
   backgroundTaskId: string;
   outputFile: string;
   canReadOutputFile: boolean;
+  /** key/name 裁决：worker 派发时带用户可读显示名（agentType 是寻址 id）；一次性 subagent 无。 */
+  workerName?: string;
 }
 
 export type AgentOutput = AgentCompletedOutput | AgentBackgroundedOutput;
@@ -88,6 +99,8 @@ export const AgentCompletedOutputSchema = z
     totalDurationMs: z.number().int().nonnegative(),
     totalTokens: z.number().int().nonnegative().optional(),
     usage: z.record(z.unknown()).optional(),
+    workerName: z.string().min(1).optional(),
+    sourceTurnId: z.string().min(1).optional(),
   })
   .strict();
 
@@ -103,6 +116,7 @@ export const AgentBackgroundedOutputSchema = z
     backgroundTaskId: z.string(),
     outputFile: z.string(),
     canReadOutputFile: z.boolean(),
+    workerName: z.string().min(1).optional(),
   })
   .strict();
 
@@ -133,6 +147,8 @@ export const AgentErrorCode = {
   BACKGROUND_UNAVAILABLE: "agent_background_unavailable",
   UNKNOWN_AGENT_TYPE: "agent_unknown_type",
   CHILD_RUNTIME_FAILED: "agent_child_runtime_failed",
+  /** P2.6 工具分离：本工具只派发一次性 subagent；名册 worker（wkr-*）任务传递走 ContactAgent（2026-11-20 同构化）。 */
+  WORKER_DISPATCH_FORBIDDEN: "agent_worker_dispatch_forbidden",
 } as const;
 
 export type AgentErrorCode = (typeof AgentErrorCode)[keyof typeof AgentErrorCode];

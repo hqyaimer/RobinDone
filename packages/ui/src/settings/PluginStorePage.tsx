@@ -178,7 +178,9 @@ export function PluginStorePage({
   // 否则新上架插件要等用户手动点刷新才可见；以 10 分钟窗口节流，并在发起时占位防抖（失败/在飞不重复），
   // 判据见 officialMarketplaceAutoRefresh。状态放模块级而非组件 ref，因为每次进入都是重新挂载。
   useEffect(() => {
-    const official = marketplaces.find((item) => item.id === ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID);
+    const official = marketplaces.find(
+      (item) => item.id === ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+    );
     if (
       official &&
       claimMarketplaceAutoRefresh(ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID, official.lastUpdated)

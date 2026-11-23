@@ -13,7 +13,9 @@ import type { RobinRunAccountAccess, RobinRunProviderAccountAccess } from "@robi
  * 它不保存 Provider Config，也不提供 Registry fallback。
  */
 export interface IAccountRequestAuthService {
-  resolveAccessCurrent(access: RobinRunProviderAccountAccess): Promise<RobinRunAccountAccess | null>;
+  resolveAccessCurrent(
+    access: RobinRunProviderAccountAccess,
+  ): Promise<RobinRunAccountAccess | null>;
   resolveCurrent(input: AccountRequestAuthInput): Promise<AccountRequestAuthMaterial>;
   assertCurrent(input: AccountAccessIdentityInput): Promise<void>;
 }

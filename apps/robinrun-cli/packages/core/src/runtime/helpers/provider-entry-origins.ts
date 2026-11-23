@@ -16,7 +16,9 @@ import {
   wrapSystemReminderForSource,
 } from "../../system-reminder/source.js";
 
-const INCOMING_MESSAGE_SOURCE = "incoming_message";
+// as const：attachmentMetadata 会被类型标注为 RuntimeMessageMetadata（source 必须是词表成员），
+// 无 as const 时字符串字面量拓宽为 string 会破坏类型。
+const INCOMING_MESSAGE_SOURCE = "incoming_message" as const;
 // 空闲整批相邻两条通知块之间的分隔。
 const TASK_NOTIFICATION_BLOCK_SEPARATOR = "\n";
 
@@ -158,6 +160,13 @@ export function projectIncomingMessageEntries(
     // 修复原因：人类 guide 曾在 MCS 下单独投影为 user 文本并移到 run 末尾，与其他中途消息、
     // MCS 关和已发布版本都不同；guide 是轮内提示，按同一规则投影。
     const asAttachment = isMidTurnInputPresentation(presentation);
+    // P2.6：attachment 转换会整体替换 metadata——来源身份（systemStatus）必须随行保留，
+    // 否则中途插话的 <system-status> 区块在投影后丢失。
+    const attachmentMetadata = {
+      source: INCOMING_MESSAGE_SOURCE,
+      inputPresentation: presentation,
+      ...(entry.metadata?.systemStatus ? { systemStatus: entry.metadata.systemStatus } : {}),
+    };
     // 带图中途消息同样需要前缀与说明，否则模型会把它当作新的用户轮次。
     // 文本块换行连接后只包装一次放在首块，媒体按原顺序在后。
     // attachment 只能是字符串，这里保留 user 消息形态并在本处补齐包装。
@@ -176,15 +185,13 @@ export function projectIncomingMessageEntries(
                 ...media,
               ],
             },
-            metadata: asAttachment
-              ? { source: INCOMING_MESSAGE_SOURCE, inputPresentation: presentation }
-              : entry.metadata,
+            metadata: asAttachment ? attachmentMetadata : entry.metadata,
           }
         : asAttachment
           ? {
               kind: "attachment",
               content: text,
-              metadata: { source: INCOMING_MESSAGE_SOURCE, inputPresentation: presentation },
+              metadata: attachmentMetadata,
             }
           : { ...entry, message: { ...entry.message, content: text } };
     origins.set(projected, [entry]);

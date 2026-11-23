@@ -2,7 +2,10 @@
  * useSettingService —— 设置服务 hooks
  */
 import { useState, useEffect, useCallback } from "react";
-import { APP_RUNTIME_PREFERENCES_CHANGED_BROADCAST_CHANNEL, type AppSettings } from "@robinrun/shared";
+import {
+  APP_RUNTIME_PREFERENCES_CHANGED_BROADCAST_CHANNEL,
+  type AppSettings,
+} from "@robinrun/shared";
 import type { IServiceAccessor, ISettingService } from "@robinrun/services";
 import { useServices } from "./useServices.js";
 import { usePlatform } from "./usePlatform.js";
@@ -186,7 +189,15 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
         }
       }
     },
-    [botsService, broadcastService, cacheKey, settingService, robinrunAgentService, platform, refresh],
+    [
+      botsService,
+      broadcastService,
+      cacheKey,
+      settingService,
+      robinrunAgentService,
+      platform,
+      refresh,
+    ],
   );
 
   return {

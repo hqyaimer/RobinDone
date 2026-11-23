@@ -186,7 +186,8 @@ export class RobinRunProtocolClient implements IDisposable {
     options?: RobinRunProtocolClientOptions,
   ) {
     this.storageStartup = new RobinRunStorageStartupGate(options?.requireStorageStartup ?? false);
-    this.requestTimeoutMs = options?.requestTimeoutMs ?? DEFAULT_ROBINRUN_PROTOCOL_REQUEST_TIMEOUT_MS;
+    this.requestTimeoutMs =
+      options?.requestTimeoutMs ?? DEFAULT_ROBINRUN_PROTOCOL_REQUEST_TIMEOUT_MS;
     this.disposables.push(
       transport.onMessage((message) => this.handleMessage(message)),
       transport.onClose((event) => {

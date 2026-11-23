@@ -1,5 +1,8 @@
 import { createContext } from "react";
-import type { RobinRunModelTrajectoryMessage, RobinRunModelTrajectoryRecord } from "@robinrun/services";
+import type {
+  RobinRunModelTrajectoryMessage,
+  RobinRunModelTrajectoryRecord,
+} from "@robinrun/services";
 import {
   trajectoryToolCallInputs,
   trajectoryToolMetadata,

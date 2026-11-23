@@ -34,8 +34,10 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   buildCustomSupplierKey,
   isHighspeedProviderId,
+  isMainAgentGroupId,
   isRemoteWorkspaceIdentity,
   ROBINRUN_AGENT_PROVIDER,
+  workerGroupId,
 } from "@robinrun/shared";
 import { TID_CHAT_EMPTY, TID_V4_SESSION_PANE, testId } from "@robinrun/shared/test-ids";
 import type {
@@ -146,6 +148,8 @@ import {
 import { useWorkflowRunJournalSummaries } from "@/hooks/useWorkflowRunJournalSummaries.js";
 import { usePlanIdentitySnapshot } from "@/hooks/usePlanIdentitySnapshot.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
+import { TASK_GROUP_COLOR_CLASS } from "@/project-sidebar/grouped/types.js";
+import type { TaskGroupColor as RobinRunTaskGroupColor } from "@/project-sidebar/contract.js";
 import { selectGenUiModelContext } from "@robinrun/shared/gen-ui";
 import { useWorkspaceHomePath } from "@/hooks/useWorkspaceHomePath.js";
 import { prepareWorkspaceWithRobinRunSessionService } from "@/hooks/useWorkspacePrepare.js";
@@ -271,6 +275,7 @@ import type {
   ConversationFileChangesRequestOptions,
   ConversationRowRenderContext,
 } from "@/v4/conversationRowContext.js";
+import { consumePendingSourceJump, setPendingSourceJump } from "@/v4/conversationRowContext.js";
 import type { AssistantPreviewCardsAutoOpenRequest } from "@/lib/assistantPreviewCards.js";
 import {
   advanceAssistantPreviewPptxAutoOpenGate,
@@ -376,6 +381,28 @@ export interface SessionPaneProps {
   readOnly?: boolean;
   /** 工作区只读原因；普通 subagent 观察视图不传，避免误报目录失效。 */
   readOnlyReason?: string;
+  /**
+   * P2.5 用户协同 worker 会话：worker_child 会话对用户开放（composer/Stop 可用，输入
+   * 与打断由 CLI 路由到派发者），但 retry/fork/行内编辑会绕过父 port 路由，v1 不开放。
+   */
+  workerSession?: boolean;
+  /** worker 会话的外部运行态（sessions-index phase；父 runtime 驱动的运行 own runtime 看不到）。 */
+  workerSessionRunning?: boolean;
+  /**
+   * P2.6 群聊渲染：本 pane 会话的产出方（序列创建者）。主会话传 master（turn 组标签
+   * 「主智能体」）；worker 会话传 worker + 显示名 + wkr-id（「工作者-<名>」+ 块取色）。
+   * 不传（subagent 侧栏等观察视图）不画块头。第四轮（2026-11-18）起 worker 分支多带
+   * workerId，供会话区 agent 块经 workerGroupId → 任务组色取表面色。
+   */
+  conversationSender?:
+    | {
+        kind: "master";
+      }
+    | {
+        kind: "worker";
+        name?: string | null;
+        workerId?: string | null;
+      };
   /** 观察视图的显式例外：允许文件摘要恢复 workspace，但不开放会话编辑能力。 */
   allowWorkspaceFileRewind?: boolean;
   /** 框选副屏：保留普通 composer/tools，但隐藏并禁止 edit/retry/fork/goal。 */
@@ -571,6 +598,49 @@ export function shouldRestoreQueuedComposerFromAck(status: CommandAck["status"])
 }
 
 /**
+ * P2.6 验收修复第三轮（2026-11-18）：会话区 mailbox 行的发送者徽章图标按该 agent 在
+ * 侧栏的组色染色（验收反馈「一目了然」）。任务组结构与侧栏 useTaskGroups 同源——同一
+ * taskGroupService 读取 + `state:task-groups` 广播刷新；这里只要 groupId → 组色枚举
+ * 的只读投影，不做任务登记。第四轮起值从预拼 class 串改为色枚举（消费方经
+ * TASK_GROUP_COLOR_CLASS 推导头像色；第四轮二次修正后组色只染块头头像，块底统一
+ * 半透明灰）；嵌入 pane 无服务 / 读取失败（remote 工作区）按空表渲染，徽章与块头
+ * 回退中性图标。
+ */
+function useAgentGroupColors(): ReadonlyMap<string, RobinRunTaskGroupColor> {
+  const services = useBaseWorkspaceServices();
+  const [colorByGroupId, setColorByGroupId] = useState<ReadonlyMap<string, RobinRunTaskGroupColor>>(
+    () => new Map(),
+  );
+  useEffect(() => {
+    const service = services.taskGroupService;
+    if (!service) return undefined;
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const structure = await service.read();
+        if (cancelled) return;
+        const next = new Map<string, RobinRunTaskGroupColor>();
+        for (const group of structure.groups) {
+          next.set(group.id, group.color);
+        }
+        setColorByGroupId(next);
+      } catch {
+        // 只读投影读不到就保持空表；不打日志刷屏（remote 场景每次重连都会试一次）。
+      }
+    };
+    void refresh();
+    const subscription = services.broadcastService.onMessage((event) => {
+      if (event.channel === "state:task-groups") void refresh();
+    });
+    return () => {
+      cancelled = true;
+      subscription.dispose();
+    };
+  }, [services]);
+  return colorByGroupId;
+}
+
+/**
  * Highspeed 发送起点的 pane 绑定（spec §9.2）：在触发发送的同步阶段冻结，prepare 返回时据此
  * 判断 pane 是否仍停在本轮发送所属的 Task / 草稿，决定是否在本 pane 呈现卡并登记激活。
  */
@@ -625,6 +695,9 @@ export function SessionPane({
   rootSessionId,
   readOnly = false,
   readOnlyReason,
+  workerSession = false,
+  workerSessionRunning = false,
+  conversationSender,
   allowWorkspaceFileRewind = false,
   selectionSideChat = false,
   activeSelectionSideChatSessionId = null,
@@ -766,6 +839,13 @@ export function SessionPane({
   );
   const runtimeReady =
     sessionId === null ||
+    // P2.5 worker 协同：worker_child 没有自有 runtime/生命周期——输入由 CLI 按 sessionId
+    // 路由到派发者 subagentPort。订阅出快照即可发，不套 runtime 初始化/生命周期门禁
+    // （否则前台派发结束后残留的投影状态会把 composer 永久锁死）。
+    (workerSession &&
+      state.status === "live" &&
+      snapshot !== null &&
+      snapshot.sessionId === sessionId) ||
     (state.status === "live" &&
       state.projectionReady !== false &&
       (!state.lifecycle || state.lifecycle.state === "ready") &&
@@ -2101,6 +2181,42 @@ export function SessionPane({
     },
     [onSessionCreated, sessionId],
   );
+  // mailbox 跳转（2026-11-18）：mailbox 行「跳转到来源」→ 打开来信会话并定位来源消息。
+  // 滚动目标先登记 rowContext 的 sourceJump registry（目标 SessionPane 在会话切换/pane 聚焦时消费，
+  // ConversationTimeline 行就绪后按汇报轮 turnId 精确滚动），再复用 fork 落地同款
+  // onSessionCreated 原地切 pane（primary→setActiveTaskId、分屏→bindPaneSession）。
+  const handleNavigateToSourceSession = useCallback(
+    (request: { sessionId: string; sourceTurnId?: string }) => {
+      if (!request.sessionId || request.sessionId === sessionId) {
+        return;
+      }
+      setPendingSourceJump(
+        request.sessionId,
+        request.sourceTurnId ? { sourceTurnId: request.sourceTurnId } : {},
+      );
+      onSessionCreated?.(request.sessionId);
+    },
+    [onSessionCreated, sessionId],
+  );
+  // 待消费的跳转目标（本 pane 已切到目标会话后交给 ConversationTimeline 定位）。
+  const [pendingSourceJump, setPendingSourceJumpState] = useState<{
+    nonce: number;
+    sourceTurnId?: string;
+  } | null>(null);
+  const sourceJumpNonceRef = useRef(0);
+  // 消费时机：会话切换（sessionId 变化）与 pane 聚焦都会尝试——目标会话已在别的 pane
+  // 打开时没有 sessionId 变化，靠 selectWorkbenchSession 的 focusPane 触发的 focused
+  // 变化兜底。consume 是删除式读取，重复触发为空操作。
+  useEffect(() => {
+    if (!sessionId) return;
+    const pending = consumePendingSourceJump(sessionId);
+    if (!pending) return;
+    sourceJumpNonceRef.current += 1;
+    setPendingSourceJumpState({ nonce: sourceJumpNonceRef.current, ...pending });
+  }, [sessionId, focused]);
+  const handleSourceJumpSettled = useCallback(() => {
+    setPendingSourceJumpState(null);
+  }, []);
   const dispatchCommand = useCallback(
     async (
       type: CommandType,
@@ -2204,8 +2320,9 @@ export function SessionPane({
                       .getWorkspaceState(workspacePath, workspaceIdentity).draftTaskGroupId,
               sessionCreateSource:
                 sessionCreateSource ??
-                useRobinRunSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
-                  .draftCreateSource,
+                useRobinRunSessionStore
+                  .getState()
+                  .getWorkspaceState(workspacePath, workspaceIdentity).draftCreateSource,
             }
           : recentReceipt
             ? {
@@ -3035,6 +3152,38 @@ export function SessionPane({
     if (result !== "sent") throw new Error(`workflow save request not sent: ${result}`);
   }, []);
 
+  // P2.6 验收修复第三轮：mailbox 行发送者徽章的组色投影（与侧栏色标同源）。
+  const agentGroupColors = useAgentGroupColors();
+
+  // P2.6 验收修复第四轮（2026-11-18）：会话本体 agent 的块身份。worker 会话凭 wkr-id
+  // 走 workerGroupId 取组色；master 会话的组是项目标配主智能体组（isMainAgentGroupId
+  // 命中，默认紫色）。组色只染块头头像（第四轮修正：块底统一半透明灰，不再用组色淡底）；
+  // 解析不到（remote、服务缺席）surfaces 缺席 → 头像走中性回退，名称头照常渲染。
+  const conversationAgentBlock = useMemo(() => {
+    if (conversationSender === undefined) return undefined;
+    const label =
+      conversationSender.kind === "worker"
+        ? intl.formatMessage(
+            { id: "chat.sender.worker" },
+            { name: conversationSender.name?.trim() || "—" },
+          )
+        : intl.formatMessage({ id: "chat.sender.master" });
+    let color: RobinRunTaskGroupColor | undefined;
+    if (conversationSender.kind === "worker") {
+      color =
+        conversationSender.workerId != null && conversationSender.workerId.trim().length > 0
+          ? agentGroupColors.get(workerGroupId(conversationSender.workerId))
+          : undefined;
+    } else {
+      const mainAgentGroupId = [...agentGroupColors.keys()].find(isMainAgentGroupId);
+      color = mainAgentGroupId !== undefined ? agentGroupColors.get(mainAgentGroupId) : undefined;
+    }
+    return {
+      label,
+      ...(color !== undefined ? { surfaces: { avatarClass: TASK_GROUP_COLOR_CLASS[color] } } : {}),
+    };
+  }, [conversationSender, agentGroupColors, intl]);
+
   const rowContext = useMemo<ConversationRowRenderContext>(
     () => ({
       workspacePath,
@@ -3047,6 +3196,10 @@ export function SessionPane({
       codePreviewSettings,
       sessionId,
       rootSessionId: rootSessionId ?? sessionId,
+      // P2.6 群聊渲染 → 第四轮块化改版：序列创建者的块身份（块头名称 + 表面色）。
+      conversationAgentBlock,
+      // P2.6 验收修复第三轮：发送者徽章组色（groupId → 色枚举只读投影）。
+      agentGroupColors,
       compactForRemoteControl,
       chatLoadingBlockedByActiveWork,
       chatLoadingBlockedByInteraction,
@@ -3056,6 +3209,7 @@ export function SessionPane({
       toolGroupingTerminalEnabled,
       toolGroupingChangesEnabled,
       onNavigateToRow: handleNavigateToRow,
+      onNavigateToSourceSession: handleNavigateToSourceSession,
       onOpenBrowserUrl,
       onOpenAutomationsMain,
       onOpenCodeViewer,
@@ -3125,6 +3279,9 @@ export function SessionPane({
       codePreviewSettings,
       sessionId,
       rootSessionId,
+      conversationAgentBlock,
+      agentGroupColors,
+      intl,
       compactForRemoteControl,
       chatLoadingBlockedByActiveWork,
       chatLoadingBlockedByInteraction,
@@ -3134,6 +3291,7 @@ export function SessionPane({
       toolGroupingTerminalEnabled,
       toolGroupingChangesEnabled,
       handleNavigateToRow,
+      handleNavigateToSourceSession,
       onOpenBrowserUrl,
       onOpenAutomationsMain,
       onOpenCodeViewer,
@@ -4718,19 +4876,25 @@ export function SessionPane({
   );
 
   // 误停排障需要区分按钮与 Esc；普通 info 在生产禁用，必须走生命周期日志。
+  // P2.5：worker 会话的外部运行（父 runtime 驱动）在本会话快照里没有可停执行——
+  // running 事实来自 sessions-index；此时不带 expectedForegroundExecutionId 发 stop，
+  // bootstrap 端会路由到派发者 subagentPort。
+  const externalWorkerRun = workerSession && workerSessionRunning;
   const handleStop = useCallback(
     (source: "button" | "escape") => {
       const current = snapshotRef.current;
-      if (!sessionId || !current?.control.canStop) {
+      if (!sessionId || (!current?.control.canStop && !externalWorkerRun)) {
         logger.lifecycle.info("[v4-pane] stop 命令被跳过（无可停执行）", {
           source,
           sessionId: sessionId ?? "",
+          externalWorkerRun,
         });
         return;
       }
-      const foregroundExecutionId = current.control.activeWorks.find(
-        (work) => work.foregroundExecutionId,
-      )?.foregroundExecutionId;
+      const foregroundExecutionId = externalWorkerRun
+        ? undefined
+        : current?.control.activeWorks.find((work) => work.foregroundExecutionId)
+            ?.foregroundExecutionId;
       logger.lifecycle.info("[v4-pane] stop 命令发出", {
         source,
         sessionId,
@@ -4744,7 +4908,7 @@ export function SessionPane({
         logger.lifecycle.warn(`[v4-pane] stop 失败: ${String(error)}`);
       });
     },
-    [dispatchCommand, sessionId],
+    [dispatchCommand, externalWorkerRun, sessionId],
   );
 
   const handlePauseGoal = useCallback(() => {
@@ -4903,6 +5067,9 @@ export function SessionPane({
   });
   // retry 的产品裁决属于行级权威投影。这里仅提供命令能力，入口是否展示
   // 完全读取 row.actions.canRetry，禁止再用 pane phase 形成第二套 guard。
+  // 2026-11-20 worker 会话同构化：worker 会话 = 主会话路径物化（自带 worker 注入段），
+  // P2.5 的「父 port 路由绕过」前提不复存在，retry/fork/行内编辑与 master 会话同权开放
+  // （验收场景 4：用户体验一致）。
   const retryActionsEnabled = runtimeReady && !readOnly && !selectionSideChat && Boolean(sessionId);
   // fork 可用性完全由 row.actions.canFork（CLI stable resolver 投影）裁决；pane 只提供命令回调。
   const forkActionsEnabled = runtimeReady && !readOnly && !selectionSideChat && Boolean(sessionId);
@@ -5721,6 +5888,8 @@ export function SessionPane({
       // backgroundWorks；Composer 若直接读目录会提前隐藏 Agent 入口。这里复用状态面板按
       // childSessionId 精确回退后的计数，让两个入口共享同一份运行态真值。
       runningSubagentCount={runningAgentCount}
+      externalStopAvailable={workerSession && workerSessionRunning}
+      workerSession={workerSession}
       onRecoverCustomModelSelection={handleRecoverCustomModelSelection}
       onSendCompressionCommand={handleSendCompressionCommand}
       error={composerError}
@@ -5819,6 +5988,8 @@ export function SessionPane({
     ) : null
   ) : (
     <>
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「套餐额度横幅」——1005/3008 等额度错误码只来自上游
+          Coding Plan 账号（无登录不会出现），升级弹窗 Provider 也已摘除。恢复时取消本段注释
       {quotaBanner.state.visible &&
       !quotaBanner.dismissed &&
       (!projectedComposerError || quotaBanner.takesOverError || quotaBanner.state.blocksSubmit) ? (
@@ -5836,6 +6007,8 @@ export function SessionPane({
           onDismiss={quotaBanner.dismiss}
         />
       ) : null}
+      */}
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
       {recoverableCommand ? (
         <PendingCommandRecoveryBanner
           entry={recoverableCommand}
@@ -6124,6 +6297,8 @@ export function SessionPane({
                   scrollToQueryActionRef={timelineScrollToQueryRef}
                   selectionPanelLayoutContainerRef={conversationLayoutContainerRef}
                   rows={timelineSnapshot?.rows.window ?? []}
+                  sourceJump={pendingSourceJump}
+                  onSourceJumpSettled={handleSourceJumpSettled}
                   pendingGuides={timelineSnapshot ? pendingGuideProjection?.pendingGuides : []}
                   apiRetry={timelineSnapshot?.control.apiRetry ?? null}
                   totalCount={timelineSnapshot?.rows.totalCount ?? 0}

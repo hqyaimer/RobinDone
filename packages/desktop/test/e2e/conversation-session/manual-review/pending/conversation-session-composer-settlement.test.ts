@@ -198,7 +198,9 @@ describe("CST Composer 首发结算与提示交接", () => {
     const empty = result.frames.filter((frame) => !frame.text.trim());
     expect(empty.length).toBeGreaterThan(0);
     expect(empty.every((frame) => frame.sameEditor)).toBe(true);
-    expect(empty.some((frame) => frame.placeholder?.startsWith("Ask RobinRun anything"))).toBe(false);
+    expect(empty.some((frame) => frame.placeholder?.startsWith("Ask RobinRun anything"))).toBe(
+      false,
+    );
   });
 
   for (const nextInput of [false, true]) {
@@ -352,7 +354,10 @@ describe("CST Composer 首发结算与提示交接", () => {
         .contexts()[0]
         ?.pages()[0]
         ?.screenshot({
-          path: join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "composer-settlement-mobile-final.png"),
+          path: join(
+            process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+            "composer-settlement-mobile-final.png",
+          ),
         });
       await mobileBrowser.close();
     }

@@ -10,6 +10,7 @@ import {
 import { getMode, getPlanEnabled } from "./config.js";
 import { getSessionModelSelection, setSessionModelSelection } from "./config.js";
 import { getProjectId } from "./config.js";
+import { getWorkerIdentity } from "./config.js";
 import { setWorkingDirectory } from "./config.js";
 import { ensureSessionPersistedForExternalActivity } from "./config.js";
 import { getActiveTurnInfo } from "./config.js";
@@ -168,6 +169,11 @@ import {
   stopBackgroundTask,
 } from "./background.js";
 import { buildBackgroundTaskPayload } from "./background.js";
+// P2.5 用户协同 worker 会话：路由入口（bootstrap sendText/stop 拦截后调用）。
+import { sendChildSessionUserMessage } from "./worker-session-routing.js";
+import { stopWorkerSessionTask } from "./worker-session-routing.js";
+// 项目权限全量同步（2026-11-18）：worker_child 配置命令经父端口路由到活子 runtime。
+import { setChildSessionExecutionMode } from "./worker-session-routing.js";
 import { readBackgroundBashOutput } from "./background-bash-output.js";
 import { createEvent } from "./events.js";
 import { appendEvent } from "./events.js";
@@ -212,6 +218,7 @@ export function installAgentRuntimeMethods(ctor: AgentRuntimeConstructor): void 
   proto.getSessionModelSelection = getSessionModelSelection;
   proto.setSessionModelSelection = setSessionModelSelection;
   proto.getProjectId = getProjectId;
+  proto.getWorkerIdentity = getWorkerIdentity;
   proto.setWorkingDirectory = setWorkingDirectory;
   proto.ensureSessionPersistedForExternalActivity = ensureSessionPersistedForExternalActivity;
   proto.maybeStartSessionTitleGenerationFromExternalInput =
@@ -372,6 +379,9 @@ export function installAgentRuntimeMethods(ctor: AgentRuntimeConstructor): void 
   proto.resolvePermission = resolvePermission;
   proto.readBackgroundBashOutput = readBackgroundBashOutput;
   proto.cancelBackgroundTask = cancelBackgroundTask;
+  proto.sendChildSessionUserMessage = sendChildSessionUserMessage;
+  proto.stopWorkerSessionTask = stopWorkerSessionTask;
+  proto.setChildSessionExecutionMode = setChildSessionExecutionMode;
   proto.stopBackgroundTask = stopBackgroundTask;
   proto.cancelRunningRuntimeBackgroundTasks = cancelRunningRuntimeBackgroundTasks;
   proto.hasRunningBackgroundTasks = hasRunningBackgroundTasks;

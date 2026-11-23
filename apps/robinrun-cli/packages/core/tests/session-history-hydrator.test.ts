@@ -1,3 +1,6 @@
+
+// P2.6 消息来源区块：real_user 输入渲染时正文最前注入的 sender 前缀。
+const USER_BLOCK = '<system-status>{"sender":"user"}</system-status>\n\n';
 import { describe, expect, it } from "vitest";
 import {
   createMessageId,
@@ -181,7 +184,7 @@ describe("session history hydrator", () => {
     expect(result.interruptedToolCount).toBe(1);
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "read the file" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nread the file" },
       {
         role: "assistant",
         content: "I'll read it.",
@@ -382,9 +385,10 @@ describe("session history hydrator", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "ask a question" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nask a question" },
       {
         role: "assistant",
+        // assistant 消息不注入来源区块——codemod 误伤，还原空串。
         content: "",
         toolCalls: [
           { id: "tool_error_exact", input: {}, name: "AskUserQuestion" },
@@ -712,7 +716,7 @@ describe("session history hydrator", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "run the tool" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nrun the tool" },
       {
         role: "assistant",
         content: [
@@ -1272,7 +1276,7 @@ describe("session history hydrator", () => {
     expect(providerMessages(history)).toEqual(providerMessages(liveHistory));
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "use the referenced plugin" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nuse the referenced plugin" },
       { role: "system", content: reminder },
     ]);
   });
@@ -1397,7 +1401,11 @@ describe("session history hydrator", () => {
 
     expect(providerMessages(history)[1]).toEqual({
       role: "user",
-      content: "<system-reminder>\nuser typed this literal tag\n</system-reminder>",
+      content: `<system-status>{"sender":"user"}</system-status>
+
+<system-reminder>
+user typed this literal tag
+</system-reminder>`,
     });
     expect(history.toRuntimeEntries()[1]?.metadata).toEqual({ source: "real_user" });
     expect(countContextPrefixMessages(history.toRuntimeEntries())).toBe(1);
@@ -1436,7 +1444,7 @@ describe("session history hydrator", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "[Selected agent: reviewer]" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\n[Selected agent: reviewer]" },
     ]);
   });
 
@@ -1496,7 +1504,7 @@ describe("session history hydrator", () => {
       {
         role: "user",
         content: [
-          { type: "text", text: "describe this" },
+          { type: "text", text: USER_BLOCK + "describe this" },
           {
             type: "image",
             mediaType: "image/png",
@@ -1577,7 +1585,7 @@ describe("session history hydrator", () => {
       { role: "system", content: "system prompt" },
       {
         role: "user",
-        content: "summarize",
+        content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsummarize",
       },
       {
         role: "system",
@@ -1679,7 +1687,7 @@ describe("session history hydrator", () => {
       }).messages,
     ).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\n" },
       {
         role: "system",
         content:
@@ -1706,7 +1714,7 @@ describe("session history hydrator", () => {
             "2\tRemember attachment-only history.",
         ),
       },
-      { role: "user", content: "" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\n" },
     ]);
   });
 
@@ -1810,7 +1818,7 @@ describe("session history hydrator", () => {
     );
     expect(hydratedRequest).toEqual(liveRequest);
     expect(hydratedRequest.at(-1)?.content).toEqual([
-      { type: "text", text: "Summarize the video." },
+      { type: "text", text: USER_BLOCK + "Summarize the video." },
       expect.objectContaining({
         type: "video",
         source: expect.objectContaining({ path: derivedPath }),
@@ -1900,7 +1908,12 @@ describe("session history hydrator", () => {
         }).messages,
       );
       expect(
-        hydratedMessages.some((message) => message.role === "user" && message.content === ""),
+        // P2.6：空正文的 real_user 输入同样带 sender 区块前缀（渲染按来源不看正文）。
+        hydratedMessages.some(
+          (message) =>
+            message.role === "user" &&
+            message.content === '<system-status>{"sender":"user"}</system-status>\n\n',
+        ),
       ).toBe(true);
       expect(JSON.stringify(hydratedMessages)).toContain("Called the Read tool");
       expect(JSON.stringify(hydratedMessages)).toContain("Result of calling the Read tool");
@@ -1999,7 +2012,7 @@ describe("session history hydrator", () => {
       {
         role: "user",
         content: [
-          { type: "text", text: "inspect if needed" },
+          { type: "text", text: USER_BLOCK + "inspect if needed" },
           {
             type: "text",
             text: "[Attached application/octet-stream: /tmp/project/assets/demo.mp4]",
@@ -2062,7 +2075,7 @@ describe("session history hydrator", () => {
     const messages = providerMessages(history);
     expect(messages).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "summarize" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsummarize" },
       {
         role: "system",
         content: [
@@ -2123,7 +2136,7 @@ describe("session history hydrator", () => {
 
     const canonicalMessages = providerMessages(history);
     expect(canonicalMessages[1]?.content).toEqual([
-      { type: "text", text: "describe this" },
+      { type: "text", text: USER_BLOCK + "describe this" },
       {
         type: "image",
         mediaType: "image/png",
@@ -2205,7 +2218,7 @@ describe("session history hydrator", () => {
       {
         role: "user",
         content: [
-          { type: "text", text: "describe this" },
+          { type: "text", text: USER_BLOCK + "describe this" },
           {
             type: "image",
             mediaType: "image/png",
@@ -2229,7 +2242,7 @@ describe("session history hydrator", () => {
       artifactStore,
     );
     expect(resumedRequest[1]?.content).toEqual([
-      { type: "text", text: "describe this" },
+      { type: "text", text: USER_BLOCK + "describe this" },
       {
         type: "image",
         mediaType: "image/png",

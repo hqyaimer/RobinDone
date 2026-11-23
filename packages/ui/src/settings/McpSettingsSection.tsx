@@ -369,7 +369,9 @@ export function buildMcpOAuthAuthorizationStatusRefreshServers(
   return result;
 }
 
-export function buildMcpOAuthAuthorizationStatusRefreshOptions(mcpServers: RobinRunAgentMcpServer[]): {
+export function buildMcpOAuthAuthorizationStatusRefreshOptions(
+  mcpServers: RobinRunAgentMcpServer[],
+): {
   mode: "status";
   mcpServers: RobinRunAgentMcpServer[];
 } {

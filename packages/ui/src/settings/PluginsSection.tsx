@@ -13,7 +13,11 @@ import { toast } from "@/components/ui/toast.js";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { TID_PLUGIN_STORE_BROWSE } from "@robinrun/shared/test-ids";
-import type { RobinRunPluginInfo, RobinRunPluginScope, RobinRunPluginUserConfigOption } from "@robinrun/shared";
+import type {
+  RobinRunPluginInfo,
+  RobinRunPluginScope,
+  RobinRunPluginUserConfigOption,
+} from "@robinrun/shared";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
 import type { IServiceAccessor } from "@robinrun/services";
 import { useConfigWorkspaceServicesResolution as useWorkspaceServicesResolution } from "@/workspace-config-catalog/index.js";

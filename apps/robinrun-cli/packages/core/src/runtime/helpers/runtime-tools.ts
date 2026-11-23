@@ -51,9 +51,23 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     bashTimeoutPolicy: runtime.config.bashTimeoutPolicy,
     includeSkill: Boolean(runtime.skillPort),
     includeAgent: Boolean(runtime.subagentPort),
+    // 编制管理独占于 master 会话（docs/worker-session-model.md §5）：worker 会话
+    // （workerIdentity 在场）不可 ManageWorkers——编制不可被下级篡改（既有裁决不变）。
+    includeManageWorkers: runtime.config.workerIdentity === undefined,
     includeSendMessage: runtime.subagentPort?.sendMessage !== undefined,
     includeRespondToCoordinator:
       runtime.config.taskType === "subagent_child" && Boolean(deps.coordinatorResponsePort),
+    // agent 消息（2026-11-19，docs/trigger-system.md）：ContactAgent/WaitReply 门 = 端口在场。
+    // master 主会话自建端口（agent-runtime）；worker_child 由装配注入；subagent_child
+    // 不注入即天然无此工具。workerReturnPort 已随 ReturnToDispatcher 移除。
+    includeAgentContact: runtime.agentContactPort !== undefined,
+    // C1 裁决（2026-11-23）：ContactAgent 同名双变体按会话身份二选一（master 带必答
+    // 参数 / worker 纯 notification-only）；判据与 includeManageWorkers 同款。
+    agentContactVariant: runtime.config.workerIdentity === undefined ? "master" : "worker",
+    // C1 裁决（2026-11-23）：WaitReply 收敛为 master 专属——worker 不允许要求必答
+    // 后，worker 名下无可等待的在途请求；判据同款。
+    includeWaitReply:
+      runtime.agentContactPort !== undefined && runtime.config.workerIdentity === undefined,
     // submit_result 只在注入了 workflowSubmitPort 的 workflow actor 会话注册。以端口存在为门，
     // 与 taskType 无关：workflow actor 是 workflow_child，其 runtimeScope 目前是 "main"。
     includeSubmitResult: Boolean(deps.workflowSubmitPort),
@@ -184,6 +198,10 @@ function createRuntimeToolExecutor(
     skillPort: deps.skillPort,
     subagentPort: runtime.subagentPort,
     coordinatorResponsePort: deps.coordinatorResponsePort,
+    agentContactPort: runtime.agentContactPort,
+    // 触发器 python 运行时端口（2026-11-22）：install_packages 依赖（bootstrap 注入
+    // AgentRuntimeDeps；独立 CLI 缺席 → handler 报错引导）。
+    triggerRuntimePort: deps.triggerRuntimePort,
     workflowSubmitPort: deps.workflowSubmitPort,
     workflowEscalatePort: deps.workflowEscalatePort,
     artifactStore: deps.artifactStore,
@@ -226,6 +244,9 @@ function createRuntimeToolExecutor(
     getMemoryRoot: () =>
       deps.memoryRoot ?? resolveEnabledProjectMemoryRoot(runtime.config, runtime.workspaceRoot),
     runtimeScope: runtime.config.taskType === "subagent_child" ? "subagent" : "main",
+    // worker 身份透传（与 includeManageWorkers 的门同一事实源）：ManageTriggers 据此把
+    // 「订阅者=创建者」钉在机制层——worker 会话创建的触发器归属该 worker，不依赖模型传值。
+    workerIdentity: runtime.config.workerIdentity,
     permissionTimeoutMs: runtime.config.permissionTimeoutMs,
     sessionId: runtime.sessionId,
     traceContext: runtime.rootTraceContext,

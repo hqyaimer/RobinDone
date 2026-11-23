@@ -154,7 +154,8 @@ export function createDesktopPlatform(options: {
       return window.robinrun.onOpenWorkspace?.(handler) ?? (() => {});
     },
     onOpenWorkspacePath: (handler) => window.robinrun.onOpenWorkspacePath?.(handler) ?? (() => {}),
-    onOpenFeedbackDialog: (handler) => window.robinrun.onOpenFeedbackDialog?.(handler) ?? (() => {}),
+    onOpenFeedbackDialog: (handler) =>
+      window.robinrun.onOpenFeedbackDialog?.(handler) ?? (() => {}),
     onOpenTicketsPanel: (handler) => window.robinrun.onOpenTicketsPanel?.(handler) ?? (() => {}),
     onWindowFullscreenChanged: (handler) => window.robinrun.onWindowFullscreenChanged(handler),
     getDesktopWindowChromeState: window.robinrun.getDesktopWindowChromeState
@@ -163,7 +164,8 @@ export function createDesktopPlatform(options: {
     onDesktopWindowChromeStateChanged: window.robinrun.onDesktopWindowChromeStateChanged
       ? (handler) => window.robinrun.onDesktopWindowChromeStateChanged!(handler)
       : undefined,
-    getWindowControlsOverlayMetrics: () => window.robinrun.getWindowControlsOverlayMetrics?.() ?? null,
+    getWindowControlsOverlayMetrics: () =>
+      window.robinrun.getWindowControlsOverlayMetrics?.() ?? null,
     onWindowControlsOverlayChanged: (handler) =>
       window.robinrun.onWindowControlsOverlayChanged?.(handler) ?? (() => {}),
     getDesktopZoomLevel: () =>
@@ -176,7 +178,8 @@ export function createDesktopPlatform(options: {
       window.robinrun.captureWindowScreenshot?.() ?? Promise.resolve(null),
     onUpdateReady: (callback) => window.robinrun.onUpdateReady(callback),
     onUpdateCheckResult: (callback) => window.robinrun.onUpdateCheckResult(callback),
-    onUpdateStateChanged: (callback) => window.robinrun.onUpdateStateChanged?.(callback) ?? (() => {}),
+    onUpdateStateChanged: (callback) =>
+      window.robinrun.onUpdateStateChanged?.(callback) ?? (() => {}),
     getUpdateState: () =>
       window.robinrun.getUpdateState?.() ?? Promise.resolve({ kind: "idle", enabled: true }),
     downloadUpdate: () => window.robinrun.downloadUpdate?.() ?? Promise.resolve(),
@@ -199,7 +202,8 @@ export function createDesktopPlatform(options: {
     onPostUpdateReleaseNotes: (callback) => window.robinrun.onPostUpdateReleaseNotes(callback),
     acknowledgePostUpdateReleaseNotes: (version) =>
       window.robinrun.acknowledgePostUpdateReleaseNotes(version),
-    skipUpdateVersion: (version) => window.robinrun.skipUpdateVersion?.(version) ?? Promise.resolve(),
+    skipUpdateVersion: (version) =>
+      window.robinrun.skipUpdateVersion?.(version) ?? Promise.resolve(),
     quitAndInstallUpdate: () => window.robinrun.quitAndInstallUpdate(),
     getInstalledEditors: (filePath) => window.robinrun.getInstalledEditors(filePath),
     getFileApplications: (target) => window.robinrun.getFileApplications(target),

@@ -18,7 +18,8 @@ import {
   readHeadlessRuntimeFacts,
   waitForHeadlessWorkflowSettle,
 } from "./headless-workflow.js";
-import { runLoginCommand, runLogoutCommand } from "./login-command.js";
+// RobinRun(2026-11-22): [hide-upstream-account] headless login/logout 处理已注释——恢复时取消本行
+// import { runLoginCommand, runLogoutCommand } from "./login-command.js";
 import { resolveResumeSession } from "./resume.js";
 import { readRuntimeEventSubscriber } from "./runtime-event-subscriber.js";
 import {
@@ -109,20 +110,23 @@ export const runPrompt = async (
   if (slashCommand?.type === "known" && slashCommand.name === "skill" && !slashCommand.skillName) {
     return await runSkillsCommand(ctx, options, deps, []);
   }
-  if (slashCommand?.type === "known" && slashCommand.name === "login") {
-    if (slashCommand.args.length > 0) {
-      ctx.stderr.write("Usage: /login\n");
-      return 1;
-    }
-    return await runLoginCommand(ctx, options, deps, false);
-  }
-  if (slashCommand?.type === "known" && slashCommand.name === "logout") {
-    if (slashCommand.args.length > 0) {
-      ctx.stderr.write("Usage: /logout\n");
-      return 1;
-    }
-    return await runLogoutCommand(ctx, options, deps);
-  }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「headless /login /logout 处理」——解析分支已注释，
+  // 此处不可达。恢复时取消本段注释
+  // if (slashCommand?.type === "known" && slashCommand.name === "login") {
+  //   if (slashCommand.args.length > 0) {
+  //     ctx.stderr.write("Usage: /login\n");
+  //     return 1;
+  //   }
+  //   return await runLoginCommand(ctx, options, deps, false);
+  // }
+  // if (slashCommand?.type === "known" && slashCommand.name === "logout") {
+  //   if (slashCommand.args.length > 0) {
+  //     ctx.stderr.write("Usage: /logout\n");
+  //     return 1;
+  //   }
+  //   return await runLogoutCommand(ctx, options, deps);
+  // }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
   const runtimePrompt =
     slashCommand?.type === "known" && slashCommand.name === "skill"

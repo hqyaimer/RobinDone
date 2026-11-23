@@ -498,6 +498,7 @@ export function PermissionDialog({
   isWebRemoteControl?: boolean;
 }) {
   const { intl } = useRobinRunIntl();
+  // 项目权限全量同步（2026-11-18）：权限窗里的「完全访问」同样按项目去重确认。
   const confirmMode = useYoloModeConfirmation(
     JSON.stringify([
       workspacePath,
@@ -508,6 +509,7 @@ export function PermissionDialog({
       responding,
     ]),
     permissionMode,
+    { workspacePath, workspaceIdentity },
   );
   const presentationCapabilities = useToolPresentationHostCapabilities(workspacePath);
   const isMobileTextInputViewport = useIsMobileTextInputViewport();

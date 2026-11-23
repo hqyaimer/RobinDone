@@ -89,7 +89,10 @@ export class ProviderRuntime {
         this.configService.read(),
         accountSource.read(),
       ]);
-      if (!this.#disposed && config.robinrunBuiltinRevision !== account.basedOnRobinRunBuiltinRevision) {
+      if (
+        !this.#disposed &&
+        config.robinrunBuiltinRevision !== account.basedOnRobinRunBuiltinRevision
+      ) {
         await accountSource.refresh?.("builtin-account-recovery");
       }
     });

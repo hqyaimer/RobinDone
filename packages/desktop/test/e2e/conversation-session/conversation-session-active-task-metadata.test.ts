@@ -146,7 +146,9 @@ describe("当前任务元数据与自动归档", () => {
       timeout: 30_000,
     });
     expect(await activeTask()).toBe(cold);
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "AMT01-cold-title.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "AMT01-cold-title.png"),
+    );
   });
   it("AMT02/AMT05：升级关闭旧开关，用户重新开启后归档超期任务，重启保留选择", async () => {
     // 旧 Host 退出后再写升级输入，避免退出时的设置持久化覆盖 fixture。
@@ -170,7 +172,9 @@ describe("当前任务元数据与自动归档", () => {
     const toggle = $('[data-testid="archive-auto-archive-switch"]');
     await toggle.waitForDisplayed();
     expect(await toggle.getAttribute("aria-checked")).toBe("false");
-    expect(JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8"))).toMatchObject({
+    expect(
+      JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8")),
+    ).toMatchObject({
       taskAutoArchiveEnabled: false,
       taskAutoArchiveOlderThanDays: 7,
       taskAutoArchiveResetVersion: 1,
@@ -233,7 +237,9 @@ describe("当前任务元数据与自动归档", () => {
     expect(
       await $('[data-testid="archive-auto-archive-switch"]').getAttribute("aria-checked"),
     ).toBe("true");
-    expect(JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8"))).toMatchObject({
+    expect(
+      JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8")),
+    ).toMatchObject({
       taskAutoArchiveEnabled: true,
       taskAutoArchiveResetVersion: 1,
     });

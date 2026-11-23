@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/lib/utils.js";
+import robinLogoUrl from "@/assets/brand/robin-closeup.svg";
+import robinLogoAnimatedUrl from "@/assets/brand/robin-closeup-animated.svg";
 
 interface RootStartupLoadingProps {
   label: string;
@@ -24,7 +26,7 @@ export function RootStartupLoading({ label, children, busy = true }: RootStartup
   );
 }
 
-/** 初始化与引导共用品牌图标，保持底色、描边、圆角和标志比例一致。 */
+/** 初始化与引导共用品牌图标：白底圆角瓦片 + 知更鸟特写，深浅主题通用。 */
 export function RobinRunStartupLogoBadge({
   animated = true,
   size = "default",
@@ -36,57 +38,22 @@ export function RobinRunStartupLogoBadge({
     <div
       data-desktop-logo-badge={size === "titlebar" ? "true" : undefined}
       className={cn(
-        "relative flex items-center justify-center bg-[linear-gradient(180deg,#000000_0%,#151718_100%)] text-[#ffffff] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-[rgba(255,255,255,0.1)] before:content-['']",
+        // 品牌图换成知更鸟特写后是多色位图性质，底座由黑渐变字标底改为白底圆角瓦片；
+        // 描边用深色半透明，浅色界面下仍可辨。animated 走 SMIL 动画版资产（呼吸节奏沿用旧字标徽章）。
+        "relative flex items-center justify-center overflow-hidden bg-white before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-black/10",
         size === "titlebar"
-          ? "size-5 rounded shadow-sm/20 before:border-white/20"
-          : "size-24 rounded-3xl shadow-xl/20",
+          ? "size-5 rounded shadow-sm/20 before:border-black/15"
+          : "size-24 rounded-3xl shadow-xl/20 before:border-black/10",
       )}
     >
-      {/* Button 会给 SVG 默认尺寸；紧凑 Logo 显式恢复自动高度，保持标志原始比例。 */}
-      <RobinRunStartupLogo
-        className={size === "titlebar" ? "size-auto w-3.25" : "h-auto w-14"}
-        animated={animated}
+      <img
+        src={animated ? robinLogoAnimatedUrl : robinLogoUrl}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        className="size-full select-none"
       />
     </div>
   );
 }
 
-export function RobinRunStartupLogo({
-  className,
-  animated = true,
-}: {
-  className?: string;
-  animated?: boolean;
-}) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="118"
-      height="100"
-      fill="none"
-      viewBox="0 0 256 218"
-      className={cn("shrink-0 text-current", className)}
-      aria-hidden="true"
-      focusable="false"
-    >
-      {animated ? (
-        <animate
-          attributeName="opacity"
-          begin="3s"
-          dur="1.8s"
-          repeatCount="indefinite"
-          values="1;0.4;1"
-        />
-      ) : null}
-      <path
-        fill="currentColor"
-        d="M134.4 0.130152L116.48 25.6022C113.665 29.5699 109.054 32.0019 104.064 32.0019H6.3999V0C6.3999 0.130149 134.4 0.130152 134.4 0.130152Z"
-      />
-      <path fill="currentColor" d="M256 0.130127L102.401 217.732H0L153.599 0.130127H256Z" />
-      <path
-        fill="currentColor"
-        d="M121.601 217.732L139.65 192.134C142.465 188.166 147.076 185.734 152.067 185.734H249.604V217.736H121.601V217.732Z"
-      />
-    </svg>
-  );
-}

@@ -70,7 +70,10 @@ describe(`${MARKER}: 版本兼容策略`, () => {
   after(async () => {
     await restoreSnapshotFault();
     if (runtimeConfig) {
-      const current = await runSSHCommand(runtimeConfig, 'cat "$HOME/.robinrun/server/current.json"');
+      const current = await runSSHCommand(
+        runtimeConfig,
+        'cat "$HOME/.robinrun/server/current.json"',
+      );
       if (current.code === 0) facts.finalInstalledVersion = JSON.parse(current.stdout).version;
     }
     await mkdir(artifactDir, { recursive: true });
@@ -165,9 +168,9 @@ describe(`${MARKER}: 版本兼容策略`, () => {
       });
     } else if (requiredOld) {
       // 其他旧版本场景代表从未升级过的远端，不能带降级标记，否则向导不会自动更新。
-      expect((await runSSHCommand(config, 'rm -f "$HOME/.robinrun/server/downgrade.json"')).code).toBe(
-        0,
-      );
+      expect(
+        (await runSSHCommand(config, 'rm -f "$HOME/.robinrun/server/downgrade.json"')).code,
+      ).toBe(0);
     }
 
     if (scenario === "automatic-required") {
@@ -180,8 +183,9 @@ describe(`${MARKER}: 版本兼容策略`, () => {
       );
       expect(await $('[data-testid="ssh-dialog"]').isExisting()).toBe(false);
       expect(
-        JSON.parse((await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout)
-          .version,
+        JSON.parse(
+          (await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout,
+        ).version,
       ).toBe(version);
       await clickTestIdByDom(TID_TASK_SETTINGS_BUTTON);
       await clickTestIdByDom(testId(TID_SETTINGS_SECTION_NAV, "remoteDevices"));
@@ -241,8 +245,9 @@ describe(`${MARKER}: 版本兼容策略`, () => {
         timeout: 30_000,
       });
       expect(
-        JSON.parse((await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout)
-          .archiveSha256,
+        JSON.parse(
+          (await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout,
+        ).archiveSha256,
       ).toBe(synthetic.archiveSha256);
       await mkdir(artifactDir, { recursive: true });
       await browser.saveScreenshot(resolve(artifactDir, "controller-downgrade-confirm.png"));
@@ -260,8 +265,9 @@ describe(`${MARKER}: 版本兼容策略`, () => {
       );
       // 等待确认期间不得自动升级被切回的远端。
       expect(
-        JSON.parse((await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout)
-          .version,
+        JSON.parse(
+          (await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout,
+        ).version,
       ).toBe(version);
       await mkdir(artifactDir, { recursive: true });
       await browser.saveScreenshot(resolve(artifactDir, "downgraded-confirm-wait.png"));
@@ -300,8 +306,9 @@ describe(`${MARKER}: 版本兼容策略`, () => {
         { timeout: 30_000, timeoutMsg: `${MARKER}: 详细信息没有说明需要升级桌面端` },
       );
       expect(
-        JSON.parse((await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout)
-          .archiveSha256,
+        JSON.parse(
+          (await runSSHCommand(config, 'cat "$HOME/.robinrun/server/current.json"')).stdout,
+        ).archiveSha256,
       ).toBe(synthetic.archiveSha256);
       facts.remoteNotDowngraded = true;
     } else {

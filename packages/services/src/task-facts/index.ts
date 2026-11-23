@@ -95,6 +95,14 @@ export function createTaskFacts(options: {
         mode: "default",
         provider: ROBINRUN_AGENT_PROVIDER,
         ...(summary.parentSessionId ? { forkedFromTaskId: summary.parentSessionId } : {}),
+        // worker 会话身份（2026-11-16 隔离裁决）：随 meta_json 持久化（UI 跨重启判定
+        // 只读）；worker_child 专属字段，一次性 subagent 的 summary 没有该字段不受影响。
+        ...(summary.worker
+          ? { workerId: summary.worker.workerId, workerName: summary.worker.workerName }
+          : {}),
+        // 创建来源（P2.5）：CLI session 表是唯一事实源；这里镜像到 meta_json 供未来
+        // 来源判断使用（内部机制，UI 不展示）。缺席 = 旧数据按 user 处理，不回填。
+        ...(summary.creationOrigin ? { creationOrigin: summary.creationOrigin } : {}),
         ...(lastOutcome ? { status: lastOutcome === "error" ? "error" : "completed" } : {}),
       };
       return store.applyCliFacts({ meta, titleSource: summary.titleSource, lastOutcome });

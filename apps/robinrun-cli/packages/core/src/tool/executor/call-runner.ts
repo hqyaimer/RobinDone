@@ -528,6 +528,11 @@ async function executeToolCallImpl(
         skillPort: deps.skillPort,
         subagentPort: deps.subagentPort,
         coordinatorResponsePort: deps.coordinatorResponsePort,
+        // agent 消息端口（2026-11-19）：handler context 同样必须转发——注册门判端口
+        // 在场，漏转发就是「工具注册了却永远 ConfigurationError」的 P2.5 同款回归。
+        agentContactPort: deps.agentContactPort,
+        // 触发器 python 运行时端口（2026-11-22）：install_packages 依赖，漏转发同上。
+        triggerRuntimePort: deps.triggerRuntimePort,
         workflowSubmitPort: deps.workflowSubmitPort,
         workflowEscalatePort: deps.workflowEscalatePort,
         artifactStore: deps.artifactStore,
@@ -564,6 +569,9 @@ async function executeToolCallImpl(
         deliveryKind: deps.deliveryKind,
         memoryRoot: deps.getMemoryRoot?.(),
         runtimeScope: deps.runtimeScope,
+        // worker 身份透传（订阅者=创建者的机制层依据，ManageTriggers 消费）；与 runtimeScope
+        // 同源同待遇——漏转发就是「工具注册了却拿不到调用者身份」的静默失真。
+        workerIdentity: deps.workerIdentity,
         providerVisibleToolNames: deps.registry
           .list()
           .filter((name) => deps.registry.getMetadata(name)?.providerVisible !== false),

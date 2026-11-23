@@ -5,7 +5,10 @@ import type {
   WebRemoteControlDeviceGroup,
 } from "#src/web-remote-control/contract.js";
 import type { WebRemoteControlRelayV2Device } from "@robinrun/shared/web-remote-relay";
-import { parseWebRemoteControlExternalQrParams, type WebRemoteControlFailure } from "@robinrun/shared";
+import {
+  parseWebRemoteControlExternalQrParams,
+  type WebRemoteControlFailure,
+} from "@robinrun/shared";
 import { WebRemoteControlV2ConnectionError } from "@robinrun/shared/web-remote-relay";
 import type { WebOAuthProviderId } from "#src/auth/browserOAuthCredentialRepo.js";
 import { groupWebRemoteControlDevices } from "#src/web-remote-control/domain/webRemoteControlDeviceGroups.js";

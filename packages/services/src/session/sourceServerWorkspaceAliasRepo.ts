@@ -1010,9 +1010,9 @@ export class SourceServerWorkspaceAliasRepo {
     runSessionDatabaseIdentityMigration(db);
     const existing = this.readSessionDatabaseGeneration(db);
     if (existing) return existing;
-    db.prepare("INSERT INTO robinrun_database_identity (scope, identity) VALUES ('session', ?)").run(
-      identity,
-    );
+    db.prepare(
+      "INSERT INTO robinrun_database_identity (scope, identity) VALUES ('session', ?)",
+    ).run(identity);
     return identity;
   }
 

@@ -79,10 +79,7 @@ export function resolveTaskRuntimeStatusAfterRestore(
     persistedStatus &&
     persistedStatus !== "running" &&
     typeof persistedUpdatedAt === "number" &&
-    (
-      latestUserMessageTimestamp === null ||
-      persistedUpdatedAt >= latestUserMessageTimestamp
-    )
+    (latestUserMessageTimestamp === null || persistedUpdatedAt >= latestUserMessageTimestamp)
   ) {
     // Bugfix: 历史任务恢复时，store 里可能还残留上一帧的 streaming 运行态。
     // 如果宿主已经把这一轮真正收尾（completed/error）持久化到 meta.status，

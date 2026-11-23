@@ -29,7 +29,10 @@ function buildTaskProviderByTaskId(
 
 export function hasBusyTaskInWorkspaceProvider(
   selectedProvider: RobinRunProvider,
-  taskRuntimeByTaskId: Record<string, { status: RobinRunTaskRuntimeStatus; provider?: RobinRunProvider }>,
+  taskRuntimeByTaskId: Record<
+    string,
+    { status: RobinRunTaskRuntimeStatus; provider?: RobinRunProvider }
+  >,
   optimisticTaskMetaByTaskId: Record<string, { provider?: RobinRunProvider }>,
   taskListCache?: Array<{ taskId: string; provider?: RobinRunProvider }> | null,
   activeTaskId?: string | null,

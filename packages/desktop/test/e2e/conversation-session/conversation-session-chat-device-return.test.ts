@@ -48,7 +48,9 @@ async function openFromChat(locale = "zh-CN", evidence?: string) {
   );
   if (evidence) {
     await settlePresentation();
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `menu-${evidence}.png`));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `menu-${evidence}.png`),
+    );
   }
   await entry.click();
   await $(`[data-testid="${TID_SETTINGS_PAGE}"]`).waitForDisplayed();

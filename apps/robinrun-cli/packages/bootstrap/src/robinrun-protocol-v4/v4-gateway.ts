@@ -262,6 +262,12 @@ export interface V4GatewayHost {
     lastActivityAt: number;
     lastOutcome?: SessionSummary["lastOutcome"];
     parentSessionId?: string;
+    // 创建来源（P2.5）：record 持有，live 投影随行；UI 不消费。
+    creationOrigin?: SessionSummary["creationOrigin"];
+    // worker_child kind 标记（record taskType 推导）+ worker 身份（同构化后随 record
+    // worker_identity 持久化，宿主钩子按 record 回传；live 投影必须透传给 syncer 准入）。
+    workerChild?: boolean;
+    worker?: SessionSummary["worker"];
   } | null;
   /**
    * config 种子：会话 runtime 的当前真值（模型选型/思考深度/协作模式）。
@@ -642,6 +648,29 @@ export class ConversationV4Gateway {
   private readonly detachedChildParent = new Map<string, string>();
   private readonly detachedChildrenByParent = new Map<string, Set<string>>();
   private readonly detachedTerminalAt = new Map<string, number>();
+  /**
+   * worker 会话注册表（2026-11-16 隔离裁决，worker 专属通道）：worker_child 没有
+   * bootstrap record，`host.getSessionWorkspaceId/getSessionIndexMeta` 都依赖 record，
+   * 会话因此进不了 sessions-index。这里按 SubagentSpawned(worker) 事件登记
+   * workspace/parent/身份/时间，投影摘要时优先查本表（publishCurrentSummaryToIndex /
+   * resolveIndexMeta / ensureIndexPublisherExclusive 三处），worker 会话因此能实时
+   * 落进父工作区的列表桶。生命周期与 detached child 相同（终态 grace 后修剪）。
+   */
+  private readonly workerSessions = new Map<
+    string,
+    {
+      workspaceKey: string;
+      parentSessionId: string;
+      workerId: string;
+      workerName: string;
+      createdAt: number;
+      lastActivityAt: number;
+    }
+  >();
+  /** P2.5 路由辅助：worker 会话的派发者（parentSessionId）live 查询；缺席返回 undefined。 */
+  getWorkerSessionParent(childSessionId: string): string | undefined {
+    return this.workerSessions.get(childSessionId)?.parentSessionId;
+  }
   /** 冷恢复协调器（既有 activation 单飞 + 错误分型）。 */
   private readonly coldResume: ColdSessionResumeCoordinator;
   /** 订阅 → flush 调度状态（publisher 内部不持有定时器，调度归网关）。 */
@@ -1171,6 +1200,58 @@ export class ConversationV4Gateway {
   }
 
   /**
+   * worker 会话通道（2026-11-16 隔离裁决）：登记 worker_child 会话并 ingest 建 publisher。
+   * 注册表是 worker 会话进 sessions-index 的事实源（没有 record 的会话靠它解析 workspace
+   * 与 meta），投影摘要因此能带上 worker 身份、被 host syncer 准入到 worker 任务组。
+   * 生命周期：终态时间戳与 detached child 同表（detachedTerminalAt），grace 后同批修剪。
+   */
+  ingestWorkerSession(input: {
+    sessionId: string;
+    parentSessionId: string;
+    workspaceKey: string;
+    workerId: string;
+    workerName: string;
+    event: SessionEvent;
+  }): void {
+    const existing = this.workerSessions.get(input.sessionId);
+    if (existing) {
+      existing.lastActivityAt = this.now();
+      // 修复（2026-11-23）：workerName 此前冻结于首登记——ManageWorkers 改名（workerId
+      // 不变、显示名变）后在途会话的 live 投影摘要与侧栏 worker 组标题持续用旧名，直到
+      // 条目 grace 修剪。随 ingest 事件刷新（同 id 改名是合法操作，session 行的
+      // worker_identity.workerName 快照不回写也由本处实时覆盖）。
+      if (input.workerName && existing.workerName !== input.workerName) {
+        existing.workerName = input.workerName;
+        this.host.onDebug?.(
+          `worker session display name refreshed session=${input.sessionId} worker=${input.workerId} name=${input.workerName}`,
+        );
+      }
+    } else {
+      this.workerSessions.set(input.sessionId, {
+        workspaceKey: input.workspaceKey,
+        parentSessionId: input.parentSessionId,
+        workerId: input.workerId,
+        workerName: input.workerName,
+        createdAt: this.now(),
+        lastActivityAt: this.now(),
+      });
+      this.host.onDebug?.(
+        `register worker session session=${input.sessionId} worker=${input.workerId}`,
+      );
+    }
+    // 终态与 detached child 共用时间表：grace 后无订阅者即修剪（见 pruneDetachedChildPublishers）。
+    if (
+      input.event.type === SessionEventType.TurnComplete ||
+      input.event.type === SessionEventType.TurnError
+    ) {
+      this.detachedTerminalAt.set(input.sessionId, Date.now());
+    } else if (input.event.type === SessionEventType.TurnStarted) {
+      this.detachedTerminalAt.delete(input.sessionId);
+    }
+    this.ingest(input.sessionId, input.event);
+  }
+
+  /**
    * 低频 tick 兜底：释放已终态、无订阅者、且没有自己 record 的 detached child publisher。
    * 释放后再被订阅走既有 cold resume（child 作为 subagent_child 持久化在 session store）。返回释放数。
    */
@@ -1191,6 +1272,8 @@ export class ConversationV4Gateway {
 
   private releaseDetachedChild(childId: string): void {
     this.host.onDebug?.(`release detached live child publisher session=${childId}`);
+    // worker 会话注册表随 publisher 一并释放（终态 grace 后；再次订阅走 cold resume）。
+    this.workerSessions.delete(childId);
     this.cleanupSessionRuntime(childId, { clearCommandInbox: false, notifyIndexRemoved: false });
   }
 
@@ -1225,9 +1308,12 @@ export class ConversationV4Gateway {
     const getWorkspaceId = this.host.getSessionWorkspaceId;
     if (!getWorkspaceId) return;
     try {
-      const workspaceId = getWorkspaceId.call(this.host, sessionId);
+      // worker 会话（worker_child）没有 bootstrap record：workspace 先查 worker 注册表，
+      // 再回落宿主钩子（record 语义）；注册表命中即视作列表会话，跳过 draft/record 过滤。
+      const workerEntry = this.workerSessions.get(sessionId);
+      const workspaceId = workerEntry?.workspaceKey ?? getWorkspaceId.call(this.host, sessionId);
       if (!workspaceId) return;
-      if (this.host.isDraftSession?.(sessionId)) return;
+      if (!workerEntry && this.host.isDraftSession?.(sessionId)) return;
       const indexPublisher = this.indexPublishers.get(workspaceId);
       if (!indexPublisher) return;
       const conversationPublisher = this.publishers.get(sessionId);
@@ -1248,13 +1334,39 @@ export class ConversationV4Gateway {
     lastActivityAt: number;
     lastOutcome?: SessionSummary["lastOutcome"];
     parentSessionId?: string;
+    creationOrigin?: SessionSummary["creationOrigin"];
+    worker?: SessionSummary["worker"];
+    workerChild?: boolean;
   } {
+    // worker 会话：meta 取注册表登记值（无 record，宿主钩子恒 null）。
+    const workerEntry = this.workerSessions.get(sessionId);
+    if (workerEntry) {
+      return {
+        createdAt: workerEntry.createdAt,
+        lastActivityAt: workerEntry.lastActivityAt,
+        parentSessionId: workerEntry.parentSessionId,
+        // 创建来源（P2.5）：agent 派发，ref = 派发会话 id（注册表已持有 parentSessionId）。
+        creationOrigin: { kind: "agent", ref: workerEntry.parentSessionId },
+        workerChild: true,
+        worker: { workerId: workerEntry.workerId, workerName: workerEntry.workerName },
+      };
+    }
     const meta = this.host.getSessionIndexMeta?.(sessionId);
     return {
       createdAt: meta?.createdAt ?? 0,
       lastActivityAt: meta?.lastActivityAt ?? this.now(),
       ...(meta?.lastOutcome ? { lastOutcome: meta.lastOutcome } : {}),
       ...(meta?.parentSessionId ? { parentSessionId: meta.parentSessionId } : {}),
+      ...(meta?.creationOrigin ? { creationOrigin: meta.creationOrigin } : {}),
+      // worker 会话身份透传（2026-11-22 实测修复）：同构化后 worker 身份随 record 持久化
+      // （worker_identity 列），宿主钩子按 record 回传 worker。此前这里只透传 workerChild
+      // kind 标记、丢弃 worker 身份——"身份不可恢复"是 P2 派发体制下的旧结论（身份只在
+      // 内存注册表），同构化后失效。后果：live 投影产出的所有 summary 永不带 worker，
+      // host syncer 的 admitWorkerSessionTask 在会话创建时刻从不运行（仅重启后 store
+      // 种子路径自愈），ContactAgent 新建的 worker 会话被任务组仓储的主智能体首次发现
+      // 分支误归主智能体组。
+      ...(meta?.worker ? { worker: meta.worker } : {}),
+      ...(meta?.workerChild ? { workerChild: true } : {}),
     };
   }
 
@@ -1372,10 +1484,16 @@ export class ConversationV4Gateway {
     for (const summary of stored) publisher.seed(summary);
     // 种子 2：已加载会话用 live 投影覆盖（更准的 phase/preview/backgroundWork）。
     const liveIds = this.host.listWorkspaceSessionIds?.(workspaceId) ?? [...this.publishers.keys()];
-    for (const sessionId of liveIds) {
+    // worker 会话不在 listWorkspaceSessionIds（无 record）：注册表里本工作区的
+    // worker_child 补进种子，重开订阅后运行中的 worker 会话不丢列表行。
+    const workerLiveIds = [...this.workerSessions.entries()]
+      .filter(([, entry]) => entry.workspaceKey === workspaceId)
+      .map(([sessionId]) => sessionId);
+    for (const sessionId of [...liveIds, ...workerLiveIds]) {
       const conversationPublisher = this.publishers.get(sessionId);
       if (!conversationPublisher) continue;
       // draft（deferred 未发首条）不进冷启动种子，与 fanOutToIndex 的过滤一致。
+      // worker 会话没有 record，isDraftSession 对它恒 false，无需特判。
       if (this.host.isDraftSession?.(sessionId)) continue;
       publisher.ingestConversation(
         conversationPublisher.getSnapshot(),
@@ -2227,11 +2345,15 @@ export class ConversationV4Gateway {
           candidate.rowId === params.target.rowId && candidate.entityId === params.target.entityId,
       );
     if (row?.kind !== "userInput") {
-      throw new RobinRunAttachmentFaultError(ROBINRUN_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized);
+      throw new RobinRunAttachmentFaultError(
+        ROBINRUN_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized,
+      );
     }
     const attachment = row.attachments?.[params.attachmentIndex];
     if (!attachment || (attachment.ref !== params.ref && attachment.previewRef !== params.ref)) {
-      throw new RobinRunAttachmentFaultError(ROBINRUN_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized);
+      throw new RobinRunAttachmentFaultError(
+        ROBINRUN_ATTACHMENT_FAULT_CODES.shareReadNotAuthorized,
+      );
     }
     const messageId = publisher.getMessageIdForRow(row.rowId) ?? undefined;
     let payload: { bytes: Uint8Array; mediaType: string };
@@ -2280,11 +2402,15 @@ export class ConversationV4Gateway {
           candidate.rowId === params.target.rowId && candidate.entityId === params.target.entityId,
       );
     if (row?.kind !== "userInput") {
-      throw new RobinRunAttachmentFaultError(ROBINRUN_ATTACHMENT_FAULT_CODES.shareStatNotAuthorized);
+      throw new RobinRunAttachmentFaultError(
+        ROBINRUN_ATTACHMENT_FAULT_CODES.shareStatNotAuthorized,
+      );
     }
     const attachment = row.attachments?.[params.attachmentIndex];
     if (!attachment || (attachment.ref !== params.ref && attachment.previewRef !== params.ref)) {
-      throw new RobinRunAttachmentFaultError(ROBINRUN_ATTACHMENT_FAULT_CODES.shareStatNotAuthorized);
+      throw new RobinRunAttachmentFaultError(
+        ROBINRUN_ATTACHMENT_FAULT_CODES.shareStatNotAuthorized,
+      );
     }
     const messageId = publisher.getMessageIdForRow(row.rowId) ?? undefined;
     let result: { totalBytes: number; mediaType: string; mtimeMs?: number };

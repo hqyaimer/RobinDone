@@ -1,6 +1,13 @@
-import { IRobinRunAgentService, type IBotsService, type ServiceCollection } from "@robinrun/services";
+import {
+  IRobinRunAgentService,
+  type IBotsService,
+  type ServiceCollection,
+} from "@robinrun/services";
 import { createTopicResourceRelayChannel } from "@robinrun/services/node";
-import type { WindowHostAttachmentScope, RobinRunTopicResourceRelayRequest } from "@robinrun/shared";
+import type {
+  WindowHostAttachmentScope,
+  RobinRunTopicResourceRelayRequest,
+} from "@robinrun/shared";
 
 /** 反向请求必须属于发起它的物理连接，并仍绑定当前 logical session，不能只比较文件路径。 */
 export function createWindowTopicResourceRelay(deps: {

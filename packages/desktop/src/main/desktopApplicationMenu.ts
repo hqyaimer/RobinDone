@@ -273,11 +273,14 @@ function buildApplicationMenuTemplate(options: {
               { type: "separator" as const },
             ]
           : []),
-        {
-          label: getLabel(desktopMenuMessageIds.helpWhatsNew),
-          click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenChangelog),
-        },
-        { type: "separator" as const },
+        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「What's New」菜单项——changelog 指向 ZCode 官方站，
+        // 恢复时取消本段注释（OpenFeedback 同理见下方）
+        // {
+        //   label: getLabel(desktopMenuMessageIds.helpWhatsNew),
+        //   click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenChangelog),
+        // },
+        // { type: "separator" as const },
+        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
         ...(isLocalDevelopmentRuntime && stdioTapState.visible
           ? [
               {
@@ -286,7 +289,9 @@ function buildApplicationMenuTemplate(options: {
                 type: "checkbox" as const,
                 checked: stdioTapState.enabled,
                 click: () =>
-                  void options.executeDesktopCommand(DesktopCommandIds.ToggleRobinRunStdioTapDevProxy),
+                  void options.executeDesktopCommand(
+                    DesktopCommandIds.ToggleRobinRunStdioTapDevProxy,
+                  ),
               },
               { type: "separator" as const },
             ]
@@ -318,7 +323,9 @@ function buildApplicationMenuTemplate(options: {
                   {
                     label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointCustom),
                     click: () =>
-                      void options.executeDesktopCommand(DesktopCommandIds.SetRobinRunEndpointCustom),
+                      void options.executeDesktopCommand(
+                        DesktopCommandIds.SetRobinRunEndpointCustom,
+                      ),
                   },
                   {
                     label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointReset),
@@ -342,10 +349,12 @@ function buildApplicationMenuTemplate(options: {
           click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenResourceManager),
         },
         { type: "separator" as const },
-        {
-          label: getLabel(desktopMenuMessageIds.helpFeedback),
-          click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
-        },
+        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「反馈」菜单项——上游反馈表单/in-app 触达，恢复时取消本段注释
+        // {
+        //   label: getLabel(desktopMenuMessageIds.helpFeedback),
+        //   click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
+        // },
+        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
         {
           label: getLabel(desktopMenuMessageIds.helpExportLogs),
           click: () => void options.executeDesktopCommand(DesktopCommandIds.ExportLogs),

@@ -740,9 +740,9 @@ describe("Marketing Touch delivery", () => {
     await byId("cloud-content-dialog").$("button=Run action").click();
     await byId("cloud-content-dialog").waitForExist({ reverse: true, timeout: 15_000 });
     await browser.waitUntil(async () => (await ledger()).events.length === baseline + 1);
-    expect(await browser.execute(() => localStorage.getItem("robinrun-settings-last-section"))).toBe(
-      "appearance",
-    );
+    expect(
+      await browser.execute(() => localStorage.getItem("robinrun-settings-last-section")),
+    ).toBe("appearance");
     expect((await ledger()).events[baseline]).toEqual({
       campaign_id: currentActionCampaignId,
       action_type: "confirm",

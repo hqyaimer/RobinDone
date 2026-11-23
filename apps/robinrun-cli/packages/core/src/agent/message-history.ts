@@ -1,4 +1,5 @@
 import { genUiModelContextSchema, type GenUiModelContext } from "@robinrun/shared/gen-ui";
+import type { SystemStatusPayload } from "@robinrun/shared";
 // ============================================================
 // Message History - Maintains conversation context across turns
 // ============================================================
@@ -91,6 +92,11 @@ export interface RuntimeMessageMetadata {
   agentListingDelta?: AgentListingDelta;
   environment?: EnvironmentAnnouncement;
   inputPresentation?: RuntimeInputPresentation;
+  /**
+   * P2.6 消息来源身份（docs/message-origin.md）：provider 投影据此在正文最前注入
+   * <system-status> 区块；真实用户输入缺省时按 real_user 兜底补 {"sender":"user"}。
+   */
+  systemStatus?: SystemStatusPayload;
   /** 这条输入的页面状态 reminder 正文；provider 投影排序结束后才在输入旁派生 reminder。 */
   genUiState?: string;
 }

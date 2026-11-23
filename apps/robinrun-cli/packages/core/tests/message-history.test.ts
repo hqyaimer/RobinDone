@@ -102,6 +102,7 @@ describe("message history metadata", () => {
     history.addUser("real prompt", { source: "real_user" });
     history.addAttachment("output_style", "style body");
 
+    // canonical 历史只存裸正文 + 来源元数据；<system-status> 区块由 provider builder 渲染时注入。
     expect(history.toRuntimeEntries()).toEqual([
       {
         message: {
@@ -119,7 +120,7 @@ describe("message history metadata", () => {
     expect(buildProviderRequestMessages({ entries: history.toRuntimeEntries() }).messages).toEqual([
       {
         role: "user",
-        content: "real prompt",
+        content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt",
       },
       {
         role: "system",

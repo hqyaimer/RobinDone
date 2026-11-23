@@ -14,7 +14,10 @@ import {
   isRemoteWorkspaceIdentity,
   ROBINRUN_CUA_OFFICIAL_PLUGIN_ID,
 } from "@robinrun/shared";
-import { isCuaPermissionStatusAvailable, type CuaPermissionRestartOptions } from "@robinrun/services";
+import {
+  isCuaPermissionStatusAvailable,
+  type CuaPermissionRestartOptions,
+} from "@robinrun/services";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { Switch } from "@/components/ui/switch.js";
@@ -331,7 +334,8 @@ export function ComputerUseSection({
       const operationContextKey = pluginToggleContextKey;
       // 切换 robinrun-cua 插件 = 同步其 MCP server + skill 一起启用/禁用。
       const completed = await runAfterSuccessfulPluginEnabledChange({
-        submit: () => setPluginEnabled(ROBINRUN_CUA_OFFICIAL_PLUGIN_ID, next, pluginManagementService),
+        submit: () =>
+          setPluginEnabled(ROBINRUN_CUA_OFFICIAL_PLUGIN_ID, next, pluginManagementService),
         isCurrent: () =>
           mountedRef.current &&
           pluginToggleGenerationRef.current === operationGeneration &&

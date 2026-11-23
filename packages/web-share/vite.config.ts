@@ -17,7 +17,8 @@ const { version } = JSON.parse(readFileSync(resolve(REPO_ROOT, "package.json"), 
 
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, REPO_ROOT, ""), ...process.env };
-  const robinrunEnv = env.ROBINRUN_ENV?.trim().toLowerCase() === "production" ? "production" : "test";
+  const robinrunEnv =
+    env.ROBINRUN_ENV?.trim().toLowerCase() === "production" ? "production" : "test";
   const endpointEnv = { ...env, ROBINRUN_ENV: robinrunEnv };
   const endpointOrigin = resolveRuntimeRobinRunEndpointOrigin(endpointEnv);
   const oauthOrigin = resolveZaiOAuthOrigin(endpointEnv);

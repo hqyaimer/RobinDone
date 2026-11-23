@@ -363,8 +363,9 @@ describe(`${CASE_MARKER}: 同版本异 SHA 更新在 running task 下被守卫�
         facts.guardFailure = {
           body: await browser.execute(() => document.body.innerText.slice(-3500)),
           currentSha: await readRemoteCurrentShaOrNull(prepared.config),
-          runningTasks: (await dockerSh('"$HOME/.robinrun/server/bin/robinrun" running-tasks --json'))
-            .stdout,
+          runningTasks: (
+            await dockerSh('"$HOME/.robinrun/server/bin/robinrun" running-tasks --json')
+          ).stdout,
           core: await readRemoteCoreIdentityViaDocker().catch(() => null),
         };
         throw error;
@@ -420,7 +421,9 @@ describe(`${CASE_MARKER}: 同版本异 SHA 更新在 running task 下被守卫�
       await releaseControlledReplay("r3-update-slow-turn");
       await browser.waitUntil(
         async () => {
-          const result = await dockerSh('"$HOME/.robinrun/server/bin/robinrun" running-tasks --json');
+          const result = await dockerSh(
+            '"$HOME/.robinrun/server/bin/robinrun" running-tasks --json',
+          );
           return result.code === 0 && JSON.parse(result.stdout).length === 0;
         },
         { timeout: 120_000, timeoutMsg: `${CASE_MARKER}: 释放回合后运行任务未收口` },

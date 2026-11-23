@@ -43,6 +43,8 @@ export function resolveAppRuntimeConfig(input: {
   pluginRuntimeFeatures?: AgentRuntimeConfig["runtimeFeatures"];
   subagentOutputRootDir: string;
   subagentProfiles?: readonly AgentProfile[];
+  /** create-app 已按名册解析校验的 worker 会话身份；覆盖 options.runtimeConfig 的部分请求。 */
+  workerIdentity?: { workerId: string; workerName?: string };
   storageRoot?: string;
   workingDirectory: string;
   workspaceIdentity?: string;
@@ -57,6 +59,7 @@ export function resolveAppRuntimeConfig(input: {
     pluginRuntimeFeatures,
     subagentOutputRootDir,
     subagentProfiles = [],
+    workerIdentity,
     workingDirectory,
     workspaceIdentity,
   } = input;
@@ -129,6 +132,9 @@ export function resolveAppRuntimeConfig(input: {
     options.runtimeConfig?.subagents?.builtInModelSelectionOverrides ?? {};
   const runtimeConfig: AgentRuntimeConfig = {
     ...options.runtimeConfig,
+    // worker 会话身份以 create-app 的名册解析结果为准（覆盖请求侧的部分形态：
+    // 只有 workerId 没有显示名），master 会话显式清空，避免透传残留。
+    workerIdentity,
     genUiOutputRoot: (options.env ?? process.env)[GEN_UI_OUTPUT_ROOT_ENV],
     bashTimeoutPolicy:
       options.runtimeConfig?.bashTimeoutPolicy ??

@@ -16,5 +16,7 @@ export function isRobinRunAgentMcpStatusModeUnsupportedError(error: unknown): bo
   if (!error || typeof error !== "object") {
     return false;
   }
-  return (error as { code?: unknown }).code === ROBINRUN_AGENT_MCP_STATUS_MODE_UNSUPPORTED_ERROR_CODE;
+  return (
+    (error as { code?: unknown }).code === ROBINRUN_AGENT_MCP_STATUS_MODE_UNSUPPORTED_ERROR_CODE
+  );
 }

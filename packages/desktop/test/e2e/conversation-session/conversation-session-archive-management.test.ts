@@ -200,7 +200,9 @@ describe("归档管理", () => {
     await expect(days).toHaveText("7 天后归档");
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-checked", "true");
-    expect(JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8"))).toMatchObject({
+    expect(
+      JSON.parse(await readFile(join(home, ".robinrun/v2/setting.json"), "utf8")),
+    ).toMatchObject({
       taskAutoArchiveEnabled: true,
       taskAutoArchiveOlderThanDays: 7,
     });

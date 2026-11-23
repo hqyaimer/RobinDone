@@ -52,7 +52,10 @@ try {
               if (message.type === "pair_status_query")
                 socket.send(JSON.stringify({ type: "pair_status_ack", pair_status: "matched" }));
               const payload = message.payload;
-              if (payload?.robinrun_type === "rpc-frame" || payload?.robinrun_type === "rpc-frame-ack") {
+              if (
+                payload?.robinrun_type === "rpc-frame" ||
+                payload?.robinrun_type === "rpc-frame-ack"
+              ) {
                 connection.bridge?.acceptPayload(payload);
                 return;
               }
@@ -193,7 +196,9 @@ try {
             assert.equal(new URL(page.url()).searchParams.has("name"), false);
             assert.equal(new URL(page.url()).searchParams.get("app_version"), "3.13.0");
             assert.equal(
-              await page.evaluate(() => localStorage.getItem("robinrun-web-remote-last-device-sid")),
+              await page.evaluate(() =>
+                localStorage.getItem("robinrun-web-remote-last-device-sid"),
+              ),
               "e2e-device",
             );
             await page.getByRole("button", { name: /Alice’s MacBook/ }).waitFor();

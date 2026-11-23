@@ -1,5 +1,6 @@
 import type { ToolSearchExecutionContext } from "@robinrun/contracts";
 import type {
+  AgentContactPort,
   AgentExecutionTelemetryPort,
   AgentTelemetryActorKind,
   AutomationPort,
@@ -30,6 +31,8 @@ import type {
   SubagentPort,
   SubagentRunOptions,
   ToolArtifactStorePort,
+  TriggerRuntimePort,
+  WorkerSessionIdentity,
   TraceContext,
   TurnId,
   WorkflowEscalatePort,
@@ -104,6 +107,10 @@ export interface ToolExecutorOptions {
   skillPort?: SkillPort;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
+  /** agent 消息端口（2026-11-19）：ContactAgent/WaitReply；master 主会话 + worker_child 注入。 */
+  agentContactPort?: AgentContactPort;
+  /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
+  triggerRuntimePort?: TriggerRuntimePort;
   workflowSubmitPort?: WorkflowSubmitPort;
   /** actor 的升级端口；存在即为该会话注册 escalate。 */
   workflowEscalatePort?: WorkflowEscalatePort;
@@ -133,6 +140,8 @@ export interface ToolExecutorOptions {
   clientMode?: "desktop-continuous" | "web-remote-replayable";
   deliveryKind?: "desktop-continuous" | "web-remote-replayable";
   runtimeScope?: ToolRuntimeScope;
+  /** 调用会话的 worker 身份（runtime.config.workerIdentity 透传）；缺席 = master/subagent 会话。 */
+  workerIdentity?: WorkerSessionIdentity;
   getWorkingDirectory?: () => string;
   setWorkingDirectory?: (cwd: string) => Promise<void> | void;
   getWorkspaceRoot?: () => string;
@@ -231,6 +240,10 @@ export interface ToolExecutorDeps {
   skillPort?: SkillPort;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
+  /** agent 消息端口（2026-11-19）：ContactAgent/WaitReply；master 主会话 + worker_child 注入。 */
+  agentContactPort?: AgentContactPort;
+  /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
+  triggerRuntimePort?: TriggerRuntimePort;
   workflowSubmitPort?: WorkflowSubmitPort;
   /** actor 的升级端口；存在即为该会话注册 escalate。 */
   workflowEscalatePort?: WorkflowEscalatePort;
@@ -263,6 +276,12 @@ export interface ToolExecutorDeps {
   deliveryKind?: "desktop-continuous" | "web-remote-replayable";
   getMemoryRoot?: () => string | undefined;
   runtimeScope: ToolRuntimeScope;
+  /**
+   * 调用会话的 worker 身份（worker 会话同构化，runtime.config.workerIdentity 原样透传）。
+   * 缺席 = master/一次性 subagent 会话。ManageTriggers 用它把「订阅者=创建者」钉在机制层
+   * （worker 会话的模型不知道自己的 wkr-id，归属不能依赖模型传值）。
+   */
+  workerIdentity?: WorkerSessionIdentity;
   traceContext?: TraceContext;
   getMode: () => CollaborationMode;
   maxConcurrency: number;

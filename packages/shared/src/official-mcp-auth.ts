@@ -215,7 +215,9 @@ export function isOfficialMcpOriginTrusted(
     }
   }
 
-  const expected = input.robinrunApiOrigin ? normalizeHttpsOrigin(input.robinrunApiOrigin) : undefined;
+  const expected = input.robinrunApiOrigin
+    ? normalizeHttpsOrigin(input.robinrunApiOrigin)
+    : undefined;
   if (!expected) return { detail: "robinrun_origin_unresolved", trusted: false };
   if (normalizeHttpsOrigin(origin) !== expected) {
     return { detail: "origin_mismatch", trusted: false };

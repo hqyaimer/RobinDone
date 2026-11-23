@@ -104,7 +104,10 @@ function assertInstalledRecord(pluginStorageRoot: string, cacheRoot: string): vo
   expect(record?.source?.sha256 ?? "").toMatch(/^[a-f0-9]{64}$/u);
 }
 
-function componentNames(plugin: RobinRunPluginInfo | undefined, kind: "command" | "skill"): string[] {
+function componentNames(
+  plugin: RobinRunPluginInfo | undefined,
+  kind: "command" | "skill",
+): string[] {
   return (
     plugin?.components?.find((group) => group.kind === kind)?.items.map((item) => item.name) ?? []
   );

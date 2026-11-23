@@ -122,6 +122,8 @@ export const ServiceChannels = {
   RobinRunSession: "robinrun-session",
   Project: "project",
   TaskGroups: "task-groups",
+  /** RobinRun 触发器引擎（host 常驻服务：调度/脚本/webhook/会话路由，2026-11-19 设计） */
+  TriggerEngine: "trigger-engine",
   RemoteProjects: "remote-projects",
   /** 手机远端 attachment 的窗口目录；原 project 继续属于工作区。 */
   WindowProject: "window-project",

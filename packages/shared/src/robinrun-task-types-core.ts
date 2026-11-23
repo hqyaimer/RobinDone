@@ -59,6 +59,19 @@ export interface RobinRunGlmAgentModelStateUpdatePayload {
 }
 /** 外部历史迁移来源。当前只落 Claude Code，后续其它来源继续在这里扩展。 */
 export type RobinRunTaskMigrationSource = "claudeCode";
+
+/**
+ * 会话创建来源（P2.5，2026-11-16；内部处理机制，UI 不展示）。
+ *
+ * 每个会话创建时必带：user=用户创建；agent=主智能体某会话派发（ref=来源会话 id）；
+ * trigger=触发器/定时（ref=automationId）；system=系统任务（ref=offPeakTaskId 等）。
+ * 预留字段，未来来源判断（通知路由、权限分层等）在此基础上扩展。
+ */
+export interface RobinRunSessionCreationOrigin {
+  kind: "user" | "agent" | "trigger" | "system";
+  /** 来源锚点：agent=来源会话 id；trigger=automationId；system=offPeakTaskId；user 可空。 */
+  ref?: string;
+}
 export type RobinRunTaskGoalStatus = "active" | "paused" | "budget_limited" | "complete";
 export type RobinRunTaskTargetChangedAction =
   | "set"
@@ -339,6 +352,20 @@ export interface RobinRunTaskMeta {
    * 预分配的 sessionId，标记从创建到运行恒定，供月亮图标与系统分组归属使用。
    */
   offPeakTaskId?: string;
+  /**
+   * worker 会话身份标记（2026-11-16 会话通道隔离裁决）：该 session 由主智能体派发给
+   * 名册 worker（worker_child）。syncer 在首见时从 SessionSummary.worker 回填，持久化
+   * 到 meta_json——UI 据此判定只读（跨重启有效，不依赖 live sessions-index），
+   * 与一次性 subagent 的任何投影字段无关。
+   */
+  workerId?: string;
+  /** 派发时名册 worker 的显示名（改名不回填历史会话，快照式事实）。 */
+  workerName?: string;
+  /**
+   * 会话创建来源（P2.5，2026-11-16）：CLI session 表是唯一事实源，创建时必带；
+   * syncer 从 SessionSummary.creationOrigin 镜像到 meta_json（内部处理机制，UI 不展示）。
+   */
+  creationOrigin?: RobinRunSessionCreationOrigin;
   /** fork 产物保留来源 taskId，供 UI 做本地化标题兜底和后续追溯。 */
   forkedFromTaskId?: string;
   /** 未读任务记录最近一次标记/产生未读的时间，用于跨重启保留蓝点状态。 */

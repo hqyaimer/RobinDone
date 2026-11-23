@@ -6,7 +6,11 @@ import {
   type ConversationShareArtifactDescriptor,
 } from "@robinrun/shared";
 import { toolCallDisplaySchema } from "@robinrun/shared/robinrun-protocol-v4";
-import type { ArtifactRow, ConversationRow, ToolCallRow } from "@robinrun/shared/robinrun-protocol-v4";
+import type {
+  ArtifactRow,
+  ConversationRow,
+  ToolCallRow,
+} from "@robinrun/shared/robinrun-protocol-v4";
 
 import { ConversationShareServiceError } from "./conversationShare.js";
 

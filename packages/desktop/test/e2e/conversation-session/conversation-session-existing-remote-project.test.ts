@@ -1,7 +1,11 @@
 import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
 import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
-import { ServiceChannels, InternalChannels, buildRemoteHostWorkspaceIdentity } from "@robinrun/shared";
+import {
+  ServiceChannels,
+  InternalChannels,
+  buildRemoteHostWorkspaceIdentity,
+} from "@robinrun/shared";
 import {
   TID_VIRTUAL_PROJECT_CREATE_TASK,
   TID_TASK_SETTINGS_BUTTON,

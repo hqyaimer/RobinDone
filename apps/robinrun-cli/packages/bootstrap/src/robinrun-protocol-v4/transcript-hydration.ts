@@ -21,7 +21,7 @@ import type {
   TurnInputIntentMetadata,
 } from "@robinrun/contracts";
 import { INTERRUPT_MARKER_SOURCE, joinTaskNotificationBatch } from "@robinrun/core";
-import { isHighspeedProviderId } from "@robinrun/shared";
+import { isHighspeedProviderId, type SystemStatusPayload } from "@robinrun/shared";
 import type { EventId, SessionEvent, SessionId, TraceId, TurnId } from "@robinrun/contracts";
 import {
   CompactTimelineStatus,
@@ -53,7 +53,8 @@ import { shouldHideInvalidToolCallFromProduct } from "../tool-call-product-visib
 import { ProductProjection } from "./product-projection.js";
 import { HYDRATION_TRACE_ID } from "./projection-state.js";
 
-const SUBAGENT_TOOL_NAMES = new Set(["Agent", "Task", "subagent"]);
+// P2.6 工具分离：DispatchWorker 与 Agent 同族派发工具，转录投影同一套行逻辑。
+const SUBAGENT_TOOL_NAMES = new Set(["Agent", "Task", "subagent", "DispatchWorker"]);
 const LEGACY_MODEL_REQUEST_CANCELLED_MESSAGE = "Model request was cancelled.";
 const LEGACY_PROTOCOL_SESSION_STOPPED_MESSAGE = "RobinRun Protocol session stopped";
 const PERSISTED_CANCELLATION_CODES = new Set<string>([
@@ -1333,6 +1334,59 @@ function steerDeliveryOfMessage(message: MessageWithParts): "guide" | "queue" | 
   return delivery === "guide" || delivery === "queue" ? delivery : null;
 }
 
+// sender 闭合集与 @robinrun/shared message-origin 的 SYSTEM_STATUS_SENDERS 同步
+// （hydration 不引运行时协议模块，重复六词换取零耦合；两边都有测试守恒）。
+const HYDRATED_SYSTEM_STATUS_SENDERS = new Set([
+  "user",
+  "master",
+  "worker",
+  "subagent",
+  "trigger",
+  "system",
+]);
+
+/**
+ * P2.6 消息来源（2026-11-18 验收修复）：持久 metadata.systemStatus 的宽松读取。
+ * master 派发/插话与触发器轮的 user 消息带它——冷恢复据此归 mailbox（左侧 + 发送者
+ * 徽章），与活投影同形；此前派发首条消息伪成用户气泡（右侧），根因就是这里丢了来源。
+ * metadata 是系统写入的可信数据，sender 闭合集校验通过即原样透传。
+ */
+function systemStatusOfMessage(message: MessageWithParts): SystemStatusPayload | undefined {
+  if (message.info.role !== "user") return undefined;
+  const metadata = (message.info as { metadata?: unknown }).metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return undefined;
+  const candidate = (metadata as Record<string, unknown>).systemStatus;
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return undefined;
+  const sender = (candidate as Record<string, unknown>).sender;
+  if (typeof sender !== "string" || !HYDRATED_SYSTEM_STATUS_SENDERS.has(sender)) return undefined;
+  return candidate as SystemStatusPayload;
+}
+
+/**
+ * P2.6 验收修复第二轮（2026-11-18）：background wake（task-notification）轮的发送方
+ * 身份字段。与 turn.ts 的 TurnStarted 组装同一形状（inputSender/Label/SessionId），
+ * 真实用户来源不占字段；投影据此把 worker/subagent 通知落成可见 mailbox 行。
+ */
+function backgroundWakeSenderFieldsOfMessage(
+  message: MessageWithParts,
+): {
+  inputSender: SystemStatusPayload["sender"];
+  inputSenderId?: string;
+  inputSenderLabel?: string;
+  inputSenderSessionId?: string;
+} | {} {
+  const systemStatus = systemStatusOfMessage(message);
+  if (!systemStatus || systemStatus.sender === "user") return {};
+  return {
+    inputSender: systemStatus.sender,
+    ...(systemStatus.senderId ? { inputSenderId: systemStatus.senderId } : {}),
+    ...(systemStatus.senderName ? { inputSenderLabel: systemStatus.senderName } : {}),
+    ...(systemStatus.fromSessionId
+      ? { inputSenderSessionId: systemStatus.fromSessionId }
+      : {}),
+  };
+}
+
 /**
  * 轮边界判定：真实 user starter（guide steer 除外——内联当前轮）或 model-only
  * 唤醒触发（background wake / goal continuation 各开一轮）。
@@ -1380,10 +1434,17 @@ function backgroundResultOriginMetaOfMessage(
   const workflowBlocked = workflowBlockedMetaSchema.safeParse(record.workflowBlocked);
   // 后台 Agent 的结构化终态也要过冷恢复，否则恢复后失败详情退回整句 summary。
   const subagentResult = subagentResultMetaSchema.safeParse(record.subagentResult);
+  // mailbox 跳转锚点（2026-11-18）同形还原：子会话汇报轮 turnId 缺席/畸形时丢弃该字段
+  // 不丢基字段——冷恢复后的 mailbox 行与 live 同形，跳转按钮才能精确滚动。
+  const sourceTurnId =
+    typeof record.sourceTurnId === "string" && record.sourceTurnId.trim().length > 0
+      ? record.sourceTurnId.trim()
+      : undefined;
   return {
     backgroundSource,
     title,
     workId,
+    ...(sourceTurnId ? { sourceTurnId } : {}),
     ...(workflowNotification ? { workflowNotification } : {}),
     ...(workflowBlocked.success ? { workflowBlocked: workflowBlocked.data } : {}),
     ...(subagentResult.success ? { subagentResult: subagentResult.data } : {}),
@@ -1491,6 +1552,9 @@ function collectTurnOutput(options: {
       // sourceCommandId/clientId/attachments，命令去重与展示也不再和 live 等价。
       // 新数据优先复用原 queueItemId，legacy 才使用可诊断的 hydration fallback。
       const pendingInputId = intent?.queueItemId ?? `hydrate-steer-${String(message.info.id)}`;
+      // P2.6 消息来源（2026-11-18 验收修复）：guide 插话的发送者随持久 metadata 回带，
+      // 否则 master 插话在冷恢复后伪成用户气泡（投影 drainSender 缺席 → realUser 右侧）。
+      const steerSystemStatus = systemStatusOfMessage(message);
       push(
         SessionEventType.TurnSteerDrained,
         {
@@ -1503,6 +1567,7 @@ function collectTurnOutput(options: {
               text: textOfMessage(message.parts),
               delivery: "guide",
               ...(intent ? { intent } : {}),
+              ...(steerSystemStatus ? { systemStatus: steerSystemStatus } : {}),
             },
           ],
           targetTurnId: turnId,
@@ -1901,6 +1966,13 @@ export function synthesizeEventsFromMessages(
             ...(wakeSource === "background_task"
               ? { originMeta: backgroundResultOriginMetaOfMessage(message) }
               : {}),
+            // P2.6 验收修复第二轮（2026-11-18）：worker/subagent 通知的发送方身份从持久
+            // metadata.systemStatus 还原（活投影由 TurnStarted options.systemStatus 下发，
+            // 同一份元数据），冷恢复的 mailbox 行与 live 同形——否则重启后 worker 的
+            // 返回消息又退回不可见的纯 model-only 轮。
+            ...(wakeSource === "background_task"
+              ? backgroundWakeSenderFieldsOfMessage(message)
+              : {}),
             // model-only trigger 同样是持久 user 实体；若不传 messageId，
             // cold 会退化到 hydrate-turn-N，live/cold productTurn 身份再次分叉。
             messageId: String(message.info.id),
@@ -1991,12 +2063,38 @@ export function synthesizeEventsFromMessages(
     // timeline part 与下一个 accepted turn 之间可以夹着 legacy synthetic
     // context，不能靠「紧邻前一条」猜测；持有显式边界直到真正开轮。
     selectAcceptedTurnModel(turnModelSelectionOfUserMessage(message));
+    // P2.6 消息来源（2026-11-18 验收修复）：master 派发首条消息/主智能体插话/触发器轮的
+    // 持久消息带 systemStatus——冷恢复按它发 inputSource=subagent + inputSender，投影归
+    // mailbox（左侧 + 发送者徽章），与活投影同形。此前这里丢来源，派发首条消息在
+    // worker 会话里伪成用户气泡（用户截图验收问题 1）。
+    // 2026-11-21 实测修复二轮：可见轮此前只回填 inputSource/inputSender，senderId/
+    // senderLabel/senderSessionId 丢失——ContactAgent 投递的消息重开会话（冷恢复）徽章
+    // 回退泛称「工作者」。与 backgroundWakeSenderFieldsOfMessage（通知轮）同字段回填，
+    // 明细都在持久 metadata.systemStatus 上。
+    const hydratedSystemStatus = systemStatusOfMessage(message);
+    const hydratedSenderFields =
+      hydratedSystemStatus && hydratedSystemStatus.sender !== "user"
+        ? {
+            inputSource: "subagent" as const,
+            inputSender: hydratedSystemStatus.sender,
+            ...(hydratedSystemStatus.senderId
+              ? { inputSenderId: hydratedSystemStatus.senderId }
+              : {}),
+            ...(hydratedSystemStatus.senderName
+              ? { inputSenderLabel: hydratedSystemStatus.senderName }
+              : {}),
+            ...(hydratedSystemStatus.fromSessionId
+              ? { inputSenderSessionId: hydratedSystemStatus.fromSessionId }
+              : {}),
+          }
+        : {};
     push(
       SessionEventType.TurnStarted,
       {
         turnNumber,
         input: userText,
         ...(epilogueStart === undefined ? {} : { epilogueStart }),
+        ...(Object.keys(hydratedSenderFields).length > 0 ? hydratedSenderFields : {}),
         // 根因：cold hydration 过去只重建可见 user row，遗漏持久 messageId，导致
         // 同一条历史消息在 UI 中可见却无法被 edit/rewind 命令寻址。真实 user
         // transcript message 就是该 row 的权威 target，必须与 live TurnStarted

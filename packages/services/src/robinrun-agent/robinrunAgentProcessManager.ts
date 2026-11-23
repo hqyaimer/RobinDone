@@ -458,7 +458,10 @@ export function resolveDefaultRobinRunAgentCommand(
     return applyPresentationSurfaceToCommand(
       {
         command,
-        args: parseArgsJson(process.env.ROBINRUN_AGENT_SERVER_ARGS_JSON) ?? ["app-server", "--stdio"],
+        args: parseArgsJson(process.env.ROBINRUN_AGENT_SERVER_ARGS_JSON) ?? [
+          "app-server",
+          "--stdio",
+        ],
         cwd: process.env.ROBINRUN_AGENT_SERVER_CWD?.trim() || context.workspacePath,
       },
       context.presentationSurface,
@@ -891,7 +894,9 @@ export class RobinRunAgentProcessManager {
     return cleanupPromise;
   }
 
-  private async cleanupManagedProcessForShutdown(managed: ManagedRobinRunAgentProcess): Promise<void> {
+  private async cleanupManagedProcessForShutdown(
+    managed: ManagedRobinRunAgentProcess,
+  ): Promise<void> {
     await this.cleanupManagedProcessWithRetry(
       managed,
       "manager-dispose",
@@ -1012,7 +1017,9 @@ export class RobinRunAgentProcessManager {
     }
     controllers.add(admissionAbortController);
     const startPromise = this.startClient(
-      workspaceKey === SHARED_TASK_RUNTIME_KEY ? { workspacePath: getRobinRunDataRootDir() } : params,
+      workspaceKey === SHARED_TASK_RUNTIME_KEY
+        ? { workspacePath: getRobinRunDataRootDir() }
+        : params,
       workspaceKey,
       startGeneration,
       admissionAbortController.signal,

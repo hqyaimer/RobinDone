@@ -10,12 +10,14 @@ import {
 import { createHttpServer, resolveHttpServerId } from "./http.js";
 
 async function main(): Promise<void> {
-  const robinrunBuiltinProviderConfigFilePath = await materializeBundledRobinRunBuiltinProviderConfig({
-    environmentConfigRoot: getAppConfigDir(),
-    content: readBundledRobinRunBuiltinProviderConfig(),
-  });
+  const robinrunBuiltinProviderConfigFilePath =
+    await materializeBundledRobinRunBuiltinProviderConfig({
+      environmentConfigRoot: getAppConfigDir(),
+      content: readBundledRobinRunBuiltinProviderConfig(),
+    });
   const port = Number(process.env["PORT"]) || 3030;
-  const host = process.env["ROBINRUN_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
+  const host =
+    process.env["ROBINRUN_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
   const staticRoot = process.env["ROBINRUN_WEB_STATIC_ROOT"]?.trim() || undefined;
   const authToken = process.env["ROBINRUN_SERVER_AUTH_TOKEN"]?.trim() || undefined;
   const topicResourcePeers = createTopicResourcePeers();

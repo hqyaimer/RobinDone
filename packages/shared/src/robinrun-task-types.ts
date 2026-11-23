@@ -71,6 +71,36 @@ export function isMainAgentGroupId(groupId: string): boolean {
   return groupId.startsWith(MAIN_AGENT_GROUP_PREFIX);
 }
 
+/**
+ * worker 分组的 id 前缀：每个 active worker 一个会话组织组（2026-11-16 物化裁决）。
+ * id 确定性派生为 `${WORKER_GROUP_PREFIX}${workerId}`；workers.json 仍是 worker 身份
+ * 唯一事实源（改名/停用语义不变），组行只是会话组织投影——标题随注册表同步（注册表
+ * 赢），颜色存组行（用户可改），禁止重命名/解散（名单归 ManageWorkers）。
+ */
+export const WORKER_GROUP_PREFIX = "robinrun-worker-";
+
+/**
+ * worker id 的 slug 形状，与 worker-roster `workerIdSchema` 保持一致（小写字母/数字/
+ * 连字符，1-64）。这里复制而非 import：worker-roster 是受管模块（依赖 services 等），
+ * 基础 task 类型与本服务（task-groups）不得反向依赖它。
+ */
+export const WORKER_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
+/** 由 worker id 派生其会话组织分组的确定性 id。 */
+export function workerGroupId(workerId: string): string {
+  return `${WORKER_GROUP_PREFIX}${workerId}`;
+}
+
+/** 判断一个分组 id 是否是某个 worker 的会话组织组。 */
+export function isWorkerGroupId(groupId: string): boolean {
+  return groupId.startsWith(WORKER_GROUP_PREFIX);
+}
+
+/** 从 worker 分组 id 反解 worker id（`isWorkerGroupId` 为真时才有意义）。 */
+export function workerIdFromWorkerGroupId(groupId: string): string {
+  return groupId.slice(WORKER_GROUP_PREFIX.length);
+}
+
 type CronTaskIdentity = Pick<RobinRunTaskMeta, "cronAutomationId"> & {
   automationId?: string;
 };

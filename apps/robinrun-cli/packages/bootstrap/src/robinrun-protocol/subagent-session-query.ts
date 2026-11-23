@@ -13,7 +13,8 @@ import {
 } from "@robinrun/contracts";
 import type { RobinRunSessionEndedSubagent, RobinRunSessionRunningSubagent } from "@robinrun/shared";
 
-const SUBAGENT_TOOL_NAMES = new Set(["Agent", "Task", "subagent"]);
+// P2.6 工具分离：DispatchWorker 与 Agent 同族派发工具，子会话反查同一套候选逻辑。
+const SUBAGENT_TOOL_NAMES = new Set(["Agent", "Task", "subagent", "DispatchWorker"]);
 const CANCELLATION_PATTERN = /abort|cancel|interrupt|stop/i;
 
 interface SubagentCandidate {

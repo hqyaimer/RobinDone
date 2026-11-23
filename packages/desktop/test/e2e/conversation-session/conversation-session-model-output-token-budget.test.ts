@@ -301,7 +301,8 @@ async function waitForSuccessfulModelIo(input: {
 }
 
 async function waitForAutoCompactDecision(sessionId: string): Promise<Record<string, unknown>> {
-  const logDir = process.env.ROBINRUN_LOG_DIR?.trim() || join(paths.homeDir, ".robinrun", "cli", "log");
+  const logDir =
+    process.env.ROBINRUN_LOG_DIR?.trim() || join(paths.homeDir, ".robinrun", "cli", "log");
   let matched: Record<string, unknown> | null = null;
   await browser.waitUntil(
     async () => {

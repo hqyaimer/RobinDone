@@ -176,7 +176,9 @@ describe("Windows E2E shard runner", () => {
       },
     });
     const firstHomes = new Set(firstPlan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR));
-    const secondHomes = new Set(secondPlan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR));
+    const secondHomes = new Set(
+      secondPlan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR),
+    );
 
     expect([...firstHomes].filter((home) => secondHomes.has(home))).toEqual([]);
     expect([...firstHomes].every((home) => home.includes("concurrent-run-a"))).toBe(true);

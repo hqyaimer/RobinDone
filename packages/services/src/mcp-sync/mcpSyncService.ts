@@ -490,8 +490,9 @@ function writeServerMapToJson(
 export function readRobinrunServerMap(
   config: Record<string, unknown>,
 ): Record<string, Record<string, unknown>> {
-  return migrateLegacyEnableFlag(readServerMapFromJson(config, ROBINRUN_MCP_DESCRIPTOR.configKeyName))
-    .servers;
+  return migrateLegacyEnableFlag(
+    readServerMapFromJson(config, ROBINRUN_MCP_DESCRIPTOR.configKeyName),
+  ).servers;
 }
 
 export function writeRobinrunServerMap(

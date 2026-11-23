@@ -910,7 +910,10 @@ async function seedRemote(container: string): Promise<void> {
     [PLUGIN.update, "1.0.0"],
     [PLUGIN.older, "2.0.0"],
   ] as const) {
-    await write(`.robinrun/plugins/${name}/.robinrun-plugin/plugin.json`, pluginManifest(name, version));
+    await write(
+      `.robinrun/plugins/${name}/.robinrun-plugin/plugin.json`,
+      pluginManifest(name, version),
+    );
     await write(`.robinrun/plugins/${name}/README.md`, `${name} ${version}\n`);
     await write(`.robinrun/plugins/${name}/data/state.json`, '{ "remote": true }\n');
     remotePluginDirs.push(`${REMOTE_HOME}/.robinrun/plugins/${name}`);

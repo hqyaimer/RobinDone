@@ -45,7 +45,8 @@ export async function resolveAccountTeamPlanRuntimeMaterial(
     });
     return null;
   }
-  const robinrunJwtToken = (await params.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() ?? "";
+  const robinrunJwtToken =
+    (await params.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() ?? "";
   if (family === "bigmodel" && robinrunJwtToken && token === robinrunJwtToken) {
     // BigModel /api/biz 只接受登录 access token，不能使用旧版本误存的 RobinRun JWT。
     log.warn(undefined, "Team Plan runtime key projection skipped: stale robinrun JWT token", {

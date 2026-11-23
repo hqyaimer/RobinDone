@@ -18,7 +18,6 @@ export {
   resolveGroupedDraftTaskPlacementForTask,
 } from "@/project-sidebar/grouped/view.js";
 export {
-  TASK_GROUP_BORDER_COLOR_CLASS,
   TASK_GROUP_COLORS,
   TASK_GROUP_CONTAINER_CLASS,
   TASK_GROUP_CONTENT_CLASS,

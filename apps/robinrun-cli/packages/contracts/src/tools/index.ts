@@ -24,6 +24,10 @@ export * from "./plan-mode.js";
 export * from "./ask-user-question.js";
 export * from "./send-message.js";
 export * from "./respond-to-coordinator.js";
+// agent 消息与会话感知（2026-11-19，docs/trigger-system.md）：ContactAgent 唯一请求入口
+// + WaitReply 主动等待；ReturnToDispatcher 已移除（退出路径并入 ContactAgent needReply=false）。
+export * from "./contact-agent.js";
+export * from "./wait-reply.js";
 export * from "./task-output.js";
 export * from "./task-stop.js";
 export * from "./read-session-context.js";
@@ -58,6 +62,16 @@ export * from "./fill-workflow-hole.js";
 export * from "./workflow-observation-display.js";
 export * from "./tool-result-metadata.js";
 export * from "./performance.js";
+
+// RobinRun worker 编制系统：主智能体专属的 worker 名册管理（2026-11-15 裁决）。
+export * from "./manage-workers.js";
+
+// worker 派发专用工具（P2.6 词表/工具分离裁决）：与一次性 subagent 的 Agent 工具强制分开。
+
+
+// RobinRun 触发器系统：触发器/组/登录态档案注册表管理（2026-11-19 设计定稿，
+// docs/trigger-system.md）。任意智能体（master/worker）可创建，订阅者=创建者。
+export * from "./manage-triggers.js";
 
 // Shared types (only once to avoid duplicates)
 export type { DiffHunk, GitDiff } from "./write.js";

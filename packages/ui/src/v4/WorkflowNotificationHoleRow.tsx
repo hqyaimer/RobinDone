@@ -1,6 +1,9 @@
 import { Pen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { WorkflowNotificationMeta, WorkflowRunHole } from "@robinrun/shared/robinrun-protocol-v4";
+import type {
+  WorkflowNotificationMeta,
+  WorkflowRunHole,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import { ToolLayout } from "@/ToolCallBlocks/ToolLayout.js";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { workflowRunQuestionWaitedLabel } from "@/app-shell/workflowRunQuestions.js";

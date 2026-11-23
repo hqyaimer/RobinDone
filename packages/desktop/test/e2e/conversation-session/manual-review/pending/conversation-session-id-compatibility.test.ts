@@ -220,7 +220,11 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
           .waitFor({ timeout: 60000 });
         await waitForUpstreamRequest(
           {
-            includes: [`E2E_SID_MOBILE_${index}`, "The user referenced prior RobinRun session(s)", id],
+            includes: [
+              `E2E_SID_MOBILE_${index}`,
+              "The user referenced prior RobinRun session(s)",
+              id,
+            ],
             excludes: ["Generate a concise title"],
           },
           "手机未透传原 ID 的引用提醒",
@@ -622,7 +626,11 @@ async function resendOnMobile(command: CommandEnvelope): Promise<string> {
       () =>
         (
           window as unknown as {
-            __robinrunV4CommandAcksE2E: Array<{ type: string; status: string; reasonCode?: string }>;
+            __robinrunV4CommandAcksE2E: Array<{
+              type: string;
+              status: string;
+              reasonCode?: string;
+            }>;
           }
         ).__robinrunV4CommandAcksE2E,
     );

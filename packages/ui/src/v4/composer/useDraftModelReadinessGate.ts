@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { isRobinRunAgentProvider, ROBINRUN_AGENT_PROVIDER, type RobinRunProvider } from "@robinrun/shared";
+import {
+  isRobinRunAgentProvider,
+  ROBINRUN_AGENT_PROVIDER,
+  type RobinRunProvider,
+} from "@robinrun/shared";
 import type { IModelSelectionService, ModelSelectionView } from "@robinrun/services";
 import {
   buildModelConfigMissingUiError,

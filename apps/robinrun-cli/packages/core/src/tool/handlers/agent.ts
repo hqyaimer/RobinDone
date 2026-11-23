@@ -19,7 +19,8 @@ import type { ToolEntry, ToolHandler } from "../types.js";
 
 const MAX_AGENT_MODEL_BYTES = 120_000;
 
-const AGENT_TOOL_OUTPUT_SCHEMA = {
+// P2.6：历史上 DispatchWorker 输出形态与 Agent 一致（工具已退役，2026-11-20 同构化），schema 与模型文案渲染导出仍供本文件复用。
+export const AGENT_TOOL_OUTPUT_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   oneOf: [
     {
@@ -45,6 +46,7 @@ const AGENT_TOOL_OUTPUT_SCHEMA = {
         totalDurationMs: { type: "integer", minimum: 0 },
         totalTokens: { type: "integer", minimum: 0 },
         usage: { type: "object", additionalProperties: true },
+        workerName: { type: "string", description: "Display name when this dispatch is a roster worker" },
       },
       required: ["status", "agentId", "prompt", "content", "totalToolUseCount", "totalDurationMs"],
       additionalProperties: false,
@@ -68,6 +70,10 @@ const AGENT_TOOL_OUTPUT_SCHEMA = {
         outputFile: {
           type: "string",
           description: "Path to the output file for checking agent progress",
+        },
+        workerName: {
+          type: "string",
+          description: "Display name when this dispatch is a roster worker",
         },
         canReadOutputFile: {
           type: "boolean",
@@ -93,21 +99,22 @@ function buildAgentProviderDescription(
   } = {},
 ): string {
   return [
-    "Launch a new agent to handle complex, multi-step tasks. Each agent type has specific capabilities and tools available to it.",
+    "Launch a one-off subagent to handle a single self-contained task. Each agent type has specific capabilities and tools available to it.",
     "",
-    "Available agent types are listed in <system-reminder> messages in the conversation.",
+    // 名册 worker 的任务传递是 ContactAgent（2026-11-20 同构化）——
+    // 即使底层能力同构，名称与语义也必须分开，否则编排与认知一定混乱。
+    "Available subagent types are listed in <system-reminder> messages in the conversation (built-in: general-purpose, Explore; plus user/plugin-defined types). Roster workers (wkr-* ids) are NOT dispatched here — hand tasks to this project's persistent team members via the ContactAgent tool.",
     "",
-    "When using the Agent tool, specify a subagent_type parameter to select which agent type to use. If omitted, the general-purpose agent is used.",
+    "When using the Agent tool, specify a subagent_type parameter to select which type to use. If omitted, the general-purpose agent is used.",
     "",
     "## When to use",
     "",
-    "Reach for this when the task matches an available agent type, when you have independent work to run in parallel, or when answering would mean reading across several files — delegate it and you keep the conclusion, not the file dumps. For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself — wait for the result.",
+    "Reach for this when a one-off task matches an available type, when you have independent work to run in parallel, or when answering would mean reading across several files — delegate it and you keep the conclusion, not the file dumps. For a single-fact lookup where you already know the file, symbol, or value, search directly. Once you've delegated a search, don't also run it yourself — wait for the result.",
     "",
-    "- The agent's final report is not shown to the user — relay what matters.",
+    "- The subagent's final report is not shown to the user — relay what matters.",
     "- Use SendMessage with the agent's ID to continue a previously spawned agent with its context intact; a new Agent call starts fresh.",
-    "- Each agent type's model, reasoning effort, and tools come from its definition (`.robinrun/agents/*.md` frontmatter).",
     // RobinRun 默认前台运行；后台说明只写这一行，并要求不编造未到达的结果。
-    "- `run_in_background: true` runs the agent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.",
+    "- `run_in_background: true` runs the subagent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.",
     // 只保留「用户点名工作流」这一种情形：工作流一律由用户显式请求触发，与系统提示词其余
     // 部分一致。不能把「结果层层喂给下一步的多代理编排」也划给 CreateWorkflow，
     // 那等于让模型在用户没开口时自行选择工作流。
@@ -133,7 +140,8 @@ function formatSubagentHandback(report: string): string {
   return `${SUBAGENT_HANDBACK_FRAME}\n  ${indented}`;
 }
 
-function formatAgentOutputForModel(output: unknown): string {
+// 历史上 DispatchWorker 复用同一渲染（工具已退役；completed 报告框架 / async 启动元数据文案仍由本文件承载）。
+export function formatAgentOutputForModel(output: unknown): string {
   const parsed = AgentOutputSchema.safeParse(output);
   if (!parsed.success) {
     return typeof output === "string" ? output : (JSON.stringify(output) ?? String(output));
@@ -199,11 +207,31 @@ const agentHandler: ToolHandler = async (input, context) => {
     );
   }
 
+  // P2.6 工具分离（裁决 13）：本工具只派一次性 subagent。模型把名册 worker 的 wkr-id
+  // 传进来时立即拒绝并指路 ContactAgent——语义角色错位比失败更糟，必须在入口拦住。
+  if (/^wkr-/i.test(agentType.trim())) {
+    throw createCoreError(
+      CoreErrorType.ToolExecutionFailed,
+      `'${agentType}' is a roster worker id. One-off subagent dispatch (Agent tool) must not target workers — hand tasks to the worker via the ContactAgent tool with its immutable wkr-* id.`,
+      {
+        context: {
+          code: AgentErrorCode.WORKER_DISPATCH_FORBIDDEN,
+          agentType,
+          toolCallId: context.toolCallId,
+          toolName: "Agent",
+        },
+        recoverable: true,
+      },
+    );
+  }
+
   const request = {
     sessionId: context.sessionId,
     turnId: context.turnId,
     parentToolCallId: context.toolCallId,
     agentType,
+    // P2.6：调用方声明预期角色，runner 解析 profile 后二次校验（防 user/plugin 类型撞名）。
+    expectedKind: "subagent" as const,
     description: parsed.description,
     prompt: parsed.prompt,
     callerCanReadOutputFile: canReadBackgroundOutputFile(context.providerVisibleToolNames),
@@ -220,7 +248,9 @@ const agentHandler: ToolHandler = async (input, context) => {
   return context.subagentPort.launch(
     {
       ...request,
-      runInBackground: parsed.run_in_background === true,
+      // 三态透传（undefined/false/true）：worker 派发以「显式 false」作为阻塞等待信号，
+      // 这里若把 undefined 强转 false，省略与显式 false 就无法区分（subagent 语义不变）。
+      runInBackground: parsed.run_in_background,
     },
     {
       signal: context.abortSignal,

@@ -329,7 +329,9 @@ function hasPluginManifest(rootPath: string): boolean {
   return (
     fileExists(join(rootPath, ".robinrun-plugin", "plugin.json")) ||
     fileExists(join(rootPath, ".claude-plugin", "plugin.json")) ||
-    fileExists(join(rootPath, ".codex-plugin", "plugin.json"))
+    fileExists(join(rootPath, ".codex-plugin", "plugin.json")) ||
+    // 上游 ZCode 构建产物（官方 CDN 插件 zip）的原生 manifest 目录（RobinRun(2026-11-23)）。
+    fileExists(join(rootPath, ".zcode-plugin", "plugin.json"))
   );
 }
 

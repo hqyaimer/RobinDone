@@ -162,7 +162,10 @@ function readTrimmedEnv(name: string): string | undefined {
 
 export function resolveHttpServerId(options: HttpServerOptions = {}): string {
   return (
-    options.serverId?.trim() || readTrimmedEnv("ROBINRUN_SERVER_ID") || hostname() || "robinrun-server"
+    options.serverId?.trim() ||
+    readTrimmedEnv("ROBINRUN_SERVER_ID") ||
+    hostname() ||
+    "robinrun-server"
   );
 }
 

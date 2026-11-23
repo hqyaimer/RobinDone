@@ -140,6 +140,15 @@ import type { ProjectMemoryRecallPrefetch } from "./helpers/project-memory-recal
 import type { ProjectMemoryExtractionScheduler } from "./helpers/project-memory-extraction.js";
 import type { ProjectMemoryUpdate } from "./helpers/project-memory-dream.js";
 import { projectPersistentAgentMemoryTools } from "../subagent/persistent-memory.js";
+// agent 消息（2026-11-19，docs/trigger-system.md）：master 主会话自建 ContactAgent 端口。
+import {
+  AgentContactRegistry,
+  agentContactSessionClosedReply,
+  createMasterAgentContactPort,
+  createWorkerAgentContactPort,
+  isAgentContactMainRuntime,
+} from "../subagent/agent-contact.js";
+import type { AgentContactPort } from "@robinrun/contracts";
 import { RuntimeTelemetryFacade } from "../telemetry/runtime-telemetry.js";
 import type { WorkspaceHookRuntimeAdmissionPort } from "../hooks/workspace-hook-runtime-admission.js";
 import { disposeNodeReplSession } from "../tool/handlers/node-repl.js";
@@ -217,6 +226,26 @@ export class AgentRuntime {
   private mcpToolsSignature?: string;
   private mcpToolListRevision?: number;
   private subagentPort?: SubagentPort;
+  /** agent 消息登记表（2026-11-19）：master 侧持有活条目；子 runtime 实例恒空。 */
+  private agentContactRegistry: AgentContactRegistry;
+  /**
+   * 登记表归属（2026-11-22 归属语义修订）：deps 注入 = 进程共享实例（worker 会话同构化
+   * 后全部会话共用一份），缺席 = runtime 自建私有实例（单会话/测试形态）。共享实例上
+   * 会话关闭绝不可 dispose 全表——否则任意会话关闭（resident 池逐出/短命子会话启停）
+   * 都会清掉其他会话的在途 needReply 条目（实测回复静默丢失的根因）。
+   */
+  private ownsAgentContactRegistry: boolean;
+  /** agent 消息端口：master 主会话自建；worker_child 由装配注入 deps。 */
+  private agentContactPort?: AgentContactPort;
+  /**
+   * 触发器专属会话说明（2026-11-19 验收裁决）：首个触发器投递轮（automationId=trg-*）
+   * 到达时读盘缓存 README.md，会话级 sticky——之后每轮系统提示词都携带（压缩后仍在），
+   * 投递消息正文不再内嵌说明。普通会话两字段恒为初值。
+   */
+  triggerSessionReadme?: string;
+  triggerSessionReadmeLoaded = false;
+  /** 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：context 初始化读盘缓存。 */
+  scriptRuntimeHint?: "python" | "node";
   private readonly getAgentDefinitions: GetAgentDefinitions;
   private readonly prepareAgentDefinitions: ReturnType<
     typeof createTurnAgentDefinitions
@@ -361,6 +390,46 @@ export class AgentRuntime {
     this.modelCatalogPort = deps.modelCatalogPort;
     this.registry = deps.toolRegistry ?? createToolRegistry();
     this.workspaceRoot = this.workingDirectory;
+    // agent 消息（2026-11-19，docs/trigger-system.md）：登记表升格为进程共享事实源
+    // （2026-11-20 worker 会话同构化）——bootstrap 按 workspace 注入同一实例，全部会话
+    // 的轮终态捕获按接收方 sessionId 结算；缺席时 runtime 自建（单会话/测试形态）。
+    this.agentContactRegistry = deps.agentContactRegistry ?? new AgentContactRegistry(this.logger);
+    this.ownsAgentContactRegistry = deps.agentContactRegistry === undefined;
+    // 端口自建门 = 主会话形态 + Host 投递通道在场：ContactAgent 的全部目标都经通道
+    // 投递（master↔worker 会话均为 Host 任务），独立 CLI（无 Host）没有可达目标，
+    // 不建端口 → ContactAgent/WaitReply 不注册（诚实工具面，不给模型不可用的工具）。
+    const agentContactDispatch = deps.agentContactDispatchPort;
+    this.agentContactPort =
+      deps.agentContactPort ??
+      (isAgentContactMainRuntime(this.config.taskType) && agentContactDispatch
+        ? this.config.workerIdentity
+          ? createWorkerAgentContactPort({
+              sessionId,
+              workerId: this.config.workerIdentity.workerId,
+              workerName:
+                this.config.workerIdentity.workerName ?? this.config.workerIdentity.workerId,
+              dispatch: agentContactDispatch,
+              contacts: this.agentContactRegistry,
+              logger: this.logger,
+            })
+          : createMasterAgentContactPort({
+              sessionId,
+              rootTraceContext: this.rootTraceContext,
+              dispatch: agentContactDispatch,
+              contacts: this.agentContactRegistry,
+              logger: this.logger,
+              // 2026-11-22 实测修复：needReply 登记的接收方显示名按名册解析（裸 wkr-id
+              // 会沿回复注入链变成 master 会话里的「工作者-wkr-xxxx」徽章）；miss 时经
+              // prepareAgentDefinitions 刷新一次快照重试（同轮建队即派工场景）。
+              resolveWorkerDisplayName: (workerId) => {
+                const profile = this.getAgentDefinitions().activeAgents.find(
+                  (candidate) => candidate.worker?.workerId === workerId,
+                );
+                return profile?.worker?.workerName;
+              },
+              reloadAgentDefinitions: (input) => this.prepareAgentDefinitions(input),
+            })
+        : undefined);
     // 必须先于工具装配：registerRuntimeBuiltInTools 的灰度门读的就是这个状态。
     this.dynamicWorkflowToolsActivated = resolveInitialDynamicWorkflowToolsActivated(this.config);
     const tooling = initializeRuntimeTooling(runtime, deps, sessionId);
@@ -427,6 +496,28 @@ export class AgentRuntime {
     this.beginShutdown();
     this.stopActiveForegroundExecution({ reason: "session_closed" });
     this.ownedWorkClose ??= (async () => {
+      // agent 消息登记表清账（2026-11-22 归属语义修订，docs/trigger-system.md 实施修订节）：
+      // 登记表在 worker 会话同构化后是进程共享单例——共享实例上 dispose 会把全进程所有
+      // 会话的在途 needReply 条目一起清空（实测根因：resident 池逐出空闲会话、短命子会话
+      // 启停、用户关会话，都会让其他会话的回复被静默丢弃且零日志）。因此：
+      // - 私有登记表（runtime 自建）→ 整体 dispose（原语义：在途等待按取消收口）；
+      // - 共享登记表 → 只结算以本会话为接收方的在途条目（"会话已关闭"合成解除，发送方
+      //   显式知情）；本会话作为发送方的条目不动——接收方稍后的轮终态捕获照常结算，回复
+      //   经 Host 投递仍可送达已关闭的会话（resumeTask+sendPrompt 冷恢复）；他会话条目
+      //   一律不碰。
+      if (this.ownsAgentContactRegistry) {
+        this.agentContactRegistry.dispose("Session runtime closed");
+      } else {
+        const contactDisplayName =
+          this.config.workerIdentity?.workerName ?? "the main agent (master)";
+        this.agentContactRegistry.resolveReceiverSynthetic({
+          receiverSessionId: this.sessionId,
+          synthetic: {
+            text: agentContactSessionClosedReply(contactDisplayName),
+            receiverDisplayName: contactDisplayName,
+          },
+        });
+      }
       const results = await Promise.allSettled([
         this.subagentPort?.close?.(),
         this.cancelRunningRuntimeBackgroundTasks({ reason: "session_closed" }),
@@ -504,6 +595,8 @@ export interface AgentRuntime {
   ): Promise<void>;
   getSessionModelSelection(): ModelSelection | undefined;
   setSessionModelSelection(selection: ModelSelection | undefined): void;
+  /** worker 会话身份（同构化）：协议投影与侧栏归属读取；master 会话返回 undefined。 */
+  getWorkerIdentity(): { workerId: string; workerName: string } | undefined;
   getProjectId(): ProjectId;
   ensureSessionPersistedForExternalActivity(
     input: string,
@@ -760,6 +853,30 @@ export interface AgentRuntime {
     taskId: string,
     options?: { traceContext?: TraceContext },
   ): Promise<BackgroundTaskCancelResult>;
+  /** P2.5：用户在 worker_child 会话里直接输入——路由到父 subagentPort（steer/resume）。 */
+  sendChildSessionUserMessage(input: {
+    childSessionId: SessionId;
+    text: string;
+    traceContext?: TraceContext;
+  }): Promise<{
+    ok: boolean;
+    delivery?: "steered" | "queued" | "resumed_background";
+    error?: string;
+  }>;
+  /** P2.5：用户在 worker_child 会话里打断——按 childSessionId 停任务（user 发起 → 脱钩）。 */
+  stopWorkerSessionTask(input: {
+    childSessionId: SessionId;
+    traceContext?: TraceContext;
+  }): Promise<{ ok: boolean; error?: string }>;
+  /**
+   * 项目权限全量同步（2026-11-18）：按 childSessionId 给活子 runtime 切协作模式。
+   * worker_child 会话的配置命令不能落在物化 shell runtime 上，经本方法路由到派发者。
+   */
+  setChildSessionExecutionMode(input: {
+    childSessionId: SessionId;
+    mode: string;
+    traceContext?: TraceContext;
+  }): Promise<{ ok: boolean; error?: string }>;
   stopBackgroundTask(
     taskId: string,
     options: RuntimeBackgroundStopOptions,

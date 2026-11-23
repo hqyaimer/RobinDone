@@ -13,6 +13,7 @@ import { modelSelectionSchema } from "../model-selection.js";
 import { modelExecutionSchema } from "../model-execution.js";
 import { submissionModeSchema } from "./submission.js";
 import { botGroupInputSourceSchema, robinrunAutomationBotDeliveryTargetSchema } from "../bots.js";
+import { systemStatusPayloadSchema } from "../message-origin/system-status.js";
 import { DYNAMIC_WORKFLOW_MODES } from "../dynamic-workflow-feature.js";
 import {
   amendWorkflowRunSettingsPayloadSchema,
@@ -124,6 +125,9 @@ export const commandPayloadSchemas = {
       // docs/highspeed/highspeed-access-mode-migration.md。
       highspeedMeta: highspeedMessageMetaSchema.optional(),
       automationId: z.string().min(1).optional(),
+      // P3 触发器投递（2026-11-19 验收）：host 携带的完整来源身份（senderName/sessionKey）。
+      // 缺席时 bootstrap 按 automationId 合成最小区块（sender+triggerId）。
+      systemStatus: systemStatusPayloadSchema.optional(),
       offPeakTaskId: z.string().min(1).optional(),
       offPeakRunType: z.enum(["init", "resume"]).optional(),
       // Bot 来源只由 Host 注入，用于 CronCreate 在当前 turn 内读取并持久化回推地址。

@@ -2,7 +2,16 @@ import { readFileSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { parseRuntimeSubagentConfig } from "./runtime-subagents/index.js";
+import type { RuntimeSubagentConfiguration } from "./runtime-subagents/contract.js";
 import { migrateUserSubagentMarkdown, migrateSubagentStateFile } from "@robinrun/shared/node";
+import {
+  buildWorkerProfile,
+  workerAgentsMdFileName,
+  workerDefineMdFileName,
+  workerRegistryFileName,
+  workerRegistrySchema,
+  type WorkerRegistry,
+} from "@robinrun/shared";
 import {
   parseAgentProfileFromMarkdown,
   type AgentProfile,
@@ -80,22 +89,28 @@ export async function loadRobinRunAgentProfiles(
     });
   }
   const agentState = await readAgentState(input.storageRoot);
-  const documents = (
-    await Promise.all(
-      roots.map(async (root) =>
-        Promise.all(
-          (await listMarkdownFiles(root.path)).map(async (path) => ({
-            path,
-            source: root.source,
-            namespace: root.namespace,
-            content: await readFile(path, "utf8"),
-          })),
-        ),
-      ),
-    )
-  ).flat();
+  // project scope 自 2026-11-15 起只认 worker 注册表（与 Host 端裁决一致）：
+  // workers.json 缺失 = 空编制，不再回扫平铺 md，避免独立 CLI 与桌面端行为分叉。
+  const userDocuments: RuntimeSubagentConfiguration["documents"] = [];
+  const workerProfiles: AgentProfile[] = [];
+  for (const root of roots) {
+    if (root.source === "user") {
+      for (const path of await listMarkdownFiles(root.path)) {
+        userDocuments.push({
+          path,
+          source: root.source,
+          namespace: root.namespace,
+          content: await readFile(path, "utf8"),
+        });
+      }
+      continue;
+    }
+    const loaded = await loadWorkerRegistryProfiles(root.path, root.namespace);
+    workerProfiles.push(...loaded.profiles);
+    diagnostics.push(...loaded.diagnostics);
+  }
   const parsed = parseRuntimeSubagentConfig({
-    documents,
+    documents: userDocuments,
     state: { ...agentState, disabledAgentIds: [...agentState.disabledAgentIds] },
   });
   for (const diagnostic of parsed.diagnostics)
@@ -103,7 +118,71 @@ export async function loadRobinRunAgentProfiles(
       ...diagnostic,
       module: "bootstrap.subagents",
     });
-  return { ...parsed, diagnostics: [...diagnostics, ...parsed.diagnostics] };
+  return {
+    ...parsed,
+    profiles: [...parsed.profiles, ...workerProfiles],
+    diagnostics: [...diagnostics, ...parsed.diagnostics],
+  };
+}
+
+/**
+ * 独立 CLI 磁盘 loader 的 worker 注册表读取，语义与 Host 端 loadWorkerRegistry 一致：
+ * 注册表缺失/损坏按空编制处理，不做文件夹扫描兜底；双规则文件（裁决 10：define.md +
+ * agents.md）任一缺失即跳过并告警——缺职责定义的 worker 不允许静默入册（裁决 10 的
+ * 目的就是职责定义权在 master，缺失必须大声暴露）。
+ */
+async function loadWorkerRegistryProfiles(
+  root: string,
+  namespace: string | undefined,
+): Promise<{ profiles: AgentProfile[]; diagnostics: AgentProfileParseDiagnostic[] }> {
+  const profiles: AgentProfile[] = [];
+  const diagnostics: AgentProfileParseDiagnostic[] = [];
+  const registryPath = join(root, workerRegistryFileName);
+  const content = await readFile(registryPath, "utf8").catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  });
+  if (content === undefined) return { profiles, diagnostics };
+  let registry: WorkerRegistry;
+  try {
+    const parsed = workerRegistrySchema.safeParse(JSON.parse(content) as unknown);
+    if (!parsed.success) throw new Error(parsed.error.issues.map((i) => i.message).join("; "));
+    registry = parsed.data;
+  } catch (error) {
+    diagnostics.push({
+      code: "worker_registry_invalid",
+      message: `Worker registry is invalid; roster treated as empty (${error instanceof Error ? error.message : String(error)})`,
+      path: registryPath,
+    });
+    return { profiles, diagnostics };
+  }
+  for (const entry of registry.workers) {
+    if (entry.status !== "active") continue;
+    const defineMdPath = join(root, entry.id, workerDefineMdFileName);
+    const agentsMdPath = join(root, entry.id, workerAgentsMdFileName);
+    const readFileIfExists = (path: string) =>
+      readFile(path, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return undefined;
+        throw error;
+      });
+    const [defineMd, agentsMd] = await Promise.all([
+      readFileIfExists(defineMdPath),
+      readFileIfExists(agentsMdPath),
+    ]);
+    if (defineMd === undefined || agentsMd === undefined) {
+      const missingPath = defineMd === undefined ? defineMdPath : agentsMdPath;
+      diagnostics.push({
+        code: defineMd === undefined ? "worker_define_md_missing" : "worker_agents_md_missing",
+        message: `Worker "${entry.name}" is missing ${defineMd === undefined ? workerDefineMdFileName : workerAgentsMdFileName}`,
+        path: missingPath,
+      });
+      continue;
+    }
+    const profile = buildWorkerProfile({ entry, defineMd, agentsMd, defineMdPath });
+    // key/name 裁决（2026-11-17）：附加目录的限定名用派发句柄（id）——显示名可重名，做不了限定。
+    profiles.push(namespace ? { ...profile, name: `${namespace}/${entry.id}` } : profile);
+  }
+  return { profiles, diagnostics };
 }
 
 export function loadPluginAgentTemplates(

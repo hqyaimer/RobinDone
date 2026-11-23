@@ -89,7 +89,10 @@ try {
           viewport: { width, height: 900 },
           reducedMotion: "reduce",
         });
-        await context.addInitScript((theme) => localStorage.setItem("robinrun-theme", theme), theme);
+        await context.addInitScript(
+          (theme) => localStorage.setItem("robinrun-theme", theme),
+          theme,
+        );
         const page = await context.newPage();
         const errors = [],
           requests = [],

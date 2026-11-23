@@ -111,6 +111,30 @@ export async function removeMessage(
   );
 }
 
+/**
+ * 清空会话全部消息（2026-11-20 触发器会话清空用，docs/trigger-system.md）：parts 随
+ * 消息外键整删、todo 清空；会话行上的 revert/压缩中标记/摘要 diff 统计一并复位
+ * （它们都是被清内容的派生态）。会话主记录、标题与 worker_identity 不动——清空是
+ * 「会话保留、内容归零」，不是删除。
+ */
+export async function clearSessionMessages(
+  db: DatabaseSync,
+  input: { sessionID: SessionId },
+): Promise<{ clearedMessages: number }> {
+  const counted = db
+    .prepare("select count(*) as n from message where session_id = ?")
+    .get(input.sessionID) as { n: number };
+  db.prepare("delete from part where session_id = ?").run(input.sessionID);
+  db.prepare("delete from message where session_id = ?").run(input.sessionID);
+  db.prepare("delete from todo where session_id = ?").run(input.sessionID);
+  db.prepare(
+    `update session set revert = null, time_compacting = null,
+       summary_additions = null, summary_deletions = null, summary_files = null, summary_diffs = null
+     where id = ?`,
+  ).run(input.sessionID);
+  return { clearedMessages: counted.n };
+}
+
 export function savePart(
   db: DatabaseSync,
   input: MessagePart,

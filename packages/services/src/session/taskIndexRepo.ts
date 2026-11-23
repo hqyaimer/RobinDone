@@ -342,8 +342,35 @@ export class TaskIndexRepo {
     // 本机只登记本机事实；远程成员由控制端服务验证远端投影后写入。
     if (meta.workspaceIdentity?.trim()) return;
     new TaskGroupRepository(this.getDatabase()).admit([
-      { ...meta, hostId: "local", archived, deleted },
+      {
+        ...meta,
+        hostId: "local",
+        archived,
+        deleted,
+        // 项目归属补解析（2026-11-21 实测修复）：RobinRunTaskMeta 不携带 projectId（行上
+        // 有但 meta 投影丢弃），admit 的归组分支（主智能体/worker/触发器组）全都依赖事实
+        // 上的 projectId——缺了就落"未分组"。host 侧按项目树 root 反查补上（存量无归属行
+        // 在此自愈）；解析不到保持 undefined（admit 内部按未归属处理）。
+        projectId: this.resolveProjectIdForAdmission(meta.workspacePath),
+      },
     ]);
+  }
+
+  /** 项目树 root 反查工作区归属项目（projects 表很小，同步查询即可；异常按未归属收口）。 */
+  private resolveProjectIdForAdmission(workspacePath: string): string | null | undefined {
+    try {
+      const tree = projectStorage
+        .repository(this.getDatabase(), this.storageHostId)
+        .readTree({ includeTasks: false });
+      const project = tree.projects.find(
+        (candidate) =>
+          candidate.deleted !== true &&
+          candidate.roots.some((root) => root.rootPath === workspacePath),
+      );
+      return project?.id;
+    } catch {
+      return undefined;
+    }
   }
 
   async getOrganizationDatabase() {
@@ -1038,7 +1065,30 @@ export class TaskIndexRepo {
           "UPDATE tasks SET forked_from_task_id=coalesce(forked_from_task_id,?) WHERE workspace_key=? AND task_id=?",
         ).run(params.meta.forkedFromTaskId ?? null, workspaceKey(params.meta), params.meta.taskId);
         projectStorage.admitTaskIdentity(db, params.meta, this.storageHostId);
-        const persisted = this.getTaskRow(params.meta)!;
+        let persisted = this.getTaskRow(params.meta)!;
+        // worker 会话身份补漏（2026-11-22 实测修复）：deferred 派发路径（ContactAgent/
+        // 触发器投递）先经 createTask 草稿流预建任务行（meta_json 不含身份），之后本方法
+        // 的 UPDATE 分支从不重写 meta_json——summary 携带的 workerId 永远进不了行事实，
+        // admitTaskGroup 投影的 GroupTaskFact 也不带 workerId，任务组仓储的 worker 分支
+        // （触发器订阅者路由）与主智能体首次发现分支的排除条件双双失明，worker 会话被
+        // 误归主智能体组。CLI meta 携带身份且行上缺失/不一致时合并回 meta_json（tasks
+        // 表无 worker 列，meta_json 是身份唯一载体）；meta 不携带时不动行（reconcile
+        // 镜像路径构造的 meta 无身份，不能反向清掉既有事实——身份清除走 clearTaskMessages
+        // 的 workerIdentityTo 专路）。
+        const persistedMeta = rowToMeta(persisted);
+        if (params.meta.workerId && persistedMeta.workerId !== params.meta.workerId) {
+          const merged = {
+            ...persistedMeta,
+            workerId: params.meta.workerId,
+            ...(params.meta.workerName ? { workerName: params.meta.workerName } : {}),
+          };
+          db.prepare("UPDATE tasks SET meta_json=? WHERE workspace_key=? AND task_id=?").run(
+            serializeMetaJson(merged),
+            workspaceKey(params.meta),
+            params.meta.taskId,
+          );
+          persisted = this.getTaskRow(params.meta)!;
+        }
         this.admitTaskGroup(
           rowToMeta(persisted),
           persisted.archived === 1,

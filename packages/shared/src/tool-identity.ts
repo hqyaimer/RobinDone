@@ -26,6 +26,9 @@ export const ROBINRUN_KNOWN_TOOL_NAMES = [
   "mcp__node_repl__js_add_node_module_dir",
   "Agent",
   "Task",
+  // P2.6 工具分离（裁决 13）：worker 派发专名工具，与 Agent（一次性 subagent）同属
+  // agent family —— 行渲染共用 AgentToolCallBlock，按输入字段（worker）读取派发身份。
+  "DispatchWorker",
   "Skill",
   "CreateWorkflow",
   // 修订入口：登记进 workflow family 让确认窗
@@ -89,6 +92,7 @@ const TOOL_FAMILY_BY_NAME: Record<RobinRunKnownToolName, RobinRunToolFamily> = {
   mcp__node_repl__js_add_node_module_dir: "node-repl",
   Agent: "agent",
   Task: "agent",
+  DispatchWorker: "agent",
   Skill: "skill",
   CreateWorkflow: "workflow",
   AmendWorkflow: "workflow",

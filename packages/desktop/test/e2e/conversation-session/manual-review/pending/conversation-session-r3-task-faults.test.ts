@@ -24,7 +24,9 @@ import {
 } from "../../../helpers/v4-conversation.js";
 
 const CASE_MARKER = "E2E_R3_TASK_FAULTS";
-const artifactDir = resolve(process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-task-faults");
+const artifactDir = resolve(
+  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-task-faults",
+);
 
 async function readVisibleErrorText(): Promise<string> {
   return browser.execute(() => {

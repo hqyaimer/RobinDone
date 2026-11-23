@@ -65,6 +65,9 @@ export class NodeContextSourceAdapter implements ContextSourcePort {
 
     return {
       workingDirectory,
+      // 2026-11-19 /init 裁决（docs/init-flow.md）：项目根随快照暴露，master 个人规则等
+      // 项目级文件按它解析（workingDirectory 是打开路径，可能是嵌套子目录）。
+      projectRoot: projectRoot ?? undefined,
       envInfo,
       currentDate: request.currentDate ?? formatLocalIsoDate(new Date()),
       userInstructions,

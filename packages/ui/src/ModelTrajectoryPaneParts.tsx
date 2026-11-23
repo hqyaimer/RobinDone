@@ -114,9 +114,10 @@ export function CallCard({
 }
 
 function SourceTitle({ record, intl }: { record: RobinRunModelTrajectoryRecord; intl: IntlShape }) {
-  const callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]> = record.callSource ?? {
-    kind: "main",
-  };
+  const callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]> =
+    record.callSource ?? {
+      kind: "main",
+    };
   const labelId = sourceLabelId(callSource);
 
   return (
@@ -133,7 +134,9 @@ function SourceTitle({ record, intl }: { record: RobinRunModelTrajectoryRecord; 
   );
 }
 
-function sourceLabelId(callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]>): string {
+function sourceLabelId(
+  callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]>,
+): string {
   switch (callSource.querySource) {
     case "main_turn":
       return "modelTrajectory.source.main";

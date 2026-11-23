@@ -31,7 +31,9 @@ export interface IMcpSyncService extends IDataSyncCategoryService<McpDataSyncPay
     mcpServers?: RobinRunAgentMcpServer[];
     mode?: RobinRunMcpListMode;
   }): Promise<RobinRunMcpListResult>;
-  setWorkspaceMcpTrust?(params: WorkspaceMcpTrustDecision): Promise<RobinRunWorkspaceMcpTrustResult>;
+  setWorkspaceMcpTrust?(
+    params: WorkspaceMcpTrustDecision,
+  ): Promise<RobinRunWorkspaceMcpTrustResult>;
   saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest): Promise<void>;
 }
 

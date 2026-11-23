@@ -43,6 +43,18 @@ async function waitForStableFile(path: string, signal: AbortSignal): Promise<boo
 export function createSubagentConfigScope<T>(options: {
   root: string;
   file?: string;
+  /**
+   * 监听深度（chokidar depth，相对 root）。默认 0 与既有平铺 profile 行为一致；
+   * worker 注册表需要 1：监听 `<id>/AGENTS.md`。
+   */
+  depth?: number;
+  /**
+   * 自定义相关性判定（默认：单 file 或 depth-0 的 *.md）。提供时同时接管
+   * changed() 的事件过滤与 watcher 的 ignored 过滤；目录增删视为全量重载信号。
+   * worker 注册表用它把监听面收敛到 workers.json、`<id>/` 目录与 `<id>/AGENTS.md`，
+   * 排除 legacy 平铺 md 与 worker 自管的 plan/knowledge/tmp 内容，避免高频抖动。
+   */
+  matches?: (absolute: string) => boolean;
   load(
     previous: T | undefined,
     changes: SubagentFileChanges | undefined,
@@ -52,6 +64,8 @@ export function createSubagentConfigScope<T>(options: {
 }) {
   const root = resolve(options.root);
   const file = options.file && resolve(options.file);
+  const matches = options.matches;
+  const watchDepth = options.depth ?? 0;
   let disposed = false,
     revision = 0,
     failed = false,
@@ -150,11 +164,18 @@ export function createSubagentConfigScope<T>(options: {
       void checkWatch(true);
       return;
     }
-    if (
-      dirname(absolute) !== root ||
-      !(file ? absolute === file : /\.(md|markdown)$/iu.test(absolute))
-    )
+    const relevant = matches
+      ? matches(absolute)
+      : dirname(absolute) === root &&
+        (file ? absolute === file : /\.(md|markdown)$/iu.test(absolute));
+    if (!relevant) return;
+    if (matches && (event === "addDir" || event === "unlinkDir")) {
+      // 注册表模式下目录增删改变 worker 覆盖面（如整目录迁移/删除），全量重载而不是按文件增量。
+      revision++;
+      reset = true;
+      schedule();
       return;
+    }
     if (event === "unlink") pending.set(absolute, "remove");
     else if (event === "add" || event === "change") pending.set(absolute, "read");
     else return;
@@ -221,7 +242,7 @@ export function createSubagentConfigScope<T>(options: {
         const current = watch(anchor, {
           persistent: true,
           ignoreInitial: true,
-          depth: 0,
+          depth: watchDepth,
           usePolling: false,
           followSymlinks: true,
           atomic: true,
@@ -229,8 +250,15 @@ export function createSubagentConfigScope<T>(options: {
           ignored: (path, info) => {
             const absolute = resolve(path);
             if (absolute === nextAnchor) return false;
-            if (dirname(absolute) !== nextAnchor) return true;
+            if (dirname(absolute) !== nextAnchor) {
+              // matches 模式允许固定的子层深度（如 <id>/AGENTS.md）；更深层与未声明路径一律忽略。
+              if (!matches || !direct) return true;
+              const parent = dirname(absolute);
+              if (dirname(parent) !== nextAnchor) return true;
+              return !matches(absolute);
+            }
             if (!direct) return info ? !info.isDirectory() && !info.isSymbolicLink() : false;
+            if (matches) return !matches(absolute);
             return file
               ? absolute !== file
               : Boolean(info?.isDirectory()) || !/\.(md|markdown)$/iu.test(absolute);

@@ -9,7 +9,9 @@ import {
   Bot,
   Palette,
   Sun,
-  BarChart3,
+  // RobinRun(2026-11-22): [hide-upstream-account] usage 分区已隐藏，图标随分区注释——恢复时取消
+  // BarChart3,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   Terminal,
   AlarmClock,
   Anchor,
@@ -179,12 +181,15 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     contentTitleId: "remoteSync.title",
     groupId: "dataAndStats",
   },
-  {
-    id: "usage",
-    icon: BarChart3,
-    titleId: "settings.usageTitle",
-    groupId: "dataAndStats",
-  },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区」——内容是上游 Coding Plan 套餐用量（依赖登录
+  // entitlement），恢复时取消本段注释并同步移除 lib/settingsNavigation.ts HIDDEN_SETTINGS_SECTIONS 中的 "usage"
+  // {
+  //   id: "usage",
+  //   icon: BarChart3,
+  //   titleId: "settings.usageTitle",
+  //   groupId: "dataAndStats",
+  // },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   // 项目管理排在归档管理之前（docs/superpowers/specs/2026-10-24-project-management.md）。
   {
     id: "projects",

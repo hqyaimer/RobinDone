@@ -1,5 +1,9 @@
 import { join } from "node:path";
-import { TID_TASK_SETTINGS_BUTTON, TID_SETTINGS_SECTION_NAV, testId } from "@robinrun/shared/test-ids";
+import {
+  TID_TASK_SETTINGS_BUTTON,
+  TID_SETTINGS_SECTION_NAV,
+  testId,
+} from "@robinrun/shared/test-ids";
 import { clearAppData, clickTestIdByDom } from "#e2e/helpers/desktop-app";
 import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
 

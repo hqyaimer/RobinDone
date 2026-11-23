@@ -277,9 +277,8 @@ export function spawnHostProcess(
       ...(process.platform === "darwin" ? { ROBINRUN_CUA_LAUNCHER_PID: String(process.pid) } : {}),
       ...(dependencies.desktopContextPromptEnabled
         ? {
-            [ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]: dependencies.desktopContextPromptEnabled()
-              ? "1"
-              : "0",
+            [ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]:
+              dependencies.desktopContextPromptEnabled() ? "1" : "0",
           }
         : {}),
     },

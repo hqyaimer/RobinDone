@@ -277,7 +277,9 @@ export class BigModelCodingPlanSubscriptionProvider {
 
   async getManualClaimPlanPreviews(): Promise<ManualClaimPlanPreviewSnapshot> {
     const token = (await this.credentialService.load(ROBINRUN_JWT_TOKEN_KEY))?.trim();
-    const url = new URL(buildRuntimeRobinRunApiUrl(process.env, "/api/v1/robinrun-plan/billing/preview"));
+    const url = new URL(
+      buildRuntimeRobinRunApiUrl(process.env, "/api/v1/robinrun-plan/billing/preview"),
+    );
     url.searchParams.set("app_version", ROBINRUN_VERSION);
     url.searchParams.set("platform", resolveClientPlatformKey());
     const payload = await readCodingPlanApiJson<RemoteEnvelope<ManualClaimPlanPreviewPayload>>(

@@ -90,13 +90,17 @@ import {
 } from "@/hooks/useUsageEntitlement.js";
 import { useToolbarConfigOptions } from "@/hooks/useRobinRunConfig.js";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import {
-  createCodingPlanFunnelContext,
-  resolveCodingPlanEntryPlanState,
-} from "@/lib/codingPlanFunnelTelemetry.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 升级回调已注释，funnel 埋点工具随之停用——恢复时取消本段注释
+// import {
+//   createCodingPlanFunnelContext,
+//   resolveCodingPlanEntryPlanState,
+// } from "@/lib/codingPlanFunnelTelemetry.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { logger } from "@/logger.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」import——恢复时取消本行
+// import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useCodingPlanEntitlements } from "@/settings/model-provider-section/useCodingPlanEntitlements.js";
 import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
@@ -468,7 +472,11 @@ function V4ComposerModelControlsImpl({
   onRecoverCustomModelSelection,
 }: V4ComposerToolbarProps) {
   const { intl, locale } = useRobinRunIntl();
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  // 非可选 hook 无 Provider 会 throw；下方用量/余额链路本身被登录态门控（无账号时不渲染、不发请求），
+  // 仅 Start Plan 升级回调需要一并注释。恢复时随 Root Provider 一并取消注释
+  // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
   // 配置面读取：workspace 缺省目录（taskId=null），不读旧会话态。
   const { error: configOptionsError } = useToolbarConfigOptions(
@@ -532,25 +540,27 @@ function V4ComposerModelControlsImpl({
     return resolveDraftDisplayedConfig(draftConfig ?? {});
   }, [draftConfig]);
 
-  const handleOpenStartPlanUpgrade = useCallback(
-    (providerId: string) => {
-      openCodingPlanUpgrade({
-        providerId,
-        funnelContext: createCodingPlanFunnelContext({
-          providerId,
-          upgradeSource: "session_token_usage",
-          eventRegion: "app.session",
-          eventText: intl.formatMessage({ id: "chat.quota.action.upgrade" }),
-          entryPlanState: resolveCodingPlanEntryPlanState({
-            providerId,
-            displayStatus: "purchased",
-            planLevel: "start",
-          }),
-        }),
-      });
-    },
-    [intl, openCodingPlanUpgrade],
-  );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级回调」——升级弹窗 Provider 已摘除，恢复时取消本段注释
+  // const handleOpenStartPlanUpgrade = useCallback(
+  //   (providerId: string) => {
+  //     openCodingPlanUpgrade({
+  //       providerId,
+  //       funnelContext: createCodingPlanFunnelContext({
+  //         providerId,
+  //         upgradeSource: "session_token_usage",
+  //         eventRegion: "app.session",
+  //         eventText: intl.formatMessage({ id: "chat.quota.action.upgrade" }),
+  //         entryPlanState: resolveCodingPlanEntryPlanState({
+  //           providerId,
+  //           displayStatus: "purchased",
+  //           planLevel: "start",
+  //         }),
+  //       }),
+  //     });
+  //   },
+  //   [intl, openCodingPlanUpgrade],
+  // );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const handleOpenUsageDetails = useCallback(
     (sourceId?: SidebarUsageCodingPlanSourceId) => {
       if (sourceId) {
@@ -602,7 +612,9 @@ function V4ComposerModelControlsImpl({
             onAccess: () => refreshCodingPlanEntitlements({ silent: true, reason: "access" }),
           }
         : {}),
-      onUpgradeClick: () => handleOpenStartPlanUpgrade(contextPlanConnection.providerId),
+      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级按钮」——升级回调已注释，恢复时取消本行
+      // onUpgradeClick: () => handleOpenStartPlanUpgrade(contextPlanConnection.providerId),
+      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
       snapshot:
         entitlement?.snapshot?.provider?.id === contextPlanConnection.providerId
           ? entitlement.snapshot
@@ -612,7 +624,9 @@ function V4ComposerModelControlsImpl({
     contextPlanConnection,
     enabledStartPlanProviderIds,
     entitlements,
-    handleOpenStartPlanUpgrade,
+    // RobinRun(2026-11-22): [hide-upstream-account] handleOpenStartPlanUpgrade 已注释——恢复时取消本行
+    // handleOpenStartPlanUpgrade,
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     providerSourcesLoading,
     refreshCodingPlanEntitlements,
   ]);

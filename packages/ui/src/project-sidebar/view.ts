@@ -13,7 +13,10 @@ import type {
   WindowHostControllerTaskActivity,
 } from "@/project-sidebar/contract.js";
 import { attachTaskListRowActivity } from "@/v4/taskListRowActivity.js";
-import { compareTaskListItemsByTime, compareRobinRunTaskListItems } from "@/lib/taskListOrdering.js";
+import {
+  compareTaskListItemsByTime,
+  compareRobinRunTaskListItems,
+} from "@/lib/taskListOrdering.js";
 import { buildTaskEntityKey } from "@/lib/taskQueryCache.js";
 import { LEGACY_SINGLE_ROOT_PROJECT_PREFIX } from "@/project-sidebar/contract.js";
 import {

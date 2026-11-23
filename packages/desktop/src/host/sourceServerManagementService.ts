@@ -32,7 +32,10 @@ import type {
   SourceServerConnectionManagerOptions,
   ConnectSourceServerOptions,
 } from "./sourceServerConnectionManager.js";
-import type { ISourceServerManagementService, UpdateConnectionProfileInput } from "@robinrun/services";
+import type {
+  ISourceServerManagementService,
+  UpdateConnectionProfileInput,
+} from "@robinrun/services";
 
 interface SourceServerManagementDirectory {
   readonly onDidChange?: Event<void>;

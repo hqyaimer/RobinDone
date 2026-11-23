@@ -34,7 +34,12 @@ export interface MoveGroupNode {
   anchor?: { node: GroupNode; side: "before" | "after" };
 }
 export type GroupTaskFact = GroupTaskRef &
-  Pick<RobinRunTaskMeta, "cronAutomationId" | "offPeakTaskId"> & {
+  Pick<
+    RobinRunTaskMeta,
+    "cronAutomationId" | "offPeakTaskId" | "creationOrigin" | "workerId" | "workerName"
+  > & {
+    /** 所属项目（触发器会话归订阅智能体组用；其他路径可不带）。 */
+    projectId?: string | null;
     createdAt?: number;
     archived?: boolean;
     deleted?: boolean;
@@ -60,6 +65,16 @@ export interface ITaskGroupService {
    * saveProject（含 reuseExistingRoot 重开）都会调用，旧项目打开时自动补齐。
    */
   ensureMainAgentGroup(input: { projectId: string }): Promise<TaskGroup>;
+  /**
+   * worker 会话组织组（2026-11-16 物化裁决）：确定性 id（robinrun-worker-<workerId>）幂等；
+   * 已存在时仅同步标题（workers.json 注册表赢，不动用户改过的颜色与归属）。由 UI 名册
+   * 同步效果按 active worker 调用；workers.json 仍是身份唯一事实源。
+   */
+  ensureWorkerGroup(input: {
+    projectId: string;
+    workerId: string;
+    title?: string;
+  }): Promise<TaskGroup>;
 }
 export const ITaskGroupService = createServiceDescriptor<ITaskGroupService>(
   ServiceChannels.TaskGroups,

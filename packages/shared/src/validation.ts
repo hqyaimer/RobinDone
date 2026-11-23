@@ -1898,7 +1898,12 @@ export const robinrunPersistedMessageSchema = z.object({
     .optional(),
 });
 
-export const robinrunTaskGoalStatusSchema = z.enum(["active", "paused", "budget_limited", "complete"]);
+export const robinrunTaskGoalStatusSchema = z.enum([
+  "active",
+  "paused",
+  "budget_limited",
+  "complete",
+]);
 
 export const robinrunTaskTargetChangedActionSchema = z.enum([
   "set",
@@ -1943,6 +1948,14 @@ export const robinrunTaskTargetStatusSchema = robinrunTaskGoalStatusSchema;
 export const robinrunTaskTargetSchema = robinrunTaskGoalSchema;
 export const robinrunTaskTargetChangedPatchSchema = robinrunTaskGoalChangedPatchSchema;
 
+// 会话创建来源（P2.5）：与 RobinRunSessionCreationOrigin 接口编译期同形；strict 校验。
+export const robinrunSessionCreationOriginSchema = z
+  .object({
+    kind: z.enum(["user", "agent", "trigger", "system"]),
+    ref: nonEmptyStringSchema.optional(),
+  })
+  .strict();
+
 export const robinrunTaskMetaSchema = z.object({
   taskId: nonEmptyStringSchema,
   traceId: nonEmptyStringSchema,
@@ -1968,6 +1981,13 @@ export const robinrunTaskMetaSchema = z.object({
   // off-peak 身份：与 cron 同款持久化策略——meta_json 单一来源 + tasks 表
   // off_peak_task_id 索引投影列（兜底/反查）。
   offPeakTaskId: nonEmptyStringSchema.optional(),
+  // worker 会话身份（2026-11-16 隔离裁决）：meta_json 单一来源；syncer 首见时从
+  // SessionSummary.worker 回填。UI 据此判定 worker 会话只读（跨重启有效）。
+  workerId: nonEmptyStringSchema.optional(),
+  workerName: nonEmptyStringSchema.optional(),
+  // 会话创建来源（P2.5）：CLI session 表为唯一事实源；syncer 从 SessionSummary.creationOrigin
+  // 镜像到 meta_json。内部处理机制（未来来源判断），UI 不展示。
+  creationOrigin: robinrunSessionCreationOriginSchema.optional(),
   unreadAt: z.number().int().nonnegative().optional(),
   status: robinrunTaskPersistStatusSchema.optional(),
   lastError: z

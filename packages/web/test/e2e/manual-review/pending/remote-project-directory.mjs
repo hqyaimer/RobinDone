@@ -119,7 +119,10 @@ try {
         if (payload.robinrun_type === "mobile-view-state-update") {
           fixture.traffic.views.push(payload);
           view = payload.viewState;
-          send(socket, { robinrun_type: "mobile-view-state-updated", requestId: payload.requestId });
+          send(socket, {
+            robinrun_type: "mobile-view-state-updated",
+            requestId: payload.requestId,
+          });
         }
         if (payload.robinrun_type !== "workspace-bridge-open") return;
         fixture.traffic.opens.push(payload);

@@ -44,6 +44,8 @@ function noop(): void {}
 
 /** Plan 是独立勾选项，三种权限仍为单选；只编辑草稿，不向 Runtime 发切换命令。 */
 function V4ComposerModeSwitchImpl({
+  workspacePath,
+  workspaceIdentity,
   provider,
   draftConfig,
   disabled,
@@ -63,7 +65,13 @@ function V4ComposerModeSwitchImpl({
 >) {
   const { intl } = useRobinRunIntl();
   // 原草稿回调随 scope 换代，旧确认不能把权限写入后来选中的任务。
-  const confirmMode = useYoloModeConfirmation(disabled ? null : onSwitchMode, draftConfig?.mode);
+  // 项目权限全量同步（2026-11-18）：传项目上下文启用「每项目只确认一次 + 运行中会话
+  // 实时同步」；远端会话（workspaceIdentity 在场）同样按项目路径去重。
+  const confirmMode = useYoloModeConfirmation(
+    disabled ? null : onSwitchMode,
+    draftConfig?.mode,
+    workspacePath ? { workspacePath, workspaceIdentity } : null,
+  );
   const requestSwitchMode = useCallback(
     (mode: string) => {
       confirmMode(mode, () => onSwitchMode(mode));

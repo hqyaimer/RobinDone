@@ -92,6 +92,13 @@ export interface ContextSourceDiagnostic {
 
 export interface ContextSourceSnapshot {
   workingDirectory: string;
+  /**
+   * 项目根：从打开路径向上最近的含 .git 目录；不在仓库时缺省。
+   * 2026-11-19 /init 裁决（docs/init-flow.md）：master 个人规则（.robinrun/agents/master/）
+   * 等项目级文件的解析锚点——workingDirectory 保留用户打开的写法（可能是嵌套子目录），
+   * 不能当项目根用。
+   */
+  projectRoot?: string;
   envInfo: EnvInfo;
   currentDate?: string;
   userInstructions?: ResolvedUserInstructions;

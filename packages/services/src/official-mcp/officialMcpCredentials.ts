@@ -103,7 +103,9 @@ export interface OfficialMcpCredentialResolveOptions {
 
 export interface OfficialMcpCredentialResolverDeps {
   accountRequestAuthService: {
-    resolveAccessCurrent(access: RobinRunProviderAccountAccess): Promise<RobinRunAccountAccess | null>;
+    resolveAccessCurrent(
+      access: RobinRunProviderAccountAccess,
+    ): Promise<RobinRunAccountAccess | null>;
   };
   credentialService: { load(key: string): Promise<string | null | undefined> };
   modelSelectionService: {

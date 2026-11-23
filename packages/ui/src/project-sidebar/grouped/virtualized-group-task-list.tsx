@@ -53,7 +53,6 @@ export function VirtualizedGroupedTaskList({
   getTaskWorkspaceLabel,
   onSelectTask,
   onCloseTask,
-  onOpenFileTree,
   onMoveTaskToGroup,
   onMoveTaskToTop,
   onStartRenameTask,
@@ -73,7 +72,6 @@ export function VirtualizedGroupedTaskList({
   getTaskWorkspaceLabel: (task: RobinRunTaskMeta) => string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
   onCloseTask: (task: RobinRunTaskMeta) => void;
-  onOpenFileTree?: (task: RobinRunTaskMeta) => void;
   onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
   onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
   onStartRenameTask: (task: RobinRunTaskMeta) => void;
@@ -172,7 +170,6 @@ export function VirtualizedGroupedTaskList({
         }
         onSelectTask={onSelectTask}
         onCloseTask={onCloseTask}
-        onOpenFileTree={onOpenFileTree}
         onMoveTaskToGroup={onMoveTaskToGroup}
         onMoveTaskToTop={onMoveTaskToTop}
         onStartRenameTask={onStartRenameTask}
@@ -197,7 +194,6 @@ export function VirtualizedGroupedTaskList({
       onMarkTaskAsUnread,
       onMoveTaskToGroup,
       onMoveTaskToTop,
-      onOpenFileTree,
       onSelectTask,
       onStartRenameTask,
       activeDragTaskKey,

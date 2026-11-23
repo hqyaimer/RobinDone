@@ -193,7 +193,9 @@ export function resolveRobinRunEndpointOrigin(options?: {
     return normalizeRobinRunEndpointOrigin(overrideOrigin);
   }
 
-  return envBaseOrigin ? normalizeRobinRunEndpointOrigin(envBaseOrigin) : TEST_ROBINRUN_ENDPOINT_ORIGIN;
+  return envBaseOrigin
+    ? normalizeRobinRunEndpointOrigin(envBaseOrigin)
+    : TEST_ROBINRUN_ENDPOINT_ORIGIN;
 }
 
 export function resolveRuntimeRobinRunEnv(env: RuntimeRobinRunEndpointEnv = {}): RobinRunEnv {
@@ -227,7 +229,10 @@ export function buildRuntimeRobinRunEndpointUrls(
   return buildRobinRunEndpointUrls(resolveRuntimeRobinRunEndpointOrigin(env));
 }
 
-export function buildRuntimeRobinRunApiUrl(env: RuntimeRobinRunEndpointEnv = {}, path: string): string {
+export function buildRuntimeRobinRunApiUrl(
+  env: RuntimeRobinRunEndpointEnv = {},
+  path: string,
+): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${resolveRuntimeRobinRunEndpointOrigin(env)}${normalizedPath}`;
 }
@@ -242,7 +247,9 @@ export function resolveWebRemoteControlRelayWsUrl(options?: {
   }
 
   const origin = new URL(
-    normalizeRobinRunEndpointOrigin(options?.endpointOrigin?.trim() || DEFAULT_ROBINRUN_ENDPOINT_ORIGIN),
+    normalizeRobinRunEndpointOrigin(
+      options?.endpointOrigin?.trim() || DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+    ),
   );
   origin.protocol = origin.protocol === "https:" ? "wss:" : "ws:";
   origin.pathname = "/api/v1/remote/ws2";
@@ -385,7 +392,10 @@ export function buildRobinRunEndpointUrls(
   };
 }
 
-export function rewriteRobinRunEndpointUrl(input: string | URL, endpointOrigin: string): string | URL {
+export function rewriteRobinRunEndpointUrl(
+  input: string | URL,
+  endpointOrigin: string,
+): string | URL {
   const originalUrl = typeof input === "string" ? input : input.toString();
   let parsed: URL;
   try {

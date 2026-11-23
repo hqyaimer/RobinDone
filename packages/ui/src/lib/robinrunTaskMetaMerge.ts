@@ -9,7 +9,10 @@ function isPlaceholderTaskTitle(title: string): boolean {
   return normalizedTitle.length === 0 || normalizedTitle === "new session";
 }
 
-function resolveMergedTaskTitle(preferredTask: RobinRunTaskMeta, fallbackTask: RobinRunTaskMeta): string {
+function resolveMergedTaskTitle(
+  preferredTask: RobinRunTaskMeta,
+  fallbackTask: RobinRunTaskMeta,
+): string {
   if (fallbackTask.titleOverridden && !preferredTask.titleOverridden) {
     return fallbackTask.title;
   }

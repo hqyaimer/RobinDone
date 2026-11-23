@@ -8,7 +8,9 @@ const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const webRemoteControlUrl =
   process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL?.trim() || DEFAULT_WEB_REMOTE_CONTROL_URL;
 
-console.log(`[dev:web-remote-control] desktop ROBINRUN_WEB_REMOTE_CONTROL_URL=${webRemoteControlUrl}`);
+console.log(
+  `[dev:web-remote-control] desktop ROBINRUN_WEB_REMOTE_CONTROL_URL=${webRemoteControlUrl}`,
+);
 
 const child = spawn(pnpmCommand, ["--filter", "@robinrun/desktop", "dev:local-cli"], {
   stdio: "inherit",

@@ -120,7 +120,8 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
       robinrunBuiltinRevision: robinrunBuiltin.revision,
       personalRevision: personal.revision,
       robinrunBuiltinProviders: robinrunBuiltin.providers,
-      robinrunBuiltinProviderTemplates: robinrunBuiltin.providerTemplates ?? ProviderTemplateMap.empty(),
+      robinrunBuiltinProviderTemplates:
+        robinrunBuiltin.providerTemplates ?? ProviderTemplateMap.empty(),
       personalProviders: personal.providers,
       robinrunBuiltinModelRules: robinrunBuiltin.models,
       personalModels: personal.models,
@@ -238,7 +239,10 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
       const occupied = new Set([...robinrunBuiltin.providers.keys(), ...current.providers.keys()]);
       const providerId = nextPersonalProviderId(occupied, templateId);
       createdProviderId = providerId;
-      const effectiveProviders = resolvePersonalProviderBaselines(robinrunBuiltin, current.providers);
+      const effectiveProviders = resolvePersonalProviderBaselines(
+        robinrunBuiltin,
+        current.providers,
+      );
       const label = nextPersonalProviderLabel(
         input.providerName ??
           (template && templateId
@@ -289,7 +293,11 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
     return this.#updatePersonal((current) => ({
       providers: current.providers,
       models: current.models,
-      providerOrder: normalizeProviderOrder(robinrunBuiltin.providers, current.providers, providerIds),
+      providerOrder: normalizeProviderOrder(
+        robinrunBuiltin.providers,
+        current.providers,
+        providerIds,
+      ),
     }));
   }
 

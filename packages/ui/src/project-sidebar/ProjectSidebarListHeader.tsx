@@ -1,4 +1,4 @@
-import type { Ref } from "react";
+import type { Ref, ReactNode } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import type { ProjectSidebarProps } from "@/project-sidebar/contract.js";
 import { Button } from "@/components/ui/button.js";
@@ -12,6 +12,7 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
  * - 智能体页（onBack 存在）：返回箭头 + 进入的项目名。
  * 导航未启用的回退（web 远控树视图）沿用“智能体列表”标题。groupedActionsRef
  * 槽位仍承载折叠/新建等工具按钮（列表页由 ProjectList portal，智能体页由 TaskGroupedView portal）。
+ * projectActions（2026-11-15 裁决）：智能体页移除项目文件夹行后，行尾按钮上移到标题行。
  */
 export function ProjectSidebarListHeader({
   onOpenCommandCenter,
@@ -19,12 +20,14 @@ export function ProjectSidebarListHeader({
   title,
   onBack,
   backLabel,
+  projectActions,
 }: {
   onOpenCommandCenter: ProjectSidebarProps["onOpenCommandCenter"];
   groupedActionsRef?: Ref<HTMLDivElement>;
   title: string;
   onBack?: () => void;
   backLabel?: string;
+  projectActions?: ReactNode;
 }) {
   const { intl } = useRobinRunIntl();
   return (
@@ -52,6 +55,7 @@ export function ProjectSidebarListHeader({
       >
         {title}
       </span>
+      {projectActions}
       <div ref={groupedActionsRef} className="flex items-center gap-1" />
       <ControlHintTooltip
         // 原因：快捷键拼入标题会继承标题样式；用独立 shortcut 复用标准键帽。

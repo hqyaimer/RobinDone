@@ -128,6 +128,9 @@ export async function resumeFromStore(
 
   this.workingDirectory = session.directory;
   this.config.taskType = session.taskType;
+  // worker 会话身份随会话记录回填（worker 会话同构化）：冷恢复重建注入段时按名册
+  // 重解析 profile（resolveWorkerInstructions），define.md 最新内容生效（验收场景 5）。
+  this.config.workerIdentity = session.workerIdentity;
   if (this.config.memory) {
     // Memory root 必须使用会话落盘时的 workspace identity，不能沿用进程启动 workspace。
     this.config.memory.workspaceIdentity = session.workspaceID

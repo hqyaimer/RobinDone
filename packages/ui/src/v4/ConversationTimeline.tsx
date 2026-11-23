@@ -287,6 +287,14 @@ export interface ConversationTimelineProps {
   sessionKey: string;
   /** renderer-local 滚动记忆 key；draft 为 null，不参与保存或恢复。 */
   scrollMemoryKey?: string | null;
+  /**
+   * mailbox 跳转（2026-11-18）：非空时本会话的滚动由跳转接管——跳过滚动记忆恢复，
+   * 行就绪后按 sourceTurnId 反查渲染单元精确滚动（缺席/找不到轮退回滚到底部）。
+   * SessionPane 在会话切换/pane 聚焦时消费 rowContext 的 sourceJump registry 登记后下发。
+   */
+  sourceJump?: { nonce: number; sourceTurnId?: string } | null;
+  /** 跳转定位完成（含降级为滚到底部）；宿主据此清空 sourceJump。 */
+  onSourceJumpSettled?: () => void;
   /** 行渲染上下文（theme/codePreviewSettings/workspacePath）；宿主保证引用稳定。 */
   rowContext: ConversationRowRenderContext;
   onFork?: (target: ConversationRowTarget) => void;
@@ -389,6 +397,8 @@ function ConversationTimelineImpl({
   totalCount,
   sessionKey,
   scrollMemoryKey = null,
+  sourceJump = null,
+  onSourceJumpSettled,
   rowContext,
   onFork,
   onRetry,
@@ -564,6 +574,13 @@ function ConversationTimelineImpl({
   renderUnitCountRef.current = renderUnitCount;
   const virtualizedUnitsRef = useRef(virtualizedUnits);
   virtualizedUnitsRef.current = virtualizedUnits;
+  // mailbox 跳转（2026-11-18）：prop 经 ref 供 effect 稳定读取；jumpOwnedScrollSession
+  // 记录跳转已接管的会话，防止跳转落地后 switch/detached 恢复效应重跑把落点覆盖回记忆位置。
+  const sourceJumpRef = useRef(sourceJump);
+  sourceJumpRef.current = sourceJump;
+  const liveUnitRef = useRef(liveUnit);
+  liveUnitRef.current = liveUnit;
+  const jumpOwnedScrollSessionRef = useRef<string | null>(null);
   const liveTailRef = useRef<HTMLDivElement>(null);
   const messageLayerRef = useRef<HTMLDivElement>(null);
   const virtualHistoryRef = useRef<HTMLDivElement>(null);
@@ -1668,6 +1685,56 @@ function ConversationTimelineImpl({
     [sessionKey],
   );
 
+  // mailbox 跳转定位（2026-11-18）：目标会话行就绪后按来源汇报轮 turnId 反查渲染单元，
+  // 复用 scrollToQuery（未挂载先挂载所属 turn 再对齐行锚点）；锚点取轮内末行（汇报正文
+  // 通常收尾）。目标轮不在已加载窗口（含 live tail）或行上无锚点（master 插话/旧行）时
+  // 退回滚到底部——不自动 loadOlder，汇报轮基本都在尾窗。完成即回调宿主清空 sourceJump。
+  useEffect(() => {
+    if (!sourceJump || renderUnitCount === 0) return;
+    let cancelled = false;
+    const frame = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+      const target = sourceJumpRef.current;
+      if (!target) return;
+      const sourceTurnId = target.sourceTurnId;
+      const units = virtualizedUnitsRef.current;
+      const unitIndex = sourceTurnId ? units.findIndex((unit) => unit.turnId === sourceTurnId) : -1;
+      if (unitIndex >= 0) {
+        const unit = units[unitIndex]!;
+        // 锚点优先轮尾最终正文（汇报消息本体），退轮内末行/轮头。
+        const anchorRowId =
+          unit.latestAssistantTextRow?.rowId ?? unit.renderRows.at(-1)?.rowId ?? unit.header?.rowId;
+        if (anchorRowId !== undefined) {
+          scrollToQuery({ unitIndex, rowId: anchorRowId });
+          onSourceJumpSettled?.();
+          return;
+        }
+      } else if (
+        sourceTurnId &&
+        liveUnitRef.current?.turnId === sourceTurnId &&
+        liveUnitIndex !== null
+      ) {
+        // 汇报轮恰是运行中的 live tail 单元：它不在虚拟列表里，scrollToQuery 对
+        // liveUnitIndex 有专门分支（先对齐 liveTail 元素再精确到行）。锚点取轮内末行，
+        // 轮还没有行（刚起轮）时退回滚到底部兜底。
+        const liveAnchorRowId =
+          liveUnitRef.current?.latestAssistantTextRow?.rowId ??
+          liveUnitRef.current?.renderRows.at(-1)?.rowId;
+        if (liveAnchorRowId !== undefined) {
+          scrollToQuery({ unitIndex: liveUnitIndex, rowId: liveAnchorRowId });
+          onSourceJumpSettled?.();
+          return;
+        }
+      }
+      scrollToBottom();
+      onSourceJumpSettled?.();
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [sourceJump, renderUnitCount, scrollToQuery, onSourceJumpSettled, liveUnitIndex]);
+
   const scrollToUnit = useCallback(
     (unitIndex: number, behavior: ScrollBehavior = "auto") => {
       clearUserScrollIntent();
@@ -1756,6 +1823,20 @@ function ConversationTimelineImpl({
     virtualizer.measure();
     userAdjustedScrollSinceRestoreRef.current = false;
 
+    // mailbox 跳转接管滚动（2026-11-18）：跳转登记中或已在本会话落地时跳过记忆恢复
+    // （含挂起的 detached 恢复），落点由下方 sourceJump 效应在行就绪后定位；切到
+    // 其他会话即解除接管，恢复常态。
+    const jumpTakesOver =
+      sourceJumpRef.current !== null || jumpOwnedScrollSessionRef.current === sessionKey;
+    jumpOwnedScrollSessionRef.current = jumpTakesOver ? sessionKey : null;
+    if (jumpTakesOver) {
+      suppressVirtualizerAdjustmentDuringRestoreRef.current = false;
+      pendingDetachedScrollRestoreRef.current = null;
+      followingRef.current = false;
+      setBackToBottomVisible(false);
+      return;
+    }
+
     const restoredState = readChatSessionScrollMemoryState(scrollMemoryKey);
     const pendingRestoreWait = resolvePendingScrollMemoryRestoreWait(
       restoredState,
@@ -1829,6 +1910,12 @@ function ConversationTimelineImpl({
 
   useLayoutEffect(() => {
     if (contentMeasurementPendingRef.current) return;
+    // mailbox 跳转接管期间作废挂起恢复（2026-11-18）：否则行就绪时先把落点拉回记忆位置，
+    // 再被跳转覆盖，肉眼可见一次跳动。
+    if (sourceJumpRef.current) {
+      pendingDetachedScrollRestoreRef.current = null;
+      return;
+    }
     const pendingRestore = pendingDetachedScrollRestoreRef.current;
     if (rowCount === 0 || !pendingRestore || pendingRestore.key !== scrollMemoryKey) {
       return;

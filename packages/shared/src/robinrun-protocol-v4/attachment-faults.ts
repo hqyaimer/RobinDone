@@ -38,7 +38,9 @@ export type RobinRunAttachmentFaultCode =
 
 const KNOWN_FAULT_CODES = new Set<string>(Object.values(ROBINRUN_ATTACHMENT_FAULT_CODES));
 
-export function isRobinRunAttachmentFaultCode(value: unknown): value is RobinRunAttachmentFaultCode {
+export function isRobinRunAttachmentFaultCode(
+  value: unknown,
+): value is RobinRunAttachmentFaultCode {
   return typeof value === "string" && KNOWN_FAULT_CODES.has(value);
 }
 
@@ -66,7 +68,9 @@ export class RobinRunAttachmentFaultError extends Error {
  * - 跨 JSON-RPC 回传的 `error.data.code`；
  * - 旧版本 CLI 只有消息文本时的兼容兜底（见下方注释）。
  */
-export function readRobinRunAttachmentFaultCode(error: unknown): RobinRunAttachmentFaultCode | undefined {
+export function readRobinRunAttachmentFaultCode(
+  error: unknown,
+): RobinRunAttachmentFaultCode | undefined {
   if (!error || typeof error !== "object") return undefined;
   const candidate = error as { code?: unknown; data?: unknown };
   if (isRobinRunAttachmentFaultCode(candidate.code)) return candidate.code;

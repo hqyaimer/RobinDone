@@ -598,7 +598,10 @@ describe("虚拟项目旧产品体验", () => {
     expect(await $('[data-testid="project-task-sort-created"]').isExisting()).toBe(false);
     await browser.keys("Escape");
     await browser.execute(() => {
-      localStorage.setItem("robinrun-sidebar-task-preferences", JSON.stringify({ sortBy: "created" }));
+      localStorage.setItem(
+        "robinrun-sidebar-task-preferences",
+        JSON.stringify({ sortBy: "created" }),
+      );
       const key = "robinrun-project-sidebar-preferences";
       localStorage.setItem(
         key,
@@ -728,7 +731,9 @@ describe("虚拟项目旧产品体验", () => {
       join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "sidebar-view.json"),
       JSON.stringify({ before, expected, actual }, null, 2),
     );
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "sidebar-recent.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "sidebar-recent.png"),
+    );
     await captureLayouts(undefined, "sidebar-recent");
     await $('[data-testid="sidebar-view-menu"]').click();
     await $('[data-testid="sidebar-view-projects"]').click();

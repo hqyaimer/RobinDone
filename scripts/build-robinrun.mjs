@@ -157,7 +157,15 @@ async function buildOutputs(skipBuild) {
 async function stageRobinRunPackage({ packageRoot, version }) {
   const webDist = resolve(root, "packages", "web", "dist");
   const serverDist = resolve(root, "packages", "server", "dist");
-  const agentBundle = resolve(root, "apps", "robinrun-cli", "packages", "cli", "dist", "robinrun.cjs");
+  const agentBundle = resolve(
+    root,
+    "apps",
+    "robinrun-cli",
+    "packages",
+    "cli",
+    "dist",
+    "robinrun.cjs",
+  );
   const agentProvider = resolve(root, "apps/robinrun-cli/packages/cli/dist/provider");
 
   await assertDirectory(webDist, "web dist");

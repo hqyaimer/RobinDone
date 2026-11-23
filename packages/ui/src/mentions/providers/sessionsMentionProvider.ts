@@ -40,7 +40,10 @@ function getWorkspaceLabel(task: RobinRunTaskMeta): string {
   return raw.split(/[\\/]/).filter(Boolean).at(-1) ?? raw;
 }
 
-function mapTaskToMentionItem(task: RobinRunTaskMeta, provider: RobinRunProvider): SessionMentionItem {
+function mapTaskToMentionItem(
+  task: RobinRunTaskMeta,
+  provider: RobinRunProvider,
+): SessionMentionItem {
   const sessionId = task.taskId;
   const itemProvider = task.provider ?? provider;
   return {

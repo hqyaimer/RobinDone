@@ -17,7 +17,8 @@ const CASE_TIMEOUT_MS = 240_000;
 const OAUTH_CALLBACK_CHANNEL = "robinrun:oauth-callback";
 // state 不匹配的回调:oauthService.handleCallback 在无 pending flow 时会抛
 // "OAuth state 不匹配或已过期",复现 OAuth deep link 失败的真实链路。
-const TAMPERED_OAUTH_CALLBACK_URL = "robinrun://oauth/callback?state=e2e-tampered-state&code=e2e-code";
+const TAMPERED_OAUTH_CALLBACK_URL =
+  "robinrun://oauth/callback?state=e2e-tampered-state&code=e2e-code";
 
 describe("OAuth 登录失败态的取消交互", () => {
   after(async () => {

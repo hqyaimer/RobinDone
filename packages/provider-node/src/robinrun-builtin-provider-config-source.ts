@@ -64,7 +64,9 @@ export class NodeRobinRunBuiltinProviderConfigSource implements ProviderSource<P
     return snapshotFromRelease(release, this.#sourceKey);
   }
 
-  async applyRemoteRelease(release: RobinRunBuiltinRelease): Promise<ApplyRobinRunBuiltinReleaseResult> {
+  async applyRemoteRelease(
+    release: RobinRunBuiltinRelease,
+  ): Promise<ApplyRobinRunBuiltinReleaseResult> {
     this.#assertNotDisposed();
     await this.#ensureWatcher();
     const result = await withFileLock(this.#activeFilePath, async () => {
@@ -213,7 +215,8 @@ function selectReleaseCandidate(
     bundled?.release &&
     active?.release &&
     bundled.release.revision === active.release.revision &&
-    serializeRobinRunBuiltinRelease(bundled.release) !== serializeRobinRunBuiltinRelease(active.release)
+    serializeRobinRunBuiltinRelease(bundled.release) !==
+      serializeRobinRunBuiltinRelease(active.release)
   ) {
     // 同 revision 冲突属于 Active 缓存失效，不能反向使可信 Bundled 无法启动。
     // 返回 Bundled 后调用方会在能够写入时原子替换 Active。

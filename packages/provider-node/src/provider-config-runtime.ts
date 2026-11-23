@@ -79,7 +79,8 @@ export class NodeProviderConfigRuntime {
       pollingIntervalMs: options.personalPollingIntervalMs,
       ...(options.importLegacy
         ? {
-            importLegacy: async () => options.importLegacy!(await this.#robinrunBuiltinSource.read()),
+            importLegacy: async () =>
+              options.importLegacy!(await this.#robinrunBuiltinSource.read()),
           }
         : {}),
     });
@@ -130,7 +131,9 @@ export class NodeProviderConfigRuntime {
     return startPromise;
   }
 
-  refreshRobinRunBuiltin(options?: { readonly force?: boolean }): Promise<RobinRunBuiltinRefreshResult> {
+  refreshRobinRunBuiltin(options?: {
+    readonly force?: boolean;
+  }): Promise<RobinRunBuiltinRefreshResult> {
     if (this.#disposed) return Promise.resolve("disposed");
     if (this.#robinrunBuiltinSource instanceof EndpointScopedRobinRunBuiltinSource) {
       return this.#robinrunBuiltinSource.refresh(options);

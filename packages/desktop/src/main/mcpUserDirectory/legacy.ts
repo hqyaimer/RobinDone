@@ -207,9 +207,23 @@ function buildLegacyCommonMcpStorageCandidates(request?: MigrateLegacyCommonMcpR
   candidates.push(
     join(localAppData, "ai.z.work", "EBWebView", "Default", "Local Storage", "leveldb"),
     join(appData, "RobinRun", "Local Storage", "leveldb"),
-    join(appData, "RobinRun", "Partitions", "robinrun-embedded-browser", "Local Storage", "leveldb"),
+    join(
+      appData,
+      "RobinRun",
+      "Partitions",
+      "robinrun-embedded-browser",
+      "Local Storage",
+      "leveldb",
+    ),
     join(appData, "RobinRun Dev", "Local Storage", "leveldb"),
-    join(appData, "RobinRun Dev", "Partitions", "robinrun-embedded-browser", "Local Storage", "leveldb"),
+    join(
+      appData,
+      "RobinRun Dev",
+      "Partitions",
+      "robinrun-embedded-browser",
+      "Local Storage",
+      "leveldb",
+    ),
   );
 
   return Array.from(new Set(candidates));

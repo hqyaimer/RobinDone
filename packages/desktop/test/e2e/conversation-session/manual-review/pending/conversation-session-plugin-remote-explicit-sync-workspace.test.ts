@@ -147,9 +147,9 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
       packageStatus: "missing",
       source: "missing",
     });
-    expect(await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json"))).toBe(
-      workspaceConfigBefore,
-    );
+    expect(
+      await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json")),
+    ).toBe(workspaceConfigBefore);
 
     // 票 14：Header「同步插件」打开数据同步弹窗，定位到当前 workspace 所在设备的插件分类。
     await openRemotePluginSyncDialog(workspacePath);
@@ -172,9 +172,9 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
         timeoutMsg: `${CASE_MARKER}: 显式同步完成后 remote package/cache 没有物化`,
       },
     );
-    expect(await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json"))).toBe(
-      workspaceConfigBefore,
-    );
+    expect(
+      await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json")),
+    ).toBe(workspaceConfigBefore);
     expect(await readFile(localConfigPath, "utf8")).toBe(localConfigBefore);
     expect(await readFile(localInstalledPath, "utf8")).toBe(localInstalledBefore);
 

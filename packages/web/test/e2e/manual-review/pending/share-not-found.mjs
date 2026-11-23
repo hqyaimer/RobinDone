@@ -9,7 +9,10 @@ try {
     for (const width of [320, 1280]) {
       for (const theme of ["zai-light", "zai-dark"]) {
         const context = await browser.newContext({ viewport: { width, height: 800 } });
-        await context.addInitScript((value) => localStorage.setItem("robinrun-theme", value), theme);
+        await context.addInitScript(
+          (value) => localStorage.setItem("robinrun-theme", value),
+          theme,
+        );
         const page = await context.newPage();
         const chinese = locale === "cn/share";
         const home = page.getByRole("link", {

@@ -12,6 +12,7 @@ import type {
 import { HookEventName, SessionEventType, ModelErrorCode } from "@robinrun/contracts";
 import type {
   ConversationDelta,
+  ConversationRow,
   ConversationSnapshot,
   DeliveryProfile,
 } from "@robinrun/shared/robinrun-protocol-v4";
@@ -10598,5 +10599,296 @@ describe("userInput 行的 epilogueStart（热路径）", () => {
     const rows = projection.getSnapshot().rows.window.filter((row) => row.kind === "userInput");
     expect(rows[0]).toMatchObject({ text: "Summarize\n\n---\nStandard", epilogueStart: 9 });
     expect(rows[1]).not.toHaveProperty("epilogueStart");
+  });
+});
+
+// P2.6 验收修复第二轮（2026-11-18）：worker/subagent 完成通知此前是纯 model-only 轮，
+// 正文只更新派发工具行——用户介入返回的轮连工具行都没有，worker 的话在主会话完全
+// 不可见。带发送方身份（TurnStarted inputSender/Label/SessionId）的通知现在落一条
+// 可见 mailbox 行（左侧 + 发送者徽章 + 通知正文），UI 渲染单元把它排在轮组头之前。
+describe("P2.6 worker 返回通知的可见 mailbox 行", () => {
+  const workerReturnNotification = [
+    "<task-notification>",
+    "<task-id>wkr-task-1</task-id>",
+    "<tool-use-id>call-dispatch</tool-use-id>",
+    "<status>completed</status>",
+    '<summary>Agent "调研撰稿员" finished</summary>',
+    "<result>二次汇报：简报已完成，无遗留事项，文件没有任何改动。</result>",
+    "</task-notification>",
+  ].join("\n");
+
+  function pushWorkerReturnTurn(
+    log: EventLog,
+    options: { withSender?: boolean } = {},
+  ): void {
+    log.push(
+      SessionEventType.TurnStarted,
+      {
+        turnNumber: 2,
+        input: workerReturnNotification,
+        inputSource: "background_task",
+        inputVisibility: "model-only",
+        messageId: "user-worker-return",
+        originMeta: { backgroundSource: "subagent", title: "调研撰稿员", workId: "wkr-task-1" },
+        ...(options.withSender === false
+          ? {}
+          : {
+              inputSender: "worker",
+              inputSenderId: "wkr-c7408343",
+              inputSenderLabel: "调研撰稿员",
+              inputSenderSessionId: "sess-worker-1",
+            }),
+      } as never,
+      { turnId: "turn-worker-return" },
+    );
+  }
+
+  it("worker 返回通知落可见 mailbox 行：发送者徽章元数据 + 通知正文（不露 XML）", () => {
+    const log = new EventLog();
+    log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+    log.push(
+      SessionEventType.TurnStarted,
+      { turnNumber: 1, input: "派发 worker", messageId: "user-launch" },
+      { turnId: "turn-1" },
+    );
+    log.push(
+      SessionEventType.TurnComplete,
+      { response: "", tokenCount: 0, toolCallCount: 0, duration: 1, resultType: "success" },
+      { turnId: "turn-1" },
+    );
+    pushWorkerReturnTurn(log);
+
+    const rows = runAll(log.events).projection.getSnapshot().rows.window;
+    // 持久 messageId 是 product turn 身份（与 live 同一规则），不是 runtime turnId。
+    const header = rows.find(
+      (row) => row.kind === "turnHeader" && row.turnId === "user-worker-return",
+    );
+    expect(header).toMatchObject({ origin: "backgroundResult" });
+    const mailboxRow = rows.find(
+      (row) => row.kind === "userInput" && row.origin === "mailbox",
+    ) as Extract<ConversationRow, { kind: "userInput" }> | undefined;
+    expect(mailboxRow).toMatchObject({
+      text: "二次汇报：简报已完成，无遗留事项，文件没有任何改动。",
+      originMeta: {
+        sender: "worker",
+        senderId: "wkr-c7408343",
+        senderLabel: "调研撰稿员",
+        senderSessionId: "sess-worker-1",
+      },
+    });
+    // 通知的 XML 包装与 summary 措辞不进可见正文。
+    expect(mailboxRow?.text).not.toContain("<task-notification>");
+    expect(mailboxRow?.text).not.toContain("finished");
+    // 真实用户行只有首轮那条；通知行是 mailbox。
+    expect(rows.filter((row) => row.kind === "userInput")).toHaveLength(2);
+  });
+
+  it("旧事件兼容：无发送方身份的通知不落 mailbox 行（保持 model-only）", () => {
+    const log = new EventLog();
+    log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+    log.push(
+      SessionEventType.TurnStarted,
+      { turnNumber: 1, input: "派发 worker", messageId: "user-launch" },
+      { turnId: "turn-1" },
+    );
+    pushWorkerReturnTurn(log, { withSender: false });
+
+    const rows = runAll(log.events).projection.getSnapshot().rows.window;
+    expect(rows.filter((row) => row.kind === "userInput")).toHaveLength(1);
+  });
+
+  // 2026-11-21 实测修复：ContactAgent 投递的可见消息行此前不带发送者身份明细
+  // （senderId/senderLabel），徽章回退泛称「工作者」看不出具体是哪个工作者。
+  // TurnStarted 可见行与队列 drain 行同字段补齐（与通知分支一致）。
+  // 2026-11-22 实测修复：可见输入行此前只带 originMeta 不落 mailbox——ContactAgent 对
+  // 空闲/新建会话的直投（v4 sendText 起 startNow 轮，无 inputSource）origin 停在
+  // realUser，master 派发消息伪成用户气泡（用户截图验收）；drain 行与冷恢复同消息都归
+  // mailbox，活/冷渲染不一致。转换规则从 trigger 扩到全部非 user sender。
+  describe("2026-11-21 投递可见行的发送者身份明细", () => {
+    it("TurnStarted 可见输入行 originMeta 带 senderId/senderLabel/senderSessionId", () => {
+      const log = new EventLog();
+      log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+      log.push(
+        SessionEventType.TurnStarted,
+        {
+          turnNumber: 1,
+          input: "【触发器测试转告】webhook 触发器 trg-1 收到事件",
+          messageId: "user-contact-delivery",
+          inputSender: "worker",
+          inputSenderId: "wkr-ops-1",
+          inputSenderLabel: "运营专员",
+          inputSenderSessionId: "sess-worker-1",
+        } as never,
+        { turnId: "turn-contact" },
+      );
+      const rows = runAll(log.events).projection.getSnapshot().rows.window;
+      const row = rows.find(
+        (row) => row.kind === "userInput",
+      ) as Extract<ConversationRow, { kind: "userInput" }> | undefined;
+      expect(row).toMatchObject({
+        origin: "mailbox",
+        originMeta: {
+          sender: "worker",
+          senderId: "wkr-ops-1",
+          senderLabel: "运营专员",
+          senderSessionId: "sess-worker-1",
+        },
+      });
+    });
+
+    it("master 直投（ContactAgent 对空闲/新建会话，无 inputSource）落 mailbox 行而非用户气泡", () => {
+      const log = new EventLog();
+      log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+      log.push(
+        SessionEventType.TurnStarted,
+        {
+          turnNumber: 1,
+          input: "v0.2 补验收通过，现在下发 v0.3。",
+          messageId: "user-master-contact",
+          inputSender: "master",
+          inputSenderLabel: "主智能体",
+          inputSenderSessionId: "sess-master-1",
+        } as never,
+        { turnId: "turn-master-contact" },
+      );
+      const rows = runAll(log.events).projection.getSnapshot().rows.window;
+      const row = rows.find(
+        (row) => row.kind === "userInput",
+      ) as Extract<ConversationRow, { kind: "userInput" }> | undefined;
+      expect(row).toMatchObject({
+        origin: "mailbox",
+        originMeta: {
+          sender: "master",
+          senderLabel: "主智能体",
+          senderSessionId: "sess-master-1",
+        },
+      });
+    });
+
+    it("无发送方身份的普通用户输入保持 realUser（右侧气泡）", () => {
+      const log = new EventLog();
+      log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+      log.push(
+        SessionEventType.TurnStarted,
+        { turnNumber: 1, input: "你好", messageId: "user-real" },
+        { turnId: "turn-real" },
+      );
+      const rows = runAll(log.events).projection.getSnapshot().rows.window;
+      const row = rows.find(
+        (row) => row.kind === "userInput",
+      ) as Extract<ConversationRow, { kind: "userInput" }> | undefined;
+      expect(row).toMatchObject({ origin: "realUser" });
+      expect(row?.originMeta).toBeUndefined();
+    });
+
+    it("队列 drain 行 originMeta 同样带 senderId/senderLabel/senderSessionId", () => {
+      const turnId = "turn-1";
+      const log = new EventLog();
+      log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+      log.push(SessionEventType.TurnStarted, { turnNumber: 1, input: "hi" }, { turnId });
+      log.push(
+        SessionEventType.TurnSteerDrained,
+        {
+          pendingInputIds: ["pi-1"],
+          targetTurnId: turnId,
+          injectedMessageIds: ["message-drained"],
+          drainedInputs: [
+            {
+              pendingInputId: "pi-1",
+              messageId: "message-drained",
+              text: "【触发器测试转告】webhook 触发器 trg-1 收到事件",
+              delivery: "guide",
+              systemStatus: {
+                sender: "worker",
+                senderId: "wkr-ops-1",
+                senderName: "运营专员",
+                fromSessionId: "sess-worker-1",
+              },
+            },
+          ],
+        } as never,
+        { turnId },
+      );
+      const rows = runAll(log.events).projection.getSnapshot().rows.window;
+      const row = rows.at(-1) as Extract<ConversationRow, { kind: "userInput" }> | undefined;
+      expect(row).toMatchObject({
+        origin: "mailbox",
+        originMeta: {
+          sender: "worker",
+          senderId: "wkr-ops-1",
+          senderLabel: "运营专员",
+          senderSessionId: "sess-worker-1",
+        },
+      });
+    });
+  });
+
+  it("resume（新 agentId）按 childSessionId 归并回原派发行，不落无主裸行", () => {
+    const log = new EventLog();
+    log.push(SessionEventType.SessionCreated, { mode: "default", contextWindow: 1000 });
+    log.push(
+      SessionEventType.TurnStarted,
+      { turnNumber: 1, input: "派发 worker", messageId: "user-launch" },
+      { turnId: "turn-1" },
+    );
+    log.push(
+      SessionEventType.SubagentSpawned,
+      {
+        agentId: "agent-1",
+        agentType: "wkr-c7408343",
+        childSessionId: "sess-worker-1",
+        description: "调研撰稿员",
+        parentToolCallId: "call-dispatch",
+        background: true,
+        status: "running",
+      },
+      { turnId: "turn-1" },
+    );
+    log.push(
+      SessionEventType.SubagentStopped,
+      {
+        agentId: "agent-1",
+        agentType: "wkr-c7408343",
+        childSessionId: "sess-worker-1",
+        parentToolCallId: "call-dispatch",
+        status: "completed",
+      },
+      { turnId: "turn-1" },
+    );
+    // 用户介入后续跑：resume 铸造新 agentId，但子会话不变。
+    log.push(
+      SessionEventType.SubagentSpawned,
+      {
+        agentId: "agent-2",
+        agentType: "wkr-c7408343",
+        childSessionId: "sess-worker-1",
+        description: "调研撰稿员",
+        background: true,
+        resumed: true,
+        status: "running",
+      },
+      { turnId: "turn-2" },
+    );
+    log.push(
+      SessionEventType.SubagentStopped,
+      {
+        agentId: "agent-2",
+        agentType: "wkr-c7408343",
+        childSessionId: "sess-worker-1",
+        status: "completed",
+      },
+      { turnId: "turn-2" },
+    );
+
+    const subagentRows = runAll(log.events)
+      .projection.getSnapshot()
+      .rows.window.filter((row) => row.kind === "subagent");
+    // 一个子会话只有一行：resume 回到 running、终态再次收口，不再追加裸行。
+    expect(subagentRows).toHaveLength(1);
+    expect(subagentRows[0]).toMatchObject({
+      childSessionId: "sess-worker-1",
+      parentToolCallId: "call-dispatch",
+      status: "success",
+    });
   });
 });

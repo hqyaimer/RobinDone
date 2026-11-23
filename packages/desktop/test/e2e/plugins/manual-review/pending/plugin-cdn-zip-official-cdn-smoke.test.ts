@@ -91,7 +91,10 @@ describe("PLM-LC-007b Desktop real official CDN ZIP smoke", () => {
   });
 });
 
-function componentNames(plugin: RobinRunPluginInfo | undefined, kind: "command" | "skill"): string[] {
+function componentNames(
+  plugin: RobinRunPluginInfo | undefined,
+  kind: "command" | "skill",
+): string[] {
   return (
     plugin?.components?.find((group) => group.kind === kind)?.items.map((item) => item.name) ?? []
   );

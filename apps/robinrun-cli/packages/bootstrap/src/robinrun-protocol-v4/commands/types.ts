@@ -92,6 +92,32 @@ export interface V4SessionRecordView {
 export interface V4CommandCoreHost {
   /** 会话查找（同一注册表对象引用；不存在返回 undefined → handler 拒绝）。 */
   getRecord(sessionId: string): V4SessionRecordView | undefined;
+  // ── P2.5 用户协同 worker 会话（worker_child 的 sendText/stop 路由）────────
+  // 实现在 v4-bridge：解析派发者（gateway 注册表/parentID）→ 冷恢复父会话 → 父 runtime
+  // 的 subagentPort 交付（运行中 steer / 已结束 resume；stop 按 user 发起武装脱钩）。
+  routeWorkerSessionInput?(input: {
+    childSessionId: string;
+    text: string;
+    /**
+     * 输入命令 id（账本行 id = queue_<commandId>）。路由成功后 v4-bridge 据此把子会话
+     * 账本行收口为终态——否则它永远停在 admitted，CLI 重启被收口为 discarded
+     * (session_resumed) 并回报 inputDiscardedOnRestart，UI 弹「重启前已提交的输入
+     * 没有进入对话」恢复条（worker 输入实际已被消费，属误报且死循环）。
+     */
+    sourceCommandId?: string;
+  }): Promise<{ ok: boolean; delivery?: string; error?: string }>;
+  routeWorkerSessionStop?(input: {
+    childSessionId: string;
+  }): Promise<{ ok: boolean; error?: string }>;
+  /**
+   * 项目权限全量同步（2026-11-18）：worker_child 会话的 switchCollaborationMode 路由。
+   * 配置不能落在物化 shell runtime 上（空壳），交派发者父 runtime 的 subagentPort
+   * 找到活子 runtime 生效。
+   */
+  routeWorkerSessionConfig?(input: {
+    childSessionId: string;
+    mode: string;
+  }): Promise<{ ok: boolean; error?: string }>;
   logger?: V4CommandLogger;
 
   // ── v4 原生能力（非过渡钩子）────────────────────────────────

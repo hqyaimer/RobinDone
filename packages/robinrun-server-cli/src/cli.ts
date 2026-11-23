@@ -122,7 +122,10 @@ export async function runServerCli(
     if (command === "version" || command === "--version") {
       // Bug 原因：Server --version 过去落入 legacy delegate，实际输出取决于旁边的 Agent
       // robinrun.cjs，Desktop probe 无法稳定判断 Server compatibility。
-      stdout(io, json ? { product: "robinrun-server", version: ROBINRUN_VERSION } : ROBINRUN_VERSION);
+      stdout(
+        io,
+        json ? { product: "robinrun-server", version: ROBINRUN_VERSION } : ROBINRUN_VERSION,
+      );
       return 0;
     }
     const proxyStdioRequested =
@@ -309,7 +312,10 @@ async function runServe(
         const reused = existing.state === "ready" ? existing : await waitForControlReady(layout);
         if (json) stdout(io, reused);
         else
-          stdout(io, `RobinRun Server ${reused.state} at ${reused.host ?? ""}:${reused.port ?? ""}`);
+          stdout(
+            io,
+            `RobinRun Server ${reused.state} at ${reused.host ?? ""}:${reused.port ?? ""}`,
+          );
         return 0;
       }
       if (existing.runningTaskCount > 0) {
@@ -359,7 +365,10 @@ async function runServe(
         if (!isServiceLoadFailure(error)) throw error;
         serviceFallbackReason = (error as Error).message.trim();
         if (!json)
-          stderr(io, `Starting RobinRun Server in detached fallback mode: ${serviceFallbackReason}`);
+          stderr(
+            io,
+            `Starting RobinRun Server in detached fallback mode: ${serviceFallbackReason}`,
+          );
       }
     }
     if (!serviceStarted) {
@@ -420,7 +429,8 @@ async function runServe(
     }
     // 回退原因只属于本次启动结果，不写入 status.json。
     if (json) stdout(io, serviceFallbackReason ? { ...started, serviceFallbackReason } : started);
-    else stdout(io, `RobinRun Server ${started.state} at ${started.host ?? ""}:${started.port ?? ""}`);
+    else
+      stdout(io, `RobinRun Server ${started.state} at ${started.host ?? ""}:${started.port ?? ""}`);
     process.stdin.pause();
     process.stdin.destroy();
     return 0;

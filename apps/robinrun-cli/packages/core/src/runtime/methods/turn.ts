@@ -1,5 +1,10 @@
 import { beginLocalTurnPreparation, type LocalTtftDetail } from "@robinrun/contracts";
+import {
+  agentContactTakeoverReply,
+  agentContactTurnFailedReply,
+} from "../../subagent/agent-contact.js";
 import { runtimeInputMetadata } from "../../agent/runtime-input-presentation.js";
+import { realUserRuntimeMetadata } from "../../agent/message-history.js";
 import { refreshWorkspaceTrustAdmission } from "./mcp.js";
 import { withConversationQuotes } from "../helpers/conversation-quotes.js";
 import {
@@ -523,6 +528,24 @@ export async function executeTurnCommand(
           foregroundExecutionId: this.activeForegroundExecution?.foregroundExecutionId,
           queryId,
           inputSource: options?.inputSource,
+          // P2.6 消息来源（2026-11-18 验收修复）：发送者随 TurnStarted 下发，v4 投影据此把
+          // master/trigger 等来源的轮归 mailbox（左侧徽章）；真实用户输入缺省，不占字段。
+          // 第二轮（同日）：worker/subagent 通知轮补显示名与会话地址，mailbox 行徽章
+          // 从泛称「工作者」换成具体发送者，行上留 fromSessionId 供后续回话寻址。
+          ...(options?.systemStatus && options.systemStatus.sender !== "user"
+            ? {
+                inputSender: options.systemStatus.sender,
+                ...(options.systemStatus.senderId
+                  ? { inputSenderId: options.systemStatus.senderId }
+                  : {}),
+                ...(options.systemStatus.senderName
+                  ? { inputSenderLabel: options.systemStatus.senderName }
+                  : {}),
+                ...(options.systemStatus.fromSessionId
+                  ? { inputSenderSessionId: options.systemStatus.fromSessionId }
+                  : {}),
+              }
+            : {}),
           ...(inputOrigin ? { inputOrigin } : {}),
           inputVisibility: options?.inputVisibility,
           originMeta: options?.originMeta,
@@ -722,8 +745,18 @@ export async function executeTurnCommand(
               // 合并而不是替换：输入 entry 上还挂着页面状态（genUiState）。
               // 修复原因：整体替换会删掉它，抢占运行中轮次的立即发送在热态请求里丢失页面状态，
               // 冷恢复按合并恢复又带上，前后请求不一致。写法与冷恢复相同。
-              return entry.kind !== "attachment" && metadata
-                ? { ...entry, metadata: { ...entry.metadata, ...metadata } }
+              // P2.6：普通用户输入一律盖 real_user 章（渲染层据此补 {"sender":"user"} 区块；
+              // 无 presentation 的输入即真实用户 prompt——coordinator/trigger 轮各带自己的
+              // inputSource/presentation 或显式 systemStatus，不会落到这个分支）。
+              return entry.kind !== "attachment"
+                ? {
+                    ...entry,
+                    metadata: {
+                      ...(entry.metadata ?? realUserRuntimeMetadata()),
+                      ...(metadata ?? {}),
+                      ...(options?.systemStatus ? { systemStatus: options.systemStatus } : {}),
+                    },
+                  }
                 : entry;
             }),
           );
@@ -738,6 +771,8 @@ export async function executeTurnCommand(
             {
               intent: options?.intent,
               inputPresentation: options?.inputPresentation,
+              // P2.6 消息来源身份落持久 metadata：冷恢复后区块照常渲染、UI 徽章照常取值。
+              ...(options?.systemStatus ? { systemStatus: options.systemStatus } : {}),
               sessionInputId: options?.intent?.queueItemId,
               sourceCommandId: options?.inputId,
               ...(options?.epilogueStart === undefined
@@ -896,6 +931,17 @@ export async function executeTurnCommand(
           await closeGoalStateChangeReminderDeferral.call(this, activeTurn, turnTraceContext);
         }
         turnMachine = loopState.turnMachine;
+        // agent 消息（2026-11-19，docs/trigger-system.md）：master 作为接收端的轮终态捕获——
+        // 本轮最终输出回投给以本会话为接收方的在途 ContactAgent 请求（worker 发起的）。
+        // 用户接管已在真实用户 prompt 起跑时合成解除（runtime-command-queue），此处只会
+        // 结算仍存活的条目；子 runtime 的登记表恒空，此调用对其为 no-op。
+        this.agentContactRegistry?.resolveReceiverReplies({
+          receiverSessionId: this.sessionId,
+          reply: {
+            text: loopState.modelResponse,
+            sourceSessionId: this.sessionId,
+          },
+        });
 
         const turnUsage = createModelUsageSummaryFromEvents(events);
         // goal usage/active-run 先结算，再固定 exact goal/verifier boundary；只有两者都
@@ -1078,6 +1124,22 @@ export async function executeTurnCommand(
           loopState?.backgroundSubagentResultConsumed === true;
         const workflowResultConsumed =
           options?.workflowResultConsumed === true || loopState?.workflowResultConsumed === true;
+        // agent 消息（2026-11-19）：失败/取消轮没有最终输出——在途请求按合成回复解除
+        //（取消=用户接管文案；其余=轮次失败文案），无静默路径。重复调用按幂等落空。
+        // 接收方恒为本会话；合成文案里的对端名 = 本会话身份（master 或 worker 显示名，
+        // worker 会话同构化后本捕获点对两种身份同构生效）。
+        const contactDisplayName =
+          this.config.workerIdentity?.workerName ?? "the main agent (master)";
+        this.agentContactRegistry?.resolveReceiverSynthetic({
+          receiverSessionId: this.sessionId,
+          synthetic: {
+            text:
+              coreError.type === CoreErrorType.TurnCancelled
+                ? agentContactTakeoverReply(contactDisplayName)
+                : agentContactTurnFailedReply(contactDisplayName),
+            receiverDisplayName: contactDisplayName,
+          },
+        });
         await appendTurnOutcomeEvent(this, {
           coreError,
           events,

@@ -150,7 +150,9 @@ describe("virtual project CLI session facts", () => {
             own.id,
           ]),
         );
-        expect(db.prepare("SELECT * FROM session").get()).toEqual(oldSession);
+        // 整列深比较会随新增列失真（0025/0026 等 alter add column 后行多出键）；本断言的
+        // 意图是「迁移不改写旧行的值」——旧键值必须全等，新列（NULL）允许出现。
+        expect(db.prepare("SELECT * FROM session").get()).toMatchObject(oldSession);
         expect(await store.listSessions()).toEqual([]);
         expect((await store.messages({ sessionID }))[0]).toMatchObject({
           info: { modelSelection: { providerId: "legacy-p", modelId: "legacy-m" } },
@@ -171,12 +173,15 @@ describe("virtual project CLI session facts", () => {
       const reopened = await createSqliteSessionStore({ dbPath });
       reopened.close();
       expect(db.prepare("SELECT * FROM schema_migration ORDER BY id").all()).toEqual(before);
-      expect(db.prepare("SELECT * FROM session").get()).toEqual(oldSession);
+      // 整列深比较会随新增列失真（0025/0026 等 alter add column 后行多出键）；本断言的
+        // 意图是「迁移不改写旧行的值」——旧键值必须全等，新列（NULL）允许出现。
+        expect(db.prepare("SELECT * FROM session").get()).toMatchObject(oldSession);
     } finally {
       db.close();
       await rm(root, { recursive: true, force: true });
     }
-  });
+    // 全量迁移 + 备份跑两遍 store 创建，本机实测远超默认 5s（仓库对慢测试的既有惯例）。
+  }, 30_000);
 
   it("soft-deletes idempotently, preserves transcript and excludes deleted sessions from every list", async () => {
     const store = await createSqliteSessionStore({ dbPath: ":memory:" });
@@ -707,6 +712,8 @@ describe("SQLite session store", () => {
       "0022_backfilled_session_reasoning",
       "0023_session_soft_delete_outcome",
       "0024_session_database_identity",
+      "0025_session_creation_origin",
+      "0026_worker_session_identity",
     ];
 
     try {
@@ -743,6 +750,8 @@ describe("SQLite session store", () => {
         "0.16.5",
         "0.16.5",
         "0.16.5",
+        "0.16.9",
+        "0.16.9",
         "0.16.9",
         "0.16.9",
       ]);
@@ -782,7 +791,9 @@ describe("SQLite session store", () => {
         ]),
       );
       expect(attempts.flat().filter((result) => !result.ok)).toEqual([]);
-      expect(attempts.flat().every((result) => result.migrationIds?.length === 24)).toBe(true);
+      expect(attempts.flat().map((result) => result.migrationIds?.length)).toEqual(
+        attempts.flat().map(() => 26),
+      );
     },
     CONCURRENT_STARTUP_TEST_TIMEOUT_MS,
   );
@@ -1009,6 +1020,8 @@ describe("SQLite session store", () => {
         "0022_backfilled_session_reasoning",
         "0023_session_soft_delete_outcome",
         "0024_session_database_identity",
+        "0025_session_creation_origin",
+        "0026_worker_session_identity",
       ]);
       store.close();
     } finally {
@@ -3335,5 +3348,79 @@ describe("session input ledger (0016)", () => {
       store.close();
       await rm(tempRoot, { force: true, recursive: true });
     }
+  });
+});
+
+// worker 会话身份持久化 + 会话消息清空（2026-11-20 触发器会话清空）。
+// 0025 迁移前身份从不落库（契约有、实现丢），冷恢复即退化为 master——这里锁定
+// 落库/清除/清空三件事：身份 roundtrip、清空只动消息与派生态、会话主记录保留。
+describe("worker session identity and clearSessionMessages", () => {
+  it("persists worker identity on create, rewrites it via update, and survives reopen", async () => {
+    const dbPath = join(await mkdtemp(join(tmpdir(), "robinrun-wkr-id-")), "sessions.db");
+    let store = await createSqliteSessionStore({ dbPath });
+    const sessionID = createSessionId("wkr-identity");
+    await store.createSession({
+      id: sessionID,
+      projectID: createProjectId("wkr-identity-project"),
+      slug: "wkr-identity",
+      directory: "/workspace/wkr",
+      path: "/workspace/wkr",
+      title: "trigger session",
+      titleSource: "custom",
+      permission: { mode: "build" },
+      version: "3.9.0",
+      workerIdentity: { workerId: "wkr-d50c0cfa", workerName: "运营专员" },
+      time: { created: 1_000, updated: 1_000 },
+    });
+    expect((await store.getSession(sessionID))?.workerIdentity).toEqual({
+      workerId: "wkr-d50c0cfa",
+      workerName: "运营专员",
+    });
+
+    // 重写：worker → null（回到 master）→ 再落新身份。
+    await store.updateSession({ id: sessionID, workerIdentity: null });
+    expect((await store.getSession(sessionID))?.workerIdentity).toBeUndefined();
+    await store.updateSession({
+      id: sessionID,
+      workerIdentity: { workerId: "wkr-8df472ff" },
+    });
+    store.close();
+
+    // 重开同一库：身份必须仍在（迁移 0025 之前这里读回 undefined——冷恢复退化根因）。
+    store = await createSqliteSessionStore({ dbPath });
+    expect((await store.getSession(sessionID))?.workerIdentity).toEqual({
+      workerId: "wkr-8df472ff",
+    });
+    store.close();
+    await rm(join(dbPath, ".."), { force: true, recursive: true });
+  });
+
+  it("clearSessionMessages zeroes content but keeps the session record, title and identity", async () => {
+    const store = await createSqliteSessionStore({ dbPath: ":memory:" });
+    const bundle = createSharedContextImportBundle({ sessionSlug: "clear-messages" });
+    bundle.session.workerIdentity = { workerId: "wkr-d50c0cfa", workerName: "运营专员" };
+    await store.commitSharedContextImportBundle?.(bundle);
+    await store.updateTodos({
+      sessionID: bundle.session.id,
+      todos: [{ content: "step", priority: "high", status: "pending" }],
+    });
+    await store.setRevert({
+      sessionID: bundle.session.id,
+      revert: { messageID: bundle.contextMessage.info.id },
+      summary: { additions: 1, deletions: 2, files: 3 },
+    });
+
+    const result = await store.clearSessionMessages({ sessionID: bundle.session.id });
+    expect(result.clearedMessages).toBe(1);
+    expect(await store.messages({ sessionID: bundle.session.id })).toEqual([]);
+    expect(await store.readTodos({ sessionID: bundle.session.id })).toEqual([]);
+    const after = await store.getSession(bundle.session.id);
+    // 会话主记录保留：标题与身份不动（清空不是删除）。
+    expect(after?.title).toBe("Imported share");
+    expect(after?.workerIdentity).toEqual({ workerId: "wkr-d50c0cfa", workerName: "运营专员" });
+    // 被清内容的派生态复位：revert 与摘要 diff 统计。
+    expect(after?.revert).toBeUndefined();
+    expect(after?.summaryAdditions).toBeUndefined();
+    store.close();
   });
 });

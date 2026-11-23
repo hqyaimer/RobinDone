@@ -76,7 +76,8 @@ async function resolveUserSkills(): Promise<Map<string, ResolvedUserSkill>> {
       directoryPath,
       skillFilePath: candidate.path,
       location,
-      isSymlink: location === "robinrun" ? await hasSymlinkWithin(robinrunRoot, directoryPath) : false,
+      isSymlink:
+        location === "robinrun" ? await hasSymlinkWithin(robinrunRoot, directoryPath) : false,
     });
   }
   return result;

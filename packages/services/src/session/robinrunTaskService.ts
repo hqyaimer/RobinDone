@@ -221,6 +221,12 @@ export interface IRobinRunTaskService {
     /** 闲时任务派发时标记所属 off-peak 任务，落 tasks-index 的 off_peak_task_id。 */
     offPeakTaskId?: string;
     /**
+     * agent 会话身份（2026-11-20 worker 会话同构化，docs/worker-session-model.md）：
+     * 触发器/ContactAgent 按订阅者寻址创建 worker 会话时下发 wkr-id；CLI 按名册解析
+     * 校验显示名并落 worker_identity。缺席 = master 会话。
+     */
+    agentIdentity?: { kind: "worker"; workerId: string };
+    /**
      * 无界面派发会先创建空 session，再立即发送首条 V4 输入。此时使用 deferred，
      * 让输入 admission 在写 session_input 外键账本前先统一持久化 session 主记录。
      */
@@ -309,8 +315,25 @@ export interface IRobinRunTaskService {
       modelSelection?: CommandPayloadMap["sendText"]["modelSelection"];
       /** 单次执行约束与动态鉴权；仅 idle start-now 接受，不进入普通队列。 */
       modelExecution?: CommandPayloadMap["sendText"]["modelExecution"];
+      /**
+       * P3 触发器投递（2026-11-19 验收）：结构化来源身份（sender=trigger + triggerName/
+       * sessionKey）。随命令进 entry metadata.systemStatus——渲染层据此归 mailbox 投影、
+       * runtime 动态注入 <system-status> 区块；投递内容本身不再内嵌区块文本。
+       */
+      systemStatus?: CommandPayloadMap["sendText"]["systemStatus"];
     } & RobinRunBackgroundTurnAttribution,
   ): Promise<void>;
+
+  /**
+   * 会话是否正在运行一个输入轮次（忙）。触发器投递的忙感知用（裁决 7：存在且忙 →
+   * 引擎侧聚合桶继续累积，当前轮结束后合并为一条输入投递）。判定 = 本 adapter 的
+   * active prompt/runtime command 簿记（sendPrompt 起、轮终态/ready 边界收）。
+   */
+  isTaskBusy(params: {
+    workspacePath: string;
+    workspaceIdentity?: string;
+    taskId: string;
+  }): Promise<boolean>;
 
   deliverSessionMessage(
     request: SessionMessageSendRequested,
@@ -676,6 +699,18 @@ export interface IRobinRunTaskService {
     taskId: string;
     workspacePath: string;
     workspaceIdentity?: string;
+  }): Promise<void>;
+
+  /**
+   * 清空任务会话的全部消息（2026-11-20 触发器会话清空）：会话与标题保留、触发器绑定
+   * 不动；workerIdentityTo 同时重置持久化身份（触发器当前订阅者）——旧会话身份纠偏
+   * 的正道（只清消息不改身份，冷恢复仍按旧身份装配）。运行中的会话拒绝并抛错。
+   */
+  clearTaskMessages(params: {
+    taskId: string;
+    workspacePath: string;
+    workspaceIdentity?: string;
+    workerIdentityTo?: { workerId: string; workerName?: string } | null;
   }): Promise<void>;
 
   /** 仅删除写入时仍归档的任务；已恢复、已删除或不存在时返回 false，不清理 CLI 会话。 */

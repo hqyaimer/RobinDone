@@ -1,3 +1,5 @@
+// P2.6 消息来源区块：real_user 输入渲染时正文最前注入的 sender 前缀。
+const USER_BLOCK = '<system-status>{"sender":"user"}</system-status>\n\n';
 import { describe, expect, it } from "vitest";
 import type { ModelInputMessage, RuntimeMessageEntry } from "../src/agent/message-history.js";
 import {
@@ -26,6 +28,22 @@ function attachment(
     kind: "attachment",
     content,
     metadata: { source },
+  };
+}
+
+// P2.6 期望侧 helper：real_user 输入渲染后正文最前带 sender 区块。
+function userBlock(content: ModelInputMessage["content"]): ModelInputMessage {
+  if (typeof content === "string") {
+    return { role: "user", content: USER_BLOCK + content };
+  }
+  const blocks = Array.isArray(content) ? content : [content];
+  return {
+    role: "user",
+    content: blocks.map((block) =>
+      block.type === "text" && !block.text.startsWith("<system-status>")
+        ? { ...block, text: USER_BLOCK + block.text }
+        : block,
+    ),
   };
 }
 
@@ -89,7 +107,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nprompt" },
       { role: "assistant", content: "answer" },
     ]);
     expect(result.sourceEntries).toEqual([entries[0], assistant]);
@@ -108,7 +126,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      user("real prompt"),
+      userBlock("real prompt"),
       assistant("partial"),
       user("continue locally"),
     ]);
@@ -124,7 +142,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "real prompt", cacheControl: { type: "ephemeral" } },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt", cacheControl: { type: "ephemeral" } },
       { role: "system", content: "style body" },
     ]);
   });
@@ -142,7 +160,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "Summarize notes." },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nSummarize notes." },
       {
         role: "system",
         content:
@@ -164,7 +182,7 @@ describe("buildProviderRequestMessages", () => {
         useMidConversationSystem: true,
       }).messages,
     ).toEqual([
-      { role: "user", content: "Summarize notes." },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nSummarize notes." },
       {
         role: "system",
         content:
@@ -188,7 +206,7 @@ describe("buildProviderRequestMessages", () => {
         useMidConversationSystem: true,
       }).messages,
     ).toEqual([
-      { role: "user", content: "Continue" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nContinue" },
       {
         role: "system",
         content:
@@ -212,7 +230,7 @@ describe("buildProviderRequestMessages", () => {
         useMidConversationSystem: false,
       }).messages,
     ).toEqual([
-      { role: "user", content: "Continue" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nContinue" },
       {
         role: "user",
         content:
@@ -237,13 +255,13 @@ describe("buildProviderRequestMessages", () => {
     });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "Original goal" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nOriginal goal" },
       { role: "user", content: "Continue working toward the active session goal." },
       {
         role: "user",
         content: `<system-reminder>\n${pauseReminder}\n</system-reminder>`,
       },
-      { role: "user", content: "Follow-up after Stop" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nFollow-up after Stop" },
     ]);
     expect(result.diagnostics.bubbledAttachmentEntryCount).toBe(0);
   });
@@ -265,7 +283,7 @@ describe("buildProviderRequestMessages", () => {
         content:
           "<system-reminder>\nCalled the Read tool with the following input: {}\n</system-reminder>",
       },
-      { role: "user", content: "Summarize notes." },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nSummarize notes." },
     ]);
   });
 
@@ -282,14 +300,14 @@ describe("buildProviderRequestMessages", () => {
     }).messages;
     expect(legacy.map((message) => message.role)).toEqual(["user", "user", "assistant"]);
     expect(String(legacy[0]?.content)).toContain("Style body");
-    expect(legacy[1]?.content).toBe("Real query");
+    expect(legacy[1]?.content).toBe(USER_BLOCK + "Real query");
 
     const mcs = buildProviderRequestMessages({
       entries,
       useMidConversationSystem: true,
     });
     expect(mcs.messages.map((message) => message.role)).toEqual(["user", "system", "assistant"]);
-    expect(mcs.messages[0]?.content).toBe("Real query");
+    expect(mcs.messages[0]?.content).toBe(USER_BLOCK + "Real query");
     expect(mcs.messages[1]?.content).toBe("Style body");
     expect(mcs.diagnostics.bubbledAttachmentEntryCount).toBe(1);
   });
@@ -304,7 +322,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "original goal turn" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\noriginal goal turn" },
       {
         role: "user",
         content: "Verify whether the active goal is complete.",
@@ -327,7 +345,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "real prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt" },
       { role: "user", content: "style body" },
       { role: "user", content: "<system-reminder>\ntodo\n</system-reminder>" },
     ]);
@@ -351,7 +369,7 @@ describe("buildProviderRequestMessages", () => {
       },
       {
         role: "user",
-        content: "real prompt",
+        content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt",
         cacheControl: { type: "ephemeral" },
       },
       { role: "system", content: "skills" },
@@ -379,10 +397,11 @@ describe("buildProviderRequestMessages", () => {
     expect(result.messages.map((message) => message.content)).toEqual([
       "<system-reminder>\ninstructions\n</system-reminder>",
       "<system-reminder>\ngit\n</system-reminder>\n",
-      "real prompt",
+      // P2.6：real_user 渲染时带 sender 区块（合租协议下前一条 user 文本在其前补换行）。
+      USER_BLOCK + "real prompt",
       "answer",
       [{ type: "text", text: "tool output" }],
-      "next prompt",
+      USER_BLOCK + "next prompt",
     ]);
   });
 
@@ -430,9 +449,11 @@ describe("buildProviderRequestMessages", () => {
     expect(result.messages.map((message) => message.content)).toEqual([
       "<system-reminder>\ngit\n</system-reminder>",
       "This session is being continued from a previous conversation.",
-      "turn two",
+      // P2.6：turn two 也是 real_user，渲染同样带区块。
+      USER_BLOCK + "turn two",
       "[Request interrupted by user]",
-      "next prompt",
+      // real_user 渲染时带 sender 区块（interrupt marker 不带）。
+      USER_BLOCK + "next prompt",
     ]);
   });
 
@@ -457,7 +478,8 @@ describe("buildProviderRequestMessages", () => {
       expect(texts.at(-1)).toEqual(
         useMidConversationSystem
           ? ["system", expect.stringContaining("mode")]
-          : ["user", "next prompt"],
+          : // P2.6：real_user 渲染时带 sender 区块。
+            ["user", USER_BLOCK + "next prompt"],
       );
     },
   );
@@ -473,7 +495,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "follow up", cacheControl: { type: "ephemeral" } },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfollow up", cacheControl: { type: "ephemeral" } },
       { role: "system", content: "mode\n\ntodo\n\nstyle" },
     ]);
     expect(result.diagnostics.bubbledAttachmentEntryCount).toBe(3);
@@ -492,7 +514,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "real prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt" },
       { role: "system", content: "skills\n\nstyle" },
       { role: "assistant", content: "assistant response" },
     ]);
@@ -512,10 +534,10 @@ describe("buildProviderRequestMessages", () => {
 
     expect(result.messages).toEqual([
       { role: "assistant", content: "previous response" },
-      { role: "user", content: "follow-up prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfollow-up prompt" },
       { role: "system", content: "memory reminder\n\nruntime mode reminder" },
       { role: "assistant", content: "next response" },
-      { role: "user", content: "later prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nlater prompt" },
     ]);
     expect(result.diagnostics.bubbledAttachmentEntryCount).toBe(2);
   });
@@ -531,7 +553,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "used Read" },
       {
         role: "tool",
@@ -560,7 +582,7 @@ describe("buildProviderRequestMessages", () => {
     expect(result.messages).toEqual([
       {
         role: "user",
-        content: "use the plugin",
+        content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nuse the plugin",
         cacheControl: { type: "ephemeral" },
       },
       {
@@ -586,7 +608,7 @@ describe("buildProviderRequestMessages", () => {
     });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       {
         role: "assistant",
         content: "summarizable response",
@@ -607,7 +629,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "used Read" },
       {
         role: "tool",
@@ -631,7 +653,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "used Read" },
       {
         role: "tool",
@@ -659,7 +681,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "issued parallel tools" },
       {
         role: "tool",
@@ -701,7 +723,7 @@ describe("buildProviderRequestMessages", () => {
     });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "issued parallel tools" },
       {
         role: "tool",
@@ -861,7 +883,7 @@ describe("buildProviderRequestMessages", () => {
     expect(result.messages.slice(3)).toEqual([
       { role: "assistant", content: "used Grep" },
       { role: "tool", content: "grep result", toolCallId: "tool-2", toolName: "Grep" },
-      { role: "user", content: "next prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nnext prompt" },
     ]);
     expect(result.diagnostics.latestRealUserMessageIndex).toBe(5);
     expect(result.sourceEntries[2]).toBe(entries[2]);
@@ -973,7 +995,7 @@ describe("buildProviderRequestMessages", () => {
       const result = buildProviderRequestMessages({ entries, ...FOLD });
 
       expect(result.messages).toEqual([
-        user("first"),
+        userBlock("first"),
         assistant("answer"),
         user(`<system-reminder>\n${steerText("follow up")}\n</system-reminder>`),
       ]);
@@ -1066,7 +1088,7 @@ describe("buildProviderRequestMessages", () => {
       });
 
       expect(result.messages.slice(2).map((message) => message.role)).toEqual(["user", "system"]);
-      expect(providerText(result.messages[2]!)).toBe("prompt B");
+      expect(providerText(result.messages[2]!)).toBe(USER_BLOCK + "prompt B");
       const system = providerText(result.messages[3]!);
       expect(order([user(system)], "style for B", "message C", "todo after C")).toEqual([0, 0, 0]);
       expect(system.indexOf("style for B")).toBeLessThan(system.indexOf("message C"));
@@ -1140,7 +1162,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "used Read" },
       {
         role: "tool",
@@ -1171,7 +1193,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "inspect the repo" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ninspect the repo" },
       { role: "assistant", content: "used Read" },
       {
         role: "user",
@@ -1194,7 +1216,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "first prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst prompt" },
       { role: "user", content: "second prompt" },
       { role: "system", content: "style body" },
     ]);
@@ -1237,7 +1259,7 @@ describe("buildProviderRequestMessages", () => {
     const result = buildProviderRequestMessages({ entries, applyCacheControl: true });
 
     expect(result.messages).toEqual([
-      { role: "user", content: "first prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst prompt" },
       {
         role: "assistant",
         content: "assistant answer",
@@ -1269,7 +1291,7 @@ describe("buildProviderRequestMessages", () => {
         content: "stable system",
         cacheControl: { type: "ephemeral" },
       },
-      { role: "user", content: "first prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst prompt" },
       { role: "assistant", content: "assistant answer" },
       {
         role: "tool",
@@ -1301,7 +1323,7 @@ describe("buildProviderRequestMessages", () => {
         toolName: "Read",
       },
       { role: "user", content: "memory reminder" },
-      { role: "user", content: "next real prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nnext real prompt" },
     ]);
   });
 
@@ -1316,8 +1338,10 @@ describe("buildProviderRequestMessages", () => {
     expect(result.messages).toEqual([
       {
         role: "user",
-        content: "<system-reminder>\nthis is user-provided text\n</system-reminder>",
+        // P2.6：real_user 渲染时带 sender 区块（字面 reminder 文本随后）。
+        content: USER_BLOCK + "<system-reminder>\nthis is user-provided text\n</system-reminder>",
       },
+      // runtime_mode 是合成来源，不注入区块。
       { role: "user", content: "mode reminder" },
     ]);
   });
@@ -1331,6 +1355,7 @@ describe("buildProviderRequestMessages", () => {
         ]),
         "real_user",
       ),
+      // output_style 是合成来源，不注入区块。
       entry(user("output style reminder"), "output_style"),
     ] satisfies RuntimeMessageEntry[];
 
@@ -1340,7 +1365,8 @@ describe("buildProviderRequestMessages", () => {
       {
         role: "user",
         content: [
-          { type: "text", text: "Please inspect this screenshot." },
+          // P2.6：real_user 首文本块带 sender 区块。
+          { type: "text", text: USER_BLOCK + "Please inspect this screenshot." },
           { type: "image", mediaType: "image/png", dataUrl: "data:image/png;base64,paste" },
         ],
       },
@@ -1363,6 +1389,7 @@ describe("buildProviderRequestMessages", () => {
       {
         message: {
           role: "user",
+          // canonical 构造存裸正文；区块由投影注入（本用例锁幂等）。
           content: "real prompt",
           cacheControl: { type: "ephemeral" },
         },
@@ -1390,7 +1417,7 @@ describe("buildProviderRequestMessages", () => {
       },
       {
         role: "user",
-        content: "real prompt",
+        content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nreal prompt",
         cacheControl: { type: "ephemeral" },
       },
     ]);

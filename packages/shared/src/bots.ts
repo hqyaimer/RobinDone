@@ -1,4 +1,7 @@
-import { robinrunProtocolTraceSchema, type RobinRunProtocolTrace } from "./robinrun-protocol/trace.js";
+import {
+  robinrunProtocolTraceSchema,
+  type RobinRunProtocolTrace,
+} from "./robinrun-protocol/trace.js";
 import { channelContentPartsSchema, type ChannelContentPart } from "./channel-mention.js";
 /* oxlint-disable eslint(max-lines) -- Bot 共享合约集中维护 provider、状态和 schema，保持类型与校验就近。 */
 import { z } from "zod";

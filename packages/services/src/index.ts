@@ -403,3 +403,22 @@ export type {
   GroupNode,
   MoveGroupNode,
 } from "#src/task-groups/contract.js";
+
+// RobinRun 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：
+// host 常驻服务 + 事件投递端口类型，desktop host 装配 dispatchTriggerEvent 用。
+// 边界（2026-11-19 白屏回归的根因修复）：这里只允许出口 contract.ts（接口 +
+// createServiceDescriptor 常量，无 node 依赖）。engine.ts / script-runner.ts /
+// local-webhook-server.ts 依赖 node:child_process / node:http，经本出口进入
+// renderer 可达的 import 图会让 vite 的 node:path externalize proxy 在模块求值
+// 时抛错，整页白屏。运行时消费者（desktop host node.ts）一律走深路径
+// `#src/trigger-engine/index.js`。
+export { ITriggerEngineService } from "#src/trigger-engine/contract.js";
+export type {
+  TriggerDispatchPort,
+  TriggerEvent,
+  TriggerEventBatch,
+  TriggerNotificationPort,
+  TriggerRuntimeView,
+} from "#src/trigger-engine/contract.js";
+// 绑定身份校验是纯函数（无 node 依赖），renderer 可达安全；运行时消费者也可走深路径。
+export { isStaleWorkerTriggerBinding } from "#src/trigger-engine/binding-validation.js";

@@ -7,7 +7,6 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
-import { GroupedDraftTaskRow } from "@/project-sidebar/grouped/draft-task-row.js";
 import { GroupedTaskRow } from "@/project-sidebar/grouped/task-row.js";
 import {
   DropdownMenu,
@@ -68,12 +67,8 @@ function Fixture() {
               <Button data-testid="nested-tooltip">Nested</Button>
             </ControlHintTooltip>
           </TooltipProvider>
-          <GroupedDraftTaskRow
-            active
-            workspaceLabel="Draft folder"
-            onSelect={noop}
-            onClose={noop}
-          />
+          {/* GroupedDraftTaskRow 已随 P3 侧栏重构删除（draft-task-row.tsx 移除）；
+              本 fixture 的主题是 tooltip 行为，任务行只保留现存组件作宿主样本。 */}
           <GroupedTaskRow
             task={{
               taskId: "fixture",
@@ -89,12 +84,11 @@ function Fixture() {
               updatedAt: 2,
             }}
             groups={[]}
-            activeWorkspacePath="/example"
-            activeTaskId={null}
+            isActive={false}
+            isMobileActive={false}
             workspaceLabel="Grouped folder"
             onSelectTask={noop}
             onCloseTask={noop}
-            onOpenFileTree={noop}
             onMoveTaskToGroup={noop}
             onMoveTaskToTop={noop}
             onStartRenameTask={noop}

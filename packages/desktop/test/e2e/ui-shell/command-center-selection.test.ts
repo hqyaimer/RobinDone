@@ -32,7 +32,9 @@ describe("Command Center 重名任务选中", () => {
     // 同时接受统一 runner 与旧手工入口的隔离 HOME，禁止写入日常用户目录。
     if (
       !home ||
-      ![".e2e-home-", "robinrun-command-center-"].some((prefix) => basename(home).startsWith(prefix))
+      ![".e2e-home-", "robinrun-command-center-"].some((prefix) =>
+        basename(home).startsWith(prefix),
+      )
     ) {
       throw new Error("需要隔离 E2E HOME");
     }

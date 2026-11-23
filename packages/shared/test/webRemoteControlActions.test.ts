@@ -26,7 +26,13 @@ describe("手机置顶/归档/新建项目 payload", () => {
       success: true,
       pinned: false,
     },
-    { robinrun_type: "task-pin-response", requestId: "r1", taskId: "t1", success: false, error: "x" },
+    {
+      robinrun_type: "task-pin-response",
+      requestId: "r1",
+      taskId: "t1",
+      success: false,
+      error: "x",
+    },
     { robinrun_type: "task-archive-request", requestId: "r2", taskId: "t1", workspacePath: "/w" },
     {
       robinrun_type: "task-archive-request",
@@ -114,7 +120,10 @@ describe("normalizeWebRemoteControlWorkspaceName", () => {
 describe("resolveUnrecognizedWebRemoteControlRequest", () => {
   it("只对带 requestId 的 -request 类型回错", () => {
     expect(
-      resolveUnrecognizedWebRemoteControlRequest({ robinrun_type: "future-request", requestId: "r" }),
+      resolveUnrecognizedWebRemoteControlRequest({
+        robinrun_type: "future-request",
+        requestId: "r",
+      }),
     ).toEqual({ requestId: "r", robinrunType: "future-request" });
   });
 

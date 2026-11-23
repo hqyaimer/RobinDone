@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RobinRunElicitationRequest, RobinRunPermissionOption, RobinRunProvider } from "@robinrun/shared";
+import type {
+  RobinRunElicitationRequest,
+  RobinRunPermissionOption,
+  RobinRunProvider,
+} from "@robinrun/shared";
 import type { ConversationSnapshot } from "@robinrun/shared/robinrun-protocol-v4";
 import { ElicitationDialog } from "@/ElicitationDialog.js";
 import { PermissionDialog } from "@/PermissionDialog.js";
@@ -128,7 +132,10 @@ export function V4InteractionDialogs({
   const workspaceHookReview = currentSnapshot?.pendingInteractions.find(
     (interaction) => interaction.payload.kind === "workspaceHookReview",
   );
-  const notificationEnabled = useRobinRunStoreWithDefault((state) => state.notificationEnabled, true);
+  const notificationEnabled = useRobinRunStoreWithDefault(
+    (state) => state.notificationEnabled,
+    true,
+  );
   const botElicitationProgress = useRobinRunSessionStore(
     (state) =>
       getTaskUiState(getWorkspaceState(state, workspacePath, workspaceIdentity), sessionId)

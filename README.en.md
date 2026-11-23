@@ -7,13 +7,13 @@
   <a href="README.md">简体中文</a> | English
 </p>
 
-RobinRun is a **fully automated online operations harness**: multiple agents collaborate across browser operations, information gathering, comment replies, trigger-driven responses, and product feedback loops.
+RobinRun is a **general-purpose multi-agent + trigger harness**: in project-based workspaces, multiple agents divide the work (development, operations, analysis — composed as needed), with trigger-driven automation covering any domain that needs to keep running on its own.
 
 > Deeply forked from [ZCode](https://github.com/zai-org/ZCode) (Apache-2.0), with a full rebrand and an in-progress multi-agent architecture rework. The upstream design docs remain in [docs/](docs/) and [specs/](specs/).
 
 ## Product Shape
 
-- **Project-based workspaces**: the app starts at a project launcher; create or pick an operations project and it owns the main window
+- **Project-based workspaces**: the app starts at a project launcher; create or pick a project and it owns the main window
 - **Three-pane layout**: agent list with collapsible sessions (left), conversation area (center), info panels for web pages and file trees (right)
 - **Multi-agent hierarchy**: main Agent → resident agents (dev/ops) → ephemeral sub-agents; triggers wake agents automatically; cross-agent communication is routed via the main Agent; major decisions require "todo + email + human approval"
 - **Bring your own LLM**: inherits ZCode's provider system
@@ -24,7 +24,7 @@ RobinRun is a **fully automated online operations harness**: multiple agents col
 - ✅ Project launcher as the cold-start gate (login flow hidden, own auth to be added later)
 - ✅ Agents sidebar: agent grouping with collapsible session lists
 - 🚧 Session data structure rework (in progress)
-- 📋 Planned: resident multi-agent runtime, trigger system, content review flow, task system, meetings, email notifications, operations backend
+- 📋 Planned: resident multi-agent runtime, trigger system, content review flow, task system, meetings, email notifications, management backend
 
 ## Development
 

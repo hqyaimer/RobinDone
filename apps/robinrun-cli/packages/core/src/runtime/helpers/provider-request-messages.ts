@@ -29,6 +29,7 @@ import {
   wrapSystemReminderForSource,
   type SystemReminderSource,
 } from "../../system-reminder/source.js";
+import { prependSystemStatusBlocks } from "./provider-system-status.js";
 
 export interface ProviderRequestMessageProjectionResult {
   messages: ModelInputMessage[];
@@ -63,8 +64,9 @@ export function buildProviderRequestMessages(input: {
 }): ProviderRequestMessageProjectionResult {
   const useMidConversationSystem = input.useMidConversationSystem !== false;
   const origins = new ProviderEntryOrigins();
+  // P2.6 消息来源区块：元数据 → <system-status> 正文前缀（含真实用户兜底），其余投影不变。
   const reorderResult = reorderAttachmentLikeEntries(
-    projectIncomingMessageEntries(input.entries, origins),
+    prependSystemStatusBlocks(projectIncomingMessageEntries(input.entries, origins), origins),
   );
   const midSystemProjection = useMidConversationSystem
     ? projectMidConversationSystemEntries(reorderResult.entries, origins)

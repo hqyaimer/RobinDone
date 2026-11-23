@@ -23,14 +23,12 @@ ALTER TABLE task_groups ADD COLUMN project_id TEXT;`;
  */
 export function backfillTaskGroupProjectBinding(db: DatabaseSync): void {
   const hasProjectSchema =
-    db
-      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='project_roots'")
-      .get() &&
+    db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='project_roots'").get() &&
     db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='projects'").get();
   if (!hasProjectSchema) return;
-  const groups = db
-    .prepare("SELECT group_id FROM task_groups WHERE project_id IS NULL")
-    .all() as { group_id: string }[];
+  const groups = db.prepare("SELECT group_id FROM task_groups WHERE project_id IS NULL").all() as {
+    group_id: string;
+  }[];
   const resolve = db.prepare(`
     SELECT DISTINCT r.project_id AS projectId
     FROM task_group_members m

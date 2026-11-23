@@ -232,7 +232,10 @@ export function useSavedWorkflowGlobalGroup({
     (entry: RobinRunSavedWorkflowEntry) => void handleDelete(entry),
     [handleDelete],
   );
-  const handleCardMove = useCallback((entry: RobinRunSavedWorkflowEntry) => setMoveEntry(entry), []);
+  const handleCardMove = useCallback(
+    (entry: RobinRunSavedWorkflowEntry) => setMoveEntry(entry),
+    [],
+  );
   const handleOpen = useCallback(
     (entry: RobinRunSavedWorkflowEntry) => onOpenDetail(entry.name),
     [onOpenDetail],

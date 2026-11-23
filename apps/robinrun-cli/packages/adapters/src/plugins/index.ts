@@ -105,6 +105,9 @@ export {
 const ROBINRUN_MANIFEST_PATH = join(".robinrun-plugin", "plugin.json");
 const CLAUDE_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
 const CODEX_MANIFEST_PATH = join(".codex-plugin", "plugin.json");
+// 上游 ZCode 构建产物的原生 manifest 目录（RobinRun 改名前的旧名）。官方 CDN 插件 zip 仍由
+// 上游构建（RobinRun(2026-11-23)），读取面必须保留该别名，安装与加载才能识别。
+const UPSTREAM_ZCODE_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
 const DEFAULT_VERSION = "0.0.0";
 const FIRST_PLUGIN_PRIORITY = 1_000;
 const PRIORITY_STEP = 10;
@@ -944,7 +947,11 @@ function findManifest(rootPath: string): string | null {
     return claudePath;
   }
   const codexPath = join(rootPath, CODEX_MANIFEST_PATH);
-  return fileExists(codexPath) ? codexPath : null;
+  if (fileExists(codexPath)) {
+    return codexPath;
+  }
+  const zcodePath = join(rootPath, UPSTREAM_ZCODE_MANIFEST_PATH);
+  return fileExists(zcodePath) ? zcodePath : null;
 }
 
 function readManifest(path: string, diagnostics: PluginDiagnostic[]): PluginManifest | null {

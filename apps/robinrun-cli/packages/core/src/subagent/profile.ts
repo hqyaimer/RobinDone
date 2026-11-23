@@ -109,7 +109,10 @@ export function formatAgentProfileForPrompt(
       ? filterSubagentChildToolNames(profile.tools, profile.disallowedTools)
       : undefined;
   const toolText = typeof tools === "string" ? tools : tools?.join(", ");
-  return `- ${profile.name}: ${profile.description}${toolText ? ` (Tools: ${toolText})` : ""}`;
+  // key/name 裁决（2026-11-17）：worker 的 name 位是派发句柄（wkr-id，唯一稳定），人读
+  // 显示名括注在 id 后——模型用 id 派发，靠括注把 id 和角色对应起来。
+  const workerLabel = profile.worker ? ` (${profile.worker.workerName})` : "";
+  return `- ${profile.name}${workerLabel}: ${profile.description}${toolText ? ` (Tools: ${toolText})` : ""}`;
 }
 
 export function agentProfileDisplayName(profile: AgentProfile): string {

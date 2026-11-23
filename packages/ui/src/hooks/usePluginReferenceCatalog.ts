@@ -142,7 +142,9 @@ export function usePluginReferenceCatalog(
       ...(sessionId ? { sessionId } : {}),
     };
     let request: Promise<RobinRunPluginsReferenceCatalogResult>;
-    let requestServiceCache: Map<string, Promise<RobinRunPluginsReferenceCatalogResult>> | undefined;
+    let requestServiceCache:
+      | Map<string, Promise<RobinRunPluginsReferenceCatalogResult>>
+      | undefined;
     if (options?.dedupeSessionRequest && sessionId) {
       let serviceCache = sessionCatalogRequests.get(services);
       if (!serviceCache) {

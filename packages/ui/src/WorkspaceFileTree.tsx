@@ -54,7 +54,9 @@ export function FileManagerPane({
   const storedNavigationPreferenceOpen = useRobinRunStore(
     (state) => state.fileManagerNavigationOpenByWorkspace[workspaceKey],
   );
-  const setNavigationPreferenceOpen = useRobinRunStore((state) => state.setFileManagerNavigationOpen);
+  const setNavigationPreferenceOpen = useRobinRunStore(
+    (state) => state.setFileManagerNavigationOpen,
+  );
   // 空白文件标签需要先显示目录供用户选择；仅覆盖当前标签，不改写工作区的历史偏好。
   const [initialNavigationOpenOverride, setInitialNavigationOpenOverride] = useState<true | null>(
     source ? null : true,

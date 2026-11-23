@@ -1,3 +1,6 @@
+
+// P2.6 消息来源区块：real_user 输入渲染时正文最前注入的 sender 前缀。
+const USER_BLOCK = '<system-status>{"sender":"user"}</system-status>\n\n';
 import { describe, expect, it, vi } from "vitest";
 import { createTestModelSelection } from "./test-model-selection.js";
 import { createTestModelFormatProperties } from "./test-runtime-model.js";
@@ -2450,7 +2453,7 @@ describe("AgentRuntime session persistence", () => {
     expect(attachmentMessage).toMatchObject({
       role: "user",
       content: [
-        { type: "text", text: "describe" },
+        { type: "text", text: USER_BLOCK + "describe" },
         {
           type: "image",
           mediaType: "image/png",
@@ -2536,7 +2539,7 @@ describe("AgentRuntime session persistence", () => {
       (message) => message.role === "user" && Array.isArray(message.content),
     );
     expect(userMessage?.content).toEqual([
-      { type: "text", text: "describe" },
+      { type: "text", text: USER_BLOCK + "describe" },
       {
         type: "image",
         mediaType: "image/png",
@@ -2632,9 +2635,9 @@ describe("AgentRuntime session persistence", () => {
 
     const userMessage = capturedMessages.find(
       (message) =>
-        message.role === "user" && providerContentToText(message.content) === "summarize",
+        message.role === "user" && providerContentToText(message.content) === USER_BLOCK + "summarize",
     );
-    expect(userMessage?.content).toBe("summarize");
+    expect(userMessage?.content).toBe(USER_BLOCK + "summarize");
     const promptAttachmentInputReminder = capturedMessages.find((message) =>
       providerContentToText(message.content).includes(
         'Called the Read tool with the following input: {"file_path":"docs/notes.md"}',
@@ -2902,7 +2905,7 @@ describe("AgentRuntime session persistence", () => {
         message.role === "user" &&
         !providerContentToText(message.content).startsWith("<system-reminder>"),
     );
-    expect(userMessages.map((message) => message.content)).toEqual(["summarize"]);
+    expect(userMessages.map((message) => message.content)).toEqual([USER_BLOCK + "summarize"]);
     expect(providerMessagesToText(capturedMessages)).not.toContain(
       "[Attached text/plain: missing.md]",
     );
@@ -2940,7 +2943,7 @@ describe("AgentRuntime session persistence", () => {
     expect(attachmentMessage).toMatchObject({
       role: "user",
       content: [
-        { type: "text", text: "review" },
+        { type: "text", text: USER_BLOCK + "review" },
         { type: "resource_link", uri: "https://example.com/ref" },
       ],
     });
@@ -3013,7 +3016,7 @@ describe("AgentRuntime session persistence", () => {
     expect(attachmentMessage).toMatchObject({
       role: "user",
       content: [
-        { type: "text", text: "describe" },
+        { type: "text", text: USER_BLOCK + "describe" },
         {
           type: "image",
           mediaType: "image/jpeg",

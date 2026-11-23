@@ -8,7 +8,10 @@ import {
 } from "@robinrun/robinrun-cua/broker";
 // Contract constants are single-sourced from the producer package: locally re-declared literals here had drifted risk — a rename in the
 // producer would silently orphan these. Kept as aliases for existing callers.
-import { HELPER_ADDON_ENV, WINDOWS_DEV_CONTROL_PROTOCOL } from "@robinrun/robinrun-cua/broker/server";
+import {
+  HELPER_ADDON_ENV,
+  WINDOWS_DEV_CONTROL_PROTOCOL,
+} from "@robinrun/robinrun-cua/broker/server";
 
 import type { ServiceLogger } from "#src/logger/serviceLogger.js";
 import type { WindowsCuaRuntime } from "#src/cua-permission-broker/windowsCuaDevRuntime.js";
@@ -64,10 +67,8 @@ export const defaultChildProcess: WindowsCuaChildProcessAdapter = {
 };
 
 export const defaultSocketPathFactory = mintBrokerSocketPath;
-export const defaultHealthProbe = (
-  socketPath: string,
-  timeoutMs: number,
-): Promise<HelperHealth> => probeHelperHealth(socketPath, { timeoutMs });
+export const defaultHealthProbe = (socketPath: string, timeoutMs: number): Promise<HelperHealth> =>
+  probeHelperHealth(socketPath, { timeoutMs });
 
 export class WindowsCuaChildLifecycle {
   constructor(private readonly logger: ServiceLogger) {}

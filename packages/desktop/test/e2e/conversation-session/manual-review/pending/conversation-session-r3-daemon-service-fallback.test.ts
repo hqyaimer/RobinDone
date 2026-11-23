@@ -212,7 +212,9 @@ describe(`${CASE_MARKER}: systemd 注册装载失败时回退 detached fallback�
       // 装载阶段失败时没有启动任何 unit。
       expect(unit0).toMatchObject({ LoadState: "not-found", ActiveState: "inactive" });
       const fallbackLog = findLog(firstLogs, `${FALLBACK_LOG} (`);
-      expect(fallbackLog?.message).toContain("Failed to register service com.zhipu.robinrun.server.");
+      expect(fallbackLog?.message).toContain(
+        "Failed to register service com.zhipu.robinrun.server.",
+      );
       expect(fallbackLog?.message).toContain(
         SUBCASE === "stale-group"
           ? "Failed to enable unit: Access denied"

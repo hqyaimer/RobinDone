@@ -1,7 +1,4 @@
-import type {
-  RobinRunAutomationRunOutcome,
-  RobinRunAutomationTrigger,
-} from "@robinrun/shared";
+import type { RobinRunAutomationRunOutcome, RobinRunAutomationTrigger } from "@robinrun/shared";
 
 export interface CronRunLifecycleRepo {
   ensureRunClaimed(params: {

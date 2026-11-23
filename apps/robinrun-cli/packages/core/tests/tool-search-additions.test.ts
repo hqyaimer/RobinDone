@@ -227,7 +227,10 @@ it.each([false, true])(
     expect(JSON.stringify(message?.content).includes("<system-reminder>")).toBe(!mcs);
     expect(
       request.request.messages[request.projection.diagnostics.latestRealUserMessageIndex!]?.content,
-    ).toBe("next");
+    ).toBe(
+      // P2.6：real_user 渲染时带 sender 区块。
+      '<system-status>{"sender":"user"}</system-status>\n\nnext',
+    );
   },
 );
 

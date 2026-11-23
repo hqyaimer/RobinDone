@@ -276,7 +276,9 @@ async function shouldSkipDevelopmentRobinRunAgentDeploy(params: {
     return false;
   }
 
-  params.loggers.log(`[robinrun-agent-deploy] ${ROBINRUN_AGENT_PROVIDER}: 开发态 robinrun.cjs 未变化，跳过`);
+  params.loggers.log(
+    `[robinrun-agent-deploy] ${ROBINRUN_AGENT_PROVIDER}: 开发态 robinrun.cjs 未变化，跳过`,
+  );
   return true;
 }
 
@@ -349,7 +351,9 @@ async function uploadDevelopmentOfficialPluginPackages(params: {
         );
       }
     };
-    params.loggers.log(`[robinrun-agent-deploy] ${ROBINRUN_AGENT_PROVIDER}: 开发态上传官方插件资源`);
+    params.loggers.log(
+      `[robinrun-agent-deploy] ${ROBINRUN_AGENT_PROVIDER}: 开发态上传官方插件资源`,
+    );
     try {
       await params.backend.upload(archivePath, remoteArchivePath);
       await repairLegacyRemoteOfficialPluginDirectoryPermissions({

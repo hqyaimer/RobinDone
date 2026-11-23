@@ -1,5 +1,8 @@
 import type { RobinRunTaskMeta, RobinRunWorkspaceTaskListChanged } from "@robinrun/shared";
-import type { SessionSummary, SessionsIndexReconcileResult } from "@robinrun/shared/robinrun-protocol-v4";
+import type {
+  SessionSummary,
+  SessionsIndexReconcileResult,
+} from "@robinrun/shared/robinrun-protocol-v4";
 
 export interface TaskWorkspace {
   workspacePath: string;

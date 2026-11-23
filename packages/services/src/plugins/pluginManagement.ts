@@ -74,18 +74,24 @@ export interface IPluginManagementService {
   cancelPluginOperation(
     params: RobinRunAgentCancelPluginOperationParams,
   ): Promise<RobinRunPluginsCancelOperationResult>;
-  uninstallPlugin(params: RobinRunAgentUninstallPluginParams): Promise<RobinRunPluginsUninstallResult>;
+  uninstallPlugin(
+    params: RobinRunAgentUninstallPluginParams,
+  ): Promise<RobinRunPluginsUninstallResult>;
   updatePlugin(params: RobinRunAgentUpdatePluginParams): Promise<RobinRunPluginsInstallResult>;
   restoreBuiltinPlugin(
     params: RobinRunAgentRestoreBuiltinPluginParams,
   ): Promise<RobinRunPluginsRestoreBuiltinResult>;
-  configurePlugin(params: RobinRunAgentConfigurePluginParams): Promise<RobinRunPluginsConfigureResult>;
+  configurePlugin(
+    params: RobinRunAgentConfigurePluginParams,
+  ): Promise<RobinRunPluginsConfigureResult>;
   resetPluginConfig(
     params: RobinRunAgentResetPluginConfigParams,
   ): Promise<RobinRunPluginsConfigureResult>;
   validatePlugin(params: RobinRunAgentValidatePluginParams): Promise<RobinRunPluginsValidateResult>;
   describePlugin(params: RobinRunAgentDescribePluginParams): Promise<RobinRunPluginsDescribeResult>;
-  setPluginEnabled(params: RobinRunAgentSetPluginEnabledParams): Promise<RobinRunPluginsSetEnabledResult>;
+  setPluginEnabled(
+    params: RobinRunAgentSetPluginEnabledParams,
+  ): Promise<RobinRunPluginsSetEnabledResult>;
 }
 
 export const IPluginManagementService = createServiceDescriptor<IPluginManagementService>(

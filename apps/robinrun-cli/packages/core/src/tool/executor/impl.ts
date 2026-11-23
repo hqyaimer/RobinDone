@@ -58,6 +58,10 @@ export class ToolExecutorImpl implements ToolExecutor {
       skillPort: options.skillPort,
       subagentPort: options.subagentPort,
       coordinatorResponsePort: options.coordinatorResponsePort,
+      // agent 消息端口（2026-11-19）：与 coordinatorResponsePort 同列表同待遇——注册门在
+      // runtime deps 判端口在场，handler context 的转发漏了就会出现「工具注册了却永远
+      // ConfigurationError」的 P2.5 同款回归。
+      agentContactPort: options.agentContactPort,
       workflowSubmitPort: options.workflowSubmitPort,
       workflowEscalatePort: options.workflowEscalatePort,
       artifactStore: options.artifactStore,
@@ -92,6 +96,8 @@ export class ToolExecutorImpl implements ToolExecutor {
       deliveryKind: options.deliveryKind,
       getMemoryRoot: options.getMemoryRoot,
       runtimeScope: options.runtimeScope ?? "main",
+      // worker 身份透传（订阅者=创建者的机制层依据）；缺席 = master/subagent 会话。
+      workerIdentity: options.workerIdentity,
       traceContext: options.traceContext,
       getMode: options.getMode ?? (() => options.mode ?? "build"),
       maxConcurrency: options.maxConcurrency ?? 10,

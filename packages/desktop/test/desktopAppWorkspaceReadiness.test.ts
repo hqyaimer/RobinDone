@@ -69,7 +69,9 @@ describe("desktop e2e workspace readiness probe", () => {
     appendTestId(testId(TID_WORKSPACE_ITEM, windowsPath));
     appendTestId(`${TID_V4_SESSION_PANE}-pane-1`);
 
-    vi.stubGlobal("__robinrunTabStoreE2E", { getState: () => ({ activeWorkspacePath: windowsPath }) });
+    vi.stubGlobal("__robinrunTabStoreE2E", {
+      getState: () => ({ activeWorkspacePath: windowsPath }),
+    });
     expect(probe(windowsPath)).toBe("ready");
   });
 

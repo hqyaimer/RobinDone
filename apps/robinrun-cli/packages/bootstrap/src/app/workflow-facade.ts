@@ -295,6 +295,8 @@ function createWorkflowChildRuntime(
       bashShellSelection: deps.runtime.getSessionShellSelection(),
       parentSessionId: deps.sessionId,
       taskType: "workflow_child",
+      // 创建来源（P2.5）：agent 编排派生，ref = 编排会话 id。
+      creationOrigin: { kind: "agent", ref: deps.sessionId },
       workingDirectory: deps.workingDirectory,
     },
     {

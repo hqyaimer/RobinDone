@@ -182,7 +182,7 @@ describe("desktop tsup chunk isolation", () => {
       const defines = getDefines(entry);
       expect(defines).toHaveProperty("__ROBINRUN_ENV__");
       expect(defines).toHaveProperty("__ROBINRUN_PRODUCT_FLAVOR__");
-      expect(["\"production\"", "\"preview\""]).toContain(defines.__ROBINRUN_PRODUCT_FLAVOR__);
+      expect(['"production"', '"preview"']).toContain(defines.__ROBINRUN_PRODUCT_FLAVOR__);
     }
   });
 

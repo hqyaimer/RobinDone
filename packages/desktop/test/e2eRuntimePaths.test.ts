@@ -19,7 +19,9 @@ describe("Desktop E2E runtime paths", () => {
   it("keeps runtime files below the isolated Agent execution workspace", () => {
     const e2eHomeDir = resolve("root", "isolated-e2e-home");
 
-    expect(resolveE2ERuntimeRoot(e2eHomeDir)).toBe(join(e2eHomeDir, "RobinRunProject", ".robinrun-e2e"));
+    expect(resolveE2ERuntimeRoot(e2eHomeDir)).toBe(
+      join(e2eHomeDir, "RobinRunProject", ".robinrun-e2e"),
+    );
     expect(resolveE2ERuntimePath("bg25", "release-child-bash")).toBe(
       join(resolveE2ERuntimeRoot(), "bg25", "release-child-bash"),
     );

@@ -1047,7 +1047,8 @@ function E2ELexicalInputBridgePlugin({ inputTestId }: { inputTestId?: string }) 
     const detachBridge = (input: HTMLElement | null) => {
       if (
         input &&
-        (input as { __robinrunLexicalInputE2E?: typeof bridge }).__robinrunLexicalInputE2E === bridge
+        (input as { __robinrunLexicalInputE2E?: typeof bridge }).__robinrunLexicalInputE2E ===
+          bridge
       ) {
         delete (input as { __robinrunLexicalInputE2E?: typeof bridge }).__robinrunLexicalInputE2E;
       }

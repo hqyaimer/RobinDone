@@ -1,10 +1,17 @@
 import { readFile, readdir } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import {
+  buildWorkerProfile,
   parseAgentProfileFromMarkdown,
   resolveSubagentRuntimeProfiles,
+  workerAgentsMdFileName,
+  workerDefineMdFileName,
+  workerRegistryFileName,
+  workerRegistrySchema,
+  type AgentProfile,
   type SubagentRuntimeConfig,
   type SubagentRuntimeState,
+  type WorkerRegistry,
 } from "@robinrun/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import {
@@ -26,6 +33,91 @@ interface ConfigReader {
 }
 type Profiles = Map<string, ReturnType<typeof parseAgentProfileFromMarkdown>>;
 type Scope<T> = ReturnType<typeof createSubagentConfigScope<T>>;
+
+/** project scope 自 worker 注册表加载；value 是已解析的 profile 与诊断，不再按文件增量维护。 */
+interface ProjectScopeValue {
+  profiles: AgentProfile[];
+  registry: WorkerRegistry | undefined;
+}
+
+async function readTextIfExists(path: string): Promise<string | undefined> {
+  return readFile(path, "utf8").catch((error: NodeJS.ErrnoException) => {
+    // 删除可能先于 change 的读取完成，以实际文件不存在为准，不回填旧内容。
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  });
+}
+
+/**
+ * worker 注册表加载（2026-11-15 裁决）：`.robinrun/agents/workers.json` 是编制唯一事实源，
+ * active worker 的双规则文件（裁决 10，2026-11-20）为 `<id>/define.md`（职责定义，master
+ * 维护）+ `<id>/agents.md`（worker 自维护）。
+ * 注册表损坏/缺失 fail-safe 为空编制并告警，不做文件夹扫描兜底——避免已停用 worker 复活。
+ * 旧的平铺 `<name>.md` project scope 格式不再加载；user scope 不受影响。
+ */
+async function loadWorkerRegistry(
+  root: string,
+  context: SubagentConfigLoadContext,
+): Promise<ProjectScopeValue> {
+  const registryPath = join(root, workerRegistryFileName);
+  context.signal.throwIfAborted();
+  await context.waitForStableFile(registryPath);
+  context.signal.throwIfAborted();
+  const content = await readTextIfExists(registryPath);
+  if (content === undefined) return { profiles: [], registry: undefined };
+  let json: unknown;
+  try {
+    json = JSON.parse(content);
+  } catch {
+    logger.warn(undefined, "Worker 注册表不是有效 JSON，按空编制处理", { path: registryPath });
+    return { profiles: [], registry: undefined };
+  }
+  const parsed = workerRegistrySchema.safeParse(json);
+  if (!parsed.success) {
+    logger.warn(undefined, "Worker 注册表校验失败，按空编制处理", {
+      path: registryPath,
+      issues: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
+    });
+    return { profiles: [], registry: undefined };
+  }
+  const profiles: AgentProfile[] = [];
+  for (const entry of parsed.data.workers) {
+    if (entry.status !== "active") continue;
+    const defineMdPath = join(root, entry.id, workerDefineMdFileName);
+    const agentsMdPath = join(root, entry.id, workerAgentsMdFileName);
+    context.signal.throwIfAborted();
+    const [defineMd, agentsMd] = await Promise.all([
+      readTextIfExists(defineMdPath),
+      readTextIfExists(agentsMdPath),
+    ]);
+    // 双文件任一缺失即跳过：缺职责定义的 worker 不允许静默入册（裁决 10 的目的就是职责
+    // 定义权在 master，缺失必须大声暴露，等 master/用户修复后监听面自动重载）。
+    if (defineMd === undefined || agentsMd === undefined) {
+      logger.warn(undefined, "Worker 规则文件缺失，本轮名册跳过该 worker", {
+        path: defineMd === undefined ? defineMdPath : agentsMdPath,
+        worker: entry.name,
+      });
+      continue;
+    }
+    profiles.push(buildWorkerProfile({ entry, defineMd, agentsMd, defineMdPath }));
+  }
+  return { profiles, registry: parsed.data };
+}
+
+/** 注册表监听面：workers.json、`<id>/` 目录（增删触发全量）与 `<id>/define.md`、`<id>/agents.md`；排除 legacy 平铺 md。 */
+function isWorkerRegistryWatchPath(root: string, absolute: string): boolean {
+  const rel = relative(root, absolute);
+  if (!rel || rel.startsWith("..")) return false;
+  const parts = rel.split(sep);
+  if (parts.length === 1) {
+    // depth-0：注册表文件与 worker 目录相关；legacy `<name>.md` 不再触发重载。
+    return !/\.(md|markdown)$/iu.test(parts[0]!);
+  }
+  return (
+    parts.length === 2 &&
+    (parts[1] === workerDefineMdFileName || parts[1] === workerAgentsMdFileName)
+  );
+}
 
 async function listDocuments(root: string): Promise<string[]> {
   const entries = await readdir(root, { withFileTypes: true }).catch(
@@ -90,7 +182,7 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
   let disposed = false;
   let user: { path: string; scope: Scope<Profiles> } | undefined;
   let state: { path: string; scope: Scope<SubagentRuntimeState> } | undefined;
-  const workspaces = new Map<string, Scope<Profiles>>();
+  const workspaces = new Map<string, Scope<ProjectScopeValue>>();
   const snapshots = new Map<string, SubagentRuntimeConfig>();
   const key = (workspace: Workspace) =>
     workspace.workspaceIdentity?.trim() || workspace.workspacePath;
@@ -110,14 +202,31 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
         snapshots.set(workspaceKey, {
           kind: "ready",
           ...resolveSubagentRuntimeProfiles(
-            [...profiles(user.scope.value), ...profiles(project.value)],
+            [...profiles(user.scope.value), ...project.value.profiles],
             state.scope.value,
           ),
         });
     }
   }
-  function documentScope(path: string, source: "user" | "project") {
-    return createSubagentConfigScope({
+  // 两个 scope 的 value 类型不同（Profiles vs ProjectScopeValue）；用重载让调用点各取所需，
+  // 避免联合类型污染 user/workspace 的赋值。
+  function documentScope(path: string, source: "user"): Scope<Profiles>;
+  function documentScope(path: string, source: "project"): Scope<ProjectScopeValue>;
+  function documentScope(
+    path: string,
+    source: "user" | "project",
+  ): Scope<Profiles> | Scope<ProjectScopeValue> {
+    if (source === "project") {
+      // worker 注册表模式：全量加载 + 监听 workers.json 与 <id>/define.md、<id>/agents.md（depth 1）。
+      return createSubagentConfigScope<ProjectScopeValue>({
+        root: path,
+        depth: 1,
+        matches: (absolute) => isWorkerRegistryWatchPath(path, absolute),
+        load: (_previous, _changes, context) => loadWorkerRegistry(path, context),
+        onSettled: publish,
+      });
+    }
+    return createSubagentConfigScope<Profiles>({
       root: path,
       load: (previous: Profiles | undefined, changes, context) =>
         loadDocuments(path, source, previous, changes, context),
@@ -129,7 +238,12 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
     const project = workspaces.get(key(workspace));
     if (!user || !state || !project)
       throw new Error("Subagent runtime configuration is not prepared");
-    return [user.scope, state.scope, project];
+    // user/project 是两种 value 类型（Profiles vs ProjectScopeValue），用元组保住各自类型。
+    return {
+      user: user.scope,
+      state: state.scope,
+      project,
+    } satisfies Record<string, Scope<unknown>>;
   }
   async function waitForInitialScopes(scopes: Scope<unknown>[]) {
     let waiting = true;
@@ -197,7 +311,10 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
       if (workspace) {
         const workspaceKey = key(workspace);
         workspaces.get(workspaceKey)?.dispose();
-        const project = documentScope(join(workspace.workspacePath, ".robinrun", "agents"), "project");
+        const project = documentScope(
+          join(workspace.workspacePath, ".robinrun", "agents"),
+          "project",
+        );
         workspaces.set(workspaceKey, project);
         initializing.push(project);
       }
@@ -209,7 +326,7 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
     async read(workspace: Workspace): Promise<SubagentRuntimeConfig> {
       const scopes = required(workspace);
       if (!snapshots.has(key(workspace))) {
-        await waitForInitialScopes(scopes);
+        await waitForInitialScopes([scopes.user, scopes.state, scopes.project]);
         publish();
         if (!snapshots.has(key(workspace)))
           snapshots.set(key(workspace), { kind: "built-in-fallback" });

@@ -39,7 +39,9 @@ describe("powershell-command", () => {
     expect(command).toContain(
       "[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Security'",
     );
-    expect(command).toContain("Import-Module -Name $robinrunSecurityModule -Force -ErrorAction Stop");
+    expect(command).toContain(
+      "Import-Module -Name $robinrunSecurityModule -Force -ErrorAction Stop",
+    );
     expect(command).toContain("Windows PowerShell Security module load failed");
     expect(command).toContain("exit 26");
     expect(command).not.toContain("$env:PSModulePath");

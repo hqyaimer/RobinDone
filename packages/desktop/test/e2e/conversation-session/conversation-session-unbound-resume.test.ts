@@ -228,7 +228,9 @@ describe("Todo 70：模型选择残缺不阻止历史打开", () => {
               text: document.body.innerText,
               config: document.querySelector('[data-testid="v4-model-config"]')?.outerHTML,
               drafts: Object.fromEntries(
-                Object.entries(localStorage).filter(([key]) => key.startsWith("robinrun-v4-composer")),
+                Object.entries(localStorage).filter(([key]) =>
+                  key.startsWith("robinrun-v4-composer"),
+                ),
               ),
             }));
             await writeFile(

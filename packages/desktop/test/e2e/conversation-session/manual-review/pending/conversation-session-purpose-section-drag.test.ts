@@ -33,7 +33,9 @@ describe("CWP02 分区标题拖拽", () => {
     await beginDrag(tasks, project);
     await expect($(project).$(indicator)).toHaveAttribute("data-drop-position", "before");
     await assertDragLayout(tasks);
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "section-drag-up.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "section-drag-up.png"),
+    );
     await browser.performActions([
       {
         type: "pointer",

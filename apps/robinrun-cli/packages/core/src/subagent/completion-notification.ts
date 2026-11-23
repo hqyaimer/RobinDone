@@ -26,6 +26,8 @@ export interface LocalAgentTaskNotificationInput {
   totalTokens?: number;
   totalToolUseCount?: number;
   usage?: ModelUsage;
+  /** 子会话汇报轮 turnId（mailbox 跳转锚点，随 originMeta.sourceTurnId 透传）；缺席 = 无。 */
+  sourceTurnId?: string;
 }
 
 export function formatLocalAgentTaskNotification(

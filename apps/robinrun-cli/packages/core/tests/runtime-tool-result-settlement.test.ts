@@ -201,6 +201,8 @@ function userTextsAfterResults(messages: readonly ModelInputMessage[]): string[]
         ? message.content
         : message.content.map((block) => (block.type === "text" ? block.text : "")).join(""),
     )
+    // P2.6：剥掉 real_user 输入的 sender 区块前缀再比较正文。
+    .map((text) => text.replace(/^<system-status>[\s\S]*?<\/system-status>\n\n/, ""))
     .filter((text) => !text.startsWith("<system-reminder>"));
 }
 

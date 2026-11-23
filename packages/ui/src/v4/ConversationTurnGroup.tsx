@@ -13,7 +13,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ChevronRightIcon, EyeIcon } from "lucide-react";
+// RobinRun(2026-11-23): [hide-upstream-account] EyeIcon 只服务被隐藏的 Highspeed 分享按钮，恢复时一并还原。
+import { ChevronRightIcon } from "lucide-react";
 import {
   robinrunProviderRuntimeHeadersErrorCode,
   type HighspeedMessageMeta,
@@ -57,14 +58,16 @@ import {
   type OffPeakCreateTaskSummary,
 } from "@/ToolCallBlocks/renderers/offpeak-create.js";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { HighspeedShareDialog } from "@/highspeed/HighspeedShareNoticeCard.js";
-import { isHighspeedShareEligible } from "@/highspeed/highspeedShare.js";
+// RobinRun(2026-11-23): [hide-upstream-account] 隐藏 Highspeed 加速分享入口（上游品牌营销卡：ZCODE 字标 + Z.AI logo，
+// 分享仅为本地剪贴板复制、无 RobinRun 发布场景）。恢复时取消本文件全部同标记注释。
+// import { HighspeedShareDialog } from "@/highspeed/HighspeedShareNoticeCard.js";
+// import { isHighspeedShareEligible } from "@/highspeed/highspeedShare.js";
 import {
   aggregateHighspeedCardMetrics,
   getHighspeedTurnByCommandId,
   getHighspeedTurnDependencies,
   subscribeHighspeedTurns,
-  type HighspeedShareMetrics,
+  // RobinRun(2026-11-23): [hide-upstream-account] type HighspeedShareMetrics, —— 仅被隐藏的分享目标 memo 使用
 } from "@/highspeed/highspeedTurnStore.js";
 import type { AssistantPreviewCard } from "@/lib/assistantPreviewCards.js";
 import { useAssistantCodeCommentFeatureEnabled } from "@/AssistantCodeCommentFeatureProvider.js";
@@ -114,7 +117,17 @@ import type {
 import { formatConversationWorkDuration } from "@/v4/conversationWorkDuration.js";
 import { ConversationTurnRow, resolveAssistantCopyText } from "@/v4/ConversationTurnRow.js";
 import { ConversationHookDetailsAction } from "@/v4/ConversationHookDetailsAction.js";
+import { ConversationAgentBlock } from "@/v4/ConversationAgentBlock.js";
 import { toolCallRowToLegacyNode } from "@/v4/toolCallRowAdapter.js";
+
+/**
+ * flow 项的稳定 key（run 切分与逐项渲染共用一套口径）；与行内原内联表达式同形。
+ */
+function flowItemKey(item: ConversationTurnFlowItem, index: number): string {
+  return item.kind === "userInput" || item.kind === "assistantText"
+    ? `${item.kind}:${item.row.rowId}`
+    : `${item.kind}:${item.rows[0]?.rowId ?? index}`;
+}
 
 interface ConversationTurnGroupProps {
   unit: ConversationTurnRenderUnit;
@@ -152,20 +165,22 @@ const MIN_VISIBLE_API_RETRY_ATTEMPT = 3;
 
 interface HighspeedOutputFooterProps {
   generatedLabel: string;
-  shareLabel: string;
-  shareAriaLabel: string;
-  shareEnabled: boolean;
-  sharePending: boolean;
-  onShare: () => void;
+  // RobinRun(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
+  // shareLabel: string;
+  // shareAriaLabel: string;
+  // shareEnabled: boolean;
+  // sharePending: boolean;
+  // onShare: () => void;
 }
 
 function HighspeedOutputFooter({
   generatedLabel,
-  shareLabel,
-  shareAriaLabel,
-  shareEnabled,
-  sharePending,
-  onShare,
+  // RobinRun(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
+  // shareLabel,
+  // shareAriaLabel,
+  // shareEnabled,
+  // sharePending,
+  // onShare,
 }: HighspeedOutputFooterProps) {
   return (
     <div
@@ -175,6 +190,7 @@ function HighspeedOutputFooter({
       <div aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t border-border" />
       <div className="relative flex items-center gap-2 bg-background px-3">
         <span className="text-ui-base text-foreground-subtle">{generatedLabel}</span>
+        {/* RobinRun(2026-11-23): [hide-upstream-account] 分享按钮（打开 ZCODE/Z.AI 品牌的分享统计对话框）随入口一并隐藏
         {shareEnabled ? (
           <Button
             type="button"
@@ -195,6 +211,7 @@ function HighspeedOutputFooter({
             {shareLabel}
           </Button>
         ) : null}
+        */}
       </div>
     </div>
   );
@@ -696,6 +713,8 @@ function AssistantHistoryStatus({
           data-history-open={String(open)}
           className="group/history-message inline-flex max-w-full items-center gap-2 text-left text-ui-base text-foreground-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-input-border-focused)]"
         >
+          {/* P2.6 验收修复第四轮（2026-11-18）：发送者 pill 已移除——序列创建者名称
+              上移为 agent 块头（ConversationAgentBlock，头像 + 名称），此处只留工时。 */}
           <span
             className={cn("truncate", highspeed && "font-medium leading-5 text-icon-purple")}
             data-highspeed-duration={highspeed ? "true" : undefined}
@@ -785,6 +804,122 @@ function ConversationWorkSegmentFlow({
   let historyChunkIndex = 0;
   const open = turnRunning || segment.assistantHistoryDefaultOpen || historyOpen;
 
+  const renderItem = (item: ConversationTurnFlowItem, index: number): React.ReactNode => {
+    const stageTailIsRunning =
+      segment.workStatus?.state === "running" &&
+      index === segment.flowItems.length - 1 &&
+      (item.kind === "assistantHistory" || item.kind === "assistantWork");
+    const showHistoryStatus = shouldShowHistoryStatus && index === firstAssistantFlowItemIndex;
+    const itemKey = flowItemKey(item, index);
+    let content: React.ReactNode;
+
+    if (item.kind === "userInput") {
+      const userRow = (
+        <ConversationTurnRow
+          row={item.row}
+          context={context}
+          onEdit={item.row.actions?.canEdit === true ? onEdit : undefined}
+          editWorkspaceRewindAvailability={editWorkspaceRewindAvailability}
+        />
+      );
+      content = userRow;
+    } else if (item.kind === "cuaGroup") {
+      const group = <ConversationCuaGroupRow item={item} context={context} />;
+      if (item.flowKind === "assistantHistory") {
+        const chunkKey =
+          historyChunkIndex === 0 ? segment.key : `${segment.key}:chunk-${historyChunkIndex}`;
+        historyChunkIndex += 1;
+        content = (
+          <CollapsibleContent
+            data-testid={testId(TID_CHAT_ASSISTANT_HISTORY_CONTENT, chunkKey)}
+            data-history-open={String(open)}
+          >
+            <div className="pt-5">{group}</div>
+          </CollapsibleContent>
+        );
+      } else {
+        content = group;
+      }
+    } else if (item.kind === "assistantHistory") {
+      const chunkKey =
+        historyChunkIndex === 0 ? segment.key : `${segment.key}:chunk-${historyChunkIndex}`;
+      historyChunkIndex += 1;
+      content = (
+        <ConversationAssistantWorkItems
+          rows={item.rows}
+          context={context}
+          stageTailIsRunning={stageTailIsRunning}
+          assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
+          historyContainer={{ chunkKey, open }}
+        />
+      );
+    } else if (item.kind === "assistantText") {
+      content = (
+        <ConversationTurnRow
+          row={item.row}
+          context={context}
+          onFork={item.latest && canForkLatestAssistant ? onFork : undefined}
+          onRetry={item.latest && canRetryLatestAssistant ? onRetry : undefined}
+          hideAssistantActions={!item.latest}
+          deferAssistantActions={item.latest}
+          assistantCopyText={item.latest ? assistantCopyText : undefined}
+          assistantPreviewCards={item.latest ? assistantPreviewCards : undefined}
+          assistantPreviewCardsAutoOpenKey={
+            item.latest ? assistantPreviewCardsAutoOpenKey : undefined
+          }
+          assistantCodeCommentCards={item.latest ? assistantCodeCommentCards : undefined}
+          assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
+        />
+      );
+    } else {
+      content = (
+        <ConversationAssistantWorkItems
+          rows={item.rows}
+          context={context}
+          stageTailIsRunning={stageTailIsRunning}
+          assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
+        />
+      );
+    }
+
+    return (
+      <Fragment key={itemKey}>
+        {showHistoryStatus ? (
+          <AssistantHistoryStatus
+            segment={segment}
+            open={open}
+            highspeed={highspeed}
+            highspeedMeta={highspeedMeta}
+            sourceCommandIds={sourceCommandIds}
+          />
+        ) : null}
+        {content}
+      </Fragment>
+    );
+  };
+
+  // P2.6 验收修复第四轮（2026-11-18）：按 agent 分块的 run 切分。userInput 行是块边界
+  // ——realUser 保持右侧气泡、mailbox 行自带 agent 块（ConversationRowView），都裸渲染；
+  // 连续的非 userInput 项 = 会话本体 agent 的一个发言 run，包进 ConversationAgentBlock
+  // （淡组色底 + 块头）。同段内被 bare 行隔开的后续 agent run 作为延续块（同底色、不带
+  // 块头）；块身份缺席（subagent 侧钻、分享只读等观察视图）保持旧的裸渲染。块切分只在
+  // 渲染层，flowItems 数据形状与 CLI 投影零改动。
+  const runs: {
+    kind: "bare" | "agent";
+    items: { item: ConversationTurnFlowItem; index: number }[];
+  }[] = [];
+  segment.flowItems.forEach((item, index) => {
+    const bare = item.kind === "userInput";
+    const tail = runs.at(-1);
+    if (tail && (tail.kind === "bare") === bare) {
+      tail.items.push({ item, index });
+    } else {
+      runs.push({ kind: bare ? "bare" : "agent", items: [{ item, index }] });
+    }
+  });
+  const agentBlockIdentity = context.conversationAgentBlock;
+  let agentBlockHeaderShown = false;
+
   return (
     <Collapsible
       open={open}
@@ -794,101 +929,28 @@ function ConversationWorkSegmentFlow({
       // 的间距则放进动画层。
       className="history-message flex flex-col [&>*+*:not([data-slot='collapsible-content'])]:mt-5"
     >
-      {segment.flowItems.map((item, index) => {
-        const stageTailIsRunning =
-          segment.workStatus?.state === "running" &&
-          index === segment.flowItems.length - 1 &&
-          (item.kind === "assistantHistory" || item.kind === "assistantWork");
-        const showHistoryStatus = shouldShowHistoryStatus && index === firstAssistantFlowItemIndex;
-        const itemKey =
-          item.kind === "userInput" || item.kind === "assistantText"
-            ? `${item.kind}:${item.row.rowId}`
-            : `${item.kind}:${item.rows[0]?.rowId ?? index}`;
-        let content: React.ReactNode;
-
-        if (item.kind === "userInput") {
-          const userRow = (
-            <ConversationTurnRow
-              row={item.row}
-              context={context}
-              onEdit={item.row.actions?.canEdit === true ? onEdit : undefined}
-              editWorkspaceRewindAvailability={editWorkspaceRewindAvailability}
-            />
-          );
-          content = userRow;
-        } else if (item.kind === "cuaGroup") {
-          const group = <ConversationCuaGroupRow item={item} context={context} />;
-          if (item.flowKind === "assistantHistory") {
-            const chunkKey =
-              historyChunkIndex === 0 ? segment.key : `${segment.key}:chunk-${historyChunkIndex}`;
-            historyChunkIndex += 1;
-            content = (
-              <CollapsibleContent
-                data-testid={testId(TID_CHAT_ASSISTANT_HISTORY_CONTENT, chunkKey)}
-                data-history-open={String(open)}
-              >
-                <div className="pt-5">{group}</div>
-              </CollapsibleContent>
-            );
-          } else {
-            content = group;
-          }
-        } else if (item.kind === "assistantHistory") {
-          const chunkKey =
-            historyChunkIndex === 0 ? segment.key : `${segment.key}:chunk-${historyChunkIndex}`;
-          historyChunkIndex += 1;
-          content = (
-            <ConversationAssistantWorkItems
-              rows={item.rows}
-              context={context}
-              stageTailIsRunning={stageTailIsRunning}
-              assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
-              historyContainer={{ chunkKey, open }}
-            />
-          );
-        } else if (item.kind === "assistantText") {
-          content = (
-            <ConversationTurnRow
-              row={item.row}
-              context={context}
-              onFork={item.latest && canForkLatestAssistant ? onFork : undefined}
-              onRetry={item.latest && canRetryLatestAssistant ? onRetry : undefined}
-              hideAssistantActions={!item.latest}
-              deferAssistantActions={item.latest}
-              assistantCopyText={item.latest ? assistantCopyText : undefined}
-              assistantPreviewCards={item.latest ? assistantPreviewCards : undefined}
-              assistantPreviewCardsAutoOpenKey={
-                item.latest ? assistantPreviewCardsAutoOpenKey : undefined
-              }
-              assistantCodeCommentCards={item.latest ? assistantCodeCommentCards : undefined}
-              assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
-            />
-          );
-        } else {
-          content = (
-            <ConversationAssistantWorkItems
-              rows={item.rows}
-              context={context}
-              stageTailIsRunning={stageTailIsRunning}
-              assistantCodeCommentProjectionEnabled={assistantCodeCommentProjectionEnabled}
-            />
+      {runs.map((run) => {
+        const runContent = run.items.map(({ item, index }) => renderItem(item, index));
+        if (run.kind === "agent" && agentBlockIdentity !== undefined) {
+          // 同段内首个 agent run 带块头；被 bare 行隔开的后续 agent run 是同一发言的
+          // 延续（同底色），不再重复块头。跨段（guide 多段）每段独立起算。
+          const header = !agentBlockHeaderShown;
+          agentBlockHeaderShown = true;
+          const lead = run.items[0]!;
+          return (
+            <ConversationAgentBlock
+              key={`agent-block:${flowItemKey(lead.item, lead.index)}`}
+              label={agentBlockIdentity.label}
+              surfaces={agentBlockIdentity.surfaces}
+              header={header}
+              // 块内子项间距自洽（Collapsible 的 mt-5 选择器只作用于自己的直接子级）。
+              className="gap-5"
+            >
+              {runContent}
+            </ConversationAgentBlock>
           );
         }
-
-        return (
-          <Fragment key={itemKey}>
-            {showHistoryStatus ? (
-              <AssistantHistoryStatus
-                segment={segment}
-                open={open}
-                highspeed={highspeed}
-                highspeedMeta={highspeedMeta}
-                sourceCommandIds={sourceCommandIds}
-              />
-            ) : null}
-            {content}
-          </Fragment>
-        );
+        return <Fragment key={`run:${run.items[0]!.index}`}>{runContent}</Fragment>;
       })}
       {shouldShowHistoryStatus && firstAssistantFlowItemIndex < 0 ? (
         <AssistantHistoryStatus
@@ -1211,7 +1273,11 @@ function ConversationBackgroundResultWork({
         }
       : undefined;
 
-  return (
+  // P2.6 验收修复第四轮（2026-11-18）：通知轮的 master 处理段包进 agent 块（其上方的
+  // mailbox 行由 TurnGroup 渲染、自带发送者块），形成「worker 块 → master 块」交替；
+  // 块身份缺席（观察视图）保持裸渲染。
+  const agentBlockIdentity = context.conversationAgentBlock;
+  const body = (
     <Collapsible
       open={open}
       onOpenChange={setHistoryOpen}
@@ -1240,7 +1306,10 @@ function ConversationBackgroundResultWork({
             workflowRunSummary?.run === undefined ? undefined : (workflowRunSummary.run.holes ?? [])
           }
         />
-      ) : (
+      ) : unit.visibleUserInputs.length > 0 ? null : (
+        // P2.6 验收修复第二轮（2026-11-18）：worker/subagent 通知轮现在落可见 mailbox 行
+        // （发送者徽章 + 正文，排在轮组头之前），裸标题行（originMeta.title = worker 显示名）
+        // 与它重复且无内容，只在没有任何可见输入的纯后台轮（bash 结果等）保留。
         <div className="flex w-full">
           <div
             data-testid={testId(TID_CHAT_BACKGROUND_RESULT_TITLE, unit.key)}
@@ -1292,6 +1361,17 @@ function ConversationBackgroundResultWork({
       />
     </Collapsible>
   );
+  return agentBlockIdentity === undefined ? (
+    body
+  ) : (
+    <ConversationAgentBlock
+      label={agentBlockIdentity.label}
+      surfaces={agentBlockIdentity.surfaces}
+      className="gap-5"
+    >
+      {body}
+    </ConversationAgentBlock>
+  );
 }
 
 function ConversationTurnGroupImpl({
@@ -1330,49 +1410,50 @@ function ConversationTurnGroupImpl({
   const highspeedMeta = unit.isRunning
     ? undefined
     : visibleUserRows.find((row) => row.highspeed)?.highspeed;
-  const highspeedShareTarget = useMemo(() => {
-    let target: { cardId: string; metrics: HighspeedShareMetrics } | null = null;
-    if (
-      highspeedTurn?.metrics &&
-      highspeedTurn.metricsPersistedAt !== undefined &&
-      highspeedTurn.metrics.regularTps > 0 &&
-      highspeedTurn.metrics.highspeedTps !== undefined &&
-      highspeedTurn.metrics.highspeedTps > 0
-    ) {
-      target = {
-        cardId: highspeedTurn.card.cardId,
-        metrics: aggregateHighspeedCardMetrics(highspeedTurn.card.cardId),
-      };
-    } else if (unit.highspeedOutputFooterTarget) {
-      target = unit.highspeedOutputFooterTarget;
-    } else if (
-      highspeedMeta?.outputTokens !== undefined &&
-      highspeedMeta.outputTokens > 0 &&
-      highspeedMeta.highspeedTps !== undefined &&
-      highspeedMeta.highspeedTps > 0 &&
-      highspeedMeta.regularTps !== undefined &&
-      highspeedMeta.regularTps > 0
-    ) {
-      // Bug 原因：冷恢复后 Renderer 内存记录为空，但 transcript 已持久化完整分享统计；
-      // 只依赖 highspeedTurn 会让可见的历史分享按钮永久 disabled。
-      target = {
-        cardId: highspeedMeta.cardId,
-        metrics: {
-          outputTokens: highspeedMeta.outputTokens,
-          // 分享接口不要求 durationMs；缺失时仅让本地耗时降级为 0，不阻塞分享。
-          durationMs: highspeedMeta.durationMs ?? 0,
-          regularTps: highspeedMeta.regularTps,
-          highspeedTps: highspeedMeta.highspeedTps,
-          ...(highspeedMeta.savedDurationMs !== undefined
-            ? { savedDurationMs: highspeedMeta.savedDurationMs }
-            : {}),
-        },
-      };
-    }
-    // 卡片和历史标识继续保留，但不超过 1.2x 或缺少完整耗时数据时不提供分享入口。
-    return target && isHighspeedShareEligible(target.metrics) ? target : null;
-  }, [highspeedMeta, highspeedTurn, highspeedState, unit.highspeedOutputFooterTarget]);
-  const [highspeedShareDialogOpen, setHighspeedShareDialogOpen] = useState(false);
+  // RobinRun(2026-11-23): [hide-upstream-account] 分享目标 memo（聚合高速轮统计供分享按钮/对话框使用）随入口一并隐藏
+  // const highspeedShareTarget = useMemo(() => {
+  //   let target: { cardId: string; metrics: HighspeedShareMetrics } | null = null;
+  //   if (
+  //     highspeedTurn?.metrics &&
+  //     highspeedTurn.metricsPersistedAt !== undefined &&
+  //     highspeedTurn.metrics.regularTps > 0 &&
+  //     highspeedTurn.metrics.highspeedTps !== undefined &&
+  //     highspeedTurn.metrics.highspeedTps > 0
+  //   ) {
+  //     target = {
+  //       cardId: highspeedTurn.card.cardId,
+  //       metrics: aggregateHighspeedCardMetrics(highspeedTurn.card.cardId),
+  //     };
+  //   } else if (unit.highspeedOutputFooterTarget) {
+  //     target = unit.highspeedOutputFooterTarget;
+  //   } else if (
+  //     highspeedMeta?.outputTokens !== undefined &&
+  //     highspeedMeta.outputTokens > 0 &&
+  //     highspeedMeta.highspeedTps !== undefined &&
+  //     highspeedMeta.highspeedTps > 0 &&
+  //     highspeedMeta.regularTps !== undefined &&
+  //     highspeedMeta.regularTps > 0
+  //   ) {
+  //     // Bug 原因：冷恢复后 Renderer 内存记录为空，但 transcript 已持久化完整分享统计；
+  //     // 只依赖 highspeedTurn 会让可见的历史分享按钮永久 disabled。
+  //     target = {
+  //       cardId: highspeedMeta.cardId,
+  //       metrics: {
+  //         outputTokens: highspeedMeta.outputTokens,
+  //         // 分享接口不要求 durationMs；缺失时仅让本地耗时降级为 0，不阻塞分享。
+  //         durationMs: highspeedMeta.durationMs ?? 0,
+  //         regularTps: highspeedMeta.regularTps,
+  //         highspeedTps: highspeedMeta.highspeedTps,
+  //         ...(highspeedMeta.savedDurationMs !== undefined
+  //           ? { savedDurationMs: highspeedMeta.savedDurationMs }
+  //           : {}),
+  //       },
+  //     };
+  //   }
+  //   // 卡片和历史标识继续保留，但不超过 1.2x 或缺少完整耗时数据时不提供分享入口。
+  //   return target && isHighspeedShareEligible(target.metrics) ? target : null;
+  // }, [highspeedMeta, highspeedTurn, highspeedState, unit.highspeedOutputFooterTarget]);
+  // const [highspeedShareDialogOpen, setHighspeedShareDialogOpen] = useState(false);
   const firstReasoningRowId = useMemo(
     () => unit.assistantWorkRows.find((row) => row.kind === "reasoning")?.rowId,
     [unit.assistantWorkRows],
@@ -1678,15 +1759,12 @@ function ConversationTurnGroupImpl({
             </MessageActions>
           ) : null}
           {showHighspeedOutputFooter ? (
+            // RobinRun(2026-11-23): [hide-upstream-account] 分享按钮属性（shareLabel/shareAriaLabel/shareEnabled/sharePending/onShare）随分享入口一并隐藏
             <HighspeedOutputFooter
               generatedLabel={intl.formatMessage({ id: "chat.highspeed.generatedBy" })}
-              shareLabel={intl.formatMessage({ id: "chat.highspeed.viewAction" })}
-              shareAriaLabel={intl.formatMessage({ id: "chat.highspeed.share" })}
-              shareEnabled={highspeedShareTarget !== null}
-              sharePending={false}
-              onShare={() => setHighspeedShareDialogOpen(true)}
             />
           ) : null}
+          {/* RobinRun(2026-11-23): [hide-upstream-account] 分享统计对话框（ZCODE/Z.AI 品牌）随入口一并隐藏
           {highspeedShareTarget ? (
             <HighspeedShareDialog
               metrics={highspeedShareTarget.metrics}
@@ -1694,6 +1772,7 @@ function ConversationTurnGroupImpl({
               onOpenChange={setHighspeedShareDialogOpen}
             />
           ) : null}
+          */}
           {unit.assistantTailRows.length > 0 ? (
             // turnTailBoundary 之前虽然从工作历史中拆出，却仍在 flow 内渲染，
             // 使 CronCreate、文件 summary 与操作栏看起来落在 fork 分割线之后。boundary

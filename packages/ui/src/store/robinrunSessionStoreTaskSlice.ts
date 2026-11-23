@@ -33,7 +33,9 @@ type SetFn = (
   partial:
     | RobinRunSessionStoreState
     | Partial<RobinRunSessionStoreState>
-    | ((state: RobinRunSessionStoreState) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
+    | ((
+        state: RobinRunSessionStoreState,
+      ) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
 ) => void;
 
 function sortTasksByUpdatedAt(tasks: readonly RobinRunTaskMeta[]): RobinRunTaskMeta[] {

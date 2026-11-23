@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { modelSelectionSchema } from "@robinrun/shared/model-selection";
-import { completeModelConfigDataSchema, modelConfigDataSchema } from "@robinrun/shared/model-config";
+import {
+  completeModelConfigDataSchema,
+  modelConfigDataSchema,
+} from "@robinrun/shared/model-config";
 import {
   parsePersonalModelConfigRules,
   parsePersonalProviderConfigMap,

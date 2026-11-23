@@ -127,7 +127,12 @@ function expectInjectedAgentsMd(request: any, childTask: string): void {
   );
   const taskIndex = messages.findIndex(
     (message) =>
-      message.role === "user" && modelMessageContentToText(message.content) === childTask,
+      message.role === "user" &&
+      // P2.6 消息来源区块：coordinator 输入正文最前带 <system-status> 前缀，剥掉后比较。
+      modelMessageContentToText(message.content).replace(
+        /^<system-status>[\s\S]*?<\/system-status>\n\n/,
+        "",
+      ) === childTask,
   );
   expect(contextIndex).toBeGreaterThanOrEqual(0);
   expect(taskIndex).toBeGreaterThan(contextIndex);
@@ -136,10 +141,9 @@ function expectInjectedAgentsMd(request: any, childTask: string): void {
   expect(contextText).toContain("<system-reminder>");
   expect(contextText).toContain("Codebase and user instructions are shown below.");
   expect(contextText).toContain(USER_AGENTS_INSTRUCTION);
-  expect(contextText).toContain(WORKSPACE_AGENTS_INSTRUCTION);
-  expect(contextText.indexOf(USER_AGENTS_INSTRUCTION)).toBeLessThan(
-    contextText.indexOf(WORKSPACE_AGENTS_INSTRUCTION),
-  );
+  // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace scope（项目 AGENTS.md）迁入
+  // system 段（个体规则在前、项目说明在后），meta_user 只剩 user scope。
+  expect(contextText).not.toContain(WORKSPACE_AGENTS_INSTRUCTION);
   expect(contextText.indexOf("Codebase and user instructions")).toBeLessThan(
     contextText.indexOf(USER_AGENTS_INSTRUCTION),
   );
@@ -153,7 +157,7 @@ function expectInjectedAgentsMd(request: any, childTask: string): void {
   expect(text).not.toContain(PROJECT_CONTEXT_SENTINEL);
   expect(text).not.toContain("# Memory");
   expect(systemContents(request).join("\n")).not.toContain(USER_AGENTS_INSTRUCTION);
-  expect(systemContents(request).join("\n")).not.toContain(WORKSPACE_AGENTS_INSTRUCTION);
+  expect(systemContents(request).join("\n")).toContain(WORKSPACE_AGENTS_INSTRUCTION);
   expect(systemContents(request).join("\n")).not.toContain("# agentsMd");
 }
 
@@ -261,8 +265,11 @@ describe("subagent provider-visible prompt assembly", () => {
     );
     const taskIndex = childMessages.findIndex(
       (message: any) =>
-        modelMessageContentToText(message.content) ===
-        "Find where the runtime injects tool results.",
+        // P2.6 消息来源区块：剥掉 sender 前缀后比较正文。
+        modelMessageContentToText(message.content).replace(
+          /^<system-status>[\s\S]*?<\/system-status>\n\n/,
+          "",
+        ) === "Find where the runtime injects tool results.",
     );
     // 不支持 MCS 时，环境是任务前的 user reminder。
     expect(environmentMessage.role).toBe("user");
@@ -474,7 +481,7 @@ describe("subagent provider-visible prompt assembly", () => {
       expect(systems).toHaveLength(2);
       expect(systems[0]).toBe("You are RobinRun, an interactive agent");
       expect(systems[1]).toMatch(
-        /^\nYou are a focused code researcher\. Return concise findings\.\n\nMessages from the agent that launched you — .+\n\nNotes:/u,
+        /^\nYou are a focused code researcher\. Return concise findings\.\n\nMessages from the agent that launched you — .+\n\nMessage origin protocol: .+\n\nNotes:/u,
       );
       expect(allMessageText(childRequests[0])).toContain(" - Is a git repository: false");
       if (expectedToInject) {
@@ -501,7 +508,7 @@ describe("subagent provider-visible prompt assembly", () => {
     const systems = systemContents({ messages: result.systemMessages });
     // agent 正文两端 trim 后接启动方消息段，再接 Notes；逐字文本由 subagent-explore 锁定。
     expect(systems[1]).toMatch(
-      /^\nYou are a reviewer\.\n\nMessages from the agent that launched you — .+\n\nNotes:\n/u,
+      /^\nYou are a reviewer\.\n\nMessages from the agent that launched you — .+\n\nMessage origin protocol: .+\n\nNotes:\n/u,
     );
   });
 
@@ -522,7 +529,7 @@ describe("subagent provider-visible prompt assembly", () => {
     const systems = systemContents({ messages: result.systemMessages });
     expect(systems).toHaveLength(2);
     expect(systems[0]).toBe("You are RobinRun, an interactive agent");
-    expect(systems[1]).toMatch(/^\n\nMessages from the agent that launched you — .+\n\nNotes:/u);
+    expect(systems[1]).toMatch(/^\n\nMessages from the agent that launched you — .+\n\nMessage origin protocol: .+\n\nNotes:/u);
     expect(systems[1]).not.toContain("<env>");
     expect(result.metaUserAttachments).toEqual([]);
     expect(result.sections.find((section) => section.source === "env_info")?.content).toContain(
@@ -534,6 +541,46 @@ describe("subagent provider-visible prompt assembly", () => {
         .map((section) => section.content)
         .join(""),
     );
+  });
+
+  it("keeps the subagent builder on the pure one-off subagent shape (worker patches retired, 2026-11-20 同构化)", () => {
+    const result = createSubagentContextBuilder({
+      agentPrompt: "One-off subagent body.",
+      envInfo: {
+        cwd: "/repo",
+        platform: "darwin",
+        shell: "zsh",
+        osVersion: "Darwin 24.3.0",
+        nodeVersion: "24.14.0",
+        isGitRepository: false,
+      },
+      userInstructions: {
+        filePath: "/repo/AGENTS.md",
+        fileName: "AGENTS.md",
+        content: WORKSPACE_AGENTS_INSTRUCTION,
+        bytesRead: WORKSPACE_AGENTS_INSTRUCTION.length,
+        sizeBytes: WORKSPACE_AGENTS_INSTRUCTION.length,
+        truncated: false,
+      },
+    }).build();
+
+    // workerNotes / triggerSessionReadme 过渡补丁已退役：worker 注入面迁主 ContextBuilder
+    // （workerInstructions），触发器会话（master 与 worker）都走主 builder 的 Trigger
+    // session section。一次性 subagent 恢复「勿写报告文件」条目的无条件注入。
+    const systemSections = result.sections.filter(
+      (section) => section.injectionTarget === "system",
+    );
+    const sources = systemSections.map((section) => section.source);
+    expect(sources).toEqual([
+      "cli_prefix",
+      "subagent_agent_prompt",
+      "subagent_notes",
+      "project_instructions",
+    ]);
+    const systemText = systemSections.map((section) => section.content).join("");
+    expect(systemText).not.toContain("TRIGGER-README-SENTINEL");
+    expect(systemText).toContain("the parent agent reads your text output");
+    expect(systemText).toContain("Agent threads always have their cwd reset between bash calls");
   });
 
   it.each(["user", "project", "local"] as const)(
@@ -726,8 +773,10 @@ describe("subagent provider-visible prompt assembly", () => {
       const systems = systemContents(request);
       expect(systems).toHaveLength(2);
       expect(systems[0]).toBe("You are RobinRun, an interactive agent");
+      // 修复（2026-11-23）：P2.6 起该段在 Messages 与 Notes 之间注入 SYSTEM_STATUS_PROTOCOL_NOTE
+      // （消息来源协议整段），原正则 `.+` 不跨段匹配不了多段注入——存量失败，放宽为跨段。
       expect(systems[1]).toMatch(
-        /^\nYou are a focused child agent\. Keep the result concise\.\n\nMessages from the agent that launched you — .+\n\nNotes:/u,
+        /^\nYou are a focused child agent\. Keep the result concise\.\n\nMessages from the agent that launched you — [\s\S]+\n\nNotes:/u,
       );
       expect(systems[1]).toContain("Agent threads always have their cwd reset between bash calls");
       expect(allMessageText(request)).toContain(" - Primary working directory: /repo/current");

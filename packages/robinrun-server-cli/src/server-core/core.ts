@@ -58,9 +58,11 @@ export async function runServerCore(generation: number): Promise<void> {
       sourceServerId,
       robinrunBuiltinProviderConfigFilePath,
       providerProvisioningTargetEnabled: true,
-    topicResourceRelayChannel: (request) => topicResourcePeers.getChannel(request),
+      topicResourceRelayChannel: (request) => topicResourcePeers.getChannel(request),
     });
-  const taskActivityTracker = createTaskActivityTracker(services.getOptional(IRobinRunAgentService));
+  const taskActivityTracker = createTaskActivityTracker(
+    services.getOptional(IRobinRunAgentService),
+  );
   const ingressToken = await createIngressToken(layout);
   const http = await createCoreHttpServer(services, {
     serverId: sourceServerId,

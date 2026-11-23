@@ -144,7 +144,9 @@ export function createWindowHostControllerRuntime(options: {
   onNotification?: (event: import("@robinrun/shared/web-remote-relay").MobilePushEvent) => void;
   createId: () => string;
   readHostTaskList: IRobinRunTaskService["listTaskList"];
-  resolveSource: (scope: RobinRunTaskListWorkspaceScope) => ResolvedWindowHostControllerSource | null;
+  resolveSource: (
+    scope: RobinRunTaskListWorkspaceScope,
+  ) => ResolvedWindowHostControllerSource | null;
   onSourceError?: (
     scope: WindowHostControllerSourceScope,
     operation: "refresh" | "search",

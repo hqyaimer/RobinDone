@@ -429,7 +429,9 @@ export function SettingsPage({
   const notificationEnabled = useRobinRunStore((state) => state.notificationEnabled);
   const setNotificationEnabled = useRobinRunStore((state) => state.setNotificationEnabled);
   const notificationSoundEnabled = useRobinRunStore((state) => state.notificationSoundEnabled);
-  const setNotificationSoundEnabled = useRobinRunStore((state) => state.setNotificationSoundEnabled);
+  const setNotificationSoundEnabled = useRobinRunStore(
+    (state) => state.setNotificationSoundEnabled,
+  );
   const usageProviderSettingsRead = useProviderSettingsView();
   const usageProviderSettingsView =
     usageProviderSettingsRead.state.status === "ready"
@@ -633,7 +635,10 @@ export function SettingsPage({
     usageBigmodelEnterpriseProducts.loading ||
     usageZaiEnterpriseProducts.loading;
   const [initialModelProviderTarget] = useState(() => consumePendingSettingsModelProviderTarget());
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  // 非可选 hook 无 Provider 会 throw，恢复时随 Root Provider 一并取消注释
+  // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const [pendingModelProviderTarget, setPendingModelProviderTarget] = useState<
     SettingsModelProviderTarget | undefined
   >(() => initialModelProviderTarget);
@@ -672,9 +677,11 @@ export function SettingsPage({
         : "app",
     );
   }, [selectedUsageCodingPlanSource, usageActiveTab, usageCodingPlanSources]);
-  const setNewUserOnboardingOpen = useRobinRunStore((state) => state.setNewUserOnboardingOpen);
-  // 「通用」页「打开引导」打开职业引导；迁移向导只从数据同步页「迁移」进入。
-  const openOccupationOnboarding = () => setNewUserOnboardingOpen(true);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——职业引导壳已摘除，恢复时取消本行注释
+  // const setNewUserOnboardingOpen = useRobinRunStore((state) => state.setNewUserOnboardingOpen);
+  // // 「通用」页「打开引导」打开职业引导；迁移向导只从数据同步页「迁移」进入。
+  // const openOccupationOnboarding = () => setNewUserOnboardingOpen(true);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const requestMigrationDialog = useRobinRunStore((state) => state.requestOnboardingDialog);
   const setActiveSettingsSection = useCallback(
     (section: SettingsSectionId, fallbackSection: SettingsSectionId = activeSection) => {
@@ -689,26 +696,31 @@ export function SettingsPage({
       setActiveSettingsSection("general");
     }
   }, [activeSection, isDesktop, setActiveSettingsSection]);
-  const handleOpenCodingPlanUpgradeSettings = useCallback(
-    (
-      providerId: string,
-      funnelContext?: import("@/lib/codingPlanFunnelTelemetry.js").CodingPlanFunnelContext,
-    ) => {
-      openCodingPlanUpgrade({
-        providerId,
-        funnelContext,
-      });
-    },
-    [openCodingPlanUpgrade],
-  );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「footer 升级/用量入口 handler」——usage 分区与升级弹窗
+  // 均已隐藏，恢复时取消本段注释（升级弹窗还需恢复 Root 的 CodingPlanUpgradeDialogProvider）
+  // const handleOpenCodingPlanUpgradeSettings = useCallback(
+  //   (
+  //     providerId: string,
+  //     funnelContext?: import("@/lib/codingPlanFunnelTelemetry.js").CodingPlanFunnelContext,
+  //   ) => {
+  //     openCodingPlanUpgrade({
+  //       providerId,
+  //       funnelContext,
+  //     });
+  //   },
+  //   [openCodingPlanUpgrade],
+  // );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const handleOpenModelProviderSettings = useCallback(() => {
     setActiveSettingsSection("modelProvider");
   }, [setActiveSettingsSection]);
-  const handleOpenUsageSettings = useCallback(() => {
-    // 设置页 sidebar footer 里的齿轮/返回按钮复用 onBack，
-    // 但头像菜单的“使用统计”应该停留在设置页并切到 Usage，不能跟着返回工作区。
-    setActiveSettingsSection("usage");
-  }, [setActiveSettingsSection]);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「usage 分区跳转 handler」——恢复时取消本段注释
+  // const handleOpenUsageSettings = useCallback(() => {
+  //   // 设置页 sidebar footer 里的齿轮/返回按钮复用 onBack，
+  //   // 但头像菜单的“使用统计”应该停留在设置页并切到 Usage，不能跟着返回工作区。
+  //   setActiveSettingsSection("usage");
+  // }, [setActiveSettingsSection]);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const activeWorkspacePath = useTabStore((state) => state.activeWorkspacePath);
   const activateTab = useTabStore((state) => state.activateTab);
   const openSettingsTab = useTabStore((state) => state.openSettingsTab);
@@ -1666,8 +1678,11 @@ export function SettingsPage({
                   onLocaleChange={handleFooterLocaleChange}
                   onThemeChange={handleFooterThemeChange}
                   onSettingsButtonClick={onBack}
-                  onUsageClick={handleOpenUsageSettings}
-                  onUpgradeClick={handleOpenCodingPlanUpgradeSettings}
+                  // RobinRun(2026-11-22): [hide-upstream-account] footer 的 usage/upgrade 入口 props 已随
+                  // WorkspaceSidebarFooter 类型注释移除，恢复时取消以下两行
+                  // onUsageClick={handleOpenUsageSettings}
+                  // onUpgradeClick={handleOpenCodingPlanUpgradeSettings}
+                  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
                   onLogin={onLogin}
                   onLogout={onLogout}
                   settingsButtonMode="back"
@@ -1912,18 +1927,21 @@ export function SettingsPage({
                               onAskUserQuestionAutoResolutionEnabledChange={
                                 handleAskUserQuestionAutoResolutionEnabledChange
                               }
-                              onOpenOnboardingDialog={() =>
-                                runUserAction({
-                                  input: {
-                                    featureId: "settings.navigation",
-                                    action: "open_onboarding",
-                                    trigger: "button",
-                                  },
-                                  operation: openOccupationOnboarding,
-                                  completed: { resultSource: "local_commit" },
-                                  failureStage: "dialog_open",
-                                })
-                              }
+                              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——
+                              // 职业引导壳已摘除，恢复时取消以下注释
+                              // onOpenOnboardingDialog={() =>
+                              //   runUserAction({
+                              //     input: {
+                              //       featureId: "settings.navigation",
+                              //       action: "open_onboarding",
+                              //       trigger: "button",
+                              //     },
+                              //     operation: openOccupationOnboarding,
+                              //     completed: { resultSource: "local_commit" },
+                              //     failureStage: "dialog_open",
+                              //   })
+                              // }
+                              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
                             />
                           ) : activeSection === "dataSync" ? (
                             isDesktop ? (
@@ -2183,14 +2201,18 @@ export function SettingsPage({
                               />
                               <ArchiveManagement />
                             </div>
-                          ) : activeSection === "usage" ? (
-                            <UsageStatsSection
-                              activeTab={usageActiveTab}
-                              providerSourcesLoading={usageProviderSettingsLoading}
-                              selectedCodingPlanSource={selectedUsageCodingPlanSource}
-                              workspaceIdentity={activeWorkspaceIdentity}
-                              workspacePath={activeWorkspacePath ?? undefined}
-                            />
+                          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区渲染」——上游 Coding Plan
+                          // 套餐用量（依赖登录 entitlement），分区已从导航移除且意图回落 general，分支不可达。
+                          // 恢复时取消本段注释
+                          // ) : activeSection === "usage" ? (
+                          //   <UsageStatsSection
+                          //     activeTab={usageActiveTab}
+                          //     providerSourcesLoading={usageProviderSettingsLoading}
+                          //     selectedCodingPlanSource={selectedUsageCodingPlanSource}
+                          //     workspaceIdentity={activeWorkspaceIdentity}
+                          //     workspacePath={activeWorkspacePath ?? undefined}
+                          //   />
+                          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
                           ) : activeSection === "subagents" ? (
                             <SubagentsSection
                               onManageModels={handleOpenModelProviderSettings}

@@ -38,7 +38,9 @@ type SetFn = (
   partial:
     | RobinRunSessionStoreState
     | Partial<RobinRunSessionStoreState>
-    | ((state: RobinRunSessionStoreState) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
+    | ((
+        state: RobinRunSessionStoreState,
+      ) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
 ) => void;
 
 function normalizeThoughtLevelConfigOption(option: RobinRunConfigOption): RobinRunConfigOption {
@@ -462,6 +464,27 @@ export function createWorkspaceSlice(set: SetFn) {
             current.draftTaskGroupId === undefined
               ? current
               : { ...current, draftTaskGroupId: undefined },
+          workspaceIdentity,
+        ),
+      );
+    },
+
+    setDraftTaskGroup: (
+      workspacePath: string,
+      taskGroupId: string | null,
+      workspaceIdentity?: string,
+    ) => {
+      // composer 智能体下拉切换对话对象：与 clearDraftTaskGroup 同级的轻量组织意图更新，
+      // 不走 startDraft（会重置正文、预热与焦点）。发送时 SessionPane 冻结该字段，
+      // 持久层（useDraftConfigControl 的 keystroke 回写）随后把意图同步进草稿存储。
+      set((state) =>
+        updateWorkspaceState(
+          state,
+          workspacePath,
+          (current) =>
+            current.draftTaskGroupId === taskGroupId
+              ? current
+              : { ...current, draftTaskGroupId: taskGroupId },
           workspaceIdentity,
         ),
       );

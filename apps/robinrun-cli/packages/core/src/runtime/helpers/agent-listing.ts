@@ -1,6 +1,7 @@
 import { createMessageId, type TraceContext } from "@robinrun/contracts";
 import type { RuntimeAttachmentEntry, RuntimeMessageEntry } from "../../agent/message-history.js";
 import { collectAgentListingAttachment } from "../../subagent/listing.js";
+import type { AgentDefinitionsSnapshot } from "../../subagent/definitions.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import { resolveRuntimeEmbeddedSearchEnabled } from "../methods/embedded-search-branch.js";
 import { commitTurnRequestEntries } from "../methods/turn-output-token-continuation.js";
@@ -13,11 +14,26 @@ export function collectRuntimeAgentListing(
 ): RuntimeAttachmentEntry | undefined {
   if (!tools.some((tool) => tool.name === "Agent")) return undefined;
   return collectAgentListingAttachment({
-    definitions: runtime.getAgentDefinitions(),
+    definitions: filterAgentDefinitionsForSession(runtime, runtime.getAgentDefinitions()),
     entries,
     tools,
     embeddedSearchEnabled: resolveRuntimeEmbeddedSearchEnabled(runtime),
   });
+}
+
+/**
+ * 名册投影只进 master 会话（docs/worker-session-model.md §3 注入矩阵）：worker 会话的
+ * listing 只保留一次性 subagent 类型（general-purpose/Explore/插件模板）——名册成员不是
+ * worker 会话可派发的对象（Agent 工具本就拒绝 wkr-* id），列出来只会诱导误用。
+ */
+function filterAgentDefinitionsForSession(
+  runtime: AgentRuntimeInternal,
+  snapshot: AgentDefinitionsSnapshot,
+): AgentDefinitionsSnapshot {
+  if (!runtime.config.workerIdentity) return snapshot;
+  return {
+    activeAgents: snapshot.activeAgents.filter((profile) => profile.worker === undefined),
+  };
 }
 
 export async function appendRuntimeAgentListing(

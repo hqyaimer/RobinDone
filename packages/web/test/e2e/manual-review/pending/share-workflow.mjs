@@ -102,7 +102,10 @@ try {
     for (const width of [375, 1280]) {
       for (const theme of ["zai-light", "zai-dark"]) {
         const context = await browser.newContext({ viewport: { width, height: 900 } });
-        await context.addInitScript((theme) => localStorage.setItem("robinrun-theme", theme), theme);
+        await context.addInitScript(
+          (theme) => localStorage.setItem("robinrun-theme", theme),
+          theme,
+        );
         const page = await context.newPage();
         const errors = [];
         const unexpected = [];

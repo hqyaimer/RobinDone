@@ -9,7 +9,10 @@
  * "第一次见到这份状态的时刻"推。登记按对象身份（WeakMap）：归约对未变的 `concurrency` 保留同一对象
  * 引用，一被新事件替换就是新对象、重新登记。不放进协议，是因为它是本地观察，不是引擎事实。
  */
-import type { WorkflowRunConcurrency, WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import type {
+  WorkflowRunConcurrency,
+  WorkflowRunState,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import { isWorkflowRunConfigurable } from "@/components/workflow-timeline/workflowRunSettings.js";
 import type { WorkflowRunEventItem, WorkflowRunEventLine } from "./workflowRunPanel.js";
 
@@ -157,7 +160,9 @@ export function workflowRunConcurrencyEventLine(
         );
       }
       const reason =
-        typeof payload.reason === "string" ? throttleReasonLabel(payload.reason, formatMessage) : "?";
+        typeof payload.reason === "string"
+          ? throttleReasonLabel(payload.reason, formatMessage)
+          : "?";
       const seconds =
         typeof payload.delayMs === "number"
           ? String(Math.ceil(payload.delayMs / MS_PER_SECOND))
@@ -175,7 +180,8 @@ export function workflowRunConcurrencyEventLine(
     case "concurrency-changed": {
       const previous = typeof payload.previous === "number" ? String(payload.previous) : "?";
       const next = typeof payload.next === "number" ? String(payload.next) : "?";
-      const key = typeof payload.key === "string" && payload.key.length > 0 ? payload.key : undefined;
+      const key =
+        typeof payload.key === "string" && payload.key.length > 0 ? payload.key : undefined;
       return withDetail(
         formatMessage({ id: `${EVENT_KEY_PREFIX}concurrencyChanged` }, { previous, next }),
         key,

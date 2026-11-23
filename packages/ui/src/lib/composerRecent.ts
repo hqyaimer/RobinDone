@@ -7,6 +7,12 @@ import { composerScopeKey, type ComposerScope } from "@/v4/composer/composerDraf
 
 // 沿用旧 key，读取时兼容只保存 ModelSelection 的历史记录。
 const COMPOSER_RECENT_KEY_PREFIX = "robinrun-model-selection-recent-v1";
+/**
+ * 全局权限模式（2026-11-21 实测裁决）：用户在任意会话显式选择的权限（模式切换/提交回执）
+ * 都写这一个跨工作区键，新会话草稿缺省继承它——否则每个新会话都要手动重选一次权限。
+ * 只存 mode：模型偏好保持工作区维度的 Recent 语义不变。
+ */
+const COMPOSER_GLOBAL_MODE_KEY = "robinrun-composer-mode-global:v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -160,6 +166,11 @@ export function captureComposerRecentSubmission(
     accepted.set(key, sequence);
     try {
       storage.setItem(key, JSON.stringify(recent));
+      // 全局权限模式随提交回执同步（2026-11-21）：最近一次真实提交的权限即全局缺省。
+      storage.setItem(
+        COMPOSER_GLOBAL_MODE_KEY,
+        JSON.stringify({ mode: mode.data, order: sequence }),
+      );
     } catch (error) {
       // 权威发送已经接纳，本地偏好写入失败不能把它报告成发送失败。
       logger.warn("[ComposerRecent] 保存最近提交配置失败", {
@@ -169,6 +180,41 @@ export function captureComposerRecentSubmission(
       });
     }
   };
+}
+
+/** 读全局权限模式缺省（新会话草稿兜底；坏数据按缺席处理）。 */
+export function readGlobalComposerMode(
+  storage: StorageLike | null = browserStorage(),
+): SubmissionMode | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(COMPOSER_GLOBAL_MODE_KEY);
+    if (!raw) return null;
+    const record: unknown = JSON.parse(raw);
+    if (!record || typeof record !== "object" || Array.isArray(record)) return null;
+    const mode = submissionModeSchema.safeParse((record as { mode?: unknown }).mode);
+    return mode.success ? mode.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 显式权限切换同步全局缺省（2026-11-21）：用户在权限选择器里改档即写全局键——
+ * 不依赖提交（改完权限的会话可能长时间不发消息），保证"最近一次显式选择"全局可见。
+ */
+export function recordGlobalComposerMode(
+  mode: SubmissionMode,
+  storage: StorageLike | null = browserStorage(),
+): void {
+  if (!storage) return;
+  const parsed = submissionModeSchema.safeParse(mode);
+  if (!parsed.success) return;
+  try {
+    storage.setItem(COMPOSER_GLOBAL_MODE_KEY, JSON.stringify({ mode: parsed.data }));
+  } catch (error) {
+    logger.warn("[ComposerRecent] 保存全局权限模式失败", error);
+  }
 }
 
 export function resolveDraftInitialModelSelection(

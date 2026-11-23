@@ -2,7 +2,11 @@ import { PluginUiWorkspaceProvider } from "@/plugin-ui/index.js";
 /* eslint-disable max-lines -- App 当前集中编排 workspace 级状态、导航、Git 派生数据和 shell wiring；已将新增 side pane memory 桥接抽出，剩余拆分需要按 shell 边界单独重构。 */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { resolveWorkspaceKey, type GitChangeSourceId, type WorkspacePurpose } from "@robinrun/shared";
+import {
+  resolveWorkspaceKey,
+  type GitChangeSourceId,
+  type WorkspacePurpose,
+} from "@robinrun/shared";
 import { useRobinRunStore } from "@/store/StoreProvider.js";
 import { getVisibleTaskMetas, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
 import { useTaskQueryCacheStore } from "@/store/taskQueryCacheStore.js";
@@ -50,7 +54,7 @@ import {
 } from "@/lib/settingsNavigation.js";
 import { runWorkspaceVisibleCommand } from "@/lib/workspaceVisibleCommand.js";
 import { ROBINRUN_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
-import appLogoUrl from "@/assets/provider-icons/logo-zai.svg";
+import appLogoUrl from "@/assets/brand/robin-icon.svg";
 import { resolveTheme } from "@/useTheme.js";
 import { WorkspaceShellLayout } from "@/app-shell/WorkspaceShellLayout.js";
 import { useAppChromeState } from "@/app-shell/useAppChromeState.js";
@@ -360,7 +364,10 @@ export function App({
     useState<ChatSearchResultHighlightRequest | null>(null);
   const [fileChangeFindState, setFileChangeFindState] = useState(createTaskFindNavigationState);
   const [fileChangeFindMatchCount, setFileChangeFindMatchCount] = useState(0);
-  const [canOpenCommunityFromQuickPick, setCanOpenCommunityFromQuickPick] = useState(false);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测」——社群命令已隐藏且探测会拉上游
+  // client/configs，恢复时取消本段与下方探测 effect 的注释
+  // const [canOpenCommunityFromQuickPick, setCanOpenCommunityFromQuickPick] = useState(false);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const [gitSelectedSourceId, setGitSelectedSourceId] = useState<GitChangeSourceId>("unstaged");
   const [gitRefreshVersion, setGitRefreshVersion] = useState(0);
   const { browserRestoreUrls, handleBrowserUrlChange } = useTaskSidePaneMemoryBridge({
@@ -1023,26 +1030,28 @@ export function App({
       : null,
   });
 
-  useEffect(() => {
-    let disposed = false;
-
-    void platform.canOpenCommunity(locale).then(
-      (visible) => {
-        if (!disposed) {
-          setCanOpenCommunityFromQuickPick(visible);
-        }
-      },
-      () => {
-        if (!disposed) {
-          setCanOpenCommunityFromQuickPick(false);
-        }
-      },
-    );
-
-    return () => {
-      disposed = true;
-    };
-  }, [locale, platform]);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测 effect」——恢复时取消本段注释
+  // useEffect(() => {
+  //   let disposed = false;
+  //
+  //   void platform.canOpenCommunity(locale).then(
+  //     (visible) => {
+  //       if (!disposed) {
+  //         setCanOpenCommunityFromQuickPick(visible);
+  //       }
+  //     },
+  //     () => {
+  //       if (!disposed) {
+  //         setCanOpenCommunityFromQuickPick(false);
+  //       }
+  //     },
+  //   );
+  //
+  //   return () => {
+  //     disposed = true;
+  //   };
+  // }, [locale, platform]);
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
   const quickPickCommands = useMemo(
     () =>
@@ -1050,7 +1059,9 @@ export function App({
         supportsTerminal: !isOfficeMode,
         supportsReview: !isOfficeMode,
         allowOpenWorkspace,
-        canOpenCommunity: canOpenCommunityFromQuickPick,
+        // RobinRun(2026-11-22): [hide-upstream-account] 社群命令已隐藏，探测已摘除，恒 false；恢复时改回 canOpenCommunityFromQuickPick
+        canOpenCommunity: false,
+        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
         isSidebarVisible,
         supportsEmbeddedBrowser,
         // quick pick 命令只关心登录态布尔值。
@@ -1092,7 +1103,9 @@ export function App({
     [
       allowOpenWorkspace,
       isOfficeMode,
-      canOpenCommunityFromQuickPick,
+      // RobinRun(2026-11-22): [hide-upstream-account] 社群探测已隐藏；三个上游 handler 保留注入（handler 注册已注释）——恢复时取消下行注释
+      // canOpenCommunityFromQuickPick,
+      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
       handleOpenCommunity,
       handleOpenFeedback,
       handleOpenProductDocs,

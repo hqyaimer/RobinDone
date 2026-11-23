@@ -696,8 +696,10 @@ describe("runtime request reminders", () => {
         content: "<system-reminder>\nlegacy synthetic reminder\n</system-reminder>",
       },
       {
+        // P2.6：real_user 渲染时正文最前注入 <system-status> 区块，字面 reminder 文本随后。
+        content:
+          '<system-status>{"sender":"user"}</system-status>\n\n<system-reminder>\nuser typed this literal tag\n</system-reminder>',
         role: "user",
-        content: "<system-reminder>\nuser typed this literal tag\n</system-reminder>",
         cacheControl: { type: "ephemeral" },
       },
     ]);
@@ -707,6 +709,7 @@ describe("runtime request reminders", () => {
     const entries: RuntimeMessageEntry[] = [
       { message: { role: "system", content: "system prompt" } },
       {
+        // canonical 历史存裸正文；<system-status> 前缀由 provider builder 渲染时注入（P2.6）。
         message: { role: "user", content: "compare prompts" },
         metadata: realUserRuntimeMetadata(),
       },
@@ -723,7 +726,7 @@ describe("runtime request reminders", () => {
     expect(messages).toHaveLength(3);
     expect(messages[1]).toEqual({
       role: "user",
-      content: "compare prompts",
+      content: "<system-status>{\"sender\":\"user\"}</system-status>\n\ncompare prompts",
     });
     expect(messages[2]).toMatchObject({
       role: "user",
@@ -761,7 +764,7 @@ describe("runtime request reminders", () => {
     });
     expect(messages[2]).toEqual({
       role: "user",
-      content: "summarize this history",
+      content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsummarize this history",
       cacheControl: { type: "ephemeral" },
     });
     expect(messages[3]).toMatchObject({

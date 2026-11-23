@@ -30,8 +30,13 @@ import {
 } from "../../tool/read-file-state.js";
 import { resolveEnabledProjectMemoryRoot } from "../helpers/project-memory.js";
 import { shouldUseMidConversationSystem } from "../helpers/runtime-provider-request-messages.js";
+import {
+  pythonRuntimeStateSchema,
+  triggerPythonRuntimeStateFileName,
+} from "@robinrun/shared";
 import { buildContextHistoryEntries } from "./context-history-entries.js";
 import { resolveRuntimeEmbeddedSearchEnabled } from "./embedded-search-branch.js";
+import { composeWorkerAgentPrompt } from "../../subagent/worker-prompt.js";
 import { getContextSourceShellDisplayName } from "./session-shell-environment.js";
 import {
   ensureGenUiOutputDirectory,
@@ -77,6 +82,32 @@ export async function ensureContextInitialized(
   // Bash cd 之后 workingDirectory 会变化，但 workspaceRoot 仍表示会话初始工作区边界。
   this.workspaceRoot = snapshot.workingDirectory;
   this.contextSourceSnapshot = snapshot;
+  // 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：先解析（worker 注入段
+  // 的 bullet 需要它），一次性 subagent 不注入。
+  this.scriptRuntimeHint = this.config.subagentContext
+    ? undefined
+    : await resolveScriptRuntimeHint(this, snapshot.projectRoot ?? snapshot.workingDirectory);
+  // 注入分流（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+  // master 会话读 master agents.md；worker 会话按身份从名册解析 profile 并拼接 worker
+  // 注入段（define.md → agents.md → 预定义段）；一次性 subagent（subagentContext）两者
+  // 皆不注入。随快照缓存一次，会话级 sticky，压缩后仍在。
+  if (this.config.workerIdentity) {
+    this.masterInstructions = undefined;
+    this.workerInstructions = resolveWorkerInstructions(
+      this,
+      snapshot.projectRoot ?? snapshot.workingDirectory,
+      this.scriptRuntimeHint,
+    );
+  } else {
+    // 主智能体个人规则（2026-11-19 /init 裁决，docs/init-flow.md §4）：随快照读盘缓存一次，
+    // 会话级 sticky；只属 master 会话，文件不存在（未跑 /init）时不注入。
+    // 路径锚定项目根（快照 projectRoot，回退 workingDirectory）——workingDirectory 保留打开
+    // 写法（可能是嵌套子目录），/init 把文件写在项目根。
+    this.masterInstructions = this.config.subagentContext
+      ? undefined
+      : await loadMasterInstructions(this, snapshot.projectRoot ?? snapshot.workingDirectory);
+    this.workerInstructions = undefined;
+  }
   this.sessionStartGitPrefetch = true;
   this.startMcpStartup(traceContext);
   this.skillLoadOutcome = await this.discoverSkillsForContext(traceContext);
@@ -119,6 +150,73 @@ export async function getSkillCatalog(
   };
 }
 
+/**
+ * worker 注入段解析（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+ * 按 config.workerIdentity.workerId 从名册（config.subagents.profiles，bootstrap 随快照
+ * 提供并逐父轮刷新）找到该 worker 的 profile，用 worker-prompt.ts 拼接 define.md →
+ * agents.md → 预定义段（第④段项目 AGENTS.md 由 builder 通用 project instructions 承载）。
+ * profile 缺失（worker 被删除/停用后冷恢复）时降级为不注入并留 warn——会话仍以主会话
+ * 面貌工作，身份以会话记录为准，不做硬失败。
+ */
+function resolveWorkerInstructions(
+  runtime: AgentRuntimeInternal,
+  workingDirectory: string,
+  scriptRuntimeHint: "python" | "node" | undefined,
+): { workerId: string; content: string } | undefined {
+  const identity = runtime.config.workerIdentity;
+  if (!identity) return undefined;
+  const profile = runtime.config.subagents?.profiles?.find(
+    (candidate) => candidate.worker?.workerId === identity.workerId,
+  );
+  if (!profile?.worker) {
+    runtime.logger?.warn("Worker roster profile unavailable for worker session", {
+      event: "context.worker_instructions.missing_profile",
+      module: "core.runtime",
+      workerId: identity.workerId,
+      workingDirectory,
+    });
+    return undefined;
+  }
+  return {
+    workerId: identity.workerId,
+    content: composeWorkerAgentPrompt({
+      worker: profile.worker,
+      agentsMd: profile.systemPrompt ?? "",
+      ...(scriptRuntimeHint !== undefined ? { scriptRuntimeHint } : {}),
+    }),
+  };
+}
+
+/**
+ * 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：读引擎可用性状态文件
+ * `<projectRoot>/.robinrun/triggers/state/python-runtime.json` 投影为 "python"|"node"。
+ * available → "python"（提示词只暴露 python 协议）；unavailable/probing/缺失/损坏 →
+ * "node"（降级说明 + node 桥接文案，与 ManageTriggers 门控同口径）。会话级 sticky——
+ * 探测中的会话拿到 node 文案，下一会话自然跟上引擎侧状态翻转。
+ */
+async function resolveScriptRuntimeHint(
+  runtime: AgentRuntimeInternal,
+  projectRoot: string,
+): Promise<"python" | "node" | undefined> {
+  const fileSystemPort = runtime.fileSystemPort;
+  if (!fileSystemPort) return undefined;
+  const statePath = join(
+    projectRoot,
+    ".robinrun",
+    "triggers",
+    "state",
+    triggerPythonRuntimeStateFileName,
+  );
+  try {
+    const read = await fileSystemPort.readTextFile({ path: statePath });
+    const parsed = pythonRuntimeStateSchema.safeParse(JSON.parse(read.content));
+    if (parsed.success && parsed.data.state === "available") return "python";
+  } catch {
+    // 缺失/损坏 = 引擎未探测或文件异常 → node 备选口径。
+  }
+  return "node";
+}
+
 export function createContextBuilderFromSnapshot(
   this: AgentRuntimeInternal,
   snapshot: ContextSourceSnapshot,
@@ -142,6 +240,9 @@ export function createContextBuilderFromSnapshot(
       skillMetadataBudget: this.config.skillMetadataBudget,
       skills: this.skillLoadOutcome,
       userInstructions: this.config.subagentContext.userInstructions,
+      // workerNotes/triggerSessionReadme 过渡补丁已退役（2026-11-20 worker 会话同构化）：
+      // worker 注入面迁主 builder（workerInstructions），触发器会话（master 与 worker）
+      // 都走主 builder 的 Trigger session section。
     });
   }
 
@@ -157,6 +258,8 @@ export function createContextBuilderFromSnapshot(
     genUiOutputDirectory: resolveGenUiOutputDirectory(this),
     currentDate: snapshot.currentDate,
     userInstructions: snapshot.userInstructions,
+    masterInstructions: this.masterInstructions,
+    workerInstructions: this.workerInstructions,
     projectContext: snapshot.projectContext,
     memoryIndexContent: options.memoryIndexContent,
     memoryRoot,
@@ -170,9 +273,37 @@ export function createContextBuilderFromSnapshot(
     outputStyle: this.config.outputStyle,
     compact: this.config.compact,
     guidanceToolNames: this.getTools(options.model).map((tool) => tool.name),
+    // 触发器专属会话说明（runtime 在首个触发器投递轮读盘缓存；普通会话恒为 undefined）。
+    ...(this.triggerSessionReadme !== undefined
+      ? { triggerSessionReadme: this.triggerSessionReadme }
+      : {}),
+    // 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：master 会话的 section
+    // 输入；worker 会话的对应语义在 worker 注入段内（不重复 section）。
+    ...(this.scriptRuntimeHint !== undefined ? { scriptRuntimeHint: this.scriptRuntimeHint } : {}),
   };
 
   return createContextBuilder(contextConfig).setToolRegistry(this.registry);
+}
+
+async function loadMasterInstructions(
+  runtime: AgentRuntimeInternal,
+  workingDirectory: string,
+): Promise<{ filePath: string; content: string } | undefined> {
+  const fileSystemPort = runtime.fileSystemPort;
+  if (!fileSystemPort) return undefined;
+  // 裁决 10（2026-11-20）：master 单文件回小写 agents.md（不为拆而拆；与 plan/knowledge/tmp
+  // 目录风格一致），裁决 9 的大写候选回退一并回退。开发期项目删除重建，不做迁移；
+  // 文件不存在（未跑 /init）→ 不注入。
+  const filePath = join(workingDirectory, ".robinrun", "agents", "master", "agents.md");
+  try {
+    const read = await fileSystemPort.readTextFile({ path: filePath });
+    const content = read.content.trim();
+    if (!content) return undefined;
+    return { filePath, content };
+  } catch {
+    // 文件不存在（未跑 /init）或读取失败 → 不注入。
+    return undefined;
+  }
 }
 
 export async function loadProjectMemoryRoot(

@@ -261,7 +261,10 @@ export function ComposerInputArea(props: {
   return h(
     React.Fragment,
     null,
-    props.loginRequired ? h(LoginRequiredPanel, { copy: props.copy }) : null,
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「TUI 登录面板」——文案引用已隐藏的 /login，
+    // 面板的回车动作也指向已注释的登录流程。恢复时取消本行注释
+    // props.loginRequired ? h(LoginRequiredPanel, { copy: props.copy }) : null,
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     props.fileMention
       ? h(FileMentionPanel, {
           contentWidth: props.contentWidth,

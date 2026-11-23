@@ -25,18 +25,20 @@ export function createSession(db: DatabaseSync, input: CreateSessionInput): Sess
   db.prepare(
     `
       insert into session (
-        id, project_id, workspace_id, parent_id, trace_id, task_type, slug, directory, path,
+        id, project_id, workspace_id, parent_id, trace_id, task_type, creation_origin, worker_identity, slug, directory, path,
         title, title_source, title_message_id, version,
         share_url, summary_additions, summary_deletions, summary_files, summary_diffs,
         revert, permission, time_created, time_updated, time_title_updated,
         time_compacting
-      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, ?, ?, ?, null)
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, null, null, null, null, null, ?, ?, ?, ?, null)
       on conflict(id) do update set
         project_id = excluded.project_id,
         workspace_id = excluded.workspace_id,
         parent_id = excluded.parent_id,
         trace_id = coalesce(session.trace_id, excluded.trace_id),
         task_type = excluded.task_type,
+        creation_origin = coalesce(session.creation_origin, excluded.creation_origin),
+        worker_identity = coalesce(excluded.worker_identity, session.worker_identity),
         slug = excluded.slug,
         directory = excluded.directory,
         path = excluded.path,
@@ -56,6 +58,8 @@ export function createSession(db: DatabaseSync, input: CreateSessionInput): Sess
     input.parentID ?? null,
     input.traceID ?? null,
     input.taskType ?? "interactive",
+    encodeJson(input.creationOrigin),
+    encodeJson(input.workerIdentity),
     input.slug,
     input.directory,
     input.path ?? null,
@@ -100,6 +104,9 @@ export async function updateSession(
   }
   if (input.revert !== undefined) set("revert", encodeJson(input.revert));
   if (input.permission !== undefined) set("permission", encodeJson(input.permission));
+  // 会话身份重写（2026-11-20 触发器会话清空用）：undefined 不动；null 清除（回到
+  // master）；对象落库。encodeJson(null) 返回 NULL，正好表达清除。
+  if (input.workerIdentity !== undefined) set("worker_identity", encodeJson(input.workerIdentity));
   set("time_compacting", input.timeCompacting);
   if (
     input.title !== undefined ||

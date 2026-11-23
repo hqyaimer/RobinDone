@@ -17,6 +17,12 @@ export interface SessionSummaryDeriveExtra {
   lastActivityAt: number;
   lastOutcome?: SessionSummary["lastOutcome"];
   parentSessionId?: string;
+  // 创建来源（P2.5）：record/worker 注册表持有，live 投影随行；UI 不消费。
+  creationOrigin?: SessionSummary["creationOrigin"];
+  // worker 会话身份（2026-11-16 隔离裁决）：gateway worker 注册表对 worker_child 填充。
+  worker?: SessionSummary["worker"];
+  // worker_child kind 标记：有 record 时由 taskType 推导（resume 后 live 路径不丢标记）。
+  workerChild?: boolean;
 }
 
 const MAX_PREVIEW_CHARS = 120;
@@ -79,6 +85,8 @@ export function deriveSessionSummary(
     sessionId: snapshot.sessionId,
     workspaceId: extra.workspaceId,
     ...(extra.parentSessionId ? { parentSessionId: extra.parentSessionId } : {}),
+    // 创建来源（P2.5）随行透传；缺席 = 旧数据按 user 处理（读侧约定）。
+    ...(extra.creationOrigin ? { creationOrigin: extra.creationOrigin } : {}),
     title: snapshot.meta.title,
     titleSource: snapshot.meta.titleSource,
     ...(lastOutcome ? { lastOutcome } : {}),
@@ -97,6 +105,10 @@ export function deriveSessionSummary(
         }
       : {}),
     ...(snapshot.goal ? { goalStatus: snapshot.goal.status } : {}),
+    // worker 身份透传（worker_child 专属；缺席 = 非 worker 会话，conflation 不受影响）。
+    // kind 标记与身份同源：注册表命中或 record taskType=worker_child 都置 true。
+    ...(extra.worker || extra.workerChild ? { workerChild: true as const } : {}),
+    ...(extra.worker ? { worker: extra.worker } : {}),
     lastActivityAt: extra.lastActivityAt,
     ...(lastAssistantPreview ? { lastAssistantPreview } : {}),
     createdAt: extra.createdAt,
@@ -109,6 +121,7 @@ function summariesEqual(a: SessionSummary, b: SessionSummary): boolean {
     a.sessionId === b.sessionId &&
     a.workspaceId === b.workspaceId &&
     a.parentSessionId === b.parentSessionId &&
+    JSON.stringify(a.creationOrigin ?? null) === JSON.stringify(b.creationOrigin ?? null) &&
     a.title === b.title &&
     a.titleSource === b.titleSource &&
     a.lastOutcome === b.lastOutcome &&
@@ -122,6 +135,8 @@ function summariesEqual(a: SessionSummary, b: SessionSummary): boolean {
     a.pendingInteractionSummary?.permissionCount === b.pendingInteractionSummary?.permissionCount &&
     a.pendingInteractionSummary?.userInputCount === b.pendingInteractionSummary?.userInputCount &&
     a.goalStatus === b.goalStatus &&
+    JSON.stringify(a.worker ?? null) === JSON.stringify(b.worker ?? null) &&
+    (a.workerChild ?? false) === (b.workerChild ?? false) &&
     a.lastActivityAt === b.lastActivityAt &&
     a.lastAssistantPreview === b.lastAssistantPreview &&
     a.createdAt === b.createdAt

@@ -14,7 +14,8 @@ export async function resolveBigModelStartPlanRobinrunJwt(params: {
 }): Promise<string> {
   const activeProvider = (await params.credentialService?.load(ACTIVE_PROVIDER_KEY))?.trim() || "";
   if (params.trustCachedRobinrunJwt === true || activeProvider === BIGMODEL_PROVIDER_ID) {
-    const credentialJwt = (await params.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() || "";
+    const credentialJwt =
+      (await params.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() || "";
     if (credentialJwt) {
       return credentialJwt;
     }

@@ -27,7 +27,12 @@ describe("respondToWebRemoteControlActionRequest", () => {
     await expect(
       respondToWebRemoteControlActionRequest(
         1,
-        { robinrun_type: "task-archive-request", requestId: "a", taskId: "t1", workspacePath: "/w" },
+        {
+          robinrun_type: "task-archive-request",
+          requestId: "a",
+          taskId: "t1",
+          workspacePath: "/w",
+        },
         undefined,
       ),
     ).resolves.toMatchObject({ robinrun_type: "task-archive-response", success: false });

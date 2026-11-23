@@ -398,23 +398,24 @@ describe("ContextBuilder meta user context", () => {
     expect(result.sections.some((section) => section.source === "desktop_context")).toBe(false);
 
     expect(result.systemMessages.map((message) => message.role)).toEqual(["system", "system"]);
-    expect(result.metaUserAttachments.map((attachment) => attachment.source)).toEqual([
-      "context_prefix",
-    ]);
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：项目 AGENTS.md（workspace scope）迁入
+    // system stable 段（custom prompt 之后拼接），meta_user 不再携带 workspace 指令 →
+    // context_prefix 整个消失。
+    expect(result.metaUserAttachments).toEqual([]);
     expect(result.systemMessages[0]?.content).toBe("You are RobinRun, an interactive agent");
-    expect(result.systemMessages[1]?.content).toBe("\nYou are concise for this task.");
+    expect(result.systemMessages[1]?.content).toBe(
+      "\nYou are concise for this task.\n\nContents of /workspace/AGENTS.md (project instructions, checked into the codebase):\n\nProject instruction should stay as userContext.",
+    );
     expect(result.sections.some((section) => section.source === "env_info")).toBe(true);
-    const meta = metaAttachment(result, "context_prefix");
-    expect(meta).not.toContain("<system-reminder>");
-    expect(meta).toContain("Project instruction should stay as userContext.");
-    expect(meta).toContain("Codebase and user instructions are shown below.");
-    expect(meta).not.toContain("# claudeMd");
-    expect(meta).toContain(
+    const stableBody = result.systemMessages[1]?.content ?? "";
+    expect(stableBody).toContain("Project instruction should stay as userContext.");
+    expect(stableBody).not.toContain("# claudeMd");
+    expect(stableBody).toContain(
       "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
     );
-    expect(meta).not.toContain("Project context:");
-    expect(meta).not.toContain("- Package manager: pnpm");
-    expect(meta).not.toContain("- `test`: vitest");
+    expect(stableBody).not.toContain("Project context:");
+    expect(stableBody).not.toContain("- Package manager: pnpm");
+    expect(stableBody).not.toContain("- `test`: vitest");
     expect(metaAttachment(result, "date")).toMatch(/^Today's date is /);
     const providerText = [
       ...result.systemMessages.map((message) => message.content),
@@ -823,14 +824,13 @@ describe("ContextBuilder meta user context", () => {
     expect(result.systemMessages[1]?.cacheControl).toEqual({ type: "ephemeral" });
     expect(result.systemMessages[2]?.role).toBe("system");
     expect(result.systemMessages[2]?.cacheControl).toEqual({ type: "ephemeral" });
-    expect(result.metaUserAttachments.map((attachment) => attachment.source)).toEqual([
-      "context_prefix",
-    ]);
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace 指令迁入 system stable 段 →
+    // context_prefix 消失（此处无 user scope 与 memory）。
+    expect(result.metaUserAttachments).toEqual([]);
 
     const cliPrefix = result.systemMessages[0]?.content ?? "";
     const stableBody = result.systemMessages[1]?.content ?? "";
     const dynamicSystem = result.systemMessages[2]?.content ?? "";
-    const meta = metaAttachment(result, "context_prefix");
     expect(cliPrefix).toBe("You are RobinRun, an interactive agent");
     expect(stableBody).not.toContain("# Agent Identity");
     expect(stableBody).toMatch(/^\n?You are an agent working with the user toward their goals/);
@@ -849,20 +849,21 @@ describe("ContextBuilder meta user context", () => {
     expect(dynamicSystem).not.toContain("# Session-specific guidance");
     expect(dynamicSystem).not.toContain("# Environment");
     expect(dynamicSystem).toContain("# Context management");
-    expect(stableBody).not.toContain("local AGENTS payload");
-    expect(meta).not.toContain("<system-reminder>");
-    expect(meta).toContain("Codebase and user instructions are shown below.");
-    expect(meta).not.toContain("# claudeMd");
-    expect(meta).not.toContain("# user_instructions");
-    expect(meta).toContain("local AGENTS payload");
-    expect(meta).not.toContain("Project context:");
-    expect(meta).not.toContain("Project type: Node.js");
-    expect(meta).not.toContain("Package manager: pnpm");
-    expect(meta).not.toContain("`test`: vitest");
-    expect(meta).not.toContain("## 项目信息");
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：项目说明进 system stable 段，
+    // 个体身份（Agent Identity）在前、项目说明在后；meta_user 只剩 user scope（此处无）。
+    expect(stableBody).toContain(
+      "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
+    );
+    expect(stableBody).toContain("local AGENTS payload");
+    expect(stableBody).not.toContain("# claudeMd");
+    expect(stableBody).not.toContain("# user_instructions");
+    expect(metaAttachment(result, "context_prefix")).toBe("");
+    expect(stableBody).not.toContain("Project context:");
+    expect(stableBody).not.toContain("Project type: Node.js");
+    expect(stableBody).not.toContain("Package manager: pnpm");
+    expect(stableBody).not.toContain("`test`: vitest");
+    expect(stableBody).not.toContain("## 项目信息");
     expect(metaAttachment(result, "date")).toBe("Today's date is 2026-05-04.");
-    expect(meta).not.toContain("</system-reminder>");
-    expect(meta).not.toContain("Today's date");
 
     const sectionTargets = result.sections.map((section) => ({
       name: section.name,
@@ -872,16 +873,16 @@ describe("ContextBuilder meta user context", () => {
     expect(sectionTargets.slice(0, 5)).toEqual([
       { name: "CLI Prefix", injectionTarget: "system", cacheHint: "stable" },
       { name: "Agent Identity", injectionTarget: "system", cacheHint: "stable" },
+      // 2026-11-19 /init 裁决：项目说明（AGENTS.md）是 stable system 段，紧跟个体身份。
+      { name: "Project Instructions", injectionTarget: "system", cacheHint: "stable" },
       { name: "Dynamic Behavior", injectionTarget: "system", cacheHint: "dynamic" },
       // RobinRun 多智能体协作约定：主智能体分流 + 常驻子智能体管理（dynamic 段，随行为演进）。
       { name: "Multi-agent collaboration", injectionTarget: "system", cacheHint: "dynamic" },
-      { name: "Context Management", injectionTarget: "system", cacheHint: "dynamic" },
     ]);
     expect(sectionTargets).toEqual(
       expect.arrayContaining([
         { name: "Environment Info", injectionTarget: "meta_user", cacheHint: "dynamic" },
         { name: "Context Management", injectionTarget: "system", cacheHint: "dynamic" },
-        { name: "Request User Context", injectionTarget: "meta_user", cacheHint: "dynamic" },
         { name: "Current Date", injectionTarget: "meta_user", cacheHint: "dynamic" },
       ]),
     );
@@ -928,22 +929,67 @@ describe("ContextBuilder meta user context", () => {
       },
     }).build();
 
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace scope 迁入 system 段，
+    // meta_user（context_prefix）只保留 user scope。
+    const stableBody = result.systemMessages[1]?.content ?? "";
+    expect(stableBody).toContain(
+      "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
+    );
+    expect(stableBody).toContain("workspace instructions");
     const meta = metaAttachment(result, "context_prefix");
     expect(meta).toContain("Codebase and user instructions are shown below.");
     expect(meta).not.toContain("# claudeMd");
     expect(meta).toContain(
       "Contents of /Users/test/.robinrun/AGENTS.md (user's private global instructions for all projects):",
     );
-    expect(meta).toContain(
-      "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
-    );
-    expect(meta.indexOf("default instructions")).toBeLessThan(
-      meta.indexOf("workspace instructions"),
-    );
+    expect(meta).toContain("default instructions");
+    expect(meta).not.toContain("workspace instructions");
     expect(meta.indexOf("Codebase and user instructions")).toBeLessThan(
       meta.indexOf("default instructions"),
     );
     expect(meta).not.toContain("Today's date");
+  });
+
+  it("renders master instructions ahead of the project briefing in system", () => {
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：master 个人规则在前、项目说明在后，
+    // 相邻拼进 system stable 组；meta_user 不再携带 workspace 指令。
+    const result = createContextBuilder({
+      workingDirectory: "/workspace",
+      currentDate: "2026-05-04",
+      envInfo: {
+        cwd: "/workspace",
+        platform: "darwin",
+        shell: "zsh",
+        osVersion: "Darwin 25.4.0",
+        nodeVersion: "v24.14.0",
+      },
+      masterInstructions: {
+        filePath: "/workspace/.robinrun/agents/master/agents.md",
+        content: "Master rule sentinel.",
+      },
+      userInstructions: {
+        filePath: "/workspace/AGENTS.md",
+        fileName: "AGENTS.md",
+        content: "Project rule sentinel.",
+        bytesRead: 22,
+        sizeBytes: 22,
+        truncated: false,
+      },
+    }).build();
+
+    const stableBody = result.systemMessages[1]?.content ?? "";
+    expect(stableBody).toContain(
+      "Contents of /workspace/.robinrun/agents/master/agents.md (master agent rules):",
+    );
+    expect(stableBody).toContain("Master rule sentinel.");
+    expect(stableBody).toContain(
+      "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
+    );
+    expect(stableBody).toContain("Project rule sentinel.");
+    expect(stableBody.indexOf("Master rule sentinel.")).toBeLessThan(
+      stableBody.indexOf("Project rule sentinel."),
+    );
+    expect(result.metaUserAttachments).toEqual([]);
   });
 
   it("keeps date separate when request user context has no content", () => {
@@ -1008,7 +1054,7 @@ describe("ContextBuilder meta user context", () => {
     expect(metaAttachment(result, "date")).toMatch(/^Today's date is /);
   });
 
-  it("renders a resolved instruction source under the instruction preamble", () => {
+  it("renders a resolved workspace instruction source in the system stable section", () => {
     const result = createContextBuilder({
       workingDirectory: "/workspace",
       currentDate: "2026-05-04",
@@ -1029,15 +1075,16 @@ describe("ContextBuilder meta user context", () => {
       },
     }).build();
 
-    const meta = metaAttachment(result, "context_prefix");
-    expect(meta).toContain("Codebase and user instructions are shown below.");
-    expect(meta).not.toContain("# claudeMd");
-    expect(meta).toContain(
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace 指令（含自定义优先文件，
+    // 如 CLAUDE.md）迁入 system stable 段；meta_user 只保留 user scope，此处无 → context_prefix 为空。
+    const stableBody = result.systemMessages[1]?.content ?? "";
+    expect(stableBody).toContain(
       "Contents of /workspace/CLAUDE.md (project instructions, checked into the codebase):",
     );
-    expect(meta).toContain("Workspace resolved instruction payload");
-    expect(meta).not.toContain("# user_instructions");
-    expect(meta).not.toContain("Today's date");
+    expect(stableBody).toContain("Workspace resolved instruction payload");
+    expect(stableBody).not.toContain("# claudeMd");
+    expect(stableBody).not.toContain("# user_instructions");
+    expect(metaAttachment(result, "context_prefix")).toBe("");
   });
 
   it("does not emit an empty meta user message", () => {

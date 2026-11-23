@@ -122,7 +122,12 @@ describe("incoming reminder delimiter boundary", () => {
         expect(buildProviderRequestMessages(options)).toEqual(result);
         expect(result.diagnostics.latestRealUserMessageIndex).toBe(
           mode === "later-user"
-            ? result.messages.findIndex((message) => message.content === "later user")
+            ? // P2.6 消息来源区块：real_user 渲染时带 sender 前缀。
+              result.messages.findIndex(
+                (message) =>
+                  message.content ===
+                  '<system-status>{"sender":"user"}</system-status>\n\nlater user',
+              )
             : human
               ? index
               : 0,

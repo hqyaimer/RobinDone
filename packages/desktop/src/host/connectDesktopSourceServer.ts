@@ -37,7 +37,9 @@ export async function connectDesktopSourceServer(
     // 否则 manager 自动重连直接换 services，会丢失 Desktop 的当前用户选择。
     try {
       const mode = await deps.readDynamicWorkflowMode().catch(() => undefined);
-      await connection.services.robinrunAgentService.syncDynamicWorkflowUserMode(mode ? { mode } : {});
+      await connection.services.robinrunAgentService.syncDynamicWorkflowUserMode(
+        mode ? { mode } : {},
+      );
     } catch (error) {
       // 旧版 Source 不认识此方法时保持可连接，与既有 workflow 同步兼容策略一致。
       deps.onModeSyncError(error);

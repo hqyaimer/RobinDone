@@ -1499,18 +1499,24 @@ describe("session persistence", () => {
     }
   });
 
-  it("loads project AGENTS.md into the default prompt context", async () => {
+  it("loads project AGENTS.md and master rules into the system prompt", async () => {
     const tempRoot = await mkdtemp(join(tmpdir(), "robinrun-bootstrap-instructions-"));
     const workspace = join(tempRoot, "workspace");
     const nestedCwd = join(workspace, "packages", "app");
     const dbPath = join(tempRoot, "session.sqlite");
     const store = await createSqliteSessionStore({ dbPath });
     let capturedSystem = "";
-    let capturedMetaUser = "";
+    let capturedUser = "";
 
     try {
       await mkdir(nestedCwd, { recursive: true });
       await mkdir(join(workspace, ".git"));
+      await mkdir(join(workspace, ".robinrun", "agents", "master"), { recursive: true });
+      await writeFile(
+        // 裁决 10：master 单文件回小写 agents.md（不拆分，开发期不迁移）。
+        join(workspace, ".robinrun", "agents", "master", "agents.md"),
+        "Master rule marker: master-rule-988.\n",
+      );
       await writeFile(join(workspace, "AGENTS.md"), "Always follow marker: project-rule-314.\n");
 
       const app = await createRobinRunApp({
@@ -1525,14 +1531,10 @@ describe("session persistence", () => {
               .filter((message) => message.role === "system")
               .map((message) => message.content)
               .join("\n");
-            capturedMetaUser =
-              request.messages.find(
-                (message) =>
-                  message.role === "user" &&
-                  message.content.includes(
-                    `Contents of ${join(workspace, "AGENTS.md")} (project instructions, checked into the codebase):`,
-                  ),
-              )?.content ?? "";
+            capturedUser = request.messages
+              .filter((message) => message.role === "user")
+              .map((message) => message.content)
+              .join("\n");
             return {
               text: "done",
               finishReason: "stop",
@@ -1554,15 +1556,21 @@ describe("session persistence", () => {
       const result = await app.submitPrompt("hello");
 
       expect(result.response).toBe("done");
-      expect(capturedSystem).not.toContain("project-rule-314");
-      // 指令作为 context_prefix 公告注入 user 侧，直接以指令前言开头，不带聚合标题，带来源标签。
-      expect(capturedMetaUser).toMatch(
-        /^<system-reminder>\nCodebase and user instructions are shown below\./,
+      // 2026-11-19 /init 裁决（docs/init-flow.md §4）：项目 AGENTS.md 与 master 个人规则都进
+      // system 提示词——个体在前、项目说明在后；user 侧（meta_user 公告）不再携带项目指令。
+      expect(capturedSystem).toContain(
+        `Contents of ${join(workspace, ".robinrun", "agents", "master", "agents.md")} (master agent rules):`,
       );
-      expect(capturedMetaUser).not.toContain("# agentsMd");
-      expect(capturedMetaUser).not.toContain("# claudeMd");
-      expect(capturedMetaUser).not.toContain("# user_instructions");
-      expect(capturedMetaUser).toContain("project-rule-314");
+      expect(capturedSystem).toContain("master-rule-988");
+      expect(capturedSystem).toContain(
+        `Contents of ${join(workspace, "AGENTS.md")} (project instructions, checked into the codebase):`,
+      );
+      expect(capturedSystem).toContain("project-rule-314");
+      expect(capturedSystem.indexOf("master-rule-988")).toBeLessThan(
+        capturedSystem.indexOf("project-rule-314"),
+      );
+      expect(capturedUser).not.toContain("project-rule-314");
+      expect(capturedUser).not.toContain("master-rule-988");
     } finally {
       store.close();
       await rm(tempRoot, { recursive: true, force: true });

@@ -77,15 +77,15 @@ export function createAgentSessionsIndexTransport(
       return Promise.reject(new Error("fault.connection.handshakeUnavailable"));
     }
     return ensureAgentV4ConnectionHandshake(
-      agentService as Pick<IRobinRunAgentService, "helloConversationV4" | "initializeConversationV4">,
+      agentService as Pick<
+        IRobinRunAgentService,
+        "helloConversationV4" | "initializeConversationV4"
+      >,
     );
   };
   const topic = sessionsIndexTopic(target.workspaceIdentity?.trim() || target.workspacePath);
   const listeners = new Set<
-    (
-      frame: SessionsIndexTopicFrame,
-      context?: { deliveryKind: TopicFrameDeliveryKind },
-    ) => void
+    (frame: SessionsIndexTopicFrame, context?: { deliveryKind: TopicFrameDeliveryKind }) => void
   >();
   const faultListeners = new Set<
     (fault: {
@@ -96,9 +96,7 @@ export function createAgentSessionsIndexTransport(
     }) => void
   >();
   const restartListeners = new Set<() => void>();
-  const runtimeLifecycleListeners = new Set<
-    (state: "available" | "unavailable") => void
-  >();
+  const runtimeLifecycleListeners = new Set<(state: "available" | "unavailable") => void>();
   const decoder = createTopicWireDecoder(
     new TopicWireFrameAssembler(sessionsIndexTopicFrameSchema),
     (frame: SessionsIndexTopicFrame, deliveryKind) => {
@@ -227,16 +225,17 @@ export function createAgentSessionsIndexTransport(
           onRuntimeLifecycle(listener: (state: "available" | "unavailable") => void) {
             const lifecycleListeners = runtimeLifecycleListeners;
             lifecycleListeners.add(listener);
-            lifecycleUpstream ??= agentService.onAgentRuntimeLifecycle?.((event) => {
-              if (event.workspaceKey !== targetWorkspaceKey) return;
-              runtimeGeneration += 1;
-              barrier.clear();
-              decoder.clear();
-              activeSubscriptionId = null;
-              for (const lifecycleListener of lifecycleListeners) {
-                lifecycleListener(event.state);
-              }
-            }) ?? null;
+            lifecycleUpstream ??=
+              agentService.onAgentRuntimeLifecycle?.((event) => {
+                if (event.workspaceKey !== targetWorkspaceKey) return;
+                runtimeGeneration += 1;
+                barrier.clear();
+                decoder.clear();
+                activeSubscriptionId = null;
+                for (const lifecycleListener of lifecycleListeners) {
+                  lifecycleListener(event.state);
+                }
+              }) ?? null;
             return () => {
               lifecycleListeners.delete(listener);
               if (lifecycleListeners.size === 0) {

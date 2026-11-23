@@ -31,6 +31,11 @@ export interface RuntimeTaskPendingMessage {
     kind: "coordinator";
     toolCallId?: string;
   };
+  /**
+   * P2.6 按消息标注发起者（修复 sink 固定 initiator 的错标）：worker 正跑主智能体派发的轮次时，
+   * 用户插话经同一 sink 送达——没有本字段就会按 coordinator_steer 误报「主智能体发的」。
+   */
+  initiator?: "coordinator" | "user";
   queuedAt: Date;
   summary?: string;
   traceContext?: TraceContext;
@@ -46,6 +51,11 @@ export interface RuntimeTaskSnapshot extends SubagentTaskSnapshot {
   offPeakCancelled?: boolean;
   /** task 注册时所属 active conversation branch；用于迟到 completion fencing。 */
   branchGeneration?: number;
+  /**
+   * ContactAgent 管线标记（2026-11-19）：本次轮次由 ContactAgent 请求触发（恢复/重臂），
+   * 终态通知被回复捕获路径取代。仅内存执行态，不进持久快照。
+   */
+  contactRequestId?: string;
   exitCode?: number;
   type: RuntimeTaskType;
   isBackgrounded?: boolean;

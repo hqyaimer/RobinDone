@@ -37,6 +37,8 @@ export function collectVisibleRobinRunBackgroundBashJobs(
   >;
 }
 
-function isBackgroundBashJob(job: RobinRunBackgroundTaskControlItem): job is RobinRunBackgroundBashJob {
+function isBackgroundBashJob(
+  job: RobinRunBackgroundTaskControlItem,
+): job is RobinRunBackgroundBashJob {
   return job.taskKind === "bash";
 }

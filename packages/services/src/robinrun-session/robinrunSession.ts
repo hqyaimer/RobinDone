@@ -140,7 +140,9 @@ export interface RobinRunSessionWorkspaceRuntimeIdentity {
 }
 
 export interface IRobinRunSessionService {
-  initializeWorkspace(params: RobinRunSessionWorkspaceTarget): Promise<RobinRunSessionInitializeResult>;
+  initializeWorkspace(
+    params: RobinRunSessionWorkspaceTarget,
+  ): Promise<RobinRunSessionInitializeResult>;
   getWorkspaceRuntimeIdentity(
     params: RobinRunSessionWorkspaceTarget,
   ): Promise<RobinRunSessionWorkspaceRuntimeIdentity>;
@@ -157,7 +159,9 @@ export interface IRobinRunSessionService {
   closeSession(params: RobinRunTaskTarget): Promise<void>;
   closeDeferredDraftSession(params: RobinRunTaskTarget): Promise<boolean>;
   setModel(params: RobinRunSessionSetModelParams): Promise<RobinRunSessionStateSnapshot>;
-  setThoughtLevel(params: RobinRunSessionSetThoughtLevelParams): Promise<RobinRunSessionStateSnapshot>;
+  setThoughtLevel(
+    params: RobinRunSessionSetThoughtLevelParams,
+  ): Promise<RobinRunSessionStateSnapshot>;
   setMode(params: RobinRunSessionSetModeParams): Promise<RobinRunSessionStateSnapshot>;
   respondProviderRuntimeHeaders(
     params: RobinRunSessionRespondProviderRuntimeHeadersParams,

@@ -104,15 +104,29 @@ describe("protocol slash command surface", () => {
       expect(prompt).toContain("built-in /init command");
       expect(prompt).toContain("AGENTS.md");
       expect(prompt).toContain(join(workspace, "AGENTS.md"));
-      expect(prompt).toContain(join(workspace, ".robinrun", "AGENTS.md"));
-      expect(prompt).toContain(join(workspace, ".agents", "AGENTS.md"));
-      expect(prompt).toContain("they already have an instructions file");
+      // 2026-11-19 /init 裁决（docs/init-flow.md）：三步初始化（项目说明 → 编制 → master
+      // agents.md）+ 分步 guard，废除「既有指令文件即整体中止」。
+      // 裁决 10（2026-11-20）：智能体侧文件回小写——worker 职责定义 define.md（master 维护）
+      // + 自维护 agents.md，master 单文件 agents.md。
+      expect(prompt).toContain(join(workspace, ".robinrun", "agents", "master", "agents.md"));
+      expect(prompt).toContain("a project briefing, not a constitution");
+      expect(prompt).toContain("Step 1 — Project briefing");
+      expect(prompt).toContain("Step 2 — Worker roster");
+      expect(prompt).toContain("Step 3 — Master agents.md");
+      expect(prompt).not.toContain("they already have an instructions file");
       expect(prompt).not.toContain("Do not create CLAUDE.md or AGENTS.md");
       expect(prompt).toContain("include pnpm scripts");
-      // /init 扩展：AGENTS.md 之后按分工脚手架常驻子智能体定义。
-      expect(prompt).toContain(join(workspace, ".robinrun", "agents"));
-      expect(prompt).toContain("resident agent");
-      expect(prompt).toContain("development agent and an operations agent");
+      // /init 扩展（2026-11-15 worker 编制裁决）：AGENTS.md 之后经 ManageWorkers 脚手架 worker 编制。
+      // 2026-11-15 定位修订：最少编制只剩主智能体，开发/运营是示例配置（锁定新措辞）。
+      // 2026-11-19 裁决：编制直接建，不再逐步征求用户确认。
+      // 裁决 10：ManageWorkers create 的 prompt 即 worker 的 define.md 职责声明
+      // （负责什么/不负责什么/边界外 ContactAgent 主智能体）；agents.md 是 worker 自维护骨架。
+      expect(prompt).toContain(join(workspace, ".robinrun", "agents", "workers.json"));
+      expect(prompt).toContain("ManageWorkers");
+      expect(prompt).toContain("common examples, not a required minimum");
+      expect(prompt).toContain("without asking the user for confirmation");
+      expect(prompt).toContain("ContactAgent");
+      expect(prompt).toContain("define.md");
       expect(resolveRobinRunBuiltinPromptCommand("/review", { workingDirectory: workspace })).toBe(
         undefined,
       );

@@ -248,7 +248,9 @@ describe("resolveSshRemoteReleaseScope", () => {
   it("defaults to all and only switches to linux on the explicit declaration", () => {
     expect(resolveSshRemoteReleaseScope({})).toBe("all");
     expect(resolveSshRemoteReleaseScope({ ROBINRUN_E2E_REMOTE_RELEASE_SCOPE: " " })).toBe("all");
-    expect(resolveSshRemoteReleaseScope({ ROBINRUN_E2E_REMOTE_RELEASE_SCOPE: "linux" })).toBe("linux");
+    expect(resolveSshRemoteReleaseScope({ ROBINRUN_E2E_REMOTE_RELEASE_SCOPE: "linux" })).toBe(
+      "linux",
+    );
     expect(() =>
       resolveSshRemoteReleaseScope({ ROBINRUN_E2E_REMOTE_RELEASE_SCOPE: "darwin" }),
     ).toThrow(/ROBINRUN_E2E_REMOTE_RELEASE_SCOPE/u);

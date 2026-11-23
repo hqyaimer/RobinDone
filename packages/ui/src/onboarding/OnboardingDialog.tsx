@@ -61,7 +61,9 @@ export function OnboardingDialog(props: {
     isDesktop: props.isDesktop,
   });
   const onboardingDialogRequested = useRobinRunStore((state) => state.onboardingDialogRequested);
-  const clearOnboardingDialogRequest = useRobinRunStore((state) => state.clearOnboardingDialogRequest);
+  const clearOnboardingDialogRequest = useRobinRunStore(
+    (state) => state.clearOnboardingDialogRequest,
+  );
   const [wizardStep, setWizardStep] = useState<OnboardingWizardStep>("session");
   const [selectedWorkspacePaths, setSelectedWorkspacePaths] = useState<string[]>([]);
   const initializedWorkspaceSelectionRef = useRef(false);

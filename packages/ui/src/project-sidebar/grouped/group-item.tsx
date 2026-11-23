@@ -5,11 +5,16 @@ import type {
   RobinRunTaskGroupColor,
 } from "@/project-sidebar/grouped/types.js";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 
-import { CRON_DEFAULT_GROUP_ID, OFF_PEAK_DEFAULT_GROUP_ID, isMainAgentGroupId } from "@robinrun/shared";
-import { ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
+import {
+  CRON_DEFAULT_GROUP_ID,
+  OFF_PEAK_DEFAULT_GROUP_ID,
+  isMainAgentGroupId,
+  isWorkerGroupId,
+} from "@robinrun/shared";
+import { Bot, ChevronDownIcon, ChevronRightIcon, ListTree, MessageCirclePlus } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
@@ -34,13 +39,10 @@ import {
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { isImeComposingKeyEvent } from "@/lib/imeComposition.js";
-import { EmptyGroupDropZone } from "@/project-sidebar/grouped/task-item.js";
-import { GroupedDraftTaskRow } from "@/project-sidebar/grouped/draft-task-row.js";
 import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
 import { GroupTitleEditor } from "@/project-sidebar/grouped/group-title-editor.js";
 import { VirtualizedGroupedTaskList } from "@/project-sidebar/grouped/virtualized-group-task-list.js";
 import {
-  TASK_GROUP_BORDER_COLOR_CLASS,
   TASK_GROUP_COLORS,
   TASK_GROUP_CONTAINER_CLASS,
   TASK_GROUP_CONTENT_CLASS,
@@ -63,13 +65,7 @@ export function GroupItem({
   getTaskWorkspaceLabel,
   onSelectTask,
   onCloseTask,
-  onOpenFileTree,
   onCreateTask,
-  hasDraftTask,
-  draftTaskActive,
-  draftWorkspaceLabel,
-  onSelectDraftTask,
-  onCloseDraftTask,
   onRenameGroup,
   onUpdateGroupColor,
   onUngroupGroup,
@@ -78,13 +74,13 @@ export function GroupItem({
   onStartRenameTask,
   onArchiveTask,
   onMarkTaskAsUnread,
-  newGroupSetup,
-  onNewGroupSetupStarted,
   collapsed,
   onToggleCollapsed,
   activeDragTaskKey,
   activeDragGroupId,
   tooltipsDisabled,
+  onOpenFolder,
+  triggerSection,
 }: {
   node: Extract<RobinRunGroupedTaskViewNode, { type: "group" }>;
   groups: TaskGroupMenuItem[];
@@ -96,13 +92,7 @@ export function GroupItem({
   getTaskWorkspaceLabel: (task: RobinRunTaskMeta) => string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
   onCloseTask: (task: RobinRunTaskMeta) => void;
-  onOpenFileTree?: (task: RobinRunTaskMeta) => void;
   onCreateTask: () => void;
-  hasDraftTask?: boolean;
-  draftTaskActive?: boolean;
-  draftWorkspaceLabel?: string;
-  onSelectDraftTask?: () => void;
-  onCloseDraftTask?: () => void;
   onRenameGroup: (groupId: string, title: string) => void;
   onUpdateGroupColor: (groupId: string, color: RobinRunTaskGroupColor) => void;
   onUngroupGroup: (groupId: string) => void;
@@ -111,13 +101,18 @@ export function GroupItem({
   onStartRenameTask: (task: RobinRunTaskMeta) => void;
   onArchiveTask: (task: RobinRunTaskMeta) => void;
   onMarkTaskAsUnread: (task: RobinRunTaskMeta) => void;
-  newGroupSetup: boolean;
-  onNewGroupSetupStarted: (groupId: string) => void;
   collapsed: boolean;
   onToggleCollapsed: (groupId: string) => void;
   activeDragTaskKey?: string | null;
   activeDragGroupId?: string | null;
   tooltipsDisabled?: boolean;
+  /** 可选的"查看文件"入口（worker 组传入：打开 `.robinrun/agents/<id>/` 工作目录）。 */
+  onOpenFolder?: () => void;
+  /**
+   * 触发器文件夹（2026-11-19 触发器系统 UI）：渲染在会话列表之后的静态 section。
+   * 由调用方（TaskGroupedView）按智能体归属装配；不注册 dnd-kit 手势，不影响拖拽。
+   */
+  triggerSection?: ReactNode;
 }) {
   const { intl } = useRobinRunIntl();
   const [renaming, setRenaming] = useState(false);
@@ -127,8 +122,6 @@ export function GroupItem({
   const menuRenamePendingRef = useRef(false);
   const menuRenameFocusGuardRef = useRef(false);
   const menuRenameFocusGuardTimeoutRef = useRef<number | null>(null);
-  const newGroupInitialFocusGuardRef = useRef(false);
-  const newGroupInitialFocusGuardTimeoutRef = useRef<number | null>(null);
   const renameCompositionActiveRef = useRef(false);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
   const [titleEditorWidth, setTitleEditorWidth] = useState<number | null>(null);
@@ -144,18 +137,16 @@ export function GroupItem({
   // 只承接未归属会话的收纳与拖出，不提供新建/重命名/改色/解散入口。
   const isMainAgentGroup = isMainAgentGroupId(node.group.id);
   const isUngroupedGroup = node.group.id === UNGROUPED_AGENT_ID;
-  const isProtectedGroup = isSystemGroup || isMainAgentGroup || isUngroupedGroup;
-  const shouldShowEmptyDropZone = !hasDraftTask && node.tasks.length === 0 && !isUngroupedGroup;
+  // worker 组（2026-11-16 物化裁决）：编制投影，名称归 workers.json（ManageWorkers 维护），
+  // UI 隐藏重命名与解散（仓储兜底拒绝）；颜色/新建会话照常——与主智能体完全平级。
+  const isWorkerGroup = isWorkerGroupId(node.group.id);
+  const isProtectedGroup = isSystemGroup || isMainAgentGroup || isUngroupedGroup || isWorkerGroup;
   // 系统分组的标题按语言环境本地化展示，忽略 DB 里存的固定占位标题（'cron' / 'off-peak'）。
   const displayTitle = getTaskGroupDisplayTitle(node.group, {
     cron: intl.formatMessage({ id: "taskGroup.cronGroupName" }),
     offPeak: intl.formatMessage({ id: "offPeak.sidebar.groupTitle" }),
-    ...(isMainAgentGroup
-      ? { mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }) }
-      : {}),
-    ...(isUngroupedGroup
-      ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) }
-      : {}),
+    ...(isMainAgentGroup ? { mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }) } : {}),
+    ...(isUngroupedGroup ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) } : {}),
   });
   const dragging = activeDragGroupId === node.group.id;
   const groupDraggable = useDraggable({
@@ -272,17 +263,6 @@ export function GroupItem({
     }, 350);
   }, []);
 
-  const armNewGroupInitialFocusGuard = useCallback(() => {
-    newGroupInitialFocusGuardRef.current = true;
-    if (newGroupInitialFocusGuardTimeoutRef.current !== null) {
-      window.clearTimeout(newGroupInitialFocusGuardTimeoutRef.current);
-    }
-    newGroupInitialFocusGuardTimeoutRef.current = window.setTimeout(() => {
-      newGroupInitialFocusGuardRef.current = false;
-      newGroupInitialFocusGuardTimeoutRef.current = null;
-    }, 350);
-  }, []);
-
   const startRename = useCallback(() => {
     setRenameDraft(node.group.title);
     setRenaming(true);
@@ -328,14 +308,12 @@ export function GroupItem({
 
   const cancelRename = useCallback(() => {
     menuRenameFocusGuardRef.current = false;
-    newGroupInitialFocusGuardRef.current = false;
     setRenameDraft(node.group.title);
     setRenaming(false);
   }, [node.group.title]);
 
   const commitRename = useCallback(() => {
     menuRenameFocusGuardRef.current = false;
-    newGroupInitialFocusGuardRef.current = false;
     const nextTitle = renameDraft.trim() || node.group.title;
     setRenaming(false);
     if (nextTitle === node.group.title) {
@@ -390,45 +368,19 @@ export function GroupItem({
       focusRenameInput({ select: true });
       return;
     }
-    if (newGroupInitialFocusGuardRef.current) {
-      // 新建 group 会同时打开颜色菜单；Radix DropdownMenu 可能在打开瞬间抢焦，
-      // 这个 blur 不代表用户结束命名，只在初始展开窗口内把焦点还给 name input。
-      logger.debug("[WorkspaceGroupedTasksSection] keep new group initial name focus", {
-        groupId: node.group.id,
-      });
-      focusRenameInput({ select: true });
-      return;
-    }
     commitRename();
   }, [commitRename, focusRenameInput, node.group.id]);
-
   useEffect(() => {
     return () => {
       if (menuRenameFocusGuardTimeoutRef.current !== null) {
         window.clearTimeout(menuRenameFocusGuardTimeoutRef.current);
       }
-      if (newGroupInitialFocusGuardTimeoutRef.current !== null) {
-        window.clearTimeout(newGroupInitialFocusGuardTimeoutRef.current);
-      }
     };
   }, []);
 
-  const handleColorMenuOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open && newGroupInitialFocusGuardRef.current) {
-        // 新建 group 同时要求 name input 保持焦点、color menu 自动展开。
-        // Radix 在 input 回焦时会把这次初始展开判成外部焦点移动并请求关闭；
-        // 只忽略初始窗口内的这一次关闭，窗口结束后点击空白仍按正常关闭处理。
-        logger.debug("[WorkspaceGroupedTasksSection] keep new group initial color menu open", {
-          groupId: node.group.id,
-        });
-        setColorMenuOpen(true);
-        return;
-      }
-      setColorMenuOpen(open);
-    },
-    [node.group.id],
-  );
+  const handleColorMenuOpenChange = useCallback((open: boolean) => {
+    setColorMenuOpen(open);
+  }, []);
 
   const handleGroupColorChange = useCallback(
     (color: string) => {
@@ -466,27 +418,6 @@ export function GroupItem({
     return () => window.clearTimeout(timeout);
   }, [visualCollapsed]);
 
-  useEffect(() => {
-    if (!newGroupSetup) {
-      return;
-    }
-    logger.debug("[WorkspaceGroupedTasksSection] start new group setup", {
-      groupId: node.group.id,
-    });
-    armNewGroupInitialFocusGuard();
-    startRename();
-    setColorMenuOpen(true);
-    focusRenameInput({ select: true });
-    onNewGroupSetupStarted(node.group.id);
-  }, [
-    armNewGroupInitialFocusGuard,
-    focusRenameInput,
-    newGroupSetup,
-    node.group.id,
-    onNewGroupSetupStarted,
-    startRename,
-  ]);
-
   const newTaskButton = (
     <Button
       type="button"
@@ -513,6 +444,35 @@ export function GroupItem({
       {newTaskButton}
     </ControlHintTooltip>
   );
+  // "查看文件"入口（2026-11-16 worker 验收）：worker 组传入，点击打开其 `.robinrun/agents/<id>/`
+  // 工作目录；图标与项目行文件树动作一致（ListTree）。
+  const openFolderButton = onOpenFolder ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      className="shrink-0 text-foreground-subtle hover:text-foreground"
+      data-testid="task-group-open-folder"
+      aria-label={intl.formatMessage({ id: "workspaceSidebar.showFileTree" })}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpenFolder();
+      }}
+      onMouseDown={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
+      onTouchStart={(event) => event.stopPropagation()}
+    >
+      <ListTree aria-hidden="true" className="size-3.5" />
+    </Button>
+  ) : null;
+  const openFolderAction =
+    openFolderButton && !tooltipsDisabled ? (
+      <ControlHintTooltip title={intl.formatMessage({ id: "workspaceSidebar.showFileTree" })}>
+        {openFolderButton}
+      </ControlHintTooltip>
+    ) : (
+      openFolderButton
+    );
 
   return (
     <div
@@ -547,51 +507,54 @@ export function GroupItem({
           >
             {/* 未分组伪组没有真实颜色语义，头部不提供改色入口。 */}
             {isUngroupedGroup ? null : (
-            <DropdownMenu
-              open={colorMenuOpen}
-              onOpenChange={handleColorMenuOpenChange}
-              modal={false}
-            >
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-input-border-focused"
-                  data-testid="task-group-color-trigger"
-                  aria-label={intl.formatMessage({ id: "taskGroup.color" })}
-                  onClick={(event) => event.stopPropagation()}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onTouchStart={(event) => event.stopPropagation()}
-                >
-                  <TaskGroupColorMark color={node.group.color} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-40 min-w-40"
-                onClick={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
+              <DropdownMenu
+                open={colorMenuOpen}
+                onOpenChange={handleColorMenuOpenChange}
+                modal={false}
               >
-                <DropdownMenuLabel>
-                  {intl.formatMessage({ id: "taskGroup.color" })}
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={node.group.color}
-                  onValueChange={handleGroupColorChange}
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-input-border-focused"
+                    data-testid="task-group-color-trigger"
+                    aria-label={intl.formatMessage({ id: "taskGroup.color" })}
+                    onClick={(event) => event.stopPropagation()}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onTouchStart={(event) => event.stopPropagation()}
+                  >
+                    <TaskGroupColorMark
+                      color={node.group.color}
+                      icon={isMainAgentGroup || isWorkerGroup ? Bot : undefined}
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-40 min-w-40"
+                  onClick={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
                 >
-                  {TASK_GROUP_COLORS.map((color) => (
-                    <DropdownMenuRadioItem
-                      key={color}
-                      value={color}
-                      data-testid={`task-group-color-${color}`}
-                    >
-                      <TaskGroupColorDot color={color} />
-                      <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuLabel>
+                    {intl.formatMessage({ id: "taskGroup.color" })}
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={node.group.color}
+                    onValueChange={handleGroupColorChange}
+                  >
+                    {TASK_GROUP_COLORS.map((color) => (
+                      <DropdownMenuRadioItem
+                        key={color}
+                        value={color}
+                        data-testid={`task-group-color-${color}`}
+                      >
+                        <TaskGroupColorDot color={color} />
+                        <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <div className="flex min-w-0 flex-1 items-center gap-1">
               {renaming ? (
@@ -642,9 +605,8 @@ export function GroupItem({
                 />
               )}
             </div>
-            <span className={TASK_GROUP_COUNT_BADGE_CLASS}>
-              {node.tasks.length + (hasDraftTask ? 1 : 0)}
-            </span>
+            <span className={TASK_GROUP_COUNT_BADGE_CLASS}>{node.tasks.length}</span>
+            {openFolderAction}
             {isUngroupedGroup ? null : newTaskAction}
           </div>
         </ContextMenuTrigger>
@@ -654,7 +616,7 @@ export function GroupItem({
               {intl.formatMessage({ id: "taskGroup.newTask" })}
             </ContextMenuItem>
           )}
-          {isSystemGroup || isUngroupedGroup ? null : (
+          {isSystemGroup || isWorkerGroup || isUngroupedGroup ? null : (
             <>
               <ContextMenuSeparator />
               <ContextMenuItem data-testid="task-group-rename" onSelect={startRenameFromMenu}>
@@ -709,72 +671,31 @@ export function GroupItem({
                 Radix Presence 和高度变量会在频繁挂载时重放动画；这里用本地受控容器，
                 并在收起动画后卸载组内 task。 */}
           {shouldRenderGroupContent ? (
-            <div
-              className={cn(
-                TASK_GROUP_CONTENT_CLASS,
-                TASK_GROUP_BORDER_COLOR_CLASS[node.group.color],
-              )}
-            >
-              {hasDraftTask ? (
-                <>
-                  <GroupedDraftTaskRow
-                    active={Boolean(draftTaskActive)}
-                    workspaceLabel={draftWorkspaceLabel ?? ""}
-                    onSelect={onSelectDraftTask ?? onCreateTask}
-                    onClose={onCloseDraftTask}
-                  />
-                  <VirtualizedGroupedTaskList
-                    tasks={node.tasks}
-                    groupId={node.group.id}
-                    groups={groups}
-                    getTaskRemoteSessionId={getTaskRemoteSessionId}
-                    getTaskWorkspaceLabel={getTaskWorkspaceLabel}
-                    activeWorkspacePath={activeWorkspacePath}
-                    activeWorkspaceIdentity={activeWorkspaceIdentity}
-                    activeTaskId={activeTaskId}
-                    mobileActiveTaskKey={mobileActiveTaskKey}
-                    onSelectTask={onSelectTask}
-                    onCloseTask={onCloseTask}
-                    onOpenFileTree={onOpenFileTree}
-                    onMoveTaskToGroup={onMoveTaskToGroup}
-                    onMoveTaskToTop={onMoveTaskToTop}
-                    onStartRenameTask={onStartRenameTask}
-                    onArchiveTask={onArchiveTask}
-                    onMarkTaskAsUnread={onMarkTaskAsUnread}
-                    activeDragTaskKey={activeDragTaskKey}
-                    tooltipsDisabled={tooltipsDisabled}
-                  />
-                </>
-              ) : (
-                <>
-                  {shouldShowEmptyDropZone ? (
-                    <EmptyGroupDropZone groupId={node.group.id} onCreateTask={onCreateTask} />
-                  ) : null}
-                  {node.tasks.length > 0 ? (
-                    <VirtualizedGroupedTaskList
-                      tasks={node.tasks}
-                      groupId={node.group.id}
-                      groups={groups}
-                      getTaskRemoteSessionId={getTaskRemoteSessionId}
-                      getTaskWorkspaceLabel={getTaskWorkspaceLabel}
-                      activeWorkspacePath={activeWorkspacePath}
-                      activeWorkspaceIdentity={activeWorkspaceIdentity}
-                      activeTaskId={activeTaskId}
-                      mobileActiveTaskKey={mobileActiveTaskKey}
-                      onSelectTask={onSelectTask}
-                      onCloseTask={onCloseTask}
-                      onOpenFileTree={onOpenFileTree}
-                      onMoveTaskToGroup={onMoveTaskToGroup}
-                      onMoveTaskToTop={onMoveTaskToTop}
-                      onStartRenameTask={onStartRenameTask}
-                      onArchiveTask={onArchiveTask}
-                      onMarkTaskAsUnread={onMarkTaskAsUnread}
-                      activeDragTaskKey={activeDragTaskKey}
-                      tooltipsDisabled={tooltipsDisabled}
-                    />
-                  ) : null}
-                </>
-              )}
+            <div className={TASK_GROUP_CONTENT_CLASS}>
+              {node.tasks.length > 0 ? (
+                <VirtualizedGroupedTaskList
+                  tasks={node.tasks}
+                  groupId={node.group.id}
+                  groups={groups}
+                  getTaskRemoteSessionId={getTaskRemoteSessionId}
+                  getTaskWorkspaceLabel={getTaskWorkspaceLabel}
+                  activeWorkspacePath={activeWorkspacePath}
+                  activeWorkspaceIdentity={activeWorkspaceIdentity}
+                  activeTaskId={activeTaskId}
+                  mobileActiveTaskKey={mobileActiveTaskKey}
+                  onSelectTask={onSelectTask}
+                  onCloseTask={onCloseTask}
+                  onMoveTaskToGroup={onMoveTaskToGroup}
+                  onMoveTaskToTop={onMoveTaskToTop}
+                  onStartRenameTask={onStartRenameTask}
+                  onArchiveTask={onArchiveTask}
+                  onMarkTaskAsUnread={onMarkTaskAsUnread}
+                  activeDragTaskKey={activeDragTaskKey}
+                  tooltipsDisabled={tooltipsDisabled}
+                />
+              ) : null}
+              {/* 触发器文件夹固定在会话列表之后（2026-11-19 UI 裁决）；调用方无订阅条目时传 null。 */}
+              {triggerSection ?? null}
             </div>
           ) : null}
         </div>

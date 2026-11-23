@@ -38,6 +38,11 @@ import {
   taskToolEntry,
 } from "./agent.js";
 import { isSubagentDispatchToolName } from "../compat.js";
+import { manageWorkersToolEntry } from "./manage-workers.js";
+// P2.6 工具分离（裁决 13）：worker 派发专名工具，与 Agent（一次性 subagent）分开注册。
+// 触发器注册表管理（2026-11-19 设计定稿，docs/trigger-system.md）：任意智能体可创建
+// 触发器（订阅者=创建者），不设 includeAgent 门、不进子 runtime 强制禁用名单。
+import { manageTriggersToolEntry } from "./manage-triggers.js";
 import { skillToolEntry } from "./skill.js";
 import { todoReadToolEntry, todoWriteToolEntry } from "./todo.js";
 import {
@@ -56,6 +61,11 @@ import {
 import { askUserQuestionToolEntry } from "./ask-user-question.js";
 import { sendMessageToolEntry } from "./send-message.js";
 import { respondToCoordinatorToolEntry } from "./respond-to-coordinator.js";
+// agent 消息与会话感知（2026-11-19，docs/trigger-system.md）：ContactAgent 唯一请求入口
+// + WaitReply 主动等待；ReturnToDispatcher 已移除（退出路径并入 ContactAgent needReply=false）。
+import { contactAgentToolEntry } from "./contact-agent.js";
+import { workerContactAgentToolEntry } from "./contact-agent.js";
+import { waitReplyToolEntry } from "./wait-reply.js";
 import { createSubmitResultToolEntry, submitResultToolEntry } from "./submit-result.js";
 import { escalateToolEntry } from "./escalate.js";
 import { resolveWorkflowQuestionToolEntry } from "./resolve-workflow-question.js";
@@ -104,6 +114,14 @@ export const builtInTools: ToolEntry[] = [
   askUserQuestionToolEntry,
   sendMessageToolEntry,
   respondToCoordinatorToolEntry,
+  // agent 消息（2026-11-19）：ContactAgent/WaitReply 与 RespondToCoordinator 同构——
+  // agentContactPort 在场才注册（master 主会话自建端口；worker_child 由装配注入），
+  // 注入门在 runtime-tools.ts；subagent_child 不注入端口即天然无此工具。
+  // 2026-11-23 C1 裁决：ContactAgent 拆 master/worker 双变体（同名不同 schema），
+  // 按 agentContactVariant 二选一；WaitReply 收敛 master 专属。
+  contactAgentToolEntry,
+  workerContactAgentToolEntry,
+  waitReplyToolEntry,
   submitResultToolEntry,
   // actor 的升级通道。与 submit_result 完全同构：
   // 端口在场即注册（includeEscalate），`tools:"none"` 下由 workflow_child 的 allowlist
@@ -117,6 +135,14 @@ export const builtInTools: ToolEntry[] = [
   // replyToChannelToolEntry,
   agentToolEntry,
   taskToolEntry,
+  // worker 编制管理（2026-11-15 裁决）：与 Agent 同门（includeAgent），只在持有 subagent
+  // 能力的主会话注册；子 runtime 由 tool-policy 的强制禁用名单再兜一层。
+  manageWorkersToolEntry,
+  // worker 派发（P2.6 裁决 13）：与 Agent 同门（includeAgent，经 subagentDispatchToolNames
+  // 判定同一道门）；子 runtime 由 tool-policy 强制禁用（派发权只归主智能体）。
+  // 触发器注册表管理（2026-11-19，docs/trigger-system.md）：任意智能体可创建触发器
+  // （订阅者=创建者），worker 会话同样需要；不在 includeAgent 门与强制禁用名单内。
+  manageTriggersToolEntry,
   skillToolEntry,
   jsToolEntry,
   createWorkflowToolEntry,
@@ -185,6 +211,22 @@ interface RegisterBuiltInToolsOptions {
   includeAgent?: boolean;
   includeSendMessage?: boolean;
   includeRespondToCoordinator?: boolean;
+  /**
+   * agent 消息门（2026-11-19）：ContactAgent/WaitReply 端口在场才注册——master 主会话
+   * 自建端口、worker_child 由装配注入；subagent_child 不注入即天然无此工具。
+   */
+  includeAgentContact?: boolean;
+  /**
+   * ContactAgent 变体选择（2026-11-23 C1 裁决）：master = 带 needReply/waitFor 的完整
+   * 变体；worker = 无必答参数的 notification-only 变体（同名工具）。缺席按 master 处理。
+   */
+  agentContactVariant?: "master" | "worker";
+  /**
+   * WaitReply 门（2026-11-23 C1 裁决）：master 会话专属——worker 不允许要求必答后，
+   * worker 名下无可等待的在途请求。与 includeAgentContact 同为端口在场，附加 workerIdentity
+   * 缺席条件（runtime-tools 计算）。
+   */
+  includeWaitReply?: boolean;
   includeSubmitResult?: boolean;
   /**
    * 在场时 submit_result 以 typed 声明注册（`{ result: <schema> }`，strict 资格），供 dwf mono
@@ -195,6 +237,8 @@ interface RegisterBuiltInToolsOptions {
   includeEscalate?: boolean;
   includeWorkflow?: boolean;
   includeAutomation?: boolean;
+  /** worker 会话置 false：编制管理独占于 master 会话（docs/worker-session-model.md §5）。 */
+  includeManageWorkers?: boolean;
   /** Off-Peak 会话内创建工具面；由 host 的 offPeakToolEnabled flag（灰度/远程门）驱动。 */
   includeOffPeak?: boolean;
   /**
@@ -239,6 +283,15 @@ export function registerBuiltInTools(
     if (isSubagentDispatchToolName(entry.metadata.name) && options.includeAgent !== true) {
       continue;
     }
+    // worker 编制管理与 Agent 同源：名册（subagent 类型）存在时才有意义；worker 会话
+    // 不可触碰（编制管理独占于 master，docs/worker-session-model.md §5）。缺省（undefined）
+    // 保持旧行为——只有 worker 会话装配显式传 false 才下架。
+    if (
+      entry.metadata.name === "ManageWorkers" &&
+      (options.includeAgent !== true || options.includeManageWorkers === false)
+    ) {
+      continue;
+    }
     if (entry.metadata.name === "Skill" && options.includeSkill === false) {
       continue;
     }
@@ -249,6 +302,28 @@ export function registerBuiltInTools(
       entry.metadata.name === "RespondToCoordinator" &&
       options.includeRespondToCoordinator !== true
     ) {
+      continue;
+    }
+    if (
+      (entry.metadata.name === "ContactAgent" || entry.metadata.name === "WaitReply") &&
+      options.includeAgentContact !== true
+    ) {
+      continue;
+    }
+    // C1 裁决（2026-11-23）：ContactAgent 同名双变体按会话身份二选一——master 会话
+    // 注册带 needReply/waitFor 的 master 变体；worker 会话注册无必答参数的 worker
+    // 变体（天生 notification-only，模型见不到用不了的参数）。两个条目对象引用不同、
+    // metadata.name 相同，按引用区分。
+    if (entry === contactAgentToolEntry && options.agentContactVariant === "worker") {
+      continue;
+    }
+    if (entry === workerContactAgentToolEntry && options.agentContactVariant !== "worker") {
+      continue;
+    }
+    // C1 裁决（2026-11-23）：WaitReply 收敛为 master 专属——worker 不允许要求必答
+    // 后，worker 名下永远没有可等待的在途请求，工具面对 worker 隐藏以免误用。
+    // 门由 runtime-tools 按 workerIdentity 缺席计算。
+    if (entry.metadata.name === "WaitReply" && options.includeWaitReply !== true) {
       continue;
     }
     if (entry.metadata.name === "submit_result" && options.includeSubmitResult !== true) {

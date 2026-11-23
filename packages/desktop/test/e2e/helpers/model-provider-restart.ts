@@ -238,7 +238,9 @@ export async function waitForLastSelectedAgentConfig(params: {
   } catch {
     const storedAgentPreferences = await browser.execute(() =>
       Object.fromEntries(
-        Object.entries(window.localStorage).filter(([key]) => key.startsWith("robinrun-last-agent-")),
+        Object.entries(window.localStorage).filter(([key]) =>
+          key.startsWith("robinrun-last-agent-"),
+        ),
       ),
     );
     throw new Error(

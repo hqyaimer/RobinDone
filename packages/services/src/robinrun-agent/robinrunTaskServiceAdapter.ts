@@ -137,6 +137,7 @@ import {
   OFF_PEAK_MUTATION_TOOL_NAMES,
 } from "#src/robinrun-agent/automationToolPolicy.js";
 import type { ISettingService } from "#src/setting/setting.js";
+import { resolveAutoSessionDefaultMode } from "./auto-session-default-mode/contract.js";
 import type {
   SessionMessageDeliveryResult,
   SessionMessageSendRequested,
@@ -153,7 +154,10 @@ import type {
   RobinRunTaskIndexTerminalEvent,
 } from "./robinrunTaskIndexSyncer.js";
 import { readModelTrajectory } from "./modelTrajectory.js";
-import { errorAttributionSchema, type CommandPayloadMap } from "@robinrun/shared/robinrun-protocol-v4";
+import {
+  errorAttributionSchema,
+  type CommandPayloadMap,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import {
   assertV4CommandAckOk,
   createHostCommandEnvelope,
@@ -207,7 +211,10 @@ interface TaskTargetWithMcpServers extends TaskTarget {
 }
 
 type WorkspaceEventInput = string | RobinRunWorkspaceEventSubscriptionParams;
-type RobinRunSendPromptRuntimeCommand = Extract<RobinRunTaskRuntimeCommand, { type: "send_prompt" }>;
+type RobinRunSendPromptRuntimeCommand = Extract<
+  RobinRunTaskRuntimeCommand,
+  { type: "send_prompt" }
+>;
 type RobinRunTerminalStreamEvent =
   | Extract<RobinRunStreamEvent, { type: "task_complete" }>
   | Extract<RobinRunStreamEvent, { type: "task_error" }>;
@@ -249,7 +256,10 @@ export function createRobinRunTaskServiceAdapter(
 ): IRobinRunTaskService {
   // Bot 原来绕过连接 facade，导致真实附件 admission 缺少可信身份；复用既有 scope，
   // 同一 Bot 接入的附件、命令及对账共用连接，不改变桌面与手机各自的传输模式。
-  const botConnectionScopes = new Map<string, ReturnType<typeof createRobinRunAgentConnectionScope>>();
+  const botConnectionScopes = new Map<
+    string,
+    ReturnType<typeof createRobinRunAgentConnectionScope>
+  >();
   function botAgent(workspace: RobinRunAgentWorkspaceTarget) {
     const key = JSON.stringify([resolveWorkspaceKey(workspace), workspace.remoteSessionId ?? ""]);
     let scope = botConnectionScopes.get(key);
@@ -401,6 +411,8 @@ export function createRobinRunTaskServiceAdapter(
       logReason?: string;
       modelSelection?: CommandPayloadMap["sendText"]["modelSelection"];
       modelExecution?: CommandPayloadMap["sendText"]["modelExecution"];
+      /** P3 触发器投递：结构化来源身份，随 sendText 命令进 CLI。 */
+      systemStatus?: CommandPayloadMap["sendText"]["systemStatus"];
     } & RobinRunBackgroundTurnAttribution,
   ): Promise<void> {
     const startedAt = Date.now();
@@ -468,6 +480,7 @@ export function createRobinRunTaskServiceAdapter(
               ...(params.modelSelection ? { modelSelection: params.modelSelection } : {}),
               ...(params.modelExecution ? { modelExecution: params.modelExecution } : {}),
               ...turnAttributionOf(params),
+              ...(params.systemStatus ? { systemStatus: params.systemStatus } : {}),
               ...(params.botDeliveryTarget ? { botDeliveryTarget: params.botDeliveryTarget } : {}),
               ...(promptToolDenylist ? { toolDisallowlist: promptToolDenylist } : {}),
             },
@@ -1750,6 +1763,24 @@ export function createRobinRunTaskServiceAdapter(
 
     async createTask(params): Promise<RobinRunTaskCreateResult> {
       const target = normalizeWorkspaceParams(params);
+      // 自动创建会话权限继承（2026-11-22，P3 第十三批）：触发器/ContactAgent 派发等宿主
+      // 路径不经过 UI 草稿，mode 缺席此前直接落 CLI 缺省 build（实测反馈：master 设了
+      // 完全访问，自动新建的 worker/触发器会话仍"变更前确认"）。任务门面是全部宿主创建
+      // 路径的单点收口，这里在 mode 缺席时按设置解析缺省（项目确认完全访问 → yolo；
+      // 全局显式选择 edit/guarded 照用；全局 yolo 未过项目确认不自动升级）；显式传入的
+      // mode（cron 配置等）与 UI 手建会话（总带草稿显式 mode）都不受影响。解析失败按
+      // 缺省处理不阻断创建。
+      let effectiveMode = params.mode;
+      if (effectiveMode === undefined && options.settingService) {
+        try {
+          effectiveMode = resolveAutoSessionDefaultMode({
+            settings: await options.settingService.get(),
+            workspacePath: target.workspacePath,
+          });
+        } catch (error) {
+          logger.warn("[robinrun-task-service] 自动会话缺省权限解析失败，落 CLI 缺省", error);
+        }
+      }
       const requestedSelection =
         params.modelSelection ??
         (params.model
@@ -1785,7 +1816,7 @@ export function createRobinRunTaskServiceAdapter(
                   ...(model?.options?.reasoningLevel
                     ? { thought: model.options.reasoningLevel }
                     : {}),
-                  ...(params.mode ? { mode: toRobinRunMode(params.mode) } : {}),
+                  ...(effectiveMode ? { mode: toRobinRunMode(effectiveMode) } : {}),
                 },
                 ...(mcpServers ? { mcpServers } : {}),
               },
@@ -1807,9 +1838,20 @@ export function createRobinRunTaskServiceAdapter(
           projectId: params.projectId ?? null,
           additionalDirectories: params.additionalDirectories,
           sessionTraceId: createSessionTraceId(),
-          mode: toRobinRunMode(params.mode),
+          mode: toRobinRunMode(effectiveMode),
           model: requestedSelection,
           thoughtLevel: requestedSelection?.options?.reasoningLevel,
+          // 创建来源（P2.5）：cron → trigger、off-peak → system（ref 随行）；普通任务
+          // 不标记，CLI 侧缺省补 user。
+          ...(params.automationId
+            ? { creationOrigin: { kind: "trigger" as const, ref: params.automationId } }
+            : {}),
+          // agent 会话身份（worker 会话同构化）：触发器/ContactAgent 按订阅者寻址创建
+          // worker 会话时随行下发（CLI 按名册解析显示名并落 worker_identity）。
+          ...(params.agentIdentity ? { agentIdentity: params.agentIdentity } : {}),
+          ...(!params.automationId && params.offPeakTaskId
+            ? { creationOrigin: { kind: "system" as const, ref: params.offPeakTaskId } }
+            : {}),
           ...(params.automationId || params.deferPersistenceUntilFirstPrompt
             ? {
                 // 修复原因：automation / 闲时任务新建空 session 后会立即 sendText。session_input 有
@@ -2098,7 +2140,23 @@ export function createRobinRunTaskServiceAdapter(
         clientMode: params.clientMode,
         modelSelection: params.modelSelection,
         modelExecution: params.modelExecution,
+        ...(params.systemStatus ? { systemStatus: params.systemStatus } : {}),
       });
+    },
+
+    async isTaskBusy(params): Promise<boolean> {
+      // 触发器投递的忙感知（裁决 7 忙时排队、空闲后合并）：与 handleTaskIndexTerminalEvent/
+      // handleTaskIndexReadyEvent 的收口簿记同一事实源——sendPrompt 登记的 active input
+      // 或在途 runtime command 任一在场即为忙（轮终态/ready 边界清除）。
+      const target: TaskTarget = {
+        taskId: params.taskId,
+        workspacePath: params.workspacePath,
+        ...(params.workspaceIdentity !== undefined
+          ? { workspaceIdentity: params.workspaceIdentity }
+          : {}),
+      };
+      const key = taskKey(target);
+      return activePromptInputIds.has(key) || runtimeCommands.has(key);
     },
 
     async deliverSessionMessage(
@@ -2963,6 +3021,27 @@ export function createRobinRunTaskServiceAdapter(
         { ...params, sessionId: params.taskId },
         { type: "delete" },
       );
+    },
+
+    // 清空会话消息（2026-11-20 触发器会话清空）：透传 agent 服务的 CLI 往返
+    // （存储在 Agent 进程里）；身份随订阅者重置由调用方（引擎）给定。
+    async clearTaskMessages(params): Promise<void> {
+      const result = await options.robinrunAgentService.clearSessionMessages?.({
+        workspacePath: params.workspacePath,
+        ...(params.workspaceIdentity !== undefined
+          ? { workspaceIdentity: params.workspaceIdentity }
+          : {}),
+        sessionId: params.taskId,
+        ...(params.workerIdentityTo !== undefined
+          ? { workerIdentityTo: params.workerIdentityTo }
+          : {}),
+      });
+      if (result === undefined) {
+        throw new Error("RobinRun agent service does not support clearing session messages.");
+      }
+      if (!result.cleared && result.running) {
+        throw new Error("会话正在运行，请稍后再清空。");
+      }
     },
 
     async deleteArchivedTask(params): Promise<boolean> {
@@ -3841,7 +3920,8 @@ function textFromParts(parts: readonly RobinRunMessagePart[]): string {
 function reasoningFromParts(parts: readonly RobinRunMessagePart[]): string | undefined {
   const text = parts
     .filter(
-      (part): part is Extract<RobinRunMessagePart, { type: "reasoning" }> => part.type === "reasoning",
+      (part): part is Extract<RobinRunMessagePart, { type: "reasoning" }> =>
+        part.type === "reasoning",
     )
     .map((part) => part.text)
     .join("");
@@ -3868,7 +3948,9 @@ function fromRobinRunGoal(goal: unknown): RobinRunTaskGoal {
   };
 }
 
-function isRobinRunTaskGoalStatus(status: string | undefined): status is RobinRunTaskGoal["status"] {
+function isRobinRunTaskGoalStatus(
+  status: string | undefined,
+): status is RobinRunTaskGoal["status"] {
   return (
     status === "active" ||
     status === "paused" ||
@@ -5232,7 +5314,9 @@ function permissionPayloadToStreamEvent(
   };
 }
 
-function permissionOptionsFromPayload(payload: Record<string, unknown>): RobinRunPermissionOption[] {
+function permissionOptionsFromPayload(
+  payload: Record<string, unknown>,
+): RobinRunPermissionOption[] {
   return Array.isArray(payload.options) ? (payload.options as RobinRunPermissionOption[]) : [];
 }
 
@@ -5473,7 +5557,9 @@ function apiRetryFromSessionInfoPayload(
     return runtimeRetry;
   }
 
-  const metaRetry = normalizeRobinRunApiRetryStatus(asRecord(asRecord(payload._meta).robinrun).apiRetry);
+  const metaRetry = normalizeRobinRunApiRetryStatus(
+    asRecord(asRecord(payload._meta).robinrun).apiRetry,
+  );
   if (metaRetry !== undefined) {
     return metaRetry;
   }

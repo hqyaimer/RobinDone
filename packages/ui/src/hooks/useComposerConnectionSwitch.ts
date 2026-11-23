@@ -11,7 +11,10 @@ import { chooseConnectionModel, type ComposerConnection } from "@/lib/composerPl
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
 import { decodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
 import { logger } from "@/logger.js";
-import { resolveModelProviderFamilySpecByProviderId, type RobinRunProvider } from "@robinrun/shared";
+import {
+  resolveModelProviderFamilySpecByProviderId,
+  type RobinRunProvider,
+} from "@robinrun/shared";
 
 export function useComposerConnectionSwitch({
   workspacePath,

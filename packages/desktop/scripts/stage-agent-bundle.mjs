@@ -27,7 +27,13 @@ export const AGENT_BUNDLE_SOURCE_RELATIVE = "apps/robinrun-cli/packages/cli/dist
  * 打包链（prepare-agent-node-bundle.mjs）随后会用更完整的 officialPluginPackages
  * 逻辑重 stage 同一目录，这里重复暂存同源内容无害。
  */
-const STAGED_NODE_REPL_HOST_ENTRIES = ["dist", ".robinrun-plugin", "package.json", "README.md", "scripts"];
+const STAGED_NODE_REPL_HOST_ENTRIES = [
+  "dist",
+  ".robinrun-plugin",
+  "package.json",
+  "README.md",
+  "scripts",
+];
 
 export function resolveAgentBundlePaths({ repoRoot, platformKey }) {
   const glmDir = resolve(repoRoot, "packages", "desktop", "bundled-agents", platformKey, "glm");
@@ -65,7 +71,13 @@ export function stageAgentBundle({ repoRoot, platformKey, log = console.log }) {
   // node-repl-host 暂存（见 STAGED_NODE_REPL_HOST_ENTRIES 注释）：dist 缺失说明调用方
   // 还没构建它（build-desktop-agent-cli 的 defaultBuildFilters 会先建再 stage），跳过
   // 并留给打包链报错，不在共享实现里重复校验。
-  const nodeReplHostSource = resolve(repoRoot, "apps", "robinrun-cli", "packages", "node-repl-host");
+  const nodeReplHostSource = resolve(
+    repoRoot,
+    "apps",
+    "robinrun-cli",
+    "packages",
+    "node-repl-host",
+  );
   const nodeReplHostTarget = resolve(glmDir, "packages", "node-repl-host");
   if (existsSync(resolve(nodeReplHostSource, "dist", "mcp", "server.js"))) {
     mkdirSync(nodeReplHostTarget, { recursive: true });

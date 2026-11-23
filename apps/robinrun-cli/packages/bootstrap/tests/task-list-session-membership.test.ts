@@ -14,6 +14,8 @@ describe("task-list session membership", () => {
       nested_workflow_child: false,
       selection_side_chat: false,
       subagent_child: false,
+      // worker 会话通道（2026-11-16 隔离裁决）：worker_child 列表可见（独立 seam）。
+      worker_child: true,
       workflow_child: false,
       workflow_parent: true,
     });

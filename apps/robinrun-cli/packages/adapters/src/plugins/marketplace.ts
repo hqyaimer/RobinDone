@@ -5,7 +5,11 @@ import { basename, dirname, join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { PluginDiagnostic, PluginManifest, PluginStoreListing } from "@robinrun/contracts";
-import { isOfficialMarketplaceId, ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE } from "@robinrun/contracts";
+import {
+  isOfficialMarketplaceId,
+  ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE,
+  UPSTREAM_ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+} from "@robinrun/contracts";
 import { DEFAULT_PLUGIN_MARKETPLACES, sanitizeRobinRunRuntimeEnv } from "@robinrun/shared";
 import { loadPluginMcpServerDefinitions, resolvePluginMcpServers } from "./mcp.js";
 import {
@@ -60,6 +64,9 @@ const CLAUDE_MARKETPLACE_FILE = join(".claude-plugin", "marketplace.json");
 const ROBINRUN_MANIFEST_PATH = join(".robinrun-plugin", "plugin.json");
 const CLAUDE_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
 const CODEX_MANIFEST_PATH = join(".codex-plugin", "plugin.json");
+// 上游 ZCode 构建产物的原生 manifest 目录（旧名）；官方 CDN 插件 zip 仍由上游构建，
+// 安装校验/版本解析必须能读它（RobinRun(2026-11-23)，与 index.ts findManifest 同名别名）。
+const UPSTREAM_ZCODE_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
 const DEFAULT_VERSION = "0.0.0";
 const GIT_CLONE_MAX_ATTEMPTS = 3;
 const GIT_COMMAND_TIMEOUT_MS = 90_000;
@@ -68,12 +75,7 @@ const CLAUDE_MARKETPLACE_REFRESH_TIMEOUT_MS = 30_000;
 const MARKETPLACE_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,127}$/;
 const PLUGIN_NAME_PATTERN = /^[a-z0-9][a-z0-9._-]{0,127}$/;
 const SOURCE_SHA256_PATTERN = /^[a-f0-9]{64}$/u;
-const UNSUPPORTED_MANIFEST_FIELDS = [
-  "channels",
-  "lspServers",
-  "outputStyles",
-  "settings",
-] as const;
+const UNSUPPORTED_MANIFEST_FIELDS = ["channels", "lspServers", "outputStyles", "settings"] as const;
 
 export type MarketplaceSource =
   | { source: "url"; headers?: Record<string, string>; url: string }
@@ -397,6 +399,56 @@ export async function ensureMarketplaceManifestAvailable(input: {
   });
 }
 
+/**
+ * RobinRun(2026-11-23): 官方市场 source 有意保留上游 ZCode CDN URL（packages/shared/src/plugin-marketplaces.ts），
+ * 远端 manifest 顶层 name 仍是上游旧名 zcode-plugins-official，而本地规范 id 已改名 robinrun-plugins-official，
+ * 会被官方刷新守卫与 CDN 分片 assertOfficialManifest 双双拒绝（用户侧表现为插件市场页
+ * "Official marketplace source must provide robinrun-plugins-official" 错误横幅）。受信任刷新
+ * （trustedId=规范 id）时在此把 manifest 视图与 raw 的顶层 name 归一化为规范 id，使守卫、分片校验、
+ * staging 目录与 known record 全部按规范 id 走；描述文本里的上游品牌词顺带替换，避免刷新成功后
+ * known record 把"ZCode"字样带回 UI（P3 第十六批干净 RobinRun 裁决）。仅这一个别名对受信任官方
+ * 刷新放行：用户侧新增市场（trustedId 缺失）与其他名字不一致仍由 addMarketplace 守卫拒绝。
+ */
+function normalizeUpstreamOfficialMarketplaceAlias(
+  loaded: LoadMarketplaceResult,
+  trustedId: string | undefined,
+): void {
+  if (
+    trustedId !== ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE ||
+    loaded.manifest.name !== UPSTREAM_ZCODE_OFFICIAL_PLUGIN_MARKETPLACE
+  ) {
+    return;
+  }
+  const raw: Record<string, unknown> = {
+    ...loaded.manifest.raw,
+    name: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE,
+  };
+  if (typeof raw.description === "string") {
+    raw.description = replaceUpstreamBrandText(raw.description);
+  }
+  if (isRecord(raw.description_i18n)) {
+    raw.description_i18n = Object.fromEntries(
+      Object.entries(raw.description_i18n).map(([locale, text]) => [
+        locale,
+        typeof text === "string" ? replaceUpstreamBrandText(text) : text,
+      ]),
+    );
+  }
+  loaded.manifest = {
+    ...loaded.manifest,
+    name: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE,
+    description:
+      typeof loaded.manifest.description === "string"
+        ? replaceUpstreamBrandText(loaded.manifest.description)
+        : loaded.manifest.description,
+    raw,
+  };
+}
+
+function replaceUpstreamBrandText(text: string): string {
+  return text.split("ZCode").join("RobinRun");
+}
+
 export async function addMarketplace(input: {
   expectedId?: string;
   signal?: AbortSignal;
@@ -429,6 +481,7 @@ export async function addMarketplace(input: {
       signal: operationSignal,
     });
     throwIfPluginOperationAborted(operationSignal);
+    normalizeUpstreamOfficialMarketplaceAlias(loaded, input.trustedId);
     if (isOfficialMarketplaceId(loaded.manifest.name) && loaded.manifest.name !== input.trustedId) {
       throw new Error(
         `Cannot add a marketplace named "${loaded.manifest.name}": that id is reserved for the official marketplace.`,
@@ -439,6 +492,8 @@ export async function addMarketplace(input: {
         `Marketplace declaration id mismatch: expected ${input.expectedId}, received ${loaded.manifest.name}`,
       );
     }
+    // 上游旧名 zcode-plugins-official 已在上面的 normalizeUpstreamOfficialMarketplaceAlias
+    // 归一化为规范 id，本守卫只拦其他意外改名（来源被换挂后的冒用防护）。
     if (
       input.trustedId === ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE &&
       loaded.manifest.name !== ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE
@@ -1221,7 +1276,9 @@ export async function validateLocalPluginPath(input: {
       },
     ];
   }
-  const rootPath = statSync(resolved).isDirectory() ? resolved : resolveManifestRootFromFile(resolved);
+  const rootPath = statSync(resolved).isDirectory()
+    ? resolved
+    : resolveManifestRootFromFile(resolved);
   if (findMarketplaceManifestPath(rootPath)) {
     return validateMarketplaceSource({
       signal: input.signal,
@@ -2370,7 +2427,13 @@ function findMarketplaceManifestPath(rootPath: string, explicitPath?: string): s
 }
 
 function findPluginManifestPath(rootPath: string): string | null {
-  for (const candidate of [ROBINRUN_MANIFEST_PATH, CLAUDE_MANIFEST_PATH, CODEX_MANIFEST_PATH]) {
+  for (const candidate of [
+    ROBINRUN_MANIFEST_PATH,
+    CLAUDE_MANIFEST_PATH,
+    CODEX_MANIFEST_PATH,
+    // 上游构建产物兼容（官方 CDN 插件 zip 的 manifest 在 .zcode-plugin/）。
+    UPSTREAM_ZCODE_MANIFEST_PATH,
+  ]) {
     const path = join(rootPath, candidate);
     if (fileExists(path)) return path;
   }

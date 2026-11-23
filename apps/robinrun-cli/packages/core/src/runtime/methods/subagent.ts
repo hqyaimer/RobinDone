@@ -2,9 +2,14 @@
 import {
   RESPOND_TO_COORDINATOR_TOOL_NAME,
   SESSION_ENTRY_MODEL_SELECTION,
+  SESSION_ENTRY_WORKER_DETACH_STATE,
   parseModelSelectionValue,
 } from "@robinrun/contracts";
-import type { CollaborationMode, SubagentRunOptions, WorkspaceId } from "@robinrun/contracts";
+import type {
+  CollaborationMode,
+  SubagentRunOptions,
+  WorkspaceId,
+} from "@robinrun/contracts";
 import { inheritPermissionMode, restrictPermissionMode } from "@robinrun/contracts";
 import {
   defaultScheduler,
@@ -92,8 +97,27 @@ export function createDefaultSubagentPort(
     autoBackgroundMs: this.config.subagents?.autoBackgroundMs,
     outputRootDir: this.config.subagents?.outputRootDir,
     getAgentDefinitions: this.getAgentDefinitions,
+    // 名册 miss 时把 Host 已刷新的快照取回（快照按 turn 冻结，同轮新建的 subagent 派发靠它打通）。
+    // prepare 在没有 loadAgentDefinitions 的独立 CLI 里是 no-op，重试只是原样再解析一次。
+    reloadAgentDefinitions: (input) => this.prepareAgentDefinitions(input),
     builtInModelSelectionOverrides: this.config.subagents?.builtInModelSelectionOverrides,
     runtimeTaskRegistry: this.runtimeTaskRegistry,
+    // agent 消息（2026-11-19）：轮终态捕获与用户介入合成回复落在进程共享登记表上。
+    agentContactRegistry: this.agentContactRegistry,
+    // P2.5 legacy worker_child 脱钩的持久化钩子（2026-11-20 同构化后仅剩历史会话冷恢复
+    // 路径使用；写路径已退役，不产生新 detached 任务）：跨 CLI 重启保住「通知暂缓中」事实。
+    persistWorkerDetachState: async (childSessionId, detached) => {
+      if (!childSessionId) return;
+      const timestamp = Date.now();
+      await deps.sessionStore?.saveSessionEntry?.({
+        id: `${childSessionId}:runtime-worker-detach-state`,
+        sessionID: childSessionId,
+        type: SESSION_ENTRY_WORKER_DETACH_STATE,
+        touchSession: false,
+        time: { created: timestamp, updated: timestamp },
+        data: { detached },
+      });
+    },
     emitParentEvent: async (event, traceContext) => {
       if (isStaleBranchRuntimeTaskEvent(this, event)) return;
       await this.appendEvent(event, traceContext);
@@ -106,6 +130,29 @@ export function createDefaultSubagentPort(
         traceContext: notification.traceContext,
       });
       return undefined;
+    },
+    // 项目权限全量同步（2026-11-18）：配置类命令对子会话必须落到持有执行态
+    // 的活子 runtime——物化 shell runtime 不是执行本体，直接 setMode 只改空壳。这里用
+    // ownedRuntimes 按 sessionId 定位真身；未找到（已终态/已回收）返回失败由上层跳过。
+    // （2026-11-20 worker 会话同构化：worker 会话走主会话路径，本路由仅剩一次性
+    // subagent 的 shell 壳层场景。）
+    setChildSessionMode: async (input) => {
+      for (const runtime of ownedRuntimes) {
+        if (runtime.getSessionId() !== input.childSessionId) continue;
+        try {
+          await runtime.setExecutionState(
+            { mode: input.mode },
+            input.traceContext ?? this.rootTraceContext,
+          );
+          return { ok: true };
+        } catch (error) {
+          return {
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      }
+      return { ok: false, error: "child_runtime_not_found" };
     },
     getAllowedTools: () => {
       return buildExploreAllowedTools({
@@ -177,6 +224,9 @@ export function createDefaultSubagentPort(
         });
         // 空 agent prompt 不是一个语义段；先硬拼 `\n\n` 会把缺失段的边界
         // 泄漏到 persistent Memory 开头。这里只组合非空正文，block 左边界由 builder 统一添加。
+        // 2026-11-20 worker 会话同构化：worker 注入段改由主 ContextBuilder 的
+        // workerInstructions 承载（worker-prompt.ts 内容保留，注入面迁移），本管线回归
+        // 纯一次性 subagent 语义（裁决 10 的拼接内容不变）。
         const agentPrompt = [baseAgentPrompt, persistentMemory?.prompt]
           .filter((part): part is string => typeof part === "string" && part.length > 0)
           .join("\n\n");
@@ -337,7 +387,12 @@ export function createDefaultSubagentPort(
             agentName: `robinrun-${request.agentType}`,
             maxTurns: request.maxTurns ?? this.config.subagents?.maxTurns ?? 4,
             parentSessionId: this.sessionId,
+            // 2026-11-20 worker 会话同构化：一次性 subagent 通道回归上游纯语义。
+            // 名册 worker 不再经本管线（派发前已在 Agent 工具层拒绝 wkr-* id；这里兜底
+            // 结构性拒绝，防止 profile.worker 从其它路径漏入）。
             taskType: "subagent_child",
+            // 创建来源（P2.5）：agent 派发，ref = 派发会话 id。
+            creationOrigin: { kind: "agent", ref: this.sessionId },
             // 动态工作流灰度门必须结构性继承：
             // 父会话关着而子代理开着，等于 Agent 工具变成绕过灰度的后门。默认路径（child 继承
             // 父 registry 可见的工具名）本来就够，但**自定义 agent profile 显式写
@@ -496,6 +551,8 @@ export function createDefaultSubagentPort(
             await childRuntime.ensureSessionPersistedForExternalActivity(request.prompt, {
               traceContext: request.traceContext,
             });
+            // worker 会话身份持久化已随 worker_child 通道退役（2026-11-20 同构化）：
+            // worker 会话身份由会话记录 worker_identity 列承载，冷恢复随 resume 回填。
           }
           await notifySessionReady();
           if (
@@ -534,8 +591,20 @@ export function createDefaultSubagentPort(
             abortSignal: options?.signal,
             // 子 Runtime 的首轮输入来自父 Agent，而不是真实用户直接输入；保留源事实，避免
             // Subagent Turn 在 Trace 和成功率报表里被误归类为 user。
-            inputSource: "subagent",
-            inputPresentation: "coordinator_input",
+            // P2.5：用户在 worker 会话直接输入的恢复轮不标记 synthetic 源——按真实用户
+            // 输入记账展示（worker 会话里出现用户气泡）。
+            // P2.6：coordinator 轮（派发/主智能体 SendMessage 恢复）注入 master 来源区块；
+            // 用户轮不注入——渲染层按 real_user 兜底标 {"sender":"user"}。
+            ...(request.initiator === "user"
+              ? {}
+              : {
+                  inputSource: "subagent" as const,
+                  inputPresentation: "coordinator_input" as const,
+                  systemStatus: {
+                    sender: "master" as const,
+                    fromSessionId: this.sessionId,
+                  },
+                }),
             traceContext: request.traceContext,
           });
         } finally {
@@ -674,7 +743,9 @@ function resolveSubagentToolAllowlist(
     return appendCoordinatorResponseTool(
       [...new Set(availableToolNames)]
         .filter((toolName) => !isSubagentDispatchToolName(toolName))
-        .filter((toolName) => filterSubagentChildToolNames([toolName], disallowedRules).length > 0),
+        .filter(
+          (toolName) => filterSubagentChildToolNames([toolName], disallowedRules).length > 0,
+        ),
     );
   }
   if (request.allowedTools.length > 0) {

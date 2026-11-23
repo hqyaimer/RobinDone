@@ -40,6 +40,7 @@ import type {
 } from "@robinrun/shared";
 import {
   cancelBackgroundTask,
+  clearSessionMessages,
   closeSession,
   compactSession,
   createSession,
@@ -762,6 +763,8 @@ export class RobinRunProtocolAgentServer {
         return await compactSession(this.context, request.params);
       case robinrunProtocolMethods.sessionGoal:
         return await goalSession(this.context, request.params);
+      case robinrunProtocolMethods.sessionClearMessages:
+        return await clearSessionMessages(this.context, request.params);
       case robinrunProtocolMethods.sessionSetModel:
         return await setModel(this.context, request.params);
       case robinrunProtocolMethods.sessionSetThoughtLevel:

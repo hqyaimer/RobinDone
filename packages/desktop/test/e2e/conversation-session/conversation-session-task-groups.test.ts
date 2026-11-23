@@ -61,7 +61,9 @@ describe("任务分组独立视图", () => {
   afterEach(async function () {
     if (this.currentTest?.state === "failed") {
       const failureName = `task-groups-failure-${this.currentTest?.title.split("：")[0]?.replaceAll("/", "_")}`;
-      await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `${failureName}.png`));
+      await browser.saveScreenshot(
+        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `${failureName}.png`),
+      );
       const layout = await browser.execute(() => {
         const root = document.querySelector('[data-testid="task-grouped-view"]');
         const viewport = root?.closest("[data-scroll-mask]");

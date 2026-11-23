@@ -80,9 +80,9 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
           file,
           `---\nname: ${name}\ndescription: GUIDE_SKILL_${actor}\n---\n\nReturn GUIDE_SKILL_${actor}.\n`,
         );
-        expect((await runSSHCommand(target, `mkdir -p "$HOME/.robinrun/skills/${name}"`)).code).toBe(
-          0,
-        );
+        expect(
+          (await runSSHCommand(target, `mkdir -p "$HOME/.robinrun/skills/${name}"`)).code,
+        ).toBe(0);
         await uploadSSHFixtureFile(
           target,
           file,
@@ -149,7 +149,8 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
       );
       await browser.waitUntil(
         async () =>
-          (await runSSHCommand(a, `test ! -e "$HOME/.robinrun/skills/${name}/SKILL.md"`)).code === 0,
+          (await runSSHCommand(a, `test ! -e "$HOME/.robinrun/skills/${name}/SKILL.md"`)).code ===
+          0,
       );
       expect(
         (await runSSHCommand(b, `cat "$HOME/.robinrun/skills/${name}/SKILL.md"`)).stdout,

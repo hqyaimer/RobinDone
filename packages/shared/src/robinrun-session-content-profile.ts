@@ -6,7 +6,10 @@
 // 以保证可见性与投影策略判定和 full snapshot 完全一致（spec：docs/task/task-sqlite-index.md「Index read profile」）。
 // 不能改用 messageLimit：searchableText 取前 200K 字符、标题回退首条真实用户输入，都依赖历史开头。
 import type { RobinRunSessionStateSnapshot } from "./robinrun-protocol/index.js";
-import type { RobinRunMessagePart, RobinRunMessageWithParts } from "./robinrun-protocol-legacy-types.js";
+import type {
+  RobinRunMessagePart,
+  RobinRunMessageWithParts,
+} from "./robinrun-protocol-legacy-types.js";
 
 export type RobinRunSessionContentProfile = "full" | "index";
 
@@ -57,6 +60,8 @@ function elideMessageForIndex(message: RobinRunMessageWithParts): RobinRunMessag
 }
 
 /** 生成 task index 专用的轻量 snapshot；不修改入参（CLI 侧 messages 可能来自共享缓存）。 */
-export function elideSessionSnapshotForIndex<T extends RobinRunSessionStateSnapshot>(snapshot: T): T {
+export function elideSessionSnapshotForIndex<T extends RobinRunSessionStateSnapshot>(
+  snapshot: T,
+): T {
   return { ...snapshot, messages: snapshot.messages.map(elideMessageForIndex) };
 }

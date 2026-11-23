@@ -4,7 +4,9 @@ import { validateRemoteServerBundle } from "./buildRemoteValidation.js";
 import { loadBuiltinProviderConfig } from "../../scripts/builtin-provider-config.mjs";
 import { stageThirdPartyNotices } from "../../scripts/third-party-notices.mjs";
 
-const { version, robinrunCompatibility } = JSON.parse(readFileSync("../../package.json", "utf-8")) as {
+const { version, robinrunCompatibility } = JSON.parse(
+  readFileSync("../../package.json", "utf-8"),
+) as {
   version: string;
   robinrunCompatibility?: { minCompatibleVersion?: string };
 };

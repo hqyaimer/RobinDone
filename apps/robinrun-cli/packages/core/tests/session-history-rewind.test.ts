@@ -59,7 +59,7 @@ describe("session history rewind hydration", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "keep this" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nkeep this" },
       {
         role: "assistant",
         content: "kept reply",
@@ -264,8 +264,8 @@ describe("session history rewind hydration", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "Conversation rewind applied." },
-      { role: "user", content: "edited prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nConversation rewind applied." },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nedited prompt" },
       {
         role: "assistant",
         content: "edited reply",
@@ -391,7 +391,7 @@ describe("session history rewind hydration", () => {
 
     expect(providerMessages(history)).toEqual([
       { role: "system", content: "system prompt" },
-      { role: "user", content: "edited prompt" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nedited prompt" },
       {
         role: "assistant",
         content: "edited reply",
@@ -426,7 +426,7 @@ describe("session history rewind hydration", () => {
     expect(messages).toEqual([
       { role: "system", content: "system prompt" },
       { role: "user", content: "Summary after compact with preserved segment" },
-      { role: "user", content: "old prompt preserved before compact" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nold prompt preserved before compact" },
     ]);
   });
 });

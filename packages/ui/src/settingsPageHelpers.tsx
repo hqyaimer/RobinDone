@@ -53,7 +53,10 @@ export { SETTINGS_SECTION_GROUPS, SETTINGS_SECTIONS };
 export { isSettingsSectionAvailable };
 
 const TASK_AUTO_ARCHIVE_DAY_OPTIONS = [3, 7, 14, 30] as const;
-const ROBINRUN_INTERACTION_BEHAVIOR_OPTIONS: readonly RobinRunInteractionBehavior[] = ["queue", "guide"];
+const ROBINRUN_INTERACTION_BEHAVIOR_OPTIONS: readonly RobinRunInteractionBehavior[] = [
+  "queue",
+  "guide",
+];
 
 /**
  * 归档偏好与归档列表集中展示，设置值和保存动作继续由 SettingsPage 持有。
@@ -260,7 +263,8 @@ export function GeneralSectionContent({
   onRobinRunInteractionBehaviorChange: (behavior: RobinRunInteractionBehavior) => Promise<void>;
   onAskUserQuestionAutoResolutionEnabledChange?: (enabled: boolean) => Promise<void>;
   onModelIoFullRetentionEnabledChange?: (enabled: boolean) => Promise<void>;
-  onOpenOnboardingDialog: () => void;
+  // RobinRun(2026-11-22): [hide-upstream-account] 打开引导入口已隐藏，prop 降级可选；恢复时改回必选并还原设置行
+  onOpenOnboardingDialog?: () => void;
 }) {
   const { intl } = useRobinRunIntl();
   const hasServices = Boolean(useOptionalServices());
@@ -967,7 +971,8 @@ export function GeneralSectionContent({
         />
       </SettingsGroupCard>
 
-      <SettingsGroupCard>
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」设置行——职业引导壳已摘除，恢复时取消本段注释 */}
+      {/* <SettingsGroupCard>
         <SettingsRow
           label={intl.formatMessage({ id: "settings.onboarding" })}
           description={intl.formatMessage({
@@ -979,7 +984,8 @@ export function GeneralSectionContent({
             </Button>
           }
         />
-      </SettingsGroupCard>
+      </SettingsGroupCard> */}
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
     </div>
   );
 }

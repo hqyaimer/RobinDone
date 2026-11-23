@@ -41,10 +41,12 @@ import {
   createOfficialMcpAuthHeadersPort,
   type OfficialMcpAuthRequestContext,
 } from "./robinrun-protocol/official-mcp-auth-port.js";
-import {
-  createOfficialCommandEndpoint,
-  type OfficialCommandEndpoint,
-} from "./official-command-endpoint/index.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「official-command-endpoint（Sites 命令代理端点）」——
+// 唯一消费者 robinrun-site 插件已退役（无登录态必 401）；模块目录与单测保留。恢复时取消各接线段注释
+// import {
+//   createOfficialCommandEndpoint,
+//   type OfficialCommandEndpoint,
+// } from "./official-command-endpoint/index.js";
 import {
   createOfficialMcpTrustedOriginRegistry,
   OFFICIAL_MCP_DEV_TRUSTED_ORIGINS_ENV,
@@ -134,7 +136,8 @@ export async function runRobinRunProtocolAgent(
   let sessionStore: SqliteSessionStore | undefined;
   let serverForCleanup: RobinRunProtocolAgentServer | undefined;
   let nodeReplBrowserBroker: NodeReplBrowserBroker | undefined;
-  let officialCommandEndpoint: OfficialCommandEndpoint | undefined;
+  // RobinRun(2026-11-22): [hide-upstream-account] official-command-endpoint 已隐藏——恢复时取消本行
+  // let officialCommandEndpoint: OfficialCommandEndpoint | undefined;
   let mcpConnectionPool: McpConnectionPool | undefined;
   let mcpPort: McpPort | undefined;
   let mcpTelemetryTracker: McpTelemetryTracker | undefined;
@@ -244,20 +247,22 @@ export async function runRobinRunProtocolAgent(
         resolveRobinRunApiOrigin,
       }),
     };
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「official-command-endpoint 创建」——恢复时取消本段注释
     // 官方插件命令进程的代理端点（技术方案 5.8）：CLI 不持有凭证，端点每个请求向 host 现取
     // 身份头后转发给 robinrun-server。和官方 MCP 用同一个 origin 表达式与网络配置。
-    const endpointEnv = options.env ?? process.env;
-    officialCommandEndpoint = createOfficialCommandEndpoint({
-      resolveHeaders: createOfficialCommandAuthHeadersPort({
-        resolveContext: () => officialMcpAuthContext,
-        logger,
-      }).resolveHeaders,
-      resolveRobinRunApiOrigin,
-      appVersion: endpointEnv.ROBINRUN_APP_VERSION?.trim() || options.version,
-      fetch: createMcpTransportFetch({ env: endpointEnv, network: configResult.config.network }),
-      logger,
-    });
-    const activeOfficialCommandEndpoint = officialCommandEndpoint;
+    // const endpointEnv = options.env ?? process.env;
+    // officialCommandEndpoint = createOfficialCommandEndpoint({
+    //   resolveHeaders: createOfficialCommandAuthHeadersPort({
+    //     resolveContext: () => officialMcpAuthContext,
+    //     logger,
+    //   }).resolveHeaders,
+    //   resolveRobinRunApiOrigin,
+    //   appVersion: endpointEnv.ROBINRUN_APP_VERSION?.trim() || options.version,
+    //   fetch: createMcpTransportFetch({ env: endpointEnv, network: configResult.config.network }),
+    //   logger,
+    // });
+    // const activeOfficialCommandEndpoint = officialCommandEndpoint;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     // MCP elicitation 归属到协议 server 的会话；pool 先于 server 创建，端口延迟绑定。
     let elicitationServer: {
       requestMcpElicitation: McpElicitationPort["requestElicitation"];
@@ -333,13 +338,18 @@ export async function runRobinRunProtocolAgent(
               }
             : {}),
           providerEndpointRoutingPort,
-          officialCommandEnv: (sessionId, workspace) =>
-            activeOfficialCommandEndpoint.envForSession(sessionId, workspace),
+          // RobinRun(2026-11-22): [hide-upstream-account] official-command-endpoint 已隐藏——恢复时取消本段注释
+          // officialCommandEnv: (sessionId, workspace) =>
+          //   activeOfficialCommandEndpoint.envForSession(sessionId, workspace),
+          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
           sourceTitle: "electron",
           onToolExecResource: (params) =>
             connection.send({ method: robinrunProtocolNotifications.toolExecResource, params }),
         }),
       cwd: options.cwd,
+      // agent 消息在途请求的持久化落盘位置（2026-11-22）：CLI 存储根缺席（测试/嵌入
+      // 形态）时登记表退化为纯内存，不落盘不恢复。
+      cliStorageRoot: protocolCliStorageRoot,
       env: options.env,
       loggerFactory,
       mcpPort,
@@ -420,12 +430,14 @@ export async function runRobinRunProtocolAgent(
     throw error;
   } finally {
     options.lifecycle?.requestShutdown();
-    await officialCommandEndpoint?.close().catch((error: unknown) => {
-      logger.warn("Official command endpoint close failed", {
-        error: error instanceof Error ? error.message : String(error),
-        event: "robinrun_protocol.official_command_endpoint.close_failed",
-      });
-    });
+    // RobinRun(2026-11-22): [hide-upstream-account] official-command-endpoint 已隐藏——恢复时取消本段注释
+    // await officialCommandEndpoint?.close().catch((error: unknown) => {
+    //   logger.warn("Official command endpoint close failed", {
+    //     error: error instanceof Error ? error.message : String(error),
+    //     event: "robinrun_protocol.official_command_endpoint.close_failed",
+    //   });
+    // });
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     await cleanupProtocolRuntime({
       logger,
       deadlineAt: options.lifecycle?.deadlineAt,

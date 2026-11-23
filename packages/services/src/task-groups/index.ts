@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
+import { WORKER_ID_PATTERN, remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
 import type { DatabaseSync } from "node:sqlite";
 import type { GroupTaskFact, GroupTaskRef, ITaskGroupService } from "#src/task-groups/contract.js";
 import { TaskGroupRepository, groupTaskKey } from "#src/task-groups/repository.js";
@@ -63,9 +63,28 @@ export function createTaskGroupService(options: {
       await changed((repo) => repo.ungroup(z.string().min(1).parse(id)));
     },
     async ensureMainAgentGroup(input) {
-      const parsed = z.object({ projectId: z.string().min(1) }).strict().parse(input);
+      const parsed = z
+        .object({ projectId: z.string().min(1) })
+        .strict()
+        .parse(input);
       const result = (await repository()).ensureMainAgentGroup(parsed.projectId);
       // 已存在时是幂等空操作；广播无副作用，UI 侧刷新一遍结构即可。
+      await options.afterChange();
+      return result;
+    },
+    async ensureWorkerGroup(input) {
+      const parsed = z
+        .object({
+          projectId: z.string().min(1),
+          // 形状与 worker-roster workerIdSchema 一致（小写 slug，1-64）；task-groups 不反向
+          // import worker-roster（受管模块单向依赖），正则取自 shared 的 WORKER_ID_PATTERN。
+          workerId: z.string().regex(WORKER_ID_PATTERN).max(64),
+          title: z.string().trim().min(1).max(200).optional(),
+        })
+        .strict()
+        .parse(input);
+      const result = (await repository()).ensureWorkerGroup(parsed);
+      // 幂等（含标题同步路径）；广播无副作用，UI 侧刷新一遍结构即可。
       await options.afterChange();
       return result;
     },

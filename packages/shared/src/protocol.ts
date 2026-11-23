@@ -255,7 +255,7 @@ export interface ResourceUsageSnapshot {
 }
 
 /**
- * RobinRun 运营项目登记条目：launcher（项目启动台）的注册表单元。
+ * RobinRun 项目登记条目：launcher（项目启动台）的注册表单元。
  * path 是项目工作空间目录（也是本地 workspace identity 键）。
  * 运行时校验 schema 见 validationAppSettings.ts 的 robinrunProjectEntrySchema，
  * 两处形状必须保持一致（schema 侧有编译期双向可赋值守卫）。
@@ -266,11 +266,32 @@ export interface RobinRunProjectEntry {
   path: string;
   createdAt: number;
   lastOpenedAt: number;
+  /**
+   * 项目权限全量同步（2026-11-18）：本项目已确认过一次「完全访问」风险提示的时间戳。
+   * 在场 = 本项目内所有智能体/会话的完全访问切换不再重复弹确认窗；权限值本身仍按
+   * 会话草稿独立（运行时默认由 CLI local_setting 的项目级 permission mode 承载）。
+   */
+  fullAccessConfirmedAt?: number;
 }
+
+/**
+ * 全局权限模式缺省（2026-11-22 升格）：用户在任意会话显式选择的权限（模式选择器改档）
+ * 写这份跨工作区设置，UI 新草稿与宿主自动创建的会话（触发器/ContactAgent 派发等）
+ * 同源继承。此前 P3 第六批的全局键存在渲染进程 localStorage，host/CLI 读不到，
+ * 自动创建的会话永远落 CLI 缺省 build。
+ *
+ * 值域刻意排除 plan（plan 是草稿层独立开关位，UI 写入时归一 build）；
+ * yolo 对自动创建的会话不直接生效——须配合项目级 fullAccessConfirmedAt 门控
+ * （解析逻辑见 services 侧 resolveAutoSessionDefaultMode），未经确认的新项目
+ * 不得静默拿到完全访问。
+ */
+export type RobinRunGlobalComposerMode = "build" | "edit" | "guarded" | "yolo";
 
 export interface AppSettings {
   /** 当前 App/Host 不再显示提交前体验套餐推荐；不改变任何入口的模型选择。 */
   startPlanRecommendationDismissed?: boolean;
+  /** 全局权限模式缺省；缺席时 UI 草稿走既有解析链、宿主自动会话落 CLI 缺省 build。 */
+  globalComposerMode?: RobinRunGlobalComposerMode;
   recentProjects: string[]; // 最近项目列表，最多保留 10 个
   locale: Locale; // 界面语言
   /**
@@ -457,7 +478,7 @@ export interface AppSettings {
   /** 设置页里的临时 endpoint override；正式/测试默认 base url 由 ROBINRUN_BASE_URL env 管理。 */
   robinrunEndpointOrigin?: string;
   /**
-   * RobinRun 运营项目注册表：launcher（项目启动台）的持久化事实来源。
+   * RobinRun 项目注册表：launcher（项目启动台）的持久化事实来源。
    * path 是项目工作空间目录（本地 workspace identity 键）；schema 见 validationAppSettings.ts。
    */
   robinrunProjects?: RobinRunProjectEntry[];

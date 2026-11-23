@@ -8,6 +8,7 @@ import type {
   CollaborationMode,
   AutomationPort,
   BrowserControlPort,
+  AgentContactPort,
   CoordinatorResponsePort,
   DynamicWorkflowRunPort,
   DynamicWorkflowSnippetPort,
@@ -41,8 +42,10 @@ import type {
   SkillTelemetryMetadata,
   SubagentPort,
   SubagentRunOptions,
+  TriggerRuntimePort,
   ToolArtifactStorePort,
   ToolCancellationPolicy,
+  WorkerSessionIdentity,
   ToolContractDeclaration,
   ToolExecutionMode,
   ToolExecutionSpanWriter,
@@ -173,6 +176,10 @@ export interface ToolExecutionContext {
   skillPort?: SkillPort;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
+  /** agent 消息端口（2026-11-19）：ContactAgent/WaitReply；master 主会话 + worker_child 注入。 */
+  agentContactPort?: AgentContactPort;
+  /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
+  triggerRuntimePort?: TriggerRuntimePort;
   /** 工作流 actor 提交终态结果并等待引擎裁决的端口；仅在 workflow actor 会话注入。 */
   workflowSubmitPort?: WorkflowSubmitPort;
   /** 工作流 actor 升级阻塞问题并等待主代理作答的端口；仅在 workflow actor 会话注入。 */
@@ -206,6 +213,12 @@ export interface ToolExecutionContext {
   deliveryKind?: "desktop-continuous" | "web-remote-replayable";
   memoryRoot?: string;
   runtimeScope?: ToolRuntimeScope;
+  /**
+   * 调用会话的 worker 身份（runtime.config.workerIdentity 透传；缺席 = master/一次性
+   * subagent 会话）。机制层事实，不来自模型输入——ManageTriggers 据此把「订阅者=创建者」
+   * 钉死（worker 会话的模型不知道自己的 wkr-id，归属不能依赖模型传值）。
+   */
+  workerIdentity?: WorkerSessionIdentity;
   providerVisibleToolNames?: readonly string[];
   sessionId: SessionId;
   turnId?: TurnId;

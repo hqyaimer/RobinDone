@@ -1,5 +1,8 @@
 import type { ProviderSettingsView } from "@robinrun/services";
-import { type RobinRunProviderAccountAccess, robinrunProviderAccountAccessSchema } from "@robinrun/shared";
+import {
+  type RobinRunProviderAccountAccess,
+  robinrunProviderAccountAccessSchema,
+} from "@robinrun/shared";
 
 export interface EntitledAccountProviderAccess {
   readonly providerId: string;

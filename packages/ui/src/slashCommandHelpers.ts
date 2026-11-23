@@ -88,7 +88,9 @@ export function normalizeSlashCommandValue(name: string): string {
   return name.trim().replace(/^\/+/, "");
 }
 
-export function buildSlashSuggestions(commands: RobinRunSlashCommand[]): PromptInputSuggestionItem[] {
+export function buildSlashSuggestions(
+  commands: RobinRunSlashCommand[],
+): PromptInputSuggestionItem[] {
   return commands.flatMap((command) => {
     const value = normalizeSlashCommandValue(command.name);
     // Plan 是 Composer 本地操作。旧 Agent 仍可能广播同名命令，不能让它重新

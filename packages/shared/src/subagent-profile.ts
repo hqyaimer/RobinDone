@@ -27,6 +27,23 @@ export interface AgentProfile {
   source: AgentProfileSource;
   systemPrompt: string;
   tools?: readonly string[];
+  /**
+   * worker 身份标记（2026-11-16 会话通道隔离裁决）：由名册 profile（buildWorkerProfile）
+   * 设置，派发链据此走 worker 专属通道——taskType=worker_child、异步派发、会话投影带
+   * worker 字段。与一次性 subagent 通道完全隔离，未来 worker 针对性开发只扩展此标记。
+   */
+  worker?: WorkerProfileIdentity;
+}
+
+/**
+ * worker 派发会话的身份事实：id 是路径锚点，name 是用户可读显示名（改名不影响 id）；
+ * defineMd 是职责定义正文（`<id>/define.md`，裁决 10，2026-11-20）——由 master 独占维护，
+ * worker 仅受提示词约束不得修改；随 profile 透传给 core 的 worker-prompt.ts 拼接。
+ */
+export interface WorkerProfileIdentity {
+  workerId: string;
+  workerName: string;
+  defineMd?: string;
 }
 
 export interface AgentProfileParseDiagnostic {
@@ -39,6 +56,15 @@ export interface AgentProfileLoadResult {
   diagnostics: AgentProfileParseDiagnostic[];
   profiles: AgentProfile[];
 }
+
+/** 跨进程 worker 身份 schema：id 是路径锚点，name 是用户可读显示名，defineMd 是职责定义正文。 */
+export const workerProfileIdentitySchema = z
+  .object({
+    workerId: z.string().min(1),
+    workerName: z.string().min(1),
+    defineMd: z.string().optional(),
+  })
+  .strict();
 
 /** 完整运行时 profile 的跨进程边界，不使用 Settings 摘要代替。 */
 export const agentProfileSchema = z
@@ -63,5 +89,7 @@ export const agentProfileSchema = z
     disallowedTools: z.array(z.string()).readonly().optional(),
     skills: z.array(z.string()).readonly().optional(),
     mcpServers: z.array(z.string()).readonly().optional(),
+    // worker 身份标记与接口同步（strict schema 是 Host→CLI 跨进程边界，漏镜像会拒绝快照）。
+    worker: workerProfileIdentitySchema.optional(),
   })
   .strict();

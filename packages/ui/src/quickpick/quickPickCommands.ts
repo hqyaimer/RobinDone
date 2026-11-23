@@ -229,65 +229,68 @@ export function createQuickPickCommands({
     },
   ];
 
-  commands.push({
-    id: "feedback",
-    sectionId: "app",
-    titleId: "quickPick.command.feedback",
-    icon: "feedback",
-    keywords: [
-      "feedback",
-      "issue",
-      "support",
-      "tickets",
-      "问题上报",
-      "问题反馈",
-      "反馈",
-      "我的反馈",
-      "工单",
-    ],
-    run: handlers.openFeedback,
-  });
-
-  if (canOpenCommunity) {
-    commands.push({
-      id: "community",
-      sectionId: "app",
-      titleId: "quickPick.command.community",
-      icon: "community",
-      keywords: ["community", "users", "chat", "用户社群", "社群"],
-      run: handlers.openCommunity,
-    });
-  }
-
-  commands.push({
-    id: "product-docs",
-    sectionId: "app",
-    titleId: "quickPick.command.productDocs",
-    icon: "book",
-    keywords: ["docs", "documentation", "product docs", "文档", "产品文档"],
-    run: handlers.openProductDocs,
-  });
-
-  if (isLoggedIn && handlers.logout) {
-    commands.push({
-      id: "logout",
-      sectionId: "app",
-      titleId: "quickPick.command.logout",
-      icon: "logout",
-      keywords: ["disconnect", "logout", "sign out", "断开连接", "登出"],
-      run: handlers.logout,
-    });
-  } else if (!isLoggedIn && handlers.login) {
-    commands.push({
-      id: "login",
-      sectionId: "app",
-      titleId: "quickPick.command.login",
-      icon: "login",
-      // 命令面板的账号动作对用户表达为“连接/断开连接”，搜索词也要同步。
-      keywords: ["connect", "login", "sign in", "连接", "登录"],
-      run: handlers.login,
-    });
-  }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「feedback / community / 产品文档 / login / logout」命令——
+  // 前三者触达上游反馈/社群/文档（ZCode 官方内容），后两者依赖上游 OAuth。恢复时取消本段注释
+  // commands.push({
+  //   id: "feedback",
+  //   sectionId: "app",
+  //   titleId: "quickPick.command.feedback",
+  //   icon: "feedback",
+  //   keywords: [
+  //     "feedback",
+  //     "issue",
+  //     "support",
+  //     "tickets",
+  //     "问题上报",
+  //     "问题反馈",
+  //     "反馈",
+  //     "我的反馈",
+  //     "工单",
+  //   ],
+  //   run: handlers.openFeedback,
+  // });
+  //
+  // if (canOpenCommunity) {
+  //   commands.push({
+  //     id: "community",
+  //     sectionId: "app",
+  //     titleId: "quickPick.command.community",
+  //     icon: "community",
+  //     keywords: ["community", "users", "chat", "用户社群", "社群"],
+  //     run: handlers.openCommunity,
+  //   });
+  // }
+  //
+  // commands.push({
+  //   id: "product-docs",
+  //   sectionId: "app",
+  //   titleId: "quickPick.command.productDocs",
+  //   icon: "book",
+  //   keywords: ["docs", "documentation", "product docs", "文档", "产品文档"],
+  //   run: handlers.openProductDocs,
+  // });
+  //
+  // if (isLoggedIn && handlers.logout) {
+  //   commands.push({
+  //     id: "logout",
+  //     sectionId: "app",
+  //     titleId: "quickPick.command.logout",
+  //     icon: "logout",
+  //     keywords: ["disconnect", "logout", "sign out", "断开连接", "登出"],
+  //     run: handlers.logout,
+  //   });
+  // } else if (!isLoggedIn && handlers.login) {
+  //   commands.push({
+  //     id: "login",
+  //     sectionId: "app",
+  //     titleId: "quickPick.command.login",
+  //     icon: "login",
+  //     // 命令面板的账号动作对用户表达为“连接/断开连接”，搜索词也要同步。
+  //     keywords: ["connect", "login", "sign in", "连接", "登录"],
+  //     run: handlers.login,
+  //   });
+  // }
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
   return commands.filter(
     (command) =>

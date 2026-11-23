@@ -313,7 +313,8 @@ export const useHooksStore = create<HooksStoreState>((set, get) => ({
     const { hooks, workspacePath } = get();
     if (!workspacePath) throw new Error("No workspace path set");
     const source = hooks.find((hook) => hook.id === id);
-    if (!source || source.location?.source === "robinrun") throw new Error("Hook is not importable");
+    if (!source || source.location?.source === "robinrun")
+      throw new Error("Hook is not importable");
     const imported: Hook = {
       ...source,
       id: `hook-${crypto.randomUUID()}`,

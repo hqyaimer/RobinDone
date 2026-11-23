@@ -1,4 +1,5 @@
 import type { ExecutionOutputPreview } from "../interfaces/execution.port.js";
+import type { SystemStatusPayload, SystemStatusSender } from "@robinrun/shared";
 import type { RuntimeInputPresentation } from "../interfaces/runtime-input-presentation.js";
 /* eslint-disable max-lines -- session event 契约集中在单文件导出，避免 app/agent 协议类型分散后漂移。 */
 // ============================================================
@@ -348,6 +349,13 @@ export interface BackgroundResultOriginMeta {
   workflowBlocked?: WorkflowBlockedMeta;
   /** 只在 backgroundSource === "subagent" 的单条通知轮上在场；合并轮不带。 */
   subagentResult?: SubagentResultMeta;
+  /**
+   * 跳转锚点（2026-11-18 mailbox 跳转）：worker/subagent 完成通知记录子会话汇报轮的
+   * turnId——master 会话的 mailbox 行据此跳回子会话精确滚到汇报轮。只在单条通知轮上
+   * 在场（与 subagentResult 同口径，合并轮/无子轮次的 bash 通知缺席）；UI 缺席时退回
+   * 打开会话后滚到底部。
+   */
+  sourceTurnId?: string;
 }
 
 /**
@@ -507,6 +515,29 @@ export interface TurnStartedPayloadBase {
   foregroundExecutionId?: string;
   queryId?: QueryId;
   inputSource?: SyntheticUserMessageSource;
+  /**
+   * P2.6 消息来源（2026-11-18 验收修复）：本轮输入的 <system-status> sender。
+   * 真实用户输入缺省（absent = user）；master/trigger/system 等来源的轮由此进
+   * mailbox 投影（左侧 + 发送者徽章），冷恢复与活投影同形。
+   */
+  inputSender?: SystemStatusSender;
+  /**
+   * 发送方身份 id（systemStatus.senderId：worker = wkr-id，subagent = 类型名）。
+   * P2.6 验收修复第三轮：随 mailbox 行 originMeta.senderId 投影，UI 据此把徽章图标
+   * 染成该 agent 在侧栏的组色（workerGroupId → 任务组 color）。
+   */
+  inputSenderId?: string;
+  /**
+   * P2.6 验收修复第二轮（2026-11-18）：发送者显示名（systemStatus.senderName，已清洗）。
+   * worker/subagent 通知轮据此把 mailbox 行徽章从泛称（「工作者」）换成「谁在说话」
+   * （worker 显示名）；缺席回退按 sender 枚举选文案。
+   */
+  inputSenderLabel?: string;
+  /**
+   * 发送方会话地址（systemStatus.fromSessionId）：worker/subagent 通知轮随行投影进
+   * userInput 行 originMeta.senderSessionId，供后续「回到该会话」等联动寻址。
+   */
+  inputSenderSessionId?: string;
   inputVisibility?: MessageVisibility;
   /**
    * 中枢直接启动已保存工作流的启动轮元数据（`inputSource === "workflow_launch"` 时在场）。
@@ -606,6 +637,10 @@ export interface TurnSteerDrainedPayload {
     delivery?: TurnSteerDeliveryMode;
     intent?: TurnInputIntentMetadata;
     toolDisallowlist?: readonly string[];
+    /** P2.6 群聊投影：drain 行的输入呈现（user_steer → 用户气泡；coordinator_steer → master 来源徽章）。 */
+    inputPresentation?: RuntimeInputPresentation;
+    /** P2.6 群聊投影：发送方身份（master 插话带 fromSessionId 回话地址）。 */
+    systemStatus?: SystemStatusPayload;
   }>;
 }
 

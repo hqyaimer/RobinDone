@@ -64,6 +64,13 @@ interface Stub {
   /** 模拟 record.updatedAt：每条活动事件都会 bump，摘要因此条条有变化。 */
   lastActivityAt?: number;
   drafts?: Set<string>;
+  /** 宿主钩子回传的会话列表元信息（含 worker 身份投影）；缺省走基础字段。 */
+  indexMeta?: {
+    createdAt?: number;
+    lastActivityAt?: number;
+    worker?: SessionSummary["worker"];
+    workerChild?: boolean;
+  };
   executeCommand?: ConstructorParameters<typeof ConversationV4Gateway>[0]["executeCommand"];
   loadPersistedEvents?: (sessionId: string) => Promise<{
     events: SessionEvent[];
@@ -94,8 +101,10 @@ function makeGateway(stub: Stub, opts: { withIndexHooks: boolean }) {
             getSessionWorkspaceId: (sessionId: string) =>
               stub.sessionWorkspace.get(sessionId) ?? null,
             getSessionIndexMeta: () => ({
-              createdAt: 10,
-              lastActivityAt: stub.lastActivityAt ?? 99,
+              createdAt: stub.indexMeta?.createdAt ?? 10,
+              lastActivityAt: stub.indexMeta?.lastActivityAt ?? stub.lastActivityAt ?? 99,
+              ...(stub.indexMeta?.worker ? { worker: stub.indexMeta.worker } : {}),
+              ...(stub.indexMeta?.workerChild ? { workerChild: stub.indexMeta.workerChild } : {}),
             }),
             listWorkspaceSessionIds: (workspaceId: string) =>
               [...stub.sessionWorkspace.entries()]
@@ -191,6 +200,74 @@ describe("ConversationV4Gateway sessions-index 集成", () => {
       gateway.dispose();
     },
   );
+
+  it("FSV07：宿主钩子回传的 worker 身份进入 snapshot 与 delta summary（同构化 worker 会话归组依赖）", async () => {
+    // 回归（2026-11-22 实测）：resolveIndexMeta 曾只透传 workerChild kind 标记、丢弃
+    // worker 身份——live 投影的 summary 永不带 worker，host syncer 的 worker 组准入
+    // 在创建时刻从不运行，ContactAgent 新建的 worker 会话被误归主智能体组。
+    const stub: Stub = {
+      frames: [],
+      sessions: new Set(["wkr-live-1"]),
+      sessionWorkspace: new Map([["wkr-live-1", "ws-1"]]),
+      stored: [],
+      indexMeta: {
+        createdAt: 10,
+        worker: { workerId: "wkr-7530065b", workerName: "开发工程师" },
+        workerChild: true,
+      },
+    };
+    const gateway = makeGateway(stub, { withIndexHooks: true });
+    gateway.ingest(
+      "wkr-live-1",
+      event("wkr-live-1", 1, SessionEventType.SessionCreated, {
+        mode: "default",
+        contextWindow: 200_000,
+      }),
+    );
+    const subscribe = await gateway.subscribeSessionsIndex({
+      topic: "sessions-index/ws-1",
+      connectionId: "desktop",
+      clientMode: "desktop-continuous",
+    });
+    // snapshot 路径（ensureIndexPublisherExclusive 的 live 投影覆盖）：初始帧经订阅
+    // 返回值（initialFrame）下发，不走 emitWireFrame 异步通道。
+    const snapshotFrame = subscribe.initialFrame;
+    expect(snapshotFrame?.payload.kind).toBe("snapshot");
+    if (snapshotFrame?.payload.kind === "snapshot") {
+      expect(snapshotFrame.payload.snapshot.sessions).toMatchObject([
+        {
+          sessionId: "wkr-live-1",
+          worker: { workerId: "wkr-7530065b", workerName: "开发工程师" },
+          workerChild: true,
+        },
+      ]);
+    }
+    // delta 路径（fanOutToIndex → publishCurrentSummaryToIndex）。
+    gateway.ingest(
+      "wkr-live-1",
+      event("wkr-live-1", 2, SessionEventType.SessionTitleUpdated, {
+        previousTitle: "",
+        source: "first_input",
+        title: "worker task",
+      }),
+    );
+    const deltaFrame = indexFrames(stub).at(-1);
+    expect(subscribe.ack.mode).toBe("snapshot");
+    expect(deltaFrame?.payload.kind).toBe("deltas");
+    if (deltaFrame?.payload.kind === "deltas") {
+      expect(deltaFrame.payload.deltas).toMatchObject([
+        {
+          op: "session.upserted",
+          session: {
+            sessionId: "wkr-live-1",
+            worker: { workerId: "wkr-7530065b", workerName: "开发工程师" },
+            workerChild: true,
+          },
+        },
+      ]);
+    }
+    gateway.dispose();
+  });
 
   it("saturated mobile index subscriber does not block desktop and drains only itself", async () => {
     const stub: Stub = {

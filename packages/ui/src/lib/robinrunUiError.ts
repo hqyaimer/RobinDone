@@ -1,5 +1,8 @@
 import type { RobinRunError, RobinRunTaskMeta, TraceId } from "@robinrun/shared";
-import { errorAttributionSchema, type ErrorAttribution } from "@robinrun/shared/robinrun-protocol-v4";
+import {
+  errorAttributionSchema,
+  type ErrorAttribution,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import { resolveRequestVerificationBusinessCode } from "@/lib/providerBusinessError.js";
 
 export interface RobinRunUiError extends RobinRunError {
@@ -202,7 +205,8 @@ export function normalizeRobinRunUiError(
     options.fallbackMessage ??
     "Internal error";
   const detailMessage = candidates.find(
-    (candidate) => candidate !== primaryMessage && !GENERIC_ROBINRUN_UI_ERROR_MESSAGES.has(candidate),
+    (candidate) =>
+      candidate !== primaryMessage && !GENERIC_ROBINRUN_UI_ERROR_MESSAGES.has(candidate),
   );
   const codeFromError = readFirstStringFromPaths(error, [
     ["code"],

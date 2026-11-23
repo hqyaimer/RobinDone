@@ -9,7 +9,8 @@ export const ROBINRUN_REMOTE_NO_PROXY_ENV_KEY = "ROBINRUN_REMOTE_NO_PROXY";
 export const ROBINRUN_AGENT_CA_CERT_ENV_KEY = "ROBINRUN_AGENT_CA_CERT";
 export const ROBINRUN_TOOL_ENV_PASSTHROUGH_ENV_KEY = "ROBINRUN_TOOL_ENV_PASSTHROUGH_JSON";
 /** Desktop Main 将服务端裁决的单功能灰度结果传给 Local/Remote Host。 */
-export const ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV = "ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED";
+export const ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV =
+  "ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED";
 export const ROBINRUN_CUA_PRODUCT_HELPER_ENV_KEY = "ROBINRUN_CUA_PRODUCT_HELPER";
 export const ROBINRUN_CUA_BROKER_SOCKET_ENV_KEY = "ROBINRUN_CUA_PERMISSION_BROKER_SOCKET";
 // 官方命令端点（agent 侧代理，技术方案 5.8）：地址与 session token 只由 agent 按 session 注入
@@ -119,7 +120,9 @@ const NON_TOOL_PASSTHROUGH_RUNTIME_ENV_KEYS = [
 const SANITIZED_PACKAGE_MANAGER_ENV_PATTERN =
   /^(npm_config|yarn|pnpm)_(http_proxy|https_proxy|proxy|all_proxy|no_proxy|cafile|ca)$/i;
 
-export function normalizeRobinRunRuntimeEnv(value: string | undefined): RobinRunRuntimeEnv | undefined {
+export function normalizeRobinRunRuntimeEnv(
+  value: string | undefined,
+): RobinRunRuntimeEnv | undefined {
   const normalized = value?.trim().toLowerCase();
   if (normalized === "development" || normalized === "production" || normalized === "test") {
     return normalized;

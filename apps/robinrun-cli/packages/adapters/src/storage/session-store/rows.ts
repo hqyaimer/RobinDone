@@ -5,6 +5,7 @@ export interface SessionRow {
   parent_id: string | null;
   trace_id: string | null;
   task_type: string;
+  creation_origin: string | null;
   slug: string;
   directory: string;
   path: string | null;
@@ -26,6 +27,7 @@ export interface SessionRow {
   time_archived: number | null;
   time_deleted: number | null;
   last_outcome: "completed" | "error" | "interrupted" | null;
+  worker_identity: string | null;
 }
 
 export interface MessageRow {

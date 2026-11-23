@@ -97,6 +97,15 @@ function providerContentToText(content: unknown): string {
   return String(content ?? "");
 }
 
+// P2.6 消息来源区块：provider 请求里的真实用户输入正文最前带
+// <system-status> 区块。区块形状由 provider-request-messages / incoming-message-escaping
+// 专项测试锁定；本文件的链路断言统一剥掉前缀后比较正文。
+const SYSTEM_STATUS_BLOCK_RE = /^<system-status>[\s\S]*?<\/system-status>\n\n/;
+const SYSTEM_STATUS_BLOCK_USER_PREFIX = '<system-status>{"sender":"user"}</system-status>\n\n';
+function stripSystemStatusBlock(text: string): string {
+  return text.replace(SYSTEM_STATUS_BLOCK_RE, "");
+}
+
 function providerMessagesToText(messages: readonly { content?: unknown }[]): string {
   return messages.map((message) => providerContentToText(message.content)).join("\n");
 }
@@ -1361,7 +1370,7 @@ describe("AgentRuntime tool loop", () => {
         modelFactory: createTestModelFactory({
           async generateText(request: any) {
             const latestMessage = withoutAgentListingMessages(request.messages).at(-1);
-            modelInputs.push(providerContentToText(latestMessage?.content));
+            modelInputs.push(stripSystemStatusBlock(providerContentToText(latestMessage?.content)));
             if (modelInputs.length === 1) {
               firstModelStarted.resolve();
               await firstModelCanFinish.promise;
@@ -1407,7 +1416,9 @@ describe("AgentRuntime tool loop", () => {
         modelFactory: createTestModelFactory({
           async generateText(request: any) {
             mainInputs.push(
-              providerContentToText(withoutAgentListingMessages(request.messages).at(-1)?.content),
+              stripSystemStatusBlock(
+                providerContentToText(withoutAgentListingMessages(request.messages).at(-1)?.content),
+              ),
             );
             mainModelStarted.resolve();
             await mainModelCanFinish.promise;
@@ -1433,7 +1444,9 @@ describe("AgentRuntime tool loop", () => {
         modelFactory: createTestModelFactory({
           async generateText(request: any) {
             childInputs.push(
-              providerContentToText(withoutAgentListingMessages(request.messages).at(-1)?.content),
+              stripSystemStatusBlock(
+                providerContentToText(withoutAgentListingMessages(request.messages).at(-1)?.content),
+              ),
             );
             return {
               finishReason: "stop",
@@ -3128,7 +3141,8 @@ describe("AgentRuntime tool loop", () => {
     expect(
       capturedMessages.some(
         (message) =>
-          message.role === "user" && providerContentToText(message.content) === "Ship target",
+          message.role === "user" &&
+          stripSystemStatusBlock(providerContentToText(message.content)) === "Ship target",
       ),
     ).toBe(true);
     expect(stored).toMatchObject({
@@ -7169,7 +7183,7 @@ describe("AgentRuntime tool loop", () => {
     expect(planModeReminderText).not.toContain("<system-reminder>");
     expect(planModeReminderText).toContain("Plan mode is active");
     expect(planModeReminderText).toContain("MUST NOT make any edits");
-    expect(realUserContent).toBe("看看项目里是啥");
+    expect(stripSystemStatusBlock(realUserContent)).toBe("看看项目里是啥");
   });
 
   it("CronCreate 达到 20 个上限后取消后续工具并只进行一次无工具提示", async () => {
@@ -7827,7 +7841,9 @@ describe("AgentRuntime tool loop", () => {
     );
     expect(providerContentToText(exitPlanToolResult?.content)).not.toContain(feedback);
     expect(feedbackUserMessage).toMatchObject({ role: "user" });
-    expect(providerContentToText(feedbackUserMessage?.content)).toBe(feedback);
+    expect(stripSystemStatusBlock(providerContentToText(feedbackUserMessage?.content))).toBe(
+      feedback,
+    );
     expect(secondRequestText).toContain(feedback);
     expect(persistedUserTexts).toContain("plan first");
     expect(persistedUserTexts).toContain(feedback);
@@ -8934,7 +8950,8 @@ describe("AgentRuntime tool loop", () => {
     expect(modelCallCount).toBe(2);
     expect(queuedUserMessage).toMatchObject({
       role: "user",
-      content: literalQueuedInput,
+      // P2.6：真实用户 steer 渲染时正文最前带 <system-status> 区块，字面 steer 文本随后。
+      content: `${SYSTEM_STATUS_BLOCK_USER_PREFIX}${literalQueuedInput}`,
       cacheControl: { type: "ephemeral" },
     });
   });
@@ -9159,7 +9176,10 @@ describe("AgentRuntime tool loop", () => {
     // 同一边界一次取出全部已等待的 guide；下一次请求归因到最后一条的 query。
     expect(requestQueryIds).toEqual(["query_original_request", "query_second_steer"]);
     // 默认测试模型不合并相邻 user 内容，不补换行。
-    expect(trailingUserTexts[1]).toEqual(["first queued follow-up", "second queued follow-up"]);
+    expect(trailingUserTexts[1].map(stripSystemStatusBlock)).toEqual([
+      "first queued follow-up",
+      "second queued follow-up",
+    ]);
     // 一起取出，但每条各自落库并各发一个 drained 事件。
     const drainedPayloads = drainedEvents.map((event) => event.payload as any);
     expect(drainedPayloads.map((payload) => payload.queryIds)).toEqual([
@@ -9388,7 +9408,7 @@ describe("AgentRuntime tool loop", () => {
     );
 
     // 已被 send-now 预留的 guide 归预留方提升；按 FIFO 取到它为止，后面的 guide 也不越过它。
-    expect(trailingUserTexts[1]).toEqual(["guide a"]);
+    expect(trailingUserTexts[1].map(stripSystemStatusBlock)).toEqual(["guide a"]);
     expect(drainedEvents).toHaveLength(1);
     expect(
       (drainedEvents[0]!.payload as any).drainedInputs.map((input: any) => input.text),
@@ -9562,7 +9582,9 @@ describe("AgentRuntime tool loop", () => {
       next
         .slice(toolCallIndex + 2)
         .filter((message: any) => message.role === "user")
-        .map((message: any) => providerContentToText(message.content)),
+        .map((message: any) =>
+          stripSystemStatusBlock(providerContentToText(message.content)),
+        ),
     ).toEqual(["guide a", "guide b", "guide c", "[Request interrupted by user]", "next request"]);
   });
 
@@ -10087,10 +10109,16 @@ describe("AgentRuntime tool loop", () => {
 
     expect(projection.pendingSteerInputs).toHaveLength(0);
     expect(result.response).toBe("second answer");
-    expect(capturedMessages.map((message) => providerContentToText(message.content))).not.toContain(
-      "queued before crash",
-    );
-    expect(capturedMessages.map((message) => providerContentToText(message.content))).toContain(
+    expect(
+      capturedMessages
+        .map((message) => stripSystemStatusBlock(providerContentToText(message.content)))
+        .map((text) => text.trim()),
+    ).not.toContain("queued before crash");
+    expect(
+      capturedMessages
+        .map((message) => stripSystemStatusBlock(providerContentToText(message.content)))
+        .map((text) => text.trim()),
+    ).toContain(
       "after resume",
     );
     const eventTypes = (await eventStore.getEvents(sessionId)).map((event) => event.type);

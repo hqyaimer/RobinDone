@@ -131,7 +131,9 @@ describe("虚拟项目多目录冷恢复", () => {
     await $(`[data-testid="${testId(TID_TASK_ITEM, taskId!)}"]`).click();
     await inspect("COLD", "C");
     expect(await readTask()).toBe(taskId);
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP16-cold-roots.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP16-cold-roots.png"),
+    );
   });
 });
 

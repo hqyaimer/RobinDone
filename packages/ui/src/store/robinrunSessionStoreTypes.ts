@@ -222,7 +222,10 @@ export interface WorkspaceRobinRunUIState {
 export interface RobinRunSessionStoreState {
   /** 按 workspace 维护聊天相关 UI 状态 */
   workspaces: Record<string, WorkspaceRobinRunUIState>;
-  getWorkspaceState: (workspacePath: string, workspaceIdentity?: string) => WorkspaceRobinRunUIState;
+  getWorkspaceState: (
+    workspacePath: string,
+    workspaceIdentity?: string,
+  ) => WorkspaceRobinRunUIState;
 
   setActiveTaskId: (
     workspacePath: string,
@@ -265,6 +268,12 @@ export interface RobinRunSessionStoreState {
     workspaceIdentity?: string,
   ) => void;
   clearDraftTaskGroup: (workspacePath: string, workspaceIdentity?: string) => void;
+  /** 草稿态切换目标智能体（composer 智能体下拉）：只改组织意图，不重置草稿正文与预热。 */
+  setDraftTaskGroup: (
+    workspacePath: string,
+    taskGroupId: string | null,
+    workspaceIdentity?: string,
+  ) => void;
   startDraft: (
     workspacePath: string,
     provider?: RobinRunProvider,

@@ -25,7 +25,9 @@ export function isRobinRunGoalContinuationReminderText(text: string): boolean {
   );
 }
 
-export function isRobinRunGoalContinuationReminderMessage(message: RobinRunMessageWithParts): boolean {
+export function isRobinRunGoalContinuationReminderMessage(
+  message: RobinRunMessageWithParts,
+): boolean {
   return (
     message.info.role === "user" &&
     (message.info.source === "goal-continuation" ||
@@ -47,7 +49,9 @@ export function isRobinRunGoalModelOnlyReminderMessage(message: RobinRunMessageW
   );
 }
 
-export function isRobinRunModelOnlySyntheticUserMessage(message: RobinRunMessageWithParts): boolean {
+export function isRobinRunModelOnlySyntheticUserMessage(
+  message: RobinRunMessageWithParts,
+): boolean {
   if (
     message.info.role === "user" &&
     (String(message.info.source ?? "") === SUBAGENT_MESSAGE_SOURCE ||
@@ -85,7 +89,10 @@ export function getRobinRunUserVisibleMessages(
 ): RobinRunMessageWithParts[] {
   const visibleMessages: RobinRunMessageWithParts[] = [];
   for (const message of messages) {
-    if (isRobinRunModelOnlySyntheticUserMessage(message) || isRobinRunCompactSummaryMessage(message)) {
+    if (
+      isRobinRunModelOnlySyntheticUserMessage(message) ||
+      isRobinRunCompactSummaryMessage(message)
+    ) {
       // /goal 续跑、后台任务、子 agent、rewind 通知和 compact summary
       // 都是 runtime 注入给模型继续推理的上下文，不是用户真实 query；可见投影必须过滤，
       // 避免快照/远控恢复时渲染成右侧用户气泡或挤占 timeline 位置。
@@ -209,7 +216,10 @@ function compareRobinRunMessagesByCreatedTime(
   return left.info.messageId.localeCompare(right.info.messageId);
 }
 
-function isVisibleRealGoalUserMessage(message: RobinRunMessageWithParts, target: RobinRunSessionGoal) {
+function isVisibleRealGoalUserMessage(
+  message: RobinRunMessageWithParts,
+  target: RobinRunSessionGoal,
+) {
   if (
     message.info.role !== "user" ||
     getConversationMessageProjectionPolicy(message) !== "realUserInput"
@@ -247,7 +257,12 @@ export function resolveRobinRunVisibleSessionTitle(input: {
       getConversationMessageProjectionPolicy(message) === "realUserInput" &&
       !isRobinRunGoalModelOnlyReminderMessage(message),
   );
-  const firstUserText = textFromRobinRunMessageParts(firstUser?.parts ?? []).trim();
+  // 触发器投递的 prompt 首行是 <system-status> 来源区块（P2.6/P3），关标题生成时
+  // fallback 会把它截成标题原文（2026-11-19 验收：侧栏标题显示 JSON 原文）。区块本身
+  // 不是可读正文，剥离后再取前缀；正文若整个被区块占满则回落 objective/fallback。
+  const firstUserText = textFromRobinRunMessageParts(firstUser?.parts ?? [])
+    .replace(/^<system-status>[\s\S]*?<\/system-status>\s*/, "")
+    .trim();
   if (firstUserText) {
     return firstUserText.slice(0, 80);
   }

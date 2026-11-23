@@ -26,11 +26,34 @@ export const pendingInteractionSummarySchema = z.object({
 });
 export type PendingInteractionSummary = z.infer<typeof pendingInteractionSummarySchema>;
 
+// worker 会话身份（2026-11-16 隔离裁决的投影接缝）：host syncer 据此首见准入
+// robinrun-worker-<workerId> 组，UI 据此判定只读。own seam——未来 worker 针对性
+// 开发（状态机、审批、常驻唤醒）只扩展此对象，不碰 subagent 通道的字段。
+export const sessionWorkerIdentitySchema = z
+  .object({
+    workerId: z.string().min(1),
+    workerName: z.string().min(1),
+  })
+  .strict();
+export type SessionWorkerIdentity = z.infer<typeof sessionWorkerIdentitySchema>;
+
+// 会话创建来源（P2.5，2026-11-16）：内部处理机制，UI 不消费。kind 取值与
+// RobinRunSessionCreationOrigin 一致；ref = 来源会话 id / automationId / offPeakTaskId。
+export const sessionCreationOriginSchema = z
+  .object({
+    kind: z.enum(["user", "agent", "trigger", "system"]),
+    ref: z.string().min(1).optional(),
+  })
+  .strict();
+export type SessionCreationOrigin = z.infer<typeof sessionCreationOriginSchema>;
+
 export const sessionSummarySchema = z.object({
   sessionId: z.string(),
   workspaceId: z.string(),
   // fork 树。
   parentSessionId: z.string().optional(),
+  // 创建来源（P2.5）：live 投影与冷种子都从 session 记录推导；缺席 = 旧数据按 user 处理。
+  creationOrigin: sessionCreationOriginSchema.optional(),
   title: z.string(),
   // custom = 用户显式重命名；default/generated 都不是产品语义上的手动标题。
   // optional 是为了兼容旧 sessions-index frame / 旧持久化摘要。
@@ -48,6 +71,11 @@ export const sessionSummarySchema = z.object({
   // optional 兼容旧 sessions-index frame / stored summary。
   pendingInteractionSummary: pendingInteractionSummarySchema.optional(),
   goalStatus: goalStateSchema.shape.status.optional(),
+  // worker 会话身份：worker_child 会话携带（live 投影填充）；缺席 = 非 worker 会话。
+  worker: sessionWorkerIdentitySchema.optional(),
+  // worker_child 类型标记（kind 事实）：live 与冷种子都能推导（taskType），跨 CLI 重启
+  // 有效。UI 只读判定以本标记为准；worker 身份（上）只在 live 期存在，供 host 准入。
+  workerChild: z.literal(true).optional(),
   // 未读推导：客户端本地记 lastSeenActivityAt 比较（不用 seq，epoch 会重置）。
   lastActivityAt: timestampSchema,
   // ≤120 字符。

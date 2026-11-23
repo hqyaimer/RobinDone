@@ -28,7 +28,10 @@ export interface RobinRunLauncherProps {
   onOpenWorkspaceViaPicker: () => void;
 }
 
-export function RobinRunLauncher({ onOpenProject, onOpenWorkspaceViaPicker }: RobinRunLauncherProps) {
+export function RobinRunLauncher({
+  onOpenProject,
+  onOpenWorkspaceViaPicker,
+}: RobinRunLauncherProps) {
   const { intl } = useRobinRunIntl();
   const platform = usePlatform();
   const { settings, loading, update } = useSettings();
@@ -228,7 +231,11 @@ export function RobinRunLauncher({ onOpenProject, onOpenWorkspaceViaPicker }: Ro
             <Button onClick={() => setCreating(true)}>
               {intl.formatMessage({ id: "robinrun.launcher.create" })}
             </Button>
-            <Button variant="outline" disabled={busy} onClick={() => void handleOpenExistingFolder()}>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => void handleOpenExistingFolder()}
+            >
               {intl.formatMessage({ id: "robinrun.launcher.openFolder" })}
             </Button>
             <Button variant="ghost" onClick={onOpenWorkspaceViaPicker}>

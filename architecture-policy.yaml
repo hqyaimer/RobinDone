@@ -3,24 +3,24 @@ version: 1
 # 存量模块先标记为 legacy；新模块或完成迁移的模块设置 managed: true。
 modules:
   - id: rpc
-    roots: [ packages/rpc/src ]
+    roots: [packages/rpc/src]
     managed: false
   - id: shared
-    roots: [ packages/shared/src ]
+    roots: [packages/shared/src]
     managed: false
   - id: provider
-    roots: [ packages/provider/src ]
+    roots: [packages/provider/src]
     managed: false
   - id: provider-node
-    roots: [ packages/provider-node/src ]
+    roots: [packages/provider-node/src]
     managed: false
   - id: services
-    roots: [ packages/services/src ]
+    roots: [packages/services/src]
     managed: false
   - id: session
-    roots: [ packages/services/src/session ]
+    roots: [packages/services/src/session]
     managed: false
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/services/src/session/contract.ts
       - packages/services/src/session/taskIndexRepo.ts
@@ -30,48 +30,48 @@ modules:
       - packages/services/src/session/tasksDatabase/prepared.ts
     owner: conversation
   - id: storage
-    roots: [ packages/services/src/storage ]
+    roots: [packages/services/src/storage]
     managed: true
-    requires: [ shared, rpc, services ]
-    publicEntrypoints: [ packages/services/src/storage/contract.ts ]
+    requires: [shared, rpc, services]
+    publicEntrypoints: [packages/services/src/storage/contract.ts]
     layers: { domain: domain, app: app, adapters: adapters }
-    layerOrder: [ domain, app, adapters ]
+    layerOrder: [domain, app, adapters]
     owner: desktop-settings
   - id: client
-    roots: [ packages/client/src ]
+    roots: [packages/client/src]
     managed: false
   - id: server
-    roots: [ packages/server/src ]
+    roots: [packages/server/src]
     managed: false
   - id: robinrun-server-cli
-    roots: [ packages/robinrun-server-cli/src ]
+    roots: [packages/robinrun-server-cli/src]
     managed: false
   - id: ui
-    roots: [ packages/ui/src ]
+    roots: [packages/ui/src]
     managed: false
   - id: web
-    roots: [ packages/web/src ]
+    roots: [packages/web/src]
     managed: false
   - id: desktop
-    roots: [ packages/desktop/src ]
+    roots: [packages/desktop/src]
     managed: false
   - id: formal-proof
-    roots: [ packages/formal-proof/src ]
+    roots: [packages/formal-proof/src]
     managed: false
   - id: stream-animate
-    roots: [ packages/stream-animate/src ]
+    roots: [packages/stream-animate/src]
     managed: false
   - id: e2e-report
-    roots: [ packages/e2e-report/src ]
+    roots: [packages/e2e-report/src]
     managed: false
   - id: robinrun-cli
-    roots: [ apps/robinrun-cli ]
+    roots: [apps/robinrun-cli]
     managed: false
   # sqlite-migrations：由 architecture:adopt 登记
   - id: conversation-telemetry-engine
-    roots: [ packages/shared/src/conversation-telemetry ]
+    roots: [packages/shared/src/conversation-telemetry]
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/shared/src/conversation-telemetry/index.ts
       - packages/shared/src/conversation-telemetry/contract.ts
@@ -81,9 +81,9 @@ modules:
     layers: { app: "." }
     owner: conversation
   - id: conversation-telemetry-service
-    roots: [ packages/services/src/conversation-telemetry ]
+    roots: [packages/services/src/conversation-telemetry]
     managed: true
-    requires: [ shared, services, rpc, conversation-telemetry-engine ]
+    requires: [shared, services, rpc, conversation-telemetry-engine]
     publicEntrypoints:
       - packages/services/src/conversation-telemetry/remoteConversationTelemetry.ts
       - packages/services/src/conversation-telemetry/contract.ts
@@ -123,7 +123,7 @@ modules:
     roots:
       - packages/services/src/project
     managed: true
-    requires: [ project-storage, services, shared ]
+    requires: [project-storage, services, shared]
     publicEntrypoints:
       - packages/services/src/project/index.ts
       - packages/services/src/project/contract.ts
@@ -135,7 +135,7 @@ modules:
     roots:
       - packages/services/src/task-facts
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/services/src/task-facts/index.ts
       - packages/services/src/task-facts/contract.ts
@@ -175,7 +175,7 @@ modules:
     roots:
       - packages/services/src/remote-projects
     managed: true
-    requires: [ services, shared, project-storage ]
+    requires: [services, shared, project-storage]
     publicEntrypoints:
       - packages/services/src/remote-projects/index.ts
       - packages/services/src/remote-projects/contract.ts
@@ -200,7 +200,7 @@ modules:
     roots:
       - packages/ui/src/workspace-config-catalog
     managed: true
-    requires: [ services, shared, ui ]
+    requires: [services, shared, ui]
     publicEntrypoints:
       - packages/ui/src/workspace-config-catalog/index.ts
       - packages/ui/src/workspace-config-catalog/contract.ts
@@ -214,7 +214,7 @@ modules:
     roots:
       - packages/services/src/project-catalog
     managed: true
-    requires: [ project, remote-projects ]
+    requires: [project, remote-projects]
     publicEntrypoints:
       - packages/services/src/project-catalog/index.ts
       - packages/services/src/project-catalog/contract.ts
@@ -228,7 +228,7 @@ modules:
     roots:
       - packages/services/src/bot-project-runtime
     managed: true
-    requires: [ services, shared, remote-projects ]
+    requires: [services, shared, remote-projects]
     publicEntrypoints:
       - packages/services/src/bot-project-runtime/index.ts
       - packages/services/src/bot-project-runtime/contract.ts
@@ -241,7 +241,7 @@ modules:
     roots:
       - packages/services/src/project-workspace-navigation
     managed: true
-    requires: [ project, project-catalog, remote-projects, shared ]
+    requires: [project, project-catalog, remote-projects, shared]
     publicEntrypoints:
       - packages/services/src/project-workspace-navigation/index.ts
       - packages/services/src/project-workspace-navigation/contract.ts
@@ -254,7 +254,7 @@ modules:
     roots:
       - packages/ui/src/conversation-workspace-target
     managed: true
-    requires: [ shared, ui ]
+    requires: [shared, ui]
     publicEntrypoints:
       - packages/ui/src/conversation-workspace-target/index.ts
       - packages/ui/src/conversation-workspace-target/contract.ts
@@ -269,52 +269,77 @@ modules:
     owner: conversation
 
   - id: gen-ui-protocol
-    roots: [ packages/shared/src/gen-ui ]
+    roots: [packages/shared/src/gen-ui]
     managed: true
     requires: []
-    publicEntrypoints: [ packages/shared/src/gen-ui/index.ts, packages/shared/src/gen-ui/contract.ts ]
+    publicEntrypoints: [packages/shared/src/gen-ui/index.ts, packages/shared/src/gen-ui/contract.ts]
     layers: { domain: "." }
     owner: conversation
   - id: gen-ui-service
-    roots: [ packages/services/src/gen-ui ]
+    roots: [packages/services/src/gen-ui]
     managed: true
-    requires: [ services, shared, rpc, gen-ui-protocol, mcp-apps-protocol ]
-    publicEntrypoints: [ packages/services/src/gen-ui/index.ts, packages/services/src/gen-ui/contract.ts, packages/services/src/gen-ui/node.ts ]
+    requires: [services, shared, rpc, gen-ui-protocol, mcp-apps-protocol]
+    publicEntrypoints:
+      [
+        packages/services/src/gen-ui/index.ts,
+        packages/services/src/gen-ui/contract.ts,
+        packages/services/src/gen-ui/node.ts,
+      ]
     layers: { domain: domain, app: app, adapters: adapters }
-    layerOrder: [ domain, app, adapters ]
+    layerOrder: [domain, app, adapters]
     owner: conversation
 
   - id: gen-ui
-    roots: [ packages/ui/src/gen-ui ]
+    roots: [packages/ui/src/gen-ui]
     managed: true
-    requires: [ ui, services, gen-ui-service, gen-ui-protocol, mcp-apps-protocol, plugin-ui ]
-    publicEntrypoints: [ packages/ui/src/gen-ui/index.ts, packages/ui/src/gen-ui/contract.ts, packages/ui/src/gen-ui/host.ts ]
+    requires: [ui, services, gen-ui-service, gen-ui-protocol, mcp-apps-protocol, plugin-ui]
+    publicEntrypoints:
+      [
+        packages/ui/src/gen-ui/index.ts,
+        packages/ui/src/gen-ui/contract.ts,
+        packages/ui/src/gen-ui/host.ts,
+      ]
     layers: { domain: domain, app: app, adapters: adapters, ui: components }
-    layerOrder: [ domain, app, adapters, ui ]
+    layerOrder: [domain, app, adapters, ui]
     owner: conversation
 
   # 插件 UI（MCP Apps 沙箱）：模块边界见各模块 CONTRACT.md。
   - id: mcp-apps-protocol
-    roots: [ packages/shared/src/mcp-apps ]
+    roots: [packages/shared/src/mcp-apps]
     managed: true
     requires: []
-    publicEntrypoints: [ packages/shared/src/mcp-apps/index.ts, packages/shared/src/mcp-apps/contract.ts, packages/shared/src/mcp-apps/hostContract.ts ]
+    publicEntrypoints:
+      [
+        packages/shared/src/mcp-apps/index.ts,
+        packages/shared/src/mcp-apps/contract.ts,
+        packages/shared/src/mcp-apps/hostContract.ts,
+      ]
     layers:
       domain: "."
     owner: plugin
   - id: mcp-ui
-    roots: [ apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui ]
+    roots: [apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui]
     managed: true
-    requires: [ robinrun-cli, shared, mcp-apps-protocol ]
-    publicEntrypoints: [ apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui/index.ts, apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui/contract.ts ]
+    requires: [robinrun-cli, shared, mcp-apps-protocol]
+    publicEntrypoints:
+      [
+        apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui/index.ts,
+        apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/mcp-ui/contract.ts,
+      ]
     layers:
       app: "."
     owner: plugin
   - id: plugin-ui-bridge
-    roots: [ packages/services/src/plugin-ui-bridge ]
+    roots: [packages/services/src/plugin-ui-bridge]
     managed: true
-    requires: [ services, shared, mcp-apps-protocol ]
-    publicEntrypoints: [ packages/services/src/plugin-ui-bridge/index.ts, packages/services/src/plugin-ui-bridge/contract.ts, packages/services/src/plugin-ui-bridge/appToolsContract.ts, packages/services/src/plugin-ui-bridge/samplingContract.ts ]
+    requires: [services, shared, mcp-apps-protocol]
+    publicEntrypoints:
+      [
+        packages/services/src/plugin-ui-bridge/index.ts,
+        packages/services/src/plugin-ui-bridge/contract.ts,
+        packages/services/src/plugin-ui-bridge/appToolsContract.ts,
+        packages/services/src/plugin-ui-bridge/samplingContract.ts,
+      ]
     layers:
       app: "."
     owner: plugin
@@ -325,9 +350,8 @@ modules:
       - packages/desktop/src/preload/pluginSandbox
       - packages/desktop/src/renderer/src/plugin-sandbox
     managed: true
-    requires: [ desktop, shared, mcp-apps-protocol, gen-ui-protocol ]
-    publicEntrypoints:
-      [
+    requires: [desktop, shared, mcp-apps-protocol, gen-ui-protocol]
+    publicEntrypoints: [
         packages/desktop/src/host/pluginSandbox/index.ts,
         packages/desktop/src/host/pluginSandbox/contract.ts,
         packages/desktop/src/preload/pluginSandbox/hostBridge.ts,
@@ -335,22 +359,27 @@ modules:
         packages/desktop/src/main/pluginSandbox/contract.ts,
         # 页面兼容接口由宿主及其契约测试维护。
         packages/desktop/src/renderer/src/plugin-sandbox/aliasRuntime.ts,
-        packages/desktop/src/renderer/src/plugin-sandbox/aliasApi.ts
+        packages/desktop/src/renderer/src/plugin-sandbox/aliasApi.ts,
       ]
     layers:
       adapters: "."
     owner: plugin
   - id: plugin-ui
-    roots: [ packages/ui/src/plugin-ui ]
+    roots: [packages/ui/src/plugin-ui]
     managed: true
-    requires: [ ui, shared, services, mcp-apps-protocol, plugin-ui-bridge, plugin-sandbox ]
-    publicEntrypoints: [ packages/ui/src/plugin-ui/index.ts, packages/ui/src/plugin-ui/contract.ts, packages/ui/src/plugin-ui/hostPrimitives.ts ]
+    requires: [ui, shared, services, mcp-apps-protocol, plugin-ui-bridge, plugin-sandbox]
+    publicEntrypoints:
+      [
+        packages/ui/src/plugin-ui/index.ts,
+        packages/ui/src/plugin-ui/contract.ts,
+        packages/ui/src/plugin-ui/hostPrimitives.ts,
+      ]
     layers:
       domain: domain
       app: app
       adapters: adapters
       ui: components
-    layerOrder: [ domain, app, adapters, ui ]
+    layerOrder: [domain, app, adapters, ui]
     owner: plugin
   # remote-connection-flow：由 architecture:adopt 登记
   - id: remote-connection-flow
@@ -367,7 +396,7 @@ modules:
     layers:
       app: .
       ui: ui
-    layerOrder: [ app, ui ]
+    layerOrder: [app, ui]
     owner: remote
   # project-workflow：由 architecture:adopt 登记
   - id: project-workflow
@@ -416,6 +445,124 @@ modules:
       - apps/robinrun-cli/packages/bootstrap/src/runtime-subagents/contract.ts
     layers:
       domain: .
+    owner: agent
+  # worker-roster：由 architecture:adopt 登记（P2.2 worker 编制系统，2026-11-15）。
+  # 跨包单模块：shared 协议 schema、contracts/core 工具面、services 注册表加载器（含
+  # 被本系统改造的上游引入文件 subagentConfigScope/subagentRuntimeConfig）。
+  # P2.6 追加：DispatchWorker 工具面（词表/工具分离裁决 13，派发权归 master）。
+  # 2026-11-20 worker 会话模型同构化（docs/worker-session-model.md）：DispatchWorker
+  # 工具面退役移除；追加 worker 注入段组装（worker-prompt.ts，注入面迁主 ContextBuilder）
+  # 与名册投影 listing（agent-listing.ts，名册只进 master 会话）。
+  - id: worker-roster
+    roots:
+      - packages/shared/src/worker-roster
+      - packages/shared/test/workerRegistry.test.ts
+      - packages/services/src/subagents/subagentConfigScope.ts
+      - packages/services/src/subagents/subagentRuntimeConfig.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-workers.ts
+      - apps/robinrun-cli/packages/core/src/subagent/worker-prompt.ts
+      - apps/robinrun-cli/packages/core/src/runtime/helpers/agent-listing.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-workers.ts
+      - apps/robinrun-cli/packages/core/tests/manage-workers-tool.test.ts
+    managed: true
+    requires:
+      - shared
+      - services
+      - robinrun-cli
+    publicEntrypoints:
+      - packages/shared/src/worker-roster/index.ts
+      - packages/shared/src/worker-roster/contract.ts
+      - packages/services/src/subagents/subagentRuntimeConfig.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-workers.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-workers.ts
+    layers:
+      app: .
+    owner: agent
+  # trigger-system：由 architecture:adopt 登记（触发器系统设计定稿 2026-11-19，见
+  # docs/trigger-system.md）。跨包单模块：shared 协议（注册表 schema + 会话 key 路由）、
+  # contracts/core 工具面（ManageTriggers + ContactAgent/WaitReply，第二批 2026-11-19）、
+  # services 触发器引擎（host 常驻服务）。
+  # 2026-11-20 worker 会话模型同构化追加：master↔worker 投递通道——CLI 反向请求端口
+  # （agent-contact-dispatch-port.ts）与 Host 任务服务投递助手（agentContactDispatch.ts），
+  # 与触发器投递同构（dispatchTriggerRun 链路复用）。
+  - id: trigger-system
+    roots:
+      - packages/shared/src/trigger-system
+      - packages/shared/test/triggerRegistry.test.ts
+      - packages/services/src/trigger-engine
+      - packages/services/src/robinrun-agent/agentContactDispatch.ts
+      - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/agent-contact-dispatch-port.ts
+      - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/trigger-runtime-port.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-triggers.ts
+      - apps/robinrun-cli/packages/contracts/src/interfaces/agent-contact.port.ts
+      - apps/robinrun-cli/packages/contracts/src/interfaces/trigger-runtime.port.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/contact-agent.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/wait-reply.ts
+      - apps/robinrun-cli/packages/core/src/subagent/agent-contact.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/contact-agent.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/wait-reply.ts
+      - apps/robinrun-cli/packages/core/tests/manage-triggers-tool.test.ts
+      - apps/robinrun-cli/packages/core/tests/agent-contact-registry.test.ts
+      - apps/robinrun-cli/packages/core/tests/agent-contact-port-forwarding.test.ts
+    managed: true
+    requires:
+      - shared
+      - services
+      - session
+      - robinrun-cli
+    publicEntrypoints:
+      - packages/shared/src/trigger-system/index.ts
+      - packages/shared/src/trigger-system/contract.ts
+      - packages/services/src/trigger-engine/index.ts
+      - packages/services/src/trigger-engine/contract.ts
+      - packages/services/src/robinrun-agent/agentContactDispatch.ts
+      - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/agent-contact-dispatch-port.ts
+      - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/trigger-runtime-port.ts
+      - apps/robinrun-cli/packages/contracts/src/interfaces/trigger-runtime.port.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-triggers.ts
+      - apps/robinrun-cli/packages/contracts/src/interfaces/agent-contact.port.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/contact-agent.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/wait-reply.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/contact-agent.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/wait-reply.ts
+    layers:
+      app: .
+    owner: agent
+  # auto-session-default-mode：自动创建会话（触发器/ContactAgent 派发等宿主路径，不经过
+  # UI 草稿）的权限模式缺省解析（2026-11-22 P3 第十三批）——AppSettings.globalComposerMode
+  # （2026-11-21 P3 第六批全局键升格为宿主可读设置）+ 项目级 fullAccessConfirmedAt 门控
+  # （yolo 未经项目确认不自动升级）在任务门面 createTask 的单点收口。
+  - id: auto-session-default-mode
+    roots:
+      - packages/services/src/robinrun-agent/auto-session-default-mode
+      - packages/services/test/autoSessionDefaultMode.test.ts
+    managed: true
+    requires:
+      - shared
+      - services
+    publicEntrypoints:
+      - packages/services/src/robinrun-agent/auto-session-default-mode/contract.ts
+    layers:
+      app: .
+    owner: agent
+  # message-origin：由 architecture:adopt 登记（P2.6 消息来源区块，2026-11-17）。
+  # 跨包单模块：shared 协议 schema/渲染/解析收口 + core provider 请求组装边界的注入投影。
+  - id: message-origin
+    roots:
+      - packages/shared/src/message-origin
+      - packages/shared/test/messageOrigin.test.ts
+      - apps/robinrun-cli/packages/core/src/runtime/helpers/provider-system-status.ts
+    managed: true
+    requires:
+      - shared
+      - robinrun-cli
+    publicEntrypoints:
+      - packages/shared/src/message-origin/index.ts
+      - packages/shared/src/message-origin/contract.ts
+    layers:
+      app: .
     owner: agent
   # cli-session-execution：由 architecture:adopt 登记
   - id: cli-session-execution
@@ -581,7 +728,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/tool/handlers/fill-workflow-hole.ts
       - apps/robinrun-cli/packages/core/tests/workflow-entrypoints
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/tool/handlers/amend-workflow.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/list-models.ts
@@ -596,7 +743,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/runtime/methods/tool-result-settlement.ts
       - apps/robinrun-cli/packages/core/tests/tool-result-settlement
     managed: true
-    requires: [ robinrun-cli, session-features ]
+    requires: [robinrun-cli, session-features]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/runtime/methods/tool-result-settlement.ts
       - apps/robinrun-cli/packages/core/src/runtime/tool-result-settlement/contract.ts
@@ -612,7 +759,7 @@ modules:
       - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/input-prediction-handler.ts
       - apps/robinrun-cli/packages/core/src/runtime/methods/input-prediction-sidecar.ts
     managed: true
-    requires: [ shared, robinrun-cli ]
+    requires: [shared, robinrun-cli]
     publicEntrypoints:
       - packages/shared/src/robinrun-protocol-v4/input-prediction/contract.ts
       - packages/services/src/robinrun-agent/inputPredictionSwitch.ts
@@ -626,7 +773,7 @@ modules:
     roots:
       - packages/services/src/robinrun-agent/resident-rows-range
     managed: true
-    requires: [ shared, services ]
+    requires: [shared, services]
     publicEntrypoints:
       - packages/services/src/robinrun-agent/resident-rows-range/contract.ts
     layers: { app: . }
@@ -639,7 +786,7 @@ modules:
       - apps/robinrun-cli/packages/contracts/src/tools/tool-search.ts
       - apps/robinrun-cli/packages/core/tests/tool-discovery
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/tool/search/contract.ts
       - apps/robinrun-cli/packages/core/src/tool/search/exposure.ts
@@ -658,7 +805,7 @@ modules:
       - apps/robinrun-cli/packages/node-repl-host/src/call-ledger
       - apps/robinrun-cli/packages/node-repl-host/test/call-ledger
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/node-repl-host/src/call-ledger/contract.ts
     layers: { adapters: . }
@@ -668,7 +815,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/runtime/session-features
       - apps/robinrun-cli/packages/core/tests/session-features
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/runtime/session-features/contract.ts
     layers: { app: . }
@@ -678,7 +825,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/runtime/provider-tool-rounds
       - apps/robinrun-cli/packages/core/tests/provider-tool-rounds
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/runtime/provider-tool-rounds/contract.ts
     layers: { app: . }
@@ -699,7 +846,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/runtime/helpers/conversation-quotes.ts
       - apps/robinrun-cli/packages/core/tests/conversation-quote-context
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/runtime/conversation-quote-context/contract.ts
       - apps/robinrun-cli/packages/core/src/runtime/helpers/conversation-quotes.ts
@@ -711,7 +858,7 @@ modules:
       - apps/robinrun-cli/tools/prompt-trajectory/src/tool-search-comparison.ts
       - apps/robinrun-cli/tools/prompt-trajectory/tests/tool-search-comparison
     managed: true
-    requires: [ robinrun-cli ]
+    requires: [robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/tools/prompt-trajectory/src/tool-search-comparison-contract/contract.ts
       - apps/robinrun-cli/tools/prompt-trajectory/src/tool-search-comparison.ts
@@ -723,7 +870,7 @@ modules:
       - packages/desktop/src/host/windowTopicResourceRelay.ts
       - packages/desktop/test/topic-resource-relay
     managed: true
-    requires: [ services, shared ]
+    requires: [services, shared]
     publicEntrypoints:
       - packages/desktop/src/host/topic-resource-relay/contract.ts
       - packages/desktop/src/host/windowTopicResourceRelay.ts
@@ -735,7 +882,7 @@ modules:
       - apps/robinrun-cli/packages/core/src/tool/handlers/reply-to-channel.ts
       - apps/robinrun-cli/packages/core/tests/channel-reply
     managed: true
-    requires: [ shared, robinrun-cli ]
+    requires: [shared, robinrun-cli]
     publicEntrypoints:
       - apps/robinrun-cli/packages/core/src/tool/handlers/reply-to-channel.ts
       - apps/robinrun-cli/packages/core/src/tool/channel-reply/contract.ts
@@ -919,7 +1066,7 @@ modules:
       domain: domain
       app: app
       ui: .
-    layerOrder: [ contract, domain, app, ui ]
+    layerOrder: [contract, domain, app, ui]
     owner: remote
   # settings-scope：设置页 Scope 菜单按设备分组（docs/remote/data-sync.md「Scope 菜单按设备分组」）
   - id: settings-scope
@@ -940,7 +1087,7 @@ modules:
       domain: domain
       app: app
       ui: .
-    layerOrder: [ contract, domain, app, ui ]
+    layerOrder: [contract, domain, app, ui]
     owner: remote
   # side-pane-full-view：由 architecture:adopt 登记
   - id: side-pane-full-view
@@ -959,9 +1106,9 @@ modules:
 
   # 发行策略使用独立目录；修改后的文件由本模块承担边界检查。
   - id: request-security-edition
-    roots: [ packages/shared/src/request-security-edition ]
+    roots: [packages/shared/src/request-security-edition]
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/shared/src/request-security-edition/index.ts
       - packages/shared/src/request-security-edition/policy.ts
@@ -1050,7 +1197,7 @@ modules:
     roots:
       - packages/desktop/src/main/file-open-apps
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/desktop/src/main/file-open-apps/index.ts
       - packages/desktop/src/main/file-open-apps/contract.ts
@@ -1093,7 +1240,7 @@ modules:
     roots:
       - packages/ui/src/image-preview-editor
     managed: true
-    requires: [ ui ]
+    requires: [ui]
     publicEntrypoints:
       - packages/ui/src/image-preview-editor/index.ts
       - packages/ui/src/image-preview-editor/contract.ts
@@ -1137,9 +1284,9 @@ modules:
       app: .
 
   - id: provider-regression
-    roots: [ apps/robinrun-cli/tools/provider-regression ]
+    roots: [apps/robinrun-cli/tools/provider-regression]
     managed: true
-    requires: [ robinrun-cli, provider, provider-node, shared ]
+    requires: [robinrun-cli, provider, provider-node, shared]
     publicEntrypoints:
       - apps/robinrun-cli/tools/provider-regression/index.ts
       - apps/robinrun-cli/tools/provider-regression/contract.ts
@@ -1151,7 +1298,7 @@ modules:
       - apps/robinrun-cli/packages/bootstrap/src/session-lifecycle
       - apps/robinrun-cli/packages/bootstrap/tests/session-lifecycle
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - apps/robinrun-cli/packages/bootstrap/src/session-lifecycle/index.ts
       - apps/robinrun-cli/packages/bootstrap/src/session-lifecycle/contract.ts
@@ -1163,7 +1310,7 @@ modules:
     roots:
       - apps/robinrun-cli/packages/bootstrap/src/workspace-mcp-trust
     managed: true
-    requires: [ robinrun-cli, shared ]
+    requires: [robinrun-cli, shared]
     publicEntrypoints:
       - apps/robinrun-cli/packages/bootstrap/src/workspace-mcp-trust/index.ts
       - apps/robinrun-cli/packages/bootstrap/src/workspace-mcp-trust/contract.ts
@@ -1176,7 +1323,7 @@ modules:
     roots:
       - packages/desktop/src/main/browser-local-preview
     managed: true
-    requires: [ shared ]
+    requires: [shared]
     publicEntrypoints:
       - packages/desktop/src/main/browser-local-preview/index.ts
       - packages/desktop/src/main/browser-local-preview/contract.ts
@@ -1215,27 +1362,27 @@ global:
 exceptions:
   - id: session-features-attribution-header-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/adapters/src/model/runner-attribution.ts ]
+    paths: [apps/robinrun-cli/packages/adapters/src/model/runner-attribution.ts]
     reason: 已准入的归因头构造器只追加 x-robinrun-session-features（docs/design/v2/model/session-features-header.md）；它仍是全部归因头的唯一写入点，签名与模块边界不变，接管整个 adapters 包不在本次范围内。
   - id: session-features-workflow-command-pattern-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/methods/dynamic-workflow-activation.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/methods/dynamic-workflow-activation.ts]
     reason: 已准入的动态工作流激活只导出既有 `/workflow` 历史判据常量，供 session-features 的历史推导复用同一判据；激活行为、owner 与模块边界不变。
   - id: node-repl-call-ledger-cua-bridge-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/node-repl-host/src/cua-bridge.ts ]
+    paths: [apps/robinrun-cli/packages/node-repl-host/src/cua-bridge.ts]
     reason: 已准入的 node_repl CUA bridge 只删去 Worker 侧的会话信息构造与目标应用身份记录，二者移到主线程 CUA broker（apps/robinrun-cli/docs/design/v2/tool/20-node-repl-call-ledger.md）；subagent 拒绝与对模型的行为不变，接管整个 node-repl-host 包不在本次范围内。
   - id: node-repl-call-ledger-cua-broker-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/node-repl-host/src/cua-broker.ts ]
+    paths: [apps/robinrun-cli/packages/node-repl-host/src/cua-broker.ts]
     reason: 已准入的 node_repl CUA broker 改为只认 node-repl-call-ledger 签发的本次调用 token，按账本条目构造会话信息并把目标应用身份记进账本（20-node-repl-call-ledger.md「CUA broker」）；MR !3207 再在 token 校验之后把会话能力标签用的 computerUse 记进账本（docs/design/v2/model/session-features-header.md）；runtime 调用与响应格式不变。
   - id: node-repl-call-ledger-result-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/node-repl-host/src/result.ts ]
+    paths: [apps/robinrun-cli/packages/node-repl-host/src/result.ts]
     reason: 已准入的 node_repl 结果组装改为只从账本 facts 取可信 key，忽略 Worker 结果消息里的同名字段（20-node-repl-call-ledger.md「结果组装」）；MR !3207 按同样处置追加 robinrun/nodeReplBrowserUse、robinrun/nodeReplComputerUse 两个 key（docs/design/v2/model/session-features-header.md）；结果内容与其他 meta 处置不变。
   - id: offpeak-expiration-codes-existing-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/off-peak/model-binding.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/off-peak/model-binding.ts]
     reason: 已准入的闲时请求包装器仅复用共享错误码判断，补齐 3106 运行超时的既有生命周期通知；不改变 owner、控制协议或模块边界，不扩展为整个 CLI runtime 目录接管。
   - id: multi-cursor-badge-title-passthrough-edit
     rule: unmanaged-new-file
@@ -1244,15 +1391,18 @@ exceptions:
     reason: 已准入的 node_repl CUA broker 仅增透传可选 actionTitle 字段（node_repl cell title → badge 文字，docs/cua/producer/multi-session-cursor-overlay-spec.md §4.8）——cua-broker 按 ledger meta 构建的 requestContext 注入、parseContext 白名单补字段；签名、broker 形态与模块边界不变，不接管 robinrun-cli 目录。
   - id: side-pane-full-view-shortcut-command-edit
     rule: unmanaged-new-file
-    paths: [ packages/shared/src/shortcutCommands.ts ]
+    paths: [packages/shared/src/shortcutCommands.ts]
     reason: 已准入的快捷键命令表只追加一条 toggleSidePaneFullView 命令（Side Pane 完整视图，docs/ui/side-pane-full-view.md）；命令表仍是唯一数据源，签名与模块边界不变，接管整个 shared 包不在本次范围内。
   - id: robinrun-site-deploy-runtime-template
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/robinrun-site-plugin/skills/site-deploy/templates/static-server.mjs ]
+    paths:
+      [
+        apps/robinrun-cli/packages/robinrun-site-plugin/skills/site-deploy/templates/static-server.mjs,
+      ]
     reason: site-deploy 技能复制进用户部署包的静态站服务器模板，只在 Sites runner 的容器里由 start.sh 执行；仓库代码不 import 它，也不属于任何运行时模块。同目录的 start.sh 模板是 shell，不受本规则约束。
   - id: opensource-cua-test-project-config
     rule: unmanaged-new-file
-    paths: [ packages/robinrun-cua/vitest.config.ts ]
+    paths: [packages/robinrun-cua/vitest.config.ts]
     reason: 该文件只装配测试项目，开源占位版本用于保持根单测入口可运行；不包含 producer 运行逻辑，不为同目录实现文件开放例外。
   - id: project-location-cache-recovery-existing-edit
     rule: unmanaged-new-file
@@ -1277,43 +1427,43 @@ exceptions:
     reason: 已准入的存量文件只把 TID 导入从 @robinrun/shared 根入口改为 @robinrun/shared/test-ids 子路径（根入口不再导出 test-ids，以收窄受影响单测范围）；行为与模块边界不变，接管 ui 目录不在本次范围内。
   - id: settings-personalization-section-new-file
     rule: unmanaged-new-file
-    paths: [ packages/ui/src/settings/PersonalizationSection.tsx ]
+    paths: [packages/ui/src/settings/PersonalizationSection.tsx]
     reason: 个性化设置分区组件只编排 ISettingService 的 getUserInstructions/saveUserInstructions 与既有设置页 UI 原语（spec：docs/ui/settings-personalization.md）；读写唯一事实源在服务层，不新增平行状态，接管整个 ui 目录不在本次范围内。
   - id: settings-personalization-size-constant-new-file
     rule: unmanaged-new-file
-    paths: [ packages/shared/src/userInstructions.ts ]
+    paths: [packages/shared/src/userInstructions.ts]
     reason: 用户自定义指令字节上限共享常量（与 CLI 读取截断对齐，spec：docs/ui/settings-personalization.md），服务层校验与 UI 计数共用同一数值；仅两个常量导出，接管整个 shared 目录不在本次范围内。
   - id: remote-workspace-admission-deadline-existing-edit
     rule: unmanaged-new-file
-    paths: [ packages/desktop/src/host/remoteWorkspacePreparation.ts ]
+    paths: [packages/desktop/src/host/remoteWorkspacePreparation.ts]
     reason: 已准入的远程项目目录 admission 只增加 30 秒截止时间和可重试的无响应错误码（3.16.2 远端回归 R8，docs/remote/project-first-remote-navigation-spec.md §2.4）；owner、调用方与模块边界不变，接管 desktop host 目录不在本次修复范围内。
   - id: gen-ui-existing-capability-check
     rule: unmanaged-new-file
-    paths: [ packages/services/src/robinrun-agent/independentPlanSupport.ts ]
+    paths: [packages/services/src/robinrun-agent/independentPlanSupport.ts]
     reason: 在已存在的 CLI 能力查询入口补充 GenUI 上下文能力检查，防止旧 CLI 静默丢弃状态；保持既有 services/agent 边界，不扩展本次修复为整个 robinrun-agent 模块接管。
   - id: connection-log-secret-token-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/shared/src/source-server/connectionLog.ts ]
+    paths: [packages/shared/src/source-server/connectionLog.ts]
     reason: 已存在的连接日志过滤函数只把已知秘密从子串替换改为完整 token 匹配，修复短密码反推泄露；签名与模块边界不变，接管整个 shared 包不在本次修复范围内。
   - id: connection-errors-econnreset-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/shared/src/source-server/connectionErrors.ts ]
+    paths: [packages/shared/src/source-server/connectionErrors.ts]
     reason: 已存在的连接错误归一化码表补一项 ECONNRESET → remote-host-unreachable，修复在线断连恢复失败被误报为预检失败；签名与模块边界不变，接管整个 shared 包不在本次修复范围内。
   - id: remote-authentication-unsupported-presentation-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/ui/src/lib/remoteConnectionPresentationErrors.ts ]
+    paths: [packages/ui/src/lib/remoteConnectionPresentationErrors.ts]
     reason: 已存在的远程连接错误展示映射为新增公开码 remote-authentication-unsupported 补一项标题与“查看详情”操作，修复 SSH 二次验证失败被提示为检查密码；签名与模块边界不变，接管 ui 目录不在本次修复范围内。
   - id: source-server-operation-log-level-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/desktop/src/host/sourceServerOperationLogs.ts ]
+    paths: [packages/desktop/src/host/sourceServerOperationLogs.ts]
     reason: 已有连接日志封装透传 TransportContext 已定义的 level，使低版本 glibc 提示保留 warn；Host 仍是唯一日志 owner，签名与模块边界不变，接管整个 desktop 包不在本次范围内。
   - id: client-config-public-field-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/shared/src/clientConfig.ts ]
+    paths: [packages/shared/src/clientConfig.ts]
     reason: Existing upstream public config parser gains one validated recommendation field; ownership and module boundaries remain unchanged, and adopting the shared package is outside this change.
   - id: highspeed-fallback-snapshot-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/methods/turn-execution-fallback.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/methods/turn-execution-fallback.ts]
     reason: 合并已存在于 staging 的加速卡回退模块，仅将可变 Session 读取替换为本轮固定候选；保持现有 Core 模块边界，不在同步分支时机械拆分整个 runtime。
   - id: session-owned-workflow-shutdown-existing-files
     rule: unmanaged-new-file
@@ -1323,7 +1473,7 @@ exceptions:
     reason: 两个文件已存在于集成基线；本次在既有 bootstrap owner 内补启动关闭互斥和 actor 清理等待，不新增模块或跨层依赖。整个 bootstrap/app 的接管另行治理，生命周期公开模块边界保持不变。
   - id: workflow-quota-auto-resume-unmanaged-file
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/bootstrap/src/app/dynamic-workflow-quota-resume.ts ]
+    paths: [apps/robinrun-cli/packages/bootstrap/src/app/dynamic-workflow-quota-resume.ts]
     reason: 额度停止的 run 到点自动续跑，是 run service 旁的一个宿主模块（只读 journal 行、订阅结算、经注入的 resume 续跑）；与同目录的 run service 文件同属未受管的 robinrun-cli bootstrap，接管该目录需要单独的模块边界整理。
   - id: mcp-node-fallback-unmanaged-file
     rule: unmanaged-new-file
@@ -1333,19 +1483,19 @@ exceptions:
     reason: 桌面 Electron Node 下 stdio MCP 的 node/npm/npx 回退（apps/robinrun-cli/docs/design/v2/mcp-node-fallback.md）。adapters 文件只负责 shim 目录与子进程 env 合并，经 CreateMcpAdapterOptions.nodeFallback 注入；bootstrap 文件只判定 Electron 并给出随包 npm 候选目录。两者同属未受管的 robinrun-cli，接管 adapters/mcp 或 bootstrap/app 需要单独的模块边界整理。
   - id: workflow-unrecognized-code-cap-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/adapters/src/model/workflow-model-failure-policy.ts ]
+    paths: [apps/robinrun-cli/packages/adapters/src/model/workflow-model-failure-policy.ts]
     reason: 已准入的 workflow 模型错误策略表只增加一行（分类器不认识的业务码在同一次请求里连续出现 10 次时停 run）、一个连续计数入参与两个计数纯函数；runner 与 driver 读同一函数的约束与模块边界不变，接管 adapters/model 目录不在本次范围内。
   - id: automation-self-pause-turn-visibility-existing-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/methods/turn-tool-visibility.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/methods/turn-tool-visibility.ts]
     reason: 已有 turn 工具可见性 owner 仅增加当前 automation 自暂停的反向可见性规则；不新增跨模块依赖或 owner，接管整个 robinrun-cli runtime 超出本次缺陷修复范围。
   - id: compact-bundle-reminder-builder-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/methods/runtime-reminder-persistence.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/methods/runtime-reminder-persistence.ts]
     reason: 已入库的隐藏提醒落盘函数拆出只构建记录的函数，供 compaction 把公告、summary 与附件交给同一个 store 事务；记录不再写 tools 字段，中断标记按普通 user 文本取正文；Core 模块边界不变，接管整个 runtime 目录不在本次范围内。
   - id: tool-search-schema-key-order-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/contracts/src/tools/tool-search.ts ]
+    paths: [apps/robinrun-cli/packages/contracts/src/tools/tool-search.ts]
     reason: 已入库的 ToolSearch 输入 schema 改走统一的 toToolJsonSchema，使 key 顺序与其他工具一致，$schema 随之从 draft-07 改为 2020-12；contracts 模块边界不变，接管整个 tools 目录不在本次范围内。
   - id: tool-search-removal-reason-unmanaged-edit
     rule: unmanaged-new-file
@@ -1356,15 +1506,15 @@ exceptions:
     reason: 已入库的 ToolSearch 能力解析、公告渲染与离线轨迹识别按删除原因分段，并由 adapter 声明 Anthropic 协议的提醒折叠能力；增量事实、持久化与模块边界不变，接管整个 robinrun-cli 目录不在本次范围内。
   - id: interrupt-marker-unmanaged-new-file
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/methods/interrupt-marker.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/methods/interrupt-marker.ts]
     reason: 停止轮次后给模型的中断标记放在 runtime/methods 的独立小文件，避免继续增大已超行数的 turn.ts；复用隐藏提醒的落盘函数（persistRuntimeReminderMessage）与历史提交，Core 模块边界不变，接管整个 robinrun-cli 目录不在本次范围内。
   - id: off-peak-takeover-context-prefix-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/off-peak/turn.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/off-peak/turn.ts]
     reason: 已入库的闲时接管函数换成用户模型后，按新模型重建 Context Prefix，与 guide 换模型共用 rebuildContextPrefix；接管时机、归属与 Core 模块边界不变，接管整个 robinrun-cli 目录不在本次范围内。
   - id: turn-work-segment-comment-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ packages/ui/src/v4/conversationTurnRenderUnitTypes.ts ]
+    paths: [packages/ui/src/v4/conversationTurnRenderUnitTypes.ts]
     reason: 已入库的渲染单元类型只更新 workSegments 字段注释，使其与同一 drain 边界的 guide 共用一段的行为一致；类型与 ui 模块边界不变，接管整个 v4 目录不在本次范围内。
   - id: shortcut-settings-existing-ui-edit
     rule: unmanaged-new-file
@@ -1375,7 +1525,7 @@ exceptions:
     reason: Existing upstream shortcut components and keycap primitive edited for shared controls, responsive layout and save admission; adopting the entire settings directory requires a separate boundary refactor.
   - id: sidebar-workflow-tooltip-existing-ui-edit
     rule: unmanaged-new-file
-    paths: [ packages/ui/src/components/workflow-run-line/WorkflowRunRail.tsx ]
+    paths: [packages/ui/src/components/workflow-run-line/WorkflowRunRail.tsx]
     reason: Existing upstream workflow rail edited only to adapt native titles within the sidebar tooltip scope; workflow ownership and imports remain unchanged except for the shared UI tooltip adapter.
   - id: onboarding-existing-module-edit
     rule: unmanaged-new-file
@@ -1385,15 +1535,15 @@ exceptions:
     reason: onboarding 目录（记录持久化服务与触发 hook）是已合入 staging 的存量功能模块，本轮修复在其既有边界内收紧老用户判定与兜底；模块 adopt 登记需单独的边界梳理，不在本缺陷修复内展开。
   - id: remote-connection-flow-existing-size
     rule: max-file-lines
-    paths: [ packages/ui/src/remote-connection-flow/index.ts ]
+    paths: [packages/ui/src/remote-connection-flow/index.ts]
     reason: Preserve the existing single hook owner and closure; module adoption must not mechanically split state to satisfy line counts.
   - id: gen-ui-tweak-runtime-size
     rule: max-file-lines
-    paths: [ packages/desktop/src/renderer/src/plugin-sandbox/genUiTweakRuntime.js ]
+    paths: [packages/desktop/src/renderer/src/plugin-sandbox/genUiTweakRuntime.js]
     reason: Keep parameter binding and registration lifecycle together; runtime-manifest.json and tests verify file integrity.
   - id: gen-ui-tweak-runtime-lint
     rule: disable-count
-    paths: [ packages/desktop/src/renderer/src/plugin-sandbox/genUiTweakRuntime.js ]
+    paths: [packages/desktop/src/renderer/src/plugin-sandbox/genUiTweakRuntime.js]
     reason: Allow the control-character validation regex and the single-file parameter-control runtime.
   - id: workflow-amend-provider-boundary-unmanaged-edit
     rule: unmanaged-new-file
@@ -1484,15 +1634,15 @@ exceptions:
     reason: Admitted upstream analyzer files edited only to stop the workflow analysis from growing much faster than the script (callback bindings, loop regions, join control, flow strands); adopting apps/robinrun-cli/packages/dynamic-workflow needs a separate module boundary refactor that first breaks its 24 internal import cycles.
   - id: off-peak-model-descriptor-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/runtime/off-peak/model-binding.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/runtime/off-peak/model-binding.ts]
     reason: 已入库的闲时 Model 包装改用 contracts 的 modelDescriptorOf 复制全部数据字段，修复逐字段手抄漏掉 requestCapabilities；包装行为与 Core 模块边界不变，接管整个 runtime 目录不在本次范围内。
   - id: workflow-draft-read-state-per-path-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/tool/handlers/workflow-draft-read-state.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/tool/handlers/workflow-draft-read-state.ts]
     reason: 已入库的工作流草稿读状态登记改走 setReadFileStateEntry，跟随读状态改为每个路径一条；草稿流程与 Core 模块边界不变，接管整个 tool 目录不在本次范围内。
   - id: workflow-skill-gate-compact-read-state-comment-unmanaged-edit
     rule: unmanaged-new-file
-    paths: [ apps/robinrun-cli/packages/core/src/tool/handlers/workflow-skill-gate.ts ]
+    paths: [apps/robinrun-cli/packages/core/src/tool/handlers/workflow-skill-gate.ts]
     reason: 已入库的工作流技能门只更新一句注释，跟随 compaction 后读取状态改为只留补回的文件；门的判据、代码与 Core 模块边界不变，接管整个 tool 目录不在本次范围内。
   - id: conversation-telemetry-existing-state-machine-size
     rule: max-file-lines
@@ -1508,7 +1658,7 @@ exceptions:
     reason: Preserve the two original file-length annotations while relocating the existing implementation.
   - id: host-service-telemetry-existing-file
     rule: unmanaged-new-file
-    paths: [ packages/desktop/src/host/hostServiceResourceTelemetry.ts ]
+    paths: [packages/desktop/src/host/hostServiceResourceTelemetry.ts]
     reason: Existing main-branch registration point gains a Host-only event and capability gate; adopting the whole Host runtime is outside this telemetry change.
   - id: request-verification-config-recovery-presentation
     rule: unmanaged-new-file
@@ -1526,3 +1676,47 @@ exceptions:
     paths:
       - packages/robinrun-cua/src/**
     reason: The whole robinrun-cua producer package (broker, native adapters, tools) entered the repo after the gate timestamp as pre-existing code moved from a separate repository; adopting its internal layers needs a dedicated CONTRACT pass (it has known internal cycles by design), not a mechanical split in this branch.
+  - id: worker-session-hook-unmanaged-new-files
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/v4/useWorkerSession.ts
+      - apps/robinrun-cli/packages/core/src/subagent/worker-return.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/return-to-dispatcher.ts
+      - apps/robinrun-cli/packages/core/src/runtime/methods/worker-session-routing.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/return-to-dispatcher.ts
+    reason: worker 会话通道（P2.4 隔离裁决 + P2.5 用户协同/延迟返回）的专属 seam 文件——hook 订阅共享 sessions-index store（复用 sessionsIndexRegistry 引用计数）；ReturnToDispatcher 工具/端口与 worker 会话路由方法只消费既有 subagent 通道的中性基建，不新增状态 owner；接管整个 v4/core 目录不在本次范围内。
+  - id: conversation-agent-block-unmanaged-new-file
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/v4/ConversationAgentBlock.tsx
+    reason: 会话区按 agent 分块（P2.6 验收修复第四轮，docs/message-origin.md）的展示容器——纯展示组件，块身份经 rowContext 注入（SessionPane 计算）、表面色经 project-sidebar/grouped 的 agentBlockSurfaces 推导，不新增状态 owner；接管整个 v4 目录不在本次范围内（同 conversationTurnRenderUnitTypes 先例）。
+  - id: worker-session-identity-migration-new-file
+    rule: unmanaged-new-file
+    paths:
+      - apps/robinrun-cli/packages/adapters/src/storage/session-store/migrations/0026-worker-session-identity.ts
+    reason: worker 会话身份持久化迁移（2026-11-20 同构化补漏，migration 0026）——契约层 SessionInfo.workerIdentity 一直存在但 sqlite 实现从未落列，冷恢复读不到即退化为 master；本文件只是该目录既有迁移序列（0001-0024）的顺位新条目，schema/仓储/编解码改动都在既有文件内；接管整个 robinrun-cli 不在本次范围内。
+  - id: upstream-ui-files-oxfmt-reformat
+    rule: unmanaged-new-file
+    paths:
+      - packages/ui/src/hooks/useSessionDebug.ts
+      - packages/ui/src/hooks/useWorkflowSubagentModelProviderName.ts
+      - packages/ui/src/lib/workflowRunLine.ts
+      - packages/ui/src/v4/WorkflowNotificationHoleRow.tsx
+      - packages/ui/src/workspace-file-search/workspaceFileSearchFilterBackend.ts
+      - packages/services/src/file/workspaceFileIgnore.ts
+      - packages/ui/src/browser-use/BrowserSitePermissionsPage.tsx
+      - packages/desktop/src/main/embeddedBrowserPermissionUiBridge.ts
+      - packages/desktop/src/main/embeddedBrowserSitePermissionStore.ts
+      - packages/shared/src/robinrun-session-content-profile.ts
+      - packages/ui/src/hooks/useBotGroupTask.ts
+      - packages/services/src/bots/topicHistory.ts
+      - packages/ui/src/components/workflow-timeline/WorkflowTruncatedNotice.tsx
+      - packages/ui/src/app-shell/WorkflowRunPhasePills.tsx
+      - packages/ui/src/WorkspaceSidebar/RemoteProjectDetailsPopover.tsx
+      - packages/services/src/robinrun-agent/topicResourceBridge.ts
+      - packages/services/src/robinrun-agent/groupRuntimeSnapshot.ts
+      - packages/services/src/robinrun-agent/groupAttachmentUpload.ts
+      - packages/services/src/cua-permission-broker/cuaStandaloneStatusLaunch.ts
+      - packages/shared/src/process-diagnostic.ts
+      - packages/desktop/src/main/localTtftExporter.ts
+    reason: 二十一个存量继承文件（fork 基线带入，位于未登记 managed 模块的目录），本轮工作区改动经逐行 diff 核实全部仅为 oxfmt 格式化换行重排（import 拆行/函数签名换行/链式调用换行），零语义变化；按目录既有惯例不整目录接管，如后续有实质改动再单独登记模块或补例外。

@@ -6,6 +6,7 @@ import {
   type McpPort,
   type SessionEventStorePort,
   type SessionId,
+  type SessionCreationOrigin,
   type SessionTaskType,
   type SessionStorePort,
   type TraceContext,
@@ -42,13 +43,21 @@ export interface ParamsSchema<T> {
 }
 
 export interface RobinRunProtocolAgentDependencies {
-  createRobinRunApp(options?: Omit<RobinRunAppOptions, "providerRegistry">): RobinRunApp | Promise<RobinRunApp>;
+  createRobinRunApp(
+    options?: Omit<RobinRunAppOptions, "providerRegistry">,
+  ): RobinRunApp | Promise<RobinRunApp>;
   /**
    * 每个 session record 的内存 event store 工厂。
    * 默认 turn 窗口保留策略；测试可注入 spy 或 unbounded 实现做对照。
    */
   createSessionEventStore?(sessionId: string): SessionEventStorePort;
   cwd?: string;
+  /**
+   * CLI 存储根（`~/.robinrun/cli`）：agent 消息在途请求的持久化落盘位置
+   * （`agent-contact/<projectId>.json`，2026-11-22）。缺席（独立 CLI/测试形态）=
+   * 登记表纯内存，不落盘不恢复。
+   */
+  cliStorageRoot?: string;
   env?: NodeJS.ProcessEnv;
   loggerFactory?: LoggerFactory;
   mcpPort?: McpPort;
@@ -101,6 +110,13 @@ export interface RobinRunProtocolSessionRecord {
   legacyStreamSubscribed?: boolean;
   eventStore: SessionEventStorePort;
   parentSessionId?: SessionId;
+  /** 创建来源（P2.5）：createRecord 传入、resume 从持久化行回填；live 投影用。 */
+  creationOrigin?: SessionCreationOrigin;
+  /**
+   * agent 会话身份（worker 会话同构化）：createRecord 按名册解析传入、resume 从持久化行
+   * 回填；sessions-index live 投影随行（侧栏 worker 组归属）。
+   */
+  workerIdentity?: { workerId: string; workerName: string };
   persistence: RobinRunSessionPersistence;
   protocolEventSequences: Map<string, RobinRunProtocolEventSequenceState>;
   protocolToolInputTransmissions: Map<string, RobinRunProtocolToolInputTransmissionState>;

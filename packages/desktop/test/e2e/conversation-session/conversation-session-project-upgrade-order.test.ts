@@ -66,7 +66,13 @@ describe("虚拟项目升级顺序", () => {
             .get(`e2e-order-${name}`),
         ).toEqual({
           project_id: null,
-          workspace_path: join(home, "RobinRunProject", ".robinrun-e2e", "project-upgrade-order", name),
+          workspace_path: join(
+            home,
+            "RobinRunProject",
+            ".robinrun-e2e",
+            "project-upgrade-order",
+            name,
+          ),
           title: `E2E_ORDER_${name}`,
           archived,
           deleted,

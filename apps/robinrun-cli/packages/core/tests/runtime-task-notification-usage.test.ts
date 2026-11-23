@@ -77,7 +77,8 @@ describe("new-turn task notification context usage", () => {
         "<system-reminder>\n[SYSTEM NOTIFICATION - NOT USER INPUT]",
       );
       const expectedMessagesChars = [
-        { role: "user", content: "inspect results" },
+        // P2.6：real_user 渲染时带 sender 区块前缀。
+        { role: "user", content: '<system-status>{"sender":"user"}</system-status>\n\ninspect results' },
         { role: "assistant", content: "background launched" },
         { role: "user", content: notification.content },
       ].reduce((sum, message) => sum + JSON.stringify(message).length, 0);

@@ -48,6 +48,61 @@ function decodeSessionTitleSource(value: string | null | undefined): SessionTitl
     : "first_input";
 }
 
+// 创建来源列是 JSON 文本；损坏/缺失按缺席处理（读侧旧数据默认 user），不阻断会话读取。
+const CREATION_ORIGIN_KINDS = new Set(["user", "agent", "trigger", "system"]);
+
+function decodeSessionCreationOrigin(value: string | null | undefined):
+  | {
+      kind: "user" | "agent" | "trigger" | "system";
+      ref?: string;
+    }
+  | undefined {
+  if (!value) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+  if (typeof parsed !== "object" || parsed === null) return undefined;
+  const record = parsed as Record<string, unknown>;
+  if (typeof record.kind !== "string" || !CREATION_ORIGIN_KINDS.has(record.kind)) return undefined;
+  return {
+    kind: record.kind as "user" | "agent" | "trigger" | "system",
+    ...(typeof record.ref === "string" && record.ref.length > 0 ? { ref: record.ref } : {}),
+  };
+}
+
+// worker 会话身份列是自由 JSON 文本（可被外部 sqlite 工具触碰）；修复（2026-11-23）：
+// 此前经 decodeJson 直接 JSON.parse，损坏即抛错炸整行读取（该会话 listing/冷恢复全断），
+// 与相邻 creation_origin 的容错口径不一致。改为损坏/形状不符按缺席（master）处理 + 告警。
+function decodeSessionWorkerIdentity(
+  value: string | null | undefined,
+): SessionInfo["workerIdentity"] {
+  if (!value) return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch (error) {
+    process.emitWarning(
+      `corrupt session.worker_identity dropped (treated as master): ${error instanceof Error ? error.message : String(error)}`,
+      { code: "ROBINRUN_WORKER_IDENTITY_CORRUPT" },
+    );
+    return undefined;
+  }
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    typeof (parsed as Record<string, unknown>).workerId !== "string"
+  ) {
+    process.emitWarning("malformed session.worker_identity dropped (treated as master)", {
+      code: "ROBINRUN_WORKER_IDENTITY_CORRUPT",
+    });
+    return undefined;
+  }
+  return parsed as SessionInfo["workerIdentity"];
+}
+
 export function decodeSessionRow(row: SessionRow): SessionInfo {
   return {
     id: row.id as SessionId,
@@ -56,6 +111,10 @@ export function decodeSessionRow(row: SessionRow): SessionInfo {
     parentID: row.parent_id ? (row.parent_id as SessionId) : undefined,
     traceID: row.trace_id ? (row.trace_id as TraceId) : undefined,
     taskType: decodeSessionTaskType(row.task_type),
+    creationOrigin: decodeSessionCreationOrigin(row.creation_origin),
+    // worker 会话身份（2026-11-20 同构化补漏，migration 0026）：冷恢复据此回填
+    // runtime config 重建注入段；NULL/旧行缺席按 master 处理，损坏列容错不阻断读取。
+    workerIdentity: decodeSessionWorkerIdentity(row.worker_identity),
     slug: row.slug,
     directory: row.directory,
     path: row.path ?? undefined,

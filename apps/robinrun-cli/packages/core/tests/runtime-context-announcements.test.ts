@@ -171,16 +171,29 @@ describe("runtime context announcements", () => {
       return config.envInfo!;
     },
     async resolveContextSources() {
+      // 2026-11-19 /init 裁决（docs/init-flow.md §4）：workspace scope 已迁入 system 段，
+      // context_prefix 公告只来自 user scope 指令——本测试锁定公告管线，fixture 用 user scope。
       return {
         workingDirectory: "/workspace",
         envInfo: config.envInfo!,
         userInstructions: {
-          filePath: "/workspace/AGENTS.md",
+          filePath: "/Users/test/.robinrun/AGENTS.md",
           fileName: "AGENTS.md",
-          content: "Project rule.",
-          bytesRead: 13,
-          sizeBytes: 13,
+          content: "User rule.",
+          bytesRead: 10,
+          sizeBytes: 10,
           truncated: false,
+          sources: [
+            {
+              scope: "user" as const,
+              filePath: "/Users/test/.robinrun/AGENTS.md",
+              fileName: "AGENTS.md",
+              content: "User rule.",
+              bytesRead: 10,
+              sizeBytes: 10,
+              truncated: false,
+            },
+          ],
         },
         diagnostics: [],
       };
@@ -351,7 +364,10 @@ describe("runtime context announcements", () => {
     await runtime.executeTurn("first");
     const userTexts = requests[0]!.messages
       .filter((message) => message.role !== "system")
-      .map((message) => String(message.content));
+      // P2.6：剥掉 real_user 输入的 sender 区块前缀再比较位置。
+      .map((message) =>
+        String(message.content).replace(/^<system-status>[\s\S]*?<\/system-status>\n\n/, ""),
+      );
     const promptIndex = userTexts.indexOf("first");
     expect(promptIndex).toBeGreaterThan(1);
     expect(userTexts[promptIndex - 1]).toMatch(/<\/system-reminder>\n$/u);

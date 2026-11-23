@@ -12,7 +12,9 @@ import {
 } from "@robinrun/shared";
 
 export interface CreateHostResourceUsageResponderOptions {
-  getAgentService: () => Pick<IRobinRunAgentService, "collectLocalRuntimeChildProcesses"> | undefined;
+  getAgentService: () =>
+    | Pick<IRobinRunAgentService, "collectLocalRuntimeChildProcesses">
+    | undefined;
   postMessage: (message: HostResourceUsageSnapshotResultResponse) => void;
   hostPid?: number;
   sampler?: ProcessResourceSampler;

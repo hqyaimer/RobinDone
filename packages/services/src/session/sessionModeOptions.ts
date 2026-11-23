@@ -23,7 +23,9 @@ function readTrimmedString(value: unknown): string | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function getModeConfigOption(options: readonly RobinRunConfigOption[]): RobinRunConfigOption | undefined {
+function getModeConfigOption(
+  options: readonly RobinRunConfigOption[],
+): RobinRunConfigOption | undefined {
   return options.find((option) => option.category === "mode" && option.type === "select");
 }
 

@@ -1,5 +1,9 @@
 import type { RobinRunSessionFile, RobinRunTaskMeta } from "@robinrun/shared";
-import { robinrunSessionFileSchema, robinrunTaskMetaSchema, robinrunTaskModeSchema } from "@robinrun/shared";
+import {
+  robinrunSessionFileSchema,
+  robinrunTaskMetaSchema,
+  robinrunTaskModeSchema,
+} from "@robinrun/shared";
 
 export type LegacyTaskSessionFile = Omit<RobinRunSessionFile, "meta"> & {
   meta: Omit<RobinRunTaskMeta, "mode"> & { mode?: RobinRunTaskMeta["mode"] };

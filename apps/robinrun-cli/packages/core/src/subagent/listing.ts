@@ -3,8 +3,14 @@ import { type RuntimeAttachmentEntry, type RuntimeMessageEntry } from "../agent/
 import type { AgentDefinitionsSnapshot } from "./definitions.js";
 import { formatAgentProfileForPrompt } from "./profile.js";
 
-const INITIAL_HEADING = "Available agent types for the Agent tool:";
-const ADDED_HEADING = "New agent types are now available for the Agent tool:";
+// F6（2026-11-23 用户裁决）：标题不再把整份名单说成 "for the Agent tool"——名单同时
+// 含 roster worker（wkr-*，经 ContactAgent 派发）与内置一次性类型（经 Agent 工具），
+// 旧标题与 Agent 工具的 wkr-* 拒绝逻辑互相打架（模型照标题用 Agent 工具派 worker 被
+// 拒，浪费一轮）。worker 的完整定义在 master 协作段，标题只钉寻址分流。
+const INITIAL_HEADING =
+  "Available agents (roster workers with wkr-* ids are messaged via ContactAgent; built-in types are spawned via the Agent tool):";
+const ADDED_HEADING =
+  "New agents are now available (roster workers wkr-* via ContactAgent; built-in types via the Agent tool):";
 const REMOVED_HEADING = "The following agent types are no longer available:";
 const AMBIENT_CONTEXT_NOTE =
   "This is ambient context — do not narrate it to the user unless they ask or it is directly relevant to their request.";

@@ -1,4 +1,7 @@
-import { workflowRunStepCounts, type WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import {
+  workflowRunStepCounts,
+  type WorkflowRunState,
+} from "@robinrun/shared/robinrun-protocol-v4";
 import type { WorkflowCausalityGraphData } from "@/components/workflow-graph/types.js";
 import { workflowSubagentModelCardLabel } from "./subagent-model-label.js";
 import type { WorkflowTimelineModel } from "./timeline-model.js";

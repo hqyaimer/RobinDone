@@ -134,10 +134,12 @@ describe("Gen UI context is input metadata", () => {
         }),
       ];
       const { messages } = buildProviderRequestMessages({ entries, useMidConversationSystem });
+      // P2.6 消息来源区块：真实用户输入渲染时带 sender 前缀。
+      const USER_BLOCK = '<system-status>{"sender":"user"}</system-status>\n\n';
       expect(messages.map((message) => message.content)).toEqual([
-        "First",
+        `${USER_BLOCK}First`,
         expect.stringContaining("FIRST_STATE"),
-        "Second",
+        `${USER_BLOCK}Second`,
         expect.stringContaining("SECOND_STATE"),
       ]);
     },

@@ -97,7 +97,10 @@ describe("desktop E2E build cache", () => {
       )) {
         // Vite 配置同时包含 serve/build；Scan 仅用于 serve，不应让生产构建缓存失效。
         // 只排除此文件的开发开关，build 分支不装配 Scan 由 viteRendererConfig.test.ts 验证。
-        if (configPath === "packages/desktop/vite.config.ts" && match[1] === "ROBINRUN_REACT_SCAN") {
+        if (
+          configPath === "packages/desktop/vite.config.ts" &&
+          match[1] === "ROBINRUN_REACT_SCAN"
+        ) {
           continue;
         }
         referencedEnvNames.add(match[1]);

@@ -27,6 +27,8 @@ import type {
 } from "@/lib/workspaceSidePane.js";
 import { V4ConversationProvider } from "@/v4/V4ConversationContext.js";
 import { SessionPane } from "@/v4/SessionPane.js";
+// worker 会话事实（P2.5）：isWorkerSession + running（见 hook 头注释）。
+import { useWorkerSession } from "@/v4/useWorkerSession.js";
 import type { SessionOpenTrigger } from "@/lib/sessionOpenArmsTelemetry.js";
 import type {
   ChatSearchResultHighlightRequest,
@@ -134,6 +136,17 @@ export function V4ChatPane({
   searchResultHighlightRequest,
   onSearchResultHighlightDone,
 }: V4ChatPaneProps) {
+  // worker 会话（P2.5 用户协同）：worker_child 会话对用户开放——composer/Stop 可用，
+  // 输入与打断由 CLI 路由到派发者 subagentPort（延迟返回）。这里只取 worker 事实
+  // （isWorkerSession 禁 retry/fork/行内编辑；running 供外部运行的 Stop 可用性），
+  // 只读性仅随壳层 workspace 级 readOnly。
+  const workerSession = useWorkerSession({
+    workspacePath,
+    workspaceIdentity,
+    sessionId,
+  });
+  const effectiveReadOnly = Boolean(readOnly);
+  const effectiveReadOnlyReason = readOnlyReason;
   return (
     <V4ConversationProvider
       sessionId={sessionId ?? null}
@@ -156,8 +169,20 @@ export function V4ChatPane({
     >
       <SessionPane
         paneId="workspace-main"
-        readOnly={readOnly}
-        readOnlyReason={readOnlyReason}
+        readOnly={effectiveReadOnly}
+        readOnlyReason={effectiveReadOnlyReason}
+        workerSession={workerSession.isWorkerSession}
+        workerSessionRunning={workerSession.running}
+        // P2.6 群聊渲染 → 第四轮块化：本 pane 会话的产出方（agent 块头名称 + 取色）。
+        conversationSender={
+          workerSession.isWorkerSession
+            ? {
+                kind: "worker",
+                name: workerSession.workerDisplayName,
+                workerId: workerSession.workerId,
+              }
+            : { kind: "master" }
+        }
         allowEscapeStopOutsidePane={allowEscapeStopOutsidePane}
         sessionId={sessionId}
         openTrigger={openTrigger}

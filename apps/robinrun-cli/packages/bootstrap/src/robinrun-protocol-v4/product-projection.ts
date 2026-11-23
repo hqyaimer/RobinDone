@@ -466,6 +466,10 @@ export class ProductProjection {
   // 冷恢复 transcript 可能含旧版本先发布、后持久化失败的 ghost child。store seed 后
   // 必须持续排除，而不是只覆盖一次 snapshot；否则下一条无关事件会从历史 row 再物化它。
   private invalidSubagentChildSessionIds = new Set<string>();
+  // worker 会话通道（2026-11-16 隔离裁决）：SubagentSpawned 携带 worker 身份的 child。
+  // 这些 child 不进 snapshot.subagents（subagent 专属投影），对应的 backgroundWorks
+  // 运行条目对用户不可取消（控制权只在主智能体：SendMessage/TaskStop）。
+  private workerChildSessionIds = new Set<string>();
   // rowId → 权威 messageId 侧表。forkAssistant/editUserQuery 的命令载荷用 rowId
   // 定位，但旧 fork/rewind operations 用 messageId（history target）——桥接层经本表翻译。
   // 不进 row schema（客户端只发 rowId，messageId 是服务端内部锚点，避免污染冻结的行结构）。
@@ -1058,13 +1062,14 @@ export class ProductProjection {
     materializeActions: boolean,
   ): ConversationDelta[] {
     if (event.type === SessionEventType.SubagentSpawned) {
-      const childSessionId = this.stringPayload(
-        event.payload as Record<string, unknown>,
-        "childSessionId",
-      );
+      const payload = event.payload as Record<string, unknown>;
+      const childSessionId = this.stringPayload(payload, "childSessionId");
       // live spawn 已经过 core persist-before-publish 闸门；若它是旧 ghost 的合法 resume，
       // 以新事件恢复资格。hydration 期间 seed 尚未建立排除集合，不会误放历史引用。
       if (childSessionId) this.invalidSubagentChildSessionIds.delete(childSessionId);
+      // worker 会话登记：携带 worker 身份的 spawn 记入 worker 集合（跨 clone 复制，见
+      // cloneProjection），供 subagents 投影排除与 backgroundWorks 不可取消判定。
+      if (childSessionId && payload.worker) this.workerChildSessionIds.add(childSessionId);
     }
     const runtimeTurnId = String(event.turnId ?? this.currentTurnId ?? "turn-unknown");
     const productTurnId =
@@ -1176,6 +1181,7 @@ export class ProductProjection {
     );
     clone.rewoundHookInvocationIds = new Set(this.rewoundHookInvocationIds);
     clone.invalidSubagentChildSessionIds = new Set(this.invalidSubagentChildSessionIds);
+    clone.workerChildSessionIds = new Set(this.workerChildSessionIds);
     clone.messageIdByRowId = new Map(this.messageIdByRowId);
     clone.outputContinuationRowIdByMessageId = new Map(this.outputContinuationRowIdByMessageId);
     clone.entityIdByRowId = new Map(this.entityIdByRowId);
@@ -1229,6 +1235,7 @@ export class ProductProjection {
     this.pendingSessionHookInvocations = candidate.pendingSessionHookInvocations;
     this.rewoundHookInvocationIds = candidate.rewoundHookInvocationIds;
     this.invalidSubagentChildSessionIds = candidate.invalidSubagentChildSessionIds;
+    this.workerChildSessionIds = candidate.workerChildSessionIds;
     this.messageIdByRowId = candidate.messageIdByRowId;
     this.outputContinuationRowIdByMessageId = candidate.outputContinuationRowIdByMessageId;
     this.entityIdByRowId = candidate.entityIdByRowId;
@@ -2093,7 +2100,14 @@ export class ProductProjection {
     // background Agent 的 ToolCallResult 只是 launch ACK，先把工具行收口成
     // success；子 Agent 的真实终态随后只作为 model-only task-notification 开新轮。
     // V4 过去没有按 tool-use-id 消费这条权威事实，因此 429 后卡片会永久停在 completed。
-    const deltas: ConversationDelta[] = this.applyBackgroundTaskNotification(fact);
+    const parsedNotifications = parseRobinRunBackgroundTaskNotifications(
+      fact.input,
+      fact.originMeta,
+    );
+    const deltas: ConversationDelta[] = this.applyBackgroundTaskNotification(
+      fact,
+      parsedNotifications,
+    );
     const sharedContextRef = fact.sharedContextRefs?.[0];
     if (
       sharedContextRef &&
@@ -2202,7 +2216,35 @@ export class ProductProjection {
           fact.conversationQuotes || fact.botGroupSource
             ? (fact.intentText ?? fact.input)
             : fact.input,
-        origin: fact.origin,
+        // 触发器/ContactAgent 投递（P3，2026-11-19 验收；2026-11-22 实测修复）：inputSender
+        // 在场的非 user 轮一律按 mailbox 形态投影（左侧全宽 + 发送者徽章），不渲染成用户
+        // 气泡。此前只兜 trigger——ContactAgent 对空闲/新建会话的直投（v4 sendText 起
+        // startNow 轮，无 inputSource）origin 停在 realUser，master 派发消息伪成用户气泡；
+        // 同消息冷恢复（hydration 按 systemStatus 还原）与忙时 drain 行都归 mailbox，
+        // 活/冷渲染不一致。与 drain 行「非 user sender → mailbox」同规则补齐。
+        origin:
+          fact.inputSender !== undefined &&
+          fact.inputSender !== "user" &&
+          fact.origin === "realUser"
+            ? "mailbox"
+            : fact.origin,
+        // P2.6 消息来源（2026-11-18 验收修复）：mailbox 行带发送者枚举，UI 徽章按它选
+        // 文案（主智能体/触发器/系统…），不再固定「主智能体」误标非 master 来源。
+        // 2026-11-21 实测修复：可见输入行此前只带 sender 泛称枚举，senderId/senderLabel/
+        // senderSessionId 只在 modelOnly 通知分支携带——ContactAgent 投递的可见消息徽章
+        // 回退成泛称「工作者」，看不出具体是哪个工作者。与通知分支同字段补齐。
+        ...(fact.inputSender
+          ? {
+              originMeta: {
+                sender: fact.inputSender,
+                ...(fact.inputSenderId ? { senderId: fact.inputSenderId } : {}),
+                ...(fact.inputSenderLabel ? { senderLabel: fact.inputSenderLabel } : {}),
+                ...(fact.inputSenderSessionId
+                  ? { senderSessionId: fact.inputSenderSessionId }
+                  : {}),
+              },
+            }
+          : {}),
         ...(fact.sourceCommandId ? { sourceCommandId: fact.sourceCommandId } : {}),
         ...(rootSourceCommandId ? { rootSourceCommandId } : {}),
         ...(fact.inputOrigin ? { inputOrigin: fact.inputOrigin } : {}),
@@ -2255,6 +2297,51 @@ export class ProductProjection {
         op: "row.appended",
         row,
       });
+    } else if (
+      // P2.6 验收修复第二轮（2026-11-18）：worker/subagent 的完成通知此前是纯 model-only
+      // 轮——正文只更新派发工具行，而用户介入后返回的轮（P2.5 延迟返回）连派发工具行都
+      // 找不到，worker 说的话在主会话完全不可见，唯一的痕迹是轮内裸标题行
+      // （originMeta.title = worker 显示名）。群聊语义（docs/message-origin.md）：谁说话
+      // 就显示谁的消息——带发送方身份的单条通知落一条可见 mailbox 行（左侧 + 发送者徽章
+      // + 通知正文），渲染单元把它排在轮组头之前，成为「worker 的单独消息」；正文取
+      // 解析出的 result/error/summary，不露 <task-notification> XML 包装。bash/workflow
+      // 通知没有 systemStatus，保持既有标题行/通知卡渲染。
+      fact.visibility === "modelOnly" &&
+      fact.turnHeaderOrigin === "backgroundResult" &&
+      fact.inputSender !== undefined
+    ) {
+      const notificationText = parsedNotifications
+        .map(
+          (parsed) =>
+            parsed.notification.result ?? parsed.notification.error ?? parsed.notification.summary,
+        )
+        .filter((text): text is string => typeof text === "string" && text.trim().length > 0)
+        .join("\n\n");
+      if (notificationText) {
+        deltas.push({
+          op: "row.appended",
+          row: {
+            ...this.rowBase(event, turnId, fact.entityId),
+            kind: "userInput",
+            text: notificationText,
+            origin: "mailbox",
+            originMeta: {
+              sender: fact.inputSender,
+              ...(fact.inputSenderId ? { senderId: fact.inputSenderId } : {}),
+              ...(fact.inputSenderSessionId
+                ? { senderSessionId: fact.inputSenderSessionId }
+                : {}),
+              ...(fact.inputSenderLabel ? { senderLabel: fact.inputSenderLabel } : {}),
+              // mailbox 跳转锚点（2026-11-18）：子会话汇报轮 turnId 随轮头 originMeta 同一份
+              // 下发（TurnStarted payload → fact.originMeta），行上留存在 UI 才能跳回
+              // 来源会话精确滚动；bash/workflow/合并轮缺席。
+              ...(fact.originMeta?.sourceTurnId
+                ? { senderTurnId: fact.originMeta.sourceTurnId }
+                : {}),
+            },
+          },
+        });
+      }
     }
 
     if (fact.executionKind === "agent") {
@@ -2289,10 +2376,14 @@ export class ProductProjection {
     return deltas;
   }
 
-  private applyBackgroundTaskNotification(fact: CanonicalUserIntentFact): ConversationDelta[] {
+  private applyBackgroundTaskNotification(
+    fact: CanonicalUserIntentFact,
+    parsedNotifications: readonly RobinRunParsedBackgroundTaskNotification[],
+  ): ConversationDelta[] {
     // 终态与失败原文优先取本轮 originMeta 的结构化结果，不解析 summary 文本。
-    // 合并轮的每条通知各自更新自己的工具行。
-    return parseRobinRunBackgroundTaskNotifications(fact.input, fact.originMeta).flatMap((parsed) =>
+    // 合并轮的每条通知各自更新自己的工具行。解析结果同时供 onTurnStarted 的
+    // 可见 mailbox 行复用（一次解析，两处消费）。
+    return parsedNotifications.flatMap((parsed) =>
       this.applyBackgroundTaskNotificationBlock(fact, parsed),
     );
   }
@@ -3901,7 +3992,7 @@ export class ProductProjection {
     // drain 事实优先自带文本/messageId（drainedInputs），
     // 投影不再依赖内存 queue 状态取文本——旧实现查不到 queue item 就静默 continue，
     // 用户输入从 queue 消失后也不进 history。旧事件（无 drainedInputs）回退查表。
-    const items =
+    const items: NonNullable<TurnSteerDrainedPayload["drainedInputs"]> =
       payload.drainedInputs ??
       payload.pendingInputIds.flatMap((pendingInputId, index) => {
         const queueItem = this.snapshot.queue.items.find(
@@ -3964,6 +4055,12 @@ export class ProductProjection {
       const productTurnId = this.turnIdOf(event);
       const rootSourceCommandId =
         item.intent?.provenance?.sourceCommandId ?? item.intent?.sourceCommandId;
+      // P2.6 群聊投影（docs/message-origin.md）：drain 行按来源分流——只有真实用户输入
+      // 保持 realUser（右侧气泡）；master/子 agent 的插话改标 mailbox（左侧 + 来源徽章），
+      // 修复此前 coordinator 插话伪成用户气泡的问题。
+      const drainSender = item.systemStatus?.sender;
+      const drainOrigin: "realUser" | "mailbox" =
+        drainSender === undefined || drainSender === "user" ? "realUser" : "mailbox";
       const row = {
         ...this.rowBase(event, productTurnId, entityId),
         kind: "userInput" as const,
@@ -3971,7 +4068,26 @@ export class ProductProjection {
           item.intent?.conversationQuotes || item.intent?.botGroupSource
             ? normalizeGenUiInput(item.intent.text ?? item.text, item.intent.genUiContext).text
             : normalizedInput.text,
-        origin: "realUser" as const,
+        origin: drainOrigin,
+      ...(drainOrigin === "mailbox" &&
+      (item.systemStatus?.fromSessionId || item.systemStatus?.sender)
+        ? {
+            originMeta: {
+              ...(item.systemStatus?.fromSessionId
+                ? { senderSessionId: item.systemStatus.fromSessionId }
+                : {}),
+              // P2.6 消息来源（2026-11-18 验收修复）：徽章按发送者枚举选文案，
+              // 不再固定「主智能体」（触发器/worker 来源的行也会走 mailbox）。
+              ...(item.systemStatus?.sender ? { sender: item.systemStatus.sender } : {}),
+              // 2026-11-21 实测修复：drain 行此前不带 senderId/senderLabel——ContactAgent
+              // 投递（排队后 drain）的徽章回退泛称「工作者」。与 TurnStarted/通知分支同字段。
+              ...(item.systemStatus?.senderId ? { senderId: item.systemStatus.senderId } : {}),
+              ...(item.systemStatus?.senderName
+                ? { senderLabel: item.systemStatus.senderName }
+                : {}),
+            },
+          }
+        : {}),
         ...(delivery === "guide" ? { guided: true as const } : {}),
         ...(item.intent?.sourceCommandId ? { sourceCommandId: item.intent.sourceCommandId } : {}),
         ...(rootSourceCommandId ? { rootSourceCommandId } : {}),
@@ -4333,6 +4449,8 @@ export class ProductProjection {
     );
     const latestRowByChildId = new Map<string, SubagentRow>();
     const collectSubagentRow = (row: SubagentRow | null): void => {
+      // worker 会话不进 subagents 投影（隔离裁决）：worker_child 走侧栏 worker 组通道。
+      if (row?.childSessionId && this.workerChildSessionIds.has(row.childSessionId)) return;
       if (row?.childSessionId && !this.invalidSubagentChildSessionIds.has(row.childSessionId)) {
         latestRowByChildId.set(row.childSessionId, row);
       }
@@ -4376,6 +4494,18 @@ export class ProductProjection {
       if (delta.patch.backgroundWorks !== undefined) {
         backgroundWorks = delta.patch.backgroundWorks;
       }
+    }
+    // worker 会话的后台运行条目对用户不可取消（隔离裁决）：控制权只在主智能体
+    // （SendMessage/TaskStop）；状态面板仍显示运行事实，仅摘除取消入口。
+    if (this.workerChildSessionIds.size > 0) {
+      backgroundWorks = backgroundWorks.map((work) =>
+        work.kind === "subagent" &&
+        work.childSessionId &&
+        this.workerChildSessionIds.has(work.childSessionId) &&
+        work.cancellable
+          ? { ...work, cancellable: false }
+          : work,
+      );
     }
     const waitingChildIds = new Set<string>();
     // workspace-hook-trust 新增的 hook review 交互 payload 没有 origin 字段，跳过守卫避免误读。
@@ -4498,6 +4628,13 @@ export class ProductProjection {
     const existing = this.findSubagentLifecycleRow(agentId, payload, event);
     if (existing) this.subagentRowIdByAgentId.set(agentId, existing.rowId);
     const childSessionId = this.stringPayload(payload, "childSessionId");
+    // P2.5 会把 SubagentSpawned 镜像进 worker 子会话自己的 timeline（ingestWorkerSession）。
+    // 在父会话里这行与 Agent/DispatchWorker 工具行配对渲染；在子会话里没有配对对象，
+    // 只会落成裸行（暴露 wkr-id 与裸 running 状态，且 SubagentStopped 不进子会话导致
+    // 永远卡 running）——对用户毫无意义，直接抑制。
+    if (childSessionId && childSessionId === String(event.sessionId)) {
+      return [];
+    }
     const parentToolCallId = this.stringPayload(payload, "parentToolCallId");
     const resumedBackgroundWork = this.resumedSubagentBackgroundWorkDelta(
       event,
@@ -4541,6 +4678,8 @@ export class ProductProjection {
       ...(this.stringPayload(payload, "parentToolCallId")
         ? { parentToolCallId: this.stringPayload(payload, "parentToolCallId") }
         : {}),
+      // key/name 裁决（2026-11-17）：agentType 是寻址 id（worker = wkr-id），对用户不可读；
+      // 显示名走 workerName，行渲染据此换芯片文案。
       subagentType: this.stringPayload(payload, "agentType") ?? "subagent",
       status: "running",
       summaryText:
@@ -4594,7 +4733,8 @@ export class ProductProjection {
       title,
       status: "running",
       startedAt: this.ms(event),
-      cancellable: true,
+      // worker 会话（隔离裁决）：恢复运行同样对用户不可取消，控制权只在主智能体。
+      cancellable: !childSessionId || !this.workerChildSessionIds.has(childSessionId),
       anchorRowId: existing?.anchorRowId ?? null,
       childSessionId,
     };
@@ -5823,6 +5963,21 @@ export class ProductProjection {
   ): SubagentRow | undefined {
     const exact = this.findSubagentRow(agentId);
     if (exact) return exact;
+
+    // P2.5 验收修复第二轮（2026-11-18）：resume（用户介入后续跑/延迟返回）会铸造新的
+    // agentId，按 id 找不到首轮派发的行——Spawned/Stopped 各自落成裸行，暴露 wkr-id 和
+    // 英文状态，还会以无主伪轮的形式挂在会话尾部（验收截图里的「已处理 / wkr-xxx ·
+    // success」块）。仅对显式 resumed 的 Spawned 按子会话 id 归并回原派发行（该行回到
+    // running，终态经 agentId→rowId 映射再次收口）；对同一子会话的重新派发（无 resumed
+    // 标记）保持独立行，不改变「重复 child 最新行胜出」的既有语义。
+    const childSessionId = this.stringPayload(payload, "childSessionId");
+    if (childSessionId && payload.resumed === true) {
+      const byChildSession = this.snapshot.rows.window.find(
+        (row): row is SubagentRow =>
+          row.kind === "subagent" && row.childSessionId === childSessionId,
+      );
+      if (byChildSession) return byChildSession;
+    }
 
     const parentToolCallId = this.stringPayload(payload, "parentToolCallId");
     if (!parentToolCallId) return undefined;

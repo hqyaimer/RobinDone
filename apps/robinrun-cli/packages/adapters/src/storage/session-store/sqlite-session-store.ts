@@ -665,6 +665,13 @@ export class SqliteSessionStore
     return messageRepository.removeMessage(this.db, input);
   }
 
+  async clearSessionMessages(input: {
+    sessionID: SessionId;
+  }): Promise<{ clearedMessages: number }> {
+    this.throwBeforeWrite();
+    return messageRepository.clearSessionMessages(this.db, input);
+  }
+
   async savePart(
     input: MessagePart,
     copyFrom?: Parameters<SessionStorePort["savePart"]>[1],

@@ -36,6 +36,7 @@ import {
 import { Emitter, type Event, type IDisposable } from "@robinrun/rpc";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { TaskIndexRepo } from "#src/session/taskIndexRepo.js";
+import { TaskGroupRepository } from "#src/task-groups/repository.js";
 import type { RobinRunWorkspaceEventSubscriptionParams } from "#src/session/robinrunTaskListTypes.js";
 import type {
   IRobinRunAgentService,
@@ -134,7 +135,10 @@ export interface RobinRunTaskIndexSyncer {
    * 发送前 resume 会关闭 snapshot 广播，避免旧终态覆盖本地 streaming UI，
    * 但仍需要把 sqlite 的 model 从已删除历史模型更新到本次实际使用的可用模型。
    */
-  syncTaskModel(target: RobinRunAgentSessionTarget, model: string): Promise<RobinRunTaskMeta | null>;
+  syncTaskModel(
+    target: RobinRunAgentSessionTarget,
+    model: string,
+  ): Promise<RobinRunTaskMeta | null>;
   /**
    * 主动触发一次 workspace_task_list_changed 广播。
    * 给 adapter 用：archive / rename / pin / delete 等 task 元数据变更后仍要广播。
@@ -590,6 +594,75 @@ export function createRobinRunTaskIndexSyncer(
     taskFacts.mutate({ ...target, taskId: target.sessionId }, intent);
   const mirrorSummary = taskFacts.ingest;
 
+  /**
+   * worker 会话准入（2026-11-16 会话通道隔离裁决，worker 专属路径）：worker_child 会话
+   * 首见且携带 worker 身份时，物化确定性 worker 组并把任务行放入组内。与 cron/off-peak
+   * 的 systemKind 准入（仓储内部路径）平行、互不沾染；与一次性 subagent（无行、专用投影）
+   * 完全隔离。幂等：ensureWorkerGroup 确定性 id；placement 的 creation_id 一次为准，
+   * 用户后续拖拽（user_organized）不被覆盖。
+   */
+  async function admitWorkerSessionTask(
+    target: RobinRunAgentWorkspaceTarget,
+    summary: SessionSummary,
+  ): Promise<void> {
+    const worker = summary.worker;
+    if (!worker) return;
+    // 本机事实准入；远程工作区行不在本机组投影内（与 admitTaskGroup 的 local 门槛同语义）。
+    if (target.workspaceIdentity?.trim()) return;
+    try {
+      await taskIndexRepo.ensureReady();
+      const db = await taskIndexRepo.getOrganizationDatabase();
+      const repository = new TaskGroupRepository(db);
+      // 项目归属：applyCliFacts/admitTaskIdentity 已按 fork 父链把 worker 会话归到
+      // 主智能体会话的项目；从项目仓储读回行上的 project_id 作为组归属。
+      const projectRepository = await taskIndexRepo.getProjectRepository();
+      const workspaceKey = resolveWorkspaceKey(target);
+      const taskEntry = projectRepository
+        .readTree({ includeTasks: true })
+        .tasks.find(
+          (task) =>
+            task.taskId === summary.sessionId &&
+            (task.workspaceIdentity?.trim() || task.workspacePath) === workspaceKey,
+        );
+      const projectId = taskEntry?.projectId;
+      if (!projectId) {
+        logger.warn(
+          undefined,
+          `worker 会话缺少项目归属，跳过组准入 workerId=${worker.workerId} taskId=${summary.sessionId}`,
+        );
+        return;
+      }
+      const group = repository.ensureWorkerGroup({
+        projectId,
+        workerId: worker.workerId,
+        title: worker.workerName,
+      });
+      // placement.creationId 取 worker 专属锚点，与 UI 草稿流（messageId/sessionId）不冲突。
+      const taskFact = {
+        taskId: summary.sessionId,
+        workspacePath: target.workspacePath,
+        hostId: "local",
+        createdAt: summary.createdAt,
+      } as const;
+      repository.admit([taskFact], {
+        task: taskFact,
+        groupId: group.id,
+        creationId: `worker-session:${summary.sessionId}`,
+      });
+      logger.info(undefined, "worker 会话已准入 worker 组", {
+        workerId: worker.workerId,
+        groupId: group.id,
+        taskId: summary.sessionId,
+      });
+    } catch (error) {
+      logger.warn(
+        undefined,
+        `worker 会话准入失败 taskId=${summary.sessionId} workerId=${worker.workerId}`,
+        error,
+      );
+    }
+  }
+
   /** phase 终态迁移 → sqlite status 收敛 + 广播 + 回源正文索引。 */
   function applyTerminalTransition(
     target: RobinRunAgentSessionTarget,
@@ -692,8 +765,12 @@ export function createRobinRunTaskIndexSyncer(
     if (becameVisibleTask) {
       // 摘要已足以创建真实行；等待完整正文回源会再次依赖 TurnStarted，且误发 status
       // 无法表达行集合新增。先提交同一 facts 镜像，再广播既有 task_created。
+      // worker 组准入先于广播（2026-11-22 实测修复）：admitWorkerSessionTask 依赖行已
+      // 落库（项目归属从任务行读回），过去在广播后才异步执行——UI 首次读取看到的是
+      // 准入前的归属，且 placement 落库后无任何广播通知，列表停留在误归的主智能体组。
       void mirrorSummary(target, next)
-        .then((meta) => {
+        .then(async (meta) => {
+          if (next.worker) await admitWorkerSessionTask(state.target, next);
           if (meta) emitWorkspaceTaskListChanged(broadcastTargetFrom(target), meta, "task_created");
         })
         .catch((error) => logger.warn(undefined, "同步新会话事实失败", error));
@@ -726,7 +803,11 @@ export function createRobinRunTaskIndexSyncer(
     for (let offset = 0; offset < candidates.length; offset += INITIAL_BASELINE_SEED_BATCH_SIZE) {
       const batch = candidates.slice(offset, offset + INITIAL_BASELINE_SEED_BATCH_SIZE);
       const results = await Promise.allSettled(
-        batch.map((summary) => mirrorSummary(state.target, summary)),
+        batch.map(async (summary) => {
+          await mirrorSummary(state.target, summary);
+          // 基线补齐同样覆盖 worker 会话（如 host 重订时 worker 仍在运行），准入幂等。
+          if (summary.worker) await admitWorkerSessionTask(state.target, summary);
+        }),
       );
       for (const result of results) {
         if (result.status === "rejected") {

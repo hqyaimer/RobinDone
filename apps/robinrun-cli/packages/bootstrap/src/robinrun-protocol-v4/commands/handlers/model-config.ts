@@ -11,7 +11,7 @@ import type {
 } from "@robinrun/shared/robinrun-protocol-v4";
 import { V4CommandNoopError } from "../../v4-gateway.js";
 import { runSessionModelConfigMutation } from "../../model-config-mutation.js";
-import { requireRecord } from "../record-access.js";
+import { requireRecord, V4SessionNotFoundError } from "../record-access.js";
 import type { V4CommandCoreHost, V4SessionRecordView } from "../types.js";
 
 /** 同值切换的 noop reasonCode。 */
@@ -155,8 +155,30 @@ async function switchCollaborationMode(
   envelope: CommandEnvelope,
 ): Promise<CommandResult | undefined> {
   const payload = envelope.payload as CommandPayloadMap["switchCollaborationMode"];
-  const record = requireRecord(host, envelope.sessionId);
   const mode = payload.mode as CollaborationMode;
+  // 项目权限全量同步（2026-11-18）：worker_child 会话双路——物化的 shell record 在场时
+  // 按 taskType 路由；从未在 UI 打开的 live worker 会话没有 record（requireRecord 会抛
+  // not found），按派发者解析路由。两类都绝不写 shell runtime 自身——那是冷恢复空壳，
+  // 改它不影响正在执行的子 runtime。路由失败保持显式错误，不静默伪装成功。
+  const record = host.getRecord(envelope.sessionId ?? "");
+  if (record?.taskType === "worker_child" || (!record && host.routeWorkerSessionConfig)) {
+    if (!host.routeWorkerSessionConfig) {
+      throw new V4SessionNotFoundError(envelope.sessionId ?? "");
+    }
+    const routed = await host.routeWorkerSessionConfig({
+      childSessionId: envelope.sessionId ?? "",
+      mode,
+    });
+    if (!routed.ok) {
+      // 非 worker 的未知会话保持原 not-found 语义（派发者解析失败 = 会话不存在）。
+      if (!record && routed.error === "worker_parent_unavailable") {
+        throw new V4SessionNotFoundError(envelope.sessionId ?? "");
+      }
+      throw new Error(routed.error ?? "worker session config route failed");
+    }
+    return undefined;
+  }
+  if (!record) throw new V4SessionNotFoundError(envelope.sessionId ?? "");
   const previousMode = record.app.getMode();
   if (previousMode === mode && !record.app.runtime.getPlanEnabled()) {
     throw new V4CommandNoopError(CONFIG_UNCHANGED);

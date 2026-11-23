@@ -90,7 +90,9 @@ export function createElectronDesktopContextPromptConfigFetcher(options: {
   return async (signal) => {
     const { net } = await import("electron");
     const endpointOrigin = await options.resolveEndpointOrigin();
-    const url = new URL(`${buildRobinRunEndpointUrls(endpointOrigin).origin}/api/v1/client/configs`);
+    const url = new URL(
+      `${buildRobinRunEndpointUrls(endpointOrigin).origin}/api/v1/client/configs`,
+    );
     url.searchParams.set("app_version", options.appVersion);
     url.searchParams.set("platform", `${process.platform}-${process.arch}`);
 

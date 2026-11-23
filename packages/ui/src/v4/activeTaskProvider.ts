@@ -1,5 +1,8 @@
 import type { RobinRunProvider } from "@robinrun/shared";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 import type { WorkspaceRobinRunUIState } from "@/store/robinrunSessionStoreTypes.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";

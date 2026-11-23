@@ -4,7 +4,9 @@ import { WorkspaceTerminalToggleButton } from "@/WorkspaceTerminalToggleButton.j
 import { cn } from "@/components/lib/utils.js";
 import type { WorkspaceHeaderActionSectionProps } from "@/WorkspaceHeaderSections/shared.js";
 import { WorkspaceHelpMenuButton } from "@/WorkspaceHelpMenuButton.js";
-import { ConversationShareMenu } from "@/ConversationShareMenu.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「会话分享」——发布依赖上游分享后端 + 登录 JWT，恢复时取消本段注释
+// import { ConversationShareMenu } from "@/ConversationShareMenu.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { DesktopWindowControls } from "@/DesktopWindowControls.js";
 
 export type { WorkspaceHeaderActionSectionProps } from "@/WorkspaceHeaderSections/shared.js";
@@ -48,8 +50,9 @@ export function WorkspaceHeaderActionSection({
           onSelectedEditorChange={onSelectedEditorChange}
         />
       ) : null}
-      {/* 分享发布接口依赖登录态；未登录时隐藏入口，避免用户打开后只能得到鉴权失败。 */}
-      {activeTaskId &&
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「会话分享入口」——发布依赖上游分享后端 + 登录 JWT，
+          恢复时取消本段注释（分享浮层/面板由 openShare store 驱动，入口消失即全部 closed） */}
+      {/* {activeTaskId &&
       user &&
       isDesktop !== false &&
       !isWebRemoteControl &&
@@ -58,7 +61,8 @@ export function WorkspaceHeaderActionSection({
           taskId={activeTaskId}
           useWindowsCaptionSpacing={useWindowsCaptionSpacing}
         />
-      ) : null}
+      ) : null} */}
+      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
       {!simplifyForNarrowRemote ? (
         <>
           {!hideHelpMenu ? <WorkspaceHelpMenuButton isDesktop={Boolean(isDesktop)} /> : null}

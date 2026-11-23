@@ -48,6 +48,13 @@ const DIRECT_BRANCH_EXPECTED_PROVIDER_TOOL_ORDER = [
   "DeferredToolCall",
   "ReadSessionContext",
   // "ReplyToChannel",
+  // worker 编制管理（2026-11-15 裁决）：注册序紧随 Agent/Task（同源名册门），不进排序名单。
+  // DispatchWorker 已退役（2026-11-20 worker 会话同构化）：master↔worker 任务传递收敛
+  // 进 ContactAgent，注册序名单不再含它。
+  "ManageWorkers",
+  // 触发器注册表管理（2026-11-19，docs/trigger-system.md）：任意智能体可用（不设名册门），
+  // 注册序紧随 ManageWorkers，不进排序名单。
+  "ManageTriggers",
   "CreateWorkflow",
   // 修订入口紧随 CreateWorkflow 注册（docs/dynamic-workflow/launch.md「The `AmendWorkflow` tool」）。
   "AmendWorkflow",
@@ -426,20 +433,26 @@ describe("tool contract declarations", () => {
 
     const agentDescription = byName.get("Agent")?.description ?? "";
     const normalizedAgentDescription = agentDescription.replace(/\s+/gu, " ");
+    // P2.6 工具分离（裁决 13）：Agent 收敛为一次性 subagent 专用。
+    // 2026-11-20 worker 会话同构化：worker 任务传递指路 ContactAgent（DispatchWorker 退役）。
     expect(agentDescription.split("\n")).toContain(
-      "- The agent's final report is not shown to the user — relay what matters.",
+      "- The subagent's final report is not shown to the user — relay what matters.",
     );
     expect(agentDescription).toContain(
       "Use SendMessage with the agent's ID to continue a previously spawned agent with its context intact; a new Agent call starts fresh.",
     );
+    // RobinRun worker 编制（P2.6 词表/工具分离 + 2026-11-20 同构化）：wkr-* 任务传递走 ContactAgent。
     expect(agentDescription).toContain(
-      "Each agent type's model, reasoning effort, and tools come from its definition (`.robinrun/agents/*.md` frontmatter).",
+      "Roster workers (wkr-* ids) are NOT dispatched here — hand tasks to this project's persistent team members via the ContactAgent tool.",
     );
+    expect(agentDescription).toContain("Launch a one-off subagent");
+    expect(agentDescription).not.toContain("Dispatching to a worker");
+    expect(agentDescription).not.toContain("roster workers (worker types) default to background");
     expect(agentDescription).not.toContain("ID or name");
     expect(agentDescription).not.toContain(".claude/agents");
     expect(agentDescription).not.toContain("When you launch multiple agents for independent work");
     expect(agentDescription).toContain(
-      "Available agent types are listed in <system-reminder> messages in the conversation.",
+      "Available subagent types are listed in <system-reminder> messages in the conversation",
     );
     expect(agentDescription).not.toContain("- general-purpose:");
     expect(agentDescription).not.toContain("- Explore:");
@@ -1070,7 +1083,7 @@ describe("tool contract declarations", () => {
     expect(agentRegistry.get("Agent")?.timeout).toEqual({ kind: "none" });
     expect(agentRegistry.get("Task")?.timeout).toEqual({ kind: "none" });
     expect(agentRegistry.get("Agent")?.metadata.description).toContain(
-      "- `run_in_background: true` runs the agent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.\n",
+      "- `run_in_background: true` runs the subagent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.\n",
     );
     expect(agentRegistry.get("Agent")?.metadata.description).not.toContain("currently runs inline");
   });
@@ -1186,7 +1199,7 @@ describe("tool contract declarations", () => {
     const agentDescription = byName.get("Agent")?.description ?? "";
     expect(agentDescription).not.toContain("Tools: Glob, Grep");
     expect(agentDescription).toContain(
-      "Available agent types are listed in <system-reminder> messages in the conversation.",
+      "Available subagent types are listed in <system-reminder> messages in the conversation",
     );
     expect(agentDescription).not.toContain("(Tools:");
     expect(agentDescription).not.toContain("<system-reminder>\n");
@@ -1230,10 +1243,10 @@ describe("tool contract declarations", () => {
     );
     expect(agentInput.properties.prompt.description).toBe("The task for the agent to perform");
     expect(agentInput.properties.subagent_type.description).toBe(
-      "The type of specialized agent to use for this task",
+      "The type of one-off subagent to use. Built-in types: general-purpose and Explore; user/plugin-defined types are also listed in the system reminder. Roster workers (wkr-… ids) are NOT dispatched here — hand tasks to them via the ContactAgent tool.",
     );
     expect(agentInput.properties.run_in_background.description).toBe(
-      "Set to true to run this agent in the background. You will be notified when it completes.",
+      "Set to true to run this subagent in the background (async — you'll be notified on completion); omit or set false to block until it finishes. One-off subagents default to blocking.",
     );
     expect(agentInput.properties.subagent_type.enum).toBeUndefined();
     expect(agentInput.properties).not.toHaveProperty("model");

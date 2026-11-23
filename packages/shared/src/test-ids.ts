@@ -265,6 +265,8 @@ export const TID_PROJECT_PINNED_TASKS = "project-pinned-tasks";
 export const TID_REMOTE_PROJECT_HOST = "remote-project-host";
 /** Composer workspace 选择触发器 */
 export const TID_COMPOSER_WORKSPACE_TRIGGER = "composer-workspace-trigger";
+/** Composer 智能体（任务组）选择触发器：草稿态选取本次对话的智能体 */
+export const TID_COMPOSER_AGENT_TRIGGER = "composer-agent-trigger";
 /** Composer workspace 菜单的远程连接入口 */
 export const TID_COMPOSER_REMOTE_CONNECTION = "composer-remote-connection";
 /** Composer 当前项目解绑按钮 */

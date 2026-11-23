@@ -16,7 +16,11 @@ import {
   SearchIcon,
   Trash2Icon,
 } from "lucide-react";
-import type { WorkspaceFileEntry, RobinRunTaskChangeSummary, RobinRunTaskMeta } from "@robinrun/shared";
+import type {
+  WorkspaceFileEntry,
+  RobinRunTaskChangeSummary,
+  RobinRunTaskMeta,
+} from "@robinrun/shared";
 import {
   Command,
   CommandDialog,

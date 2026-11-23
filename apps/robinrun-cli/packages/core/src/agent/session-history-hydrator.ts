@@ -1,4 +1,5 @@
 import { genUiModelContextSchema, type GenUiModelContext } from "@robinrun/shared/gen-ui";
+import { parseSystemStatusPayload } from "@robinrun/shared";
 import { attachGenUiContext, normalizeGenUiInput } from "./message-history.js";
 import { ModelCallWrapperSchema } from "@robinrun/contracts";
 import {
@@ -128,7 +129,19 @@ export async function hydrateMessageHistoryFromSession(input: {
       // user <system-reminder>，后续 mid-conversation system projection 会失去 attachment source。
       const syntheticAttachment = syntheticSystemReminderAttachmentFromParts(parts);
       if (syntheticAttachment) {
-        input.history.addEntries([syntheticAttachment]);
+        // P2.6 消息来源身份：attachment 重建只认提醒元数据，systemStatus 从消息 metadata 补回，
+        // 渲染层照常注入区块（与 live 的 addUser metadata 一致）。
+        const attachmentSystemStatus = parseSystemStatusPayload(
+          (message.info.metadata as Record<string, unknown> | undefined)?.systemStatus,
+        );
+        input.history.addEntries([
+          attachmentSystemStatus
+            ? {
+                ...syntheticAttachment,
+                metadata: { ...syntheticAttachment.metadata, systemStatus: attachmentSystemStatus },
+              }
+            : syntheticAttachment,
+        ]);
         appliedMessageCount++;
         continue;
       }
@@ -142,6 +155,10 @@ export async function hydrateMessageHistoryFromSession(input: {
       );
       const presentation = runtimeInputMetadata(
         (message.info.metadata as Record<string, unknown> | undefined)?.inputPresentation,
+      );
+      // P2.6 消息来源身份：冷恢复从持久 metadata.systemStatus 还原，与 live 一致（渲染层据此注入区块）。
+      const systemStatus = parseSystemStatusPayload(
+        (message.info.metadata as Record<string, unknown> | undefined)?.systemStatus,
       );
       const entries = await userEntriesFromParts(
         parts,
@@ -163,15 +180,25 @@ export async function hydrateMessageHistoryFromSession(input: {
             ...legacySyntheticRuntimeMetadata(),
             ...entries[0].metadata,
             compactBoundary,
+            ...(systemStatus ? { systemStatus } : {}),
           },
         };
       }
       input.history.addEntries(
-        presentation
+        presentation || systemStatus
           ? entries.map((entry) =>
               entry.kind === "attachment"
                 ? entry
-                : { ...entry, metadata: { ...entry.metadata, ...presentation } },
+                : {
+                    ...entry,
+                    metadata: {
+                      // P2.6：metadata 缺席时以 real_user 为基（普通用户输入即 canonical real user），
+                      // 保证合并结果满足 RuntimeMessageMetadata 的 source 必填。
+                      ...(entry.metadata ?? realUserRuntimeMetadata()),
+                      ...(presentation ?? {}),
+                      ...(systemStatus ? { systemStatus } : {}),
+                    },
+                  },
             )
           : entries,
       );

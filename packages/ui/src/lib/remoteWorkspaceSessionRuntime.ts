@@ -1,6 +1,9 @@
 import type { RobinRunTaskRuntimeStatus } from "@robinrun/shared";
 import { getWorkspaceDisplayedTaskState } from "@/store/robinrunSessionStore.js";
-import type { RobinRunSessionStoreState, WorkspaceRobinRunUIState } from "@/store/robinrunSessionStore.js";
+import type {
+  RobinRunSessionStoreState,
+  WorkspaceRobinRunUIState,
+} from "@/store/robinrunSessionStore.js";
 
 interface RemoteWorkspaceRuntimeTab {
   workspacePath: string;

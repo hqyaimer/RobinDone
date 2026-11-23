@@ -671,7 +671,9 @@ function openCodeProviderToModelProviderConfig(
     provider.apiKeyRequired ?? robinrun?.apiKeyRequired ?? readBoolean(options.apiKeyRequired);
   const providerMappings = preferOpenCodeFields
     ? undefined
-    : stripRobinRunPrefixedProviderMappings(provider.providerMappings ?? robinrun?.providerMappings);
+    : stripRobinRunPrefixedProviderMappings(
+        provider.providerMappings ?? robinrun?.providerMappings,
+      );
   return normalizeProviderForStore({
     id: provider.id?.trim() || providerId,
     name: provider.name?.trim() || providerId,
@@ -688,7 +690,9 @@ function openCodeProviderToModelProviderConfig(
     endpoints,
     apiFormat: preferOpenCodeFields
       ? resolveModelProviderKindApiFormat(defaultKind)
-      : (provider.apiFormat ?? robinrun?.apiFormat ?? resolveModelProviderKindApiFormat(defaultKind)),
+      : (provider.apiFormat ??
+        robinrun?.apiFormat ??
+        resolveModelProviderKindApiFormat(defaultKind)),
     ...((provider.source ?? robinrun?.source)
       ? { source: provider.source ?? robinrun?.source }
       : { source: "custom" }),

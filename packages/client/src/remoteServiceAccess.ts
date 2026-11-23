@@ -16,6 +16,7 @@ import {
   IRobinRunSessionService,
   IProjectService,
   ITaskGroupService,
+  ITriggerEngineService,
   IRemoteProjectService,
   ICuaPermissionService,
   IConversationShareService,
@@ -85,6 +86,8 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly robinrunAgentService: IRobinRunAgentService;
   readonly robinrunSessionService: IRobinRunSessionService;
   readonly taskGroupService: ITaskGroupService;
+  /** 触发器引擎（desktop host 注册；远端 scope 未注册时经可选能力消费）。 */
+  readonly triggerEngineService?: ITriggerEngineService;
   readonly projectService: IProjectService;
   readonly remoteProjectService: IRemoteProjectService;
   // cuaPermissionService 在 IServiceAccessor 上是可选（远端/bots host 不提供），但桌面 renderer
@@ -200,6 +203,11 @@ export class RemoteServiceAccess implements IServiceAccessor {
     );
     this.taskGroupService = ProxyChannel.toService<ITaskGroupService>(
       channelClient.getChannel(ITaskGroupService.channelName),
+    );
+    // 触发器引擎（2026-11-19）：desktop host 注册了该频道；远端 scope 未注册时 getChannel
+    // 返回的代理调用会失败，消费方按可选能力处理（UI 侧已有缺席即隐藏的分支）。
+    this.triggerEngineService = ProxyChannel.toService<ITriggerEngineService>(
+      channelClient.getChannel(ITriggerEngineService.channelName),
     );
     this.projectService = ProxyChannel.toService<IProjectService>(
       channelClient.getChannel(IProjectService.channelName),

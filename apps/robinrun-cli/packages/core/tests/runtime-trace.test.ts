@@ -1,3 +1,6 @@
+
+// P2.6 消息来源区块：real_user 输入渲染时正文最前注入的 sender 前缀。
+const USER_BLOCK_PREFIX = '<system-status>{"sender":"user"}</system-status>\n\n';
 import { withoutAgentListingMessages } from "./test-agent-listing.js";
 import { describe, expect, it } from "vitest";
 import {
@@ -366,7 +369,8 @@ describe("AgentRuntime trace propagation", () => {
       | Array<Record<string, unknown>>
       | undefined;
     expect(steeredMessageTail?.at(-1)).toMatchObject({
-      contentBytes: "keep the original task but switch to option B".length,
+      contentBytes:
+        USER_BLOCK_PREFIX.length + "keep the original task but switch to option B".length,
       role: "user",
     });
   });
@@ -1060,10 +1064,10 @@ describe("AgentRuntime trace propagation", () => {
       },
       { role: "user", cacheControl: undefined, content: styleActive },
       { role: "user", cacheControl: undefined, content: TODAY_REMINDER },
-      { role: "user", cacheControl: undefined, content: "first question" },
+      { role: "user", cacheControl: undefined, content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst question" },
       { role: "assistant", cacheControl: undefined, content: "first response" },
       { role: "user", cacheControl: undefined, content: styleActive },
-      { role: "user", cacheControl: EPHEMERAL, content: "second question" },
+      { role: "user", cacheControl: EPHEMERAL, content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsecond question" },
     ]);
     expect(second?.toolNames).toContain("mcp__local__ping");
 
@@ -1241,7 +1245,7 @@ describe("AgentRuntime trace propagation", () => {
       ENVIRONMENT_REMINDER,
       MODEL_REMINDER,
       TODAY_REMINDER,
-      "first question",
+      USER_BLOCK_PREFIX + "first question",
     ]);
     expect(requests[0]?.[0]?.content).toBe("You are RobinRun, an interactive agent");
     expect(requests[0]?.[1]?.content).not.toContain("# Agent Identity");
@@ -1293,7 +1297,7 @@ describe("AgentRuntime trace propagation", () => {
     expect(requests[0]?.[2]?.content).not.toContain("- **Git**:");
     expect(requests[0]?.at(-1)).toEqual({
       role: "user",
-      content: "first question",
+      content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst question",
       cacheControl: { type: "ephemeral" },
     });
     expect(requests[1]?.slice(0, -2).map(({ role, content }) => ({ role, content }))).toEqual(
@@ -1303,7 +1307,7 @@ describe("AgentRuntime trace propagation", () => {
     expect(requests[1]?.at(-2)?.content).toBe("first response");
     expect(requests[1]?.at(-1)).toEqual({
       role: "user",
-      content: "second question",
+      content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsecond question",
       cacheControl: { type: "ephemeral" },
     });
   });
@@ -1379,17 +1383,12 @@ describe("AgentRuntime trace propagation", () => {
     await runtime.executeTurn("first question");
     await runtime.executeTurn("second question");
 
-    // 结构化前缀：环境、模型、指令、日期公告都是 user 侧附件，排在第一问之前，不带 cacheControl。
+    // 结构化前缀：环境、模型、日期公告是 user 侧附件，排在第一问之前，不带 cacheControl。
+    // 2026-11-19 /init 裁决（docs/init-flow.md §4）：项目指令（AGENTS.md）迁入 system
+    // stable 段（identity 之后拼接），不再产生 user 侧 context_prefix 公告。
     const prefix = [
       { role: "user", cacheControl: undefined, content: ENVIRONMENT_REMINDER },
       { role: "user", cacheControl: undefined, content: MODEL_REMINDER },
-      {
-        role: "user",
-        cacheControl: undefined,
-        content: expect.stringMatching(
-          /^<system-reminder>\nCodebase and user instructions are shown below\.[\s\S]*Contents of \/workspace\/AGENTS\.md \(project instructions, checked into the codebase\):\n\nproject instructions\n<\/system-reminder>$/,
-        ),
-      },
       {
         role: "user",
         cacheControl: undefined,
@@ -1398,21 +1397,27 @@ describe("AgentRuntime trace propagation", () => {
     ];
     const systems = [
       { role: "system", cacheControl: undefined, content: "You are RobinRun, an interactive agent" },
-      { role: "system", cacheControl: EPHEMERAL, content: expect.any(String) },
+      {
+        role: "system",
+        cacheControl: EPHEMERAL,
+        content: expect.stringMatching(
+          /Contents of \/workspace\/AGENTS\.md \(project instructions, checked into the codebase\):\n\nproject instructions$/,
+        ),
+      },
       { role: "system", cacheControl: EPHEMERAL, content: expect.any(String) },
     ];
     expect(requests[0]).toEqual([
       ...systems,
       ...prefix,
-      { role: "user", cacheControl: EPHEMERAL, content: "first question" },
+      { role: "user", cacheControl: EPHEMERAL, content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst question" },
     ]);
     // 第二轮前缀不变：第一问的 cacheControl 移到第二问。
     expect(requests[1]).toEqual([
       ...systems,
       ...prefix,
-      { role: "user", cacheControl: undefined, content: "first question" },
+      { role: "user", cacheControl: undefined, content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nfirst question" },
       { role: "assistant", cacheControl: undefined, content: "first response" },
-      { role: "user", cacheControl: EPHEMERAL, content: "second question" },
+      { role: "user", cacheControl: EPHEMERAL, content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nsecond question" },
     ]);
   });
 
@@ -1455,7 +1460,7 @@ describe("AgentRuntime trace propagation", () => {
     );
 
     for (const question of [
-      "first question",
+      USER_BLOCK_PREFIX + "first question",
       "second question",
       "third question",
       "fourth question",
@@ -1548,7 +1553,7 @@ describe("AgentRuntime trace propagation", () => {
           },
           async *streamText(request) {
             expect(withoutAgentListingMessages(request.messages).at(-1)).toMatchObject({
-              content: "hello streaming",
+              content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nhello streaming",
               role: "user",
             });
             yield { type: "text_delta", text: "he" };

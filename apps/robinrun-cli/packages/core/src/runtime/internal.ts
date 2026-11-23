@@ -1,5 +1,6 @@
 import { PermissionService, ToolScheduler } from "./deps.js";
-import type { ModelRequestSessionFeature } from "@robinrun/contracts";
+import type { AgentContactPort, ModelRequestSessionFeature } from "@robinrun/contracts";
+import type { AgentContactRegistry } from "../subagent/agent-contact.js";
 import type {
   Logger,
   ModelSelection,
@@ -102,6 +103,19 @@ export interface AgentRuntimeInternal
   contextBuilder: ContextBuilder | null;
   contextInitialized: boolean;
   contextSourceSnapshot?: ContextSourceSnapshot;
+  /**
+   * 主智能体个人规则（docs/init-flow.md §4）：context 初始化时读盘缓存，会话级 sticky
+   * （与 userInstructions 快照同节奏）；经 ContextBuilderConfig 进系统提示词 section。
+   * 仅 master 会话（config.workerIdentity 缺席）加载；worker 会话改载 workerInstructions。
+   */
+  masterInstructions?: { filePath: string; content: string };
+  /**
+   * worker 注入段（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+   * context 初始化时按 config.workerIdentity 从名册解析 profile 并由 worker-prompt.ts
+   * 拼接缓存（define.md → agents.md → 预定义段；第④段项目 AGENTS.md 走 builder 通用
+   * project instructions），会话级 sticky。仅 worker 会话在场，与 masterInstructions 互斥。
+   */
+  workerInstructions?: { workerId: string; content: string };
   // 新会话初始化时刚读过的 Git 尚未用于宣告；第一次判断后清除，恢复的会话不设。
   sessionStartGitPrefetch?: boolean;
   // 本 runtime 已确认不是 Git 仓库的目录；同一目录不再检查（目录里 git init 后由新 runtime 发现）。
@@ -129,6 +143,23 @@ export interface AgentRuntimeInternal
   mcpToolsSignature?: string;
   mcpToolListRevision?: number;
   subagentPort?: SubagentPort;
+  /** agent 消息登记表（2026-11-19）：进程内在途 needReply 请求；master 侧持有活条目。 */
+  agentContactRegistry: AgentContactRegistry;
+  /** agent 消息端口（2026-11-19）：master 主会话自建 / worker_child 注入；工具注册门。 */
+  agentContactPort?: AgentContactPort;
+  /**
+   * 触发器专属会话说明（2026-11-19 验收裁决）：首个触发器投递轮（automationId=trg-*）
+   * 读盘缓存 README.md，会话级 sticky——之后每轮系统提示词携带（压缩后仍在）。普通
+   * 会话恒为 undefined；README 缺失/读失败时 loaded 置位而 readme 不设值。
+   */
+  triggerSessionReadme?: string;
+  triggerSessionReadmeLoaded: boolean;
+  /**
+   * 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：context 初始化读引擎
+   * 状态文件 `state/python-runtime.json` 的投影，会话级 sticky（压缩后仍在）。master
+   * 走 builder 的 Script trigger runtime section，worker 走 worker 注入段 bullet。
+   */
+  scriptRuntimeHint?: "python" | "node";
   getAgentDefinitions: NonNullable<AgentRuntimeDeps["getAgentDefinitions"]>;
   prepareAgentDefinitions: (input: {
     signal: AbortSignal;

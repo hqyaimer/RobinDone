@@ -37,6 +37,8 @@ export async function admitPrompt(
       intent: admissionIntent(options.intent, "queue"),
       modelSelectionScope: options.modelExecution?.selectionScope,
       highspeedFallbackSelection: options.modelExecution?.selectionFallback?.target,
+      // P2.6 消息来源身份随排队输入保留（队列编辑/提升必须原样透传）。
+      ...(options.systemStatus ? { systemStatus: options.systemStatus } : {}),
       queryId: options.queryId,
       toolDisallowlist: options.toolDisallowlist,
       traceContext: options.traceContext,
@@ -78,6 +80,8 @@ export async function admitPrompt(
         input,
         inputPresentation:
           options?.inputPresentation ?? (!options?.inputSource ? "user_steer" : undefined),
+        // P2.6 消息来源身份随输入走（master 插话 / 用户插话 / 触发器按条区分）。
+        ...(options?.systemStatus ? { systemStatus: options.systemStatus } : {}),
         inputId: options?.inputId,
         intent: admissionIntent(options?.intent, delivery ?? "queue"),
         queryId: options?.queryId,
@@ -96,6 +100,8 @@ export async function admitPrompt(
       input,
       inputPresentation:
         options?.inputPresentation ?? (!options?.inputSource ? "user_steer" : undefined),
+      // P2.6 消息来源身份随排队输入保留（队列编辑/提升必须原样透传）。
+      ...(options?.systemStatus ? { systemStatus: options.systemStatus } : {}),
       inputId: options?.inputId,
       intent: admissionIntent(options?.intent, delivery),
       queryId: options?.queryId,

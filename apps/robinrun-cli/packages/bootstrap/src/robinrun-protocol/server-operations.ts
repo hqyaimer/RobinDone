@@ -1,7 +1,7 @@
 import { isAbsolute, resolve } from "node:path";
 import {
   isAuxiliarySessionKind,
-  isReadonlyAgentSessionKind,
+  isUserReadonlySessionKind,
   OFF_PEAK_EXECUTION_TOOL_DENYLIST,
 } from "@robinrun/shared";
 /* eslint-disable max-lines -- RobinRun Protocol 的 session/workspace 方法共享同一个 server context 与 snapshot helpers，迁移期先集中维护。 */
@@ -55,6 +55,8 @@ import {
   robinrunSessionCancelBackgroundTaskParamsSchema,
   robinrunSessionCompactParamsSchema,
   robinrunSessionCloseParamsSchema,
+  robinrunSessionClearMessagesParamsSchema,
+  robinrunSessionClearMessagesResultSchema,
   robinrunSessionCreateParamsSchema,
   robinrunSessionEventsParamsSchema,
   robinrunSessionForkParamsSchema,
@@ -116,7 +118,10 @@ import {
   type RobinRunProtocolSessionRecord,
   type RobinRunProtocolToolInputTransmissionState,
 } from "./server-types.js";
-import { createWorkspaceRobinRunApp, ensureSessionModelAvailable } from "./workspace-model-runtime.js";
+import {
+  createWorkspaceRobinRunApp,
+  ensureSessionModelAvailable,
+} from "./workspace-model-runtime.js";
 import { buildAppUsageSnapshot, resolveTzOffsetMs } from "./usage-stats-builder.js";
 import { createProtocolInteractionBroker } from "./interaction-broker.js";
 import { createProtocolAutomationPort } from "./automation-port.js";
@@ -133,7 +138,11 @@ import {
 } from "./subagent-session-query.js";
 import { runSessionModelConfigMutation } from "../robinrun-protocol-v4/model-config-mutation.js";
 import { resolveDynamicWorkflowRuntimeGate } from "./dynamic-workflow-policy.js";
+import { agentContactState } from "./agent-contact-dispatch-port.js";
+import { triggerRuntimeState } from "./trigger-runtime-port.js";
 import {
+  createSessionResidentPoolHost,
+  deactivateSessionRecord,
   runWithSessionResidencyFinalization,
   getSessionLifecycle,
   closeSessionRuntime,
@@ -164,6 +173,11 @@ type RobinRunSessionRecordParams = (
       // 自动化会话会在创建期关闭标题二次生成，而 create/resume
       // 共用 record 初始化函数；resume 兼容分支也必须声明该策略字段。
       titleGenerationEnabled?: RobinRunSessionCreateParams["titleGenerationEnabled"];
+      // 创建来源（P2.5）随行：resume 从持久化行回填（与 taskType 同款收口）。
+      creationOrigin?: RobinRunSessionCreateParams["creationOrigin"];
+      // agent 会话身份（worker 会话同构化）随行：resume 从持久化行回填（与 taskType 同款收口）。
+      // resume 携带持久化的显示名，避免名册缺项时冷恢复丢身份。
+      agentIdentity?: { kind: "worker"; workerId: string; workerName?: string };
     })
 ) & { taskType?: SessionTaskType };
 
@@ -1551,6 +1565,18 @@ export async function activateSessionRuntime(
       // desktop 任务列表长出「workflow actor actor#N@k」假任务，任务索引同步器还会
       // 反复对它们发 session/resume。fork 路径一直带着 taskType，这里必须同样带。
       taskType: session.taskType,
+      // 创建来源（P2.5）随行回填：live 投影经 record.creationOrigin 读取。
+      ...(session.creationOrigin ? { creationOrigin: session.creationOrigin } : {}),
+      // agent 会话身份随行回填（worker 会话同构化）：冷恢复重建注入段（同 taskType 收口）。
+      ...(session.workerIdentity
+        ? {
+            agentIdentity: {
+              kind: "worker" as const,
+              workerId: session.workerIdentity.workerId,
+              workerName: session.workerIdentity.workerName,
+            },
+          }
+        : {}),
       workspace,
     },
     params.sessionId as SessionId,
@@ -1593,7 +1619,10 @@ export async function activateSessionRuntime(
   };
 }
 
-export async function resumeSession(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+export async function resumeSession(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunSessionResumeParamsSchema, rawParams);
   const activated = await activateSessionForResume(context, params);
   return await snapshot(context, activated.record, activated.knownSession);
@@ -1769,7 +1798,10 @@ export async function validateSessionActivationWorkspace(
     throw new Error("project.session-lineage-invalid");
 }
 
-export async function listSessions(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+export async function listSessions(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunSessionListParamsSchema, rawParams ?? {});
   const store = context.deps.sessionStore;
   // 显式 ID 查询只读持久化身份，供 Host 修复旧索引；不能为了识别 child 激活 runtime。
@@ -1928,7 +1960,10 @@ export async function listSessionSubagents(
 
 const APP_USAGE_RANGE_DAYS: Record<string, number> = { "7d": 7, "30d": 30 };
 
-export async function getUsageStats(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+export async function getUsageStats(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunUsageStatsParamsSchema, rawParams ?? {});
   const timeZone = params.timeZone ?? "UTC";
   const until = Date.now();
@@ -2029,7 +2064,10 @@ export async function readSessionContextUsage(
   });
 }
 
-export async function readMessages(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+export async function readMessages(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunSessionMessagesParamsSchema, rawParams);
   const record = requireSession(context, params.sessionId);
   const allMessages = await readActiveSessionMessages(context, record);
@@ -2085,7 +2123,17 @@ export async function sendPrompt(context: RobinRunProtocolAgentServerContext, ra
   const params = parseParams(robinrunSessionSendParamsSchema, rawParams);
   const record = requireSession(context, params.sessionId);
   // legacy 输入入口同样必须保持子代理只读，不能绕过 V4 用户输入准入。
-  if (isReadonlyAgentSessionKind(record.taskType)) {
+  // P2.5：一次性 subagent / 工作流子会话仍只读。worker_child 已对用户开放，但输入
+  // 必须经 V4 sendText 路由到派发者 subagentPort（延迟返回）——legacy 路径没有该
+  // 路由，直接起轮会丢 roster profile，因此这里维持拒绝（独立 reasonCode 便于定位）。
+  if (record.taskType === "worker_child") {
+    throw new ProtocolRequestError(
+      -32010,
+      "Worker sessions accept input via the V4 conversation channel",
+      { reasonCode: "guard.workerRoutingRequired" },
+    );
+  }
+  if (isUserReadonlySessionKind(record.taskType)) {
     throw new ProtocolRequestError(-32010, "Subagent sessions are read-only", {
       reasonCode: "guard.subagentReadOnly",
     });
@@ -2178,7 +2226,66 @@ export async function sendPrompt(context: RobinRunProtocolAgentServerContext, ra
   return afterPromptAccepted(context, record, "prompt_started");
 }
 
-export async function compactSession(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+/**
+ * 清空会话全部消息（2026-11-20 触发器会话清空，docs/trigger-system.md「UI 规格」）：
+ * Host（触发器引擎 resetTriggerSession）经 session/clearMessages 下发。语义是「会话
+ * 保留、内容归零」——主记录/标题/触发器绑定不动，身份按 Host 给的当前订阅者重置
+ * （这是旧会话身份纠偏的正道：只清消息不改身份，冷恢复仍按旧身份装配）。运行中的
+ * 会话拒绝清空（turn 写库互踩）；驻留但空闲的会话先去激活，让下次 fire 冷恢复时
+ * 按重置后的身份重建注入段。
+ */
+export async function clearSessionMessages(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
+  const params = parseParams(robinrunSessionClearMessagesParamsSchema, rawParams);
+  const sessionStore = context.deps.sessionStore;
+  if (!sessionStore?.clearSessionMessages || !sessionStore.updateSession) {
+    throw new ProtocolRequestError(
+      robinrunProtocolErrorCodes.sessionUnavailable,
+      "Session message clearing is unavailable in this process",
+    );
+  }
+  const resident = context.sessions.get(params.sessionId);
+  const residency = createSessionResidentPoolHost(context).readResidencyFacts(params.sessionId);
+  if (resident !== undefined && residency?.hasResidencyBlockingWork) {
+    // 有在途交互/排队命令/活动轮次：拒绝而不是静默半清空。
+    return robinrunSessionClearMessagesResultSchema.parse({
+      cleared: false,
+      running: true,
+      clearedMessages: 0,
+    });
+  }
+  if (resident !== undefined) {
+    // 空闲驻留：内存 record 还持着旧身份的 runtime config，必须去激活，
+    // 下次 fire 走冷恢复按重置后的身份重建注入段。
+    await deactivateSessionRecord(context, params.sessionId);
+  }
+  if (params.workerIdentity !== undefined) {
+    await sessionStore.updateSession({
+      id: params.sessionId as SessionId,
+      workerIdentity: params.workerIdentity,
+    });
+  }
+  const result = await sessionStore.clearSessionMessages({
+    sessionID: params.sessionId as SessionId,
+  });
+  context.logger?.info("Session messages cleared", {
+    event: "robinrun_protocol.session.messages_cleared",
+    sessionId: params.sessionId,
+    clearedMessages: result.clearedMessages,
+    identityReset: params.workerIdentity !== undefined,
+  });
+  return robinrunSessionClearMessagesResultSchema.parse({
+    cleared: true,
+    clearedMessages: result.clearedMessages,
+  });
+}
+
+export async function compactSession(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunSessionCompactParamsSchema, rawParams);
   const record = requireSession(context, params.sessionId);
   assertExpectedRevision(record, params.expectedRevision);
@@ -2903,7 +3010,10 @@ export async function setMode(context: RobinRunProtocolAgentServerContext, rawPa
   return await afterStateMutation(context, record, "mode_changed");
 }
 
-export async function closeSession(context: RobinRunProtocolAgentServerContext, rawParams: unknown) {
+export async function closeSession(
+  context: RobinRunProtocolAgentServerContext,
+  rawParams: unknown,
+) {
   const params = parseParams(robinrunSessionCloseParamsSchema, rawParams);
   const record = requireSession(context, params.sessionId);
   if (!shouldCloseSessionForExpectedPersistence(record.persistence, params.expectedPersistence)) {
@@ -3203,6 +3313,31 @@ export function onSessionEvent(
         sessionId: computerUseOperationEvent.sessionId,
         turnId:
           "turnId" in computerUseOperationEvent ? computerUseOperationEvent.turnId : undefined,
+      });
+    }
+  }
+  // worker 会话通道（2026-11-16 隔离裁决）：主智能体派发名册 worker（SubagentSpawned
+  // 携带 worker 身份）时，把 child 会话登记进 gateway 的 worker 注册表。worker_child
+  // 没有 bootstrap record，注册表是它进 sessions-index 的事实源——summary 带 worker
+  // 身份，host syncer 据此把会话准入侧栏 worker 任务组；与一次性 subagent 的
+  // detached live session 通道（下方 sessionId-mismatch 分支）互不沾染。
+  if (event.type === SessionEventType.SubagentSpawned) {
+    const payload = event.payload as {
+      childSessionId?: string;
+      worker?: { workerId: string; workerName: string };
+    };
+    if (
+      payload.worker &&
+      payload.childSessionId &&
+      payload.childSessionId !== record.app.sessionId
+    ) {
+      context.v4Gateway?.ingestWorkerSession({
+        sessionId: String(payload.childSessionId),
+        parentSessionId: record.app.sessionId,
+        workspaceKey: record.workspace.workspaceKey,
+        workerId: payload.worker.workerId,
+        workerName: payload.worker.workerName,
+        event,
       });
     }
   }
@@ -3545,6 +3680,21 @@ async function createRecord(
       ? (params.parentSessionId as SessionId)
       : undefined;
   const taskType = params.taskType ?? "interactive";
+  // 创建来源（P2.5）：host 按(cron/off-peak 等)入口传入；缺省 user（普通用户任务）。
+  const creationOrigin = params.creationOrigin ?? { kind: "user" as const };
+  // agent 会话身份（worker 会话同构化，docs/worker-session-model.md）：触发器/ContactAgent
+  // 投递按 subscriberAgentId 寻址创建 worker 会话；taskType 保持 interactive，身份随行。
+  // workerName 在 create-app 按名册解析校验（创建路径），resume 路径透传持久化显示名。
+  const requestedAgentIdentity: { workerId: string; workerName?: string } | undefined =
+    params.agentIdentity;
+  const workerIdentity = requestedAgentIdentity
+    ? {
+        workerId: requestedAgentIdentity.workerId,
+        ...(requestedAgentIdentity.workerName
+          ? { workerName: requestedAgentIdentity.workerName }
+          : {}),
+      }
+    : undefined;
   const runtimeMcp = protocolMcpServersToRuntimeMcpConfig(params.mcpServers);
   context.logger?.info("RobinRun Protocol createRecord MCP config", {
     event: "robinrun_protocol.create_record.mcp_config",
@@ -3570,6 +3720,8 @@ async function createRecord(
       modelSelection: "model" in params ? toRuntimeModelSelection(initialModel) : undefined,
       parentSessionId,
       taskType,
+      creationOrigin,
+      ...(workerIdentity ? { workerIdentity } : {}),
       // 动态工作流灰度门（docs/dynamic-workflow/launch.md「Gray release」「On demand: activation」）：
       // 与 offPeakPort 同一套读法——本次 create/resume 参数优先，缺席时读 Host 同步到进程的
       // workspace 级结论。取值与「必须显式布尔」的理由收在 resolveDynamicWorkflowRuntimeGate。
@@ -3615,6 +3767,13 @@ async function createRecord(
     permissionBroker: createProtocolInteractionBroker(context),
     automationPort: createProtocolAutomationPort(context, () => ownSessionRecord),
     topicResourcePort: createProtocolTopicResourcePort(context),
+    // agent 消息（worker 会话同构化）：进程共享登记表 + Host 投递端口按 context 取单例
+    // （同 workspace 全部会话共用一个事实源，ContactAgent master↔worker 双向可达）。
+    agentContactRegistry: agentContactState(context).registry,
+    agentContactDispatchPort: agentContactState(context).dispatch,
+    // 触发器 python 运行时端口（2026-11-22）：install_packages 经反向请求到宿主引擎；
+    // 按 context 单例（同款 context 级共享模式）。
+    triggerRuntimePort: triggerRuntimeState(context).port,
     // 只接入 Host 已开放的工具面；缺省不注入。复用现行异步工厂，
     // 不恢复旧 deferred ModelAdapter/Registry overlay，也不改变 Session Selection。
     ...(("offPeakToolEnabled" in params && params.offPeakToolEnabled === true) ||
@@ -3675,6 +3834,10 @@ async function createRecord(
     nativeSearchEnhancementsEnabled: startupPreferences.nativeSearchEnhancementsEnabled,
     toolSearchMode: startupPreferences.toolSearchMode,
     ...(parentSessionId ? { parentSessionId } : {}),
+    creationOrigin,
+    // agent 会话身份（worker 会话同构化）：读 create-app 按名册解析后的最终身份
+    //（含显示名；请求侧只带 workerId）。
+    workerIdentity: app.runtime.getWorkerIdentity(),
     persistence: "persistence" in params ? (params.persistence ?? "immediate") : "immediate",
     protocolEventSequences: new Map(),
     protocolToolInputTransmissions: new Map(),

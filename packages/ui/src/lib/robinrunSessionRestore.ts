@@ -16,7 +16,10 @@ export type RobinRunSessionRestoreService = Pick<
   IRobinRunSessionService,
   "readSession" | "resumeSession"
 >;
-export type RobinRunLegacyTaskSnapshotRestoreService = Pick<IRobinRunTaskService, "getTaskSnapshot">;
+export type RobinRunLegacyTaskSnapshotRestoreService = Pick<
+  IRobinRunTaskService,
+  "getTaskSnapshot"
+>;
 
 export interface DesktopContinuousSessionRestoreSnapshot {
   snapshot: RobinRunTaskSnapshot;

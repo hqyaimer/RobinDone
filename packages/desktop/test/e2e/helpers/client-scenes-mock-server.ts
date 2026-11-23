@@ -161,7 +161,11 @@ export function clearClientScenesMockEnv(
   environment: Record<string, string | undefined>,
   baseUrl: string,
 ): void {
-  for (const key of ["ROBINRUN_BASE_URL", "ROBINRUN_TEST_BASE_URL", "ROBINRUN_ENDPOINT_ORIGIN"] as const) {
+  for (const key of [
+    "ROBINRUN_BASE_URL",
+    "ROBINRUN_TEST_BASE_URL",
+    "ROBINRUN_ENDPOINT_ORIGIN",
+  ] as const) {
     if (environment[key] === baseUrl) {
       delete environment[key];
     }

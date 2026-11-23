@@ -105,6 +105,17 @@ export function setSessionModelSelection(
   this.sessionModelSelection = selection && cloneModelSelection(selection);
 }
 
+export function getWorkerIdentity(
+  this: AgentRuntimeInternal,
+): { workerId: string; workerName: string } | undefined {
+  const identity = this.config.workerIdentity;
+  if (!identity) return undefined;
+  return {
+    workerId: identity.workerId,
+    workerName: identity.workerName ?? identity.workerId,
+  };
+}
+
 export function getProjectId(this: AgentRuntimeInternal): ProjectId {
   // Bash cd 会改变执行 cwd，但 project identity 不能随工具内 cwd 漂移。
   return projectIdFromDirectory(this.workspaceRoot);

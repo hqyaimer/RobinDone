@@ -493,7 +493,11 @@ describe("prompt attachment provider content order", () => {
       {
         role: "user",
         content: [
-          { type: "text", text: "Summarize the attachments." },
+          // P2.6 消息来源区块：真实用户输入的文本首块带 sender 前缀。
+          {
+            type: "text",
+            text: '<system-status>{"sender":"user"}</system-status>\n\nSummarize the attachments.',
+          },
           { type: "resource_link", uri: "https://example.com/ref" },
         ],
       },
@@ -672,7 +676,7 @@ describe("prompt attachment provider content order", () => {
     ]);
 
     expect(buildProviderRequestMessages({ entries }).messages).toEqual([
-      { role: "user", content: "Summarize this." },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nSummarize this." },
       { role: "system", content: reminderBody },
     ]);
   });

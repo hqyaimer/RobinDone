@@ -39,6 +39,10 @@ export const SESSION_TASK_TYPES = [
   "workflow_child",
   "subagent_child",
   "nested_workflow_child",
+  // [已退役写入路径，2026-11-20 worker 会话模型同构化] worker 会话改走主会话路径
+  // （taskType=interactive + workerIdentity 身份字段）；本值仅供历史 worker_child 会话
+  // 的投影/冷恢复读取兼容，开发期项目删除重建，不再产生新会话。
+  "worker_child",
 ] as const;
 export type SessionTaskType = (typeof SESSION_TASK_TYPES)[number];
 
@@ -46,6 +50,28 @@ export const SESSION_TITLE_SOURCES = ["default", "first_input", "generated", "cu
 export type SessionTitleSource = (typeof SESSION_TITLE_SOURCES)[number];
 
 export type SessionLastOutcome = "completed" | "error" | "interrupted";
+
+/**
+ * 会话创建来源（P2.5，2026-11-16）：创建时必带，落 session.creation_origin 列。
+ * user=用户创建；agent=主智能体某会话派发（ref=来源会话 id）；trigger=触发器/定时
+ * （ref=automationId）；system=系统任务（ref=offPeakTaskId 等）。内部处理机制，UI 不展示。
+ */
+export interface SessionCreationOrigin {
+  kind: "user" | "agent" | "trigger" | "system";
+  ref?: string;
+}
+
+/**
+ * agent 会话身份（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md）：
+ * worker = 主智能体级并行会话，taskType 保持 interactive，身份由本字段承载
+ * （缺席 = master 会话）。显示名在建会话时按名册（workers.json）解析定档，
+ * 之后随会话持久化——名册改名不回写历史会话。
+ */
+export interface WorkerSessionIdentity {
+  workerId: string;
+  /** 创建路径由 bootstrap 按名册解析补全；wire 请求（协议 agentIdentity）可只带 workerId。 */
+  workerName?: string;
+}
 
 export const MESSAGE_VISIBILITIES = ["user-visible", "model-only"] as const;
 export type MessageVisibility = (typeof MESSAGE_VISIBILITIES)[number];
@@ -152,6 +178,15 @@ export interface SessionInfo {
   parentID?: SessionId;
   traceID?: TraceId;
   taskType: SessionTaskType;
+  /** 创建来源（P2.5）；旧行缺席按 user 处理。 */
+  creationOrigin?: SessionCreationOrigin;
+  /**
+   * agent 会话身份（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md）：
+   * worker 会话随创建落库（显示名由 CLI 建会话时按名册解析定档）；旧行缺席按 master 处理。
+   * 冷恢复经 session 记录回填 runtime config，注入段据此重建（同 masterInstructions 的
+   * sticky 语义）。
+   */
+  workerIdentity?: WorkerSessionIdentity;
   slug: string;
   directory: string;
   path?: string;
@@ -183,6 +218,10 @@ export interface CreateSessionInput {
   parentID?: SessionId;
   traceID?: TraceId;
   taskType?: SessionTaskType;
+  /** 创建来源（P2.5）；缺省由创建收口点补 user。 */
+  creationOrigin?: SessionCreationOrigin;
+  /** agent 会话身份（worker 会话同构化）；缺席 = master 会话，见 SessionInfo 注释。 */
+  workerIdentity?: WorkerSessionIdentity;
   slug: string;
   directory: string;
   path?: string;
@@ -278,6 +317,12 @@ export interface UpdateSessionInput {
   revert?: SessionRevert | null;
   permission?: PermissionRuleset | null;
   timeCompacting?: number | null;
+  /**
+   * 会话身份重写（2026-11-20 触发器会话清空用）：undefined = 不动；null = 清除
+   * （回到 master 会话）；对象 = 落库指定身份。与创建时的随行落库不同，这里是
+   * 显式重置入口——清空触发器会话时按触发器当前订阅者重定身份。
+   */
+  workerIdentity?: WorkerSessionIdentity | null;
 }
 
 export interface FileDiff {
@@ -835,6 +880,10 @@ export const SESSION_ENTRY_DYNAMIC_WORKFLOW_ACTIVATION =
   "runtime/dynamic_workflow_activation" as const;
 /** 本会话用过的能力标签（docs/design/v2/model/session-features-header.md）。 */
 export const SESSION_ENTRY_SESSION_FEATURES = "runtime/session_features" as const;
+// worker 会话通道（P2.5，2026-11-16）：派发时持久化的 worker 身份（重启后 registry 为空时
+// 合成快照恢复 profile 用）与用户介入脱钩状态（延迟返回的持久事实）。
+export const SESSION_ENTRY_WORKER_IDENTITY = "runtime/worker-identity" as const;
+export const SESSION_ENTRY_WORKER_DETACH_STATE = "runtime/worker-detach-state" as const;
 
 export const SESSION_ENTRY_TYPES = [
   SESSION_ENTRY_TARGET_COMPLETION_VERIFICATION,
@@ -846,6 +895,8 @@ export const SESSION_ENTRY_TYPES = [
   SESSION_ENTRY_WORKSPACE_FILE_REWIND,
   SESSION_ENTRY_DYNAMIC_WORKFLOW_ACTIVATION,
   SESSION_ENTRY_SESSION_FEATURES,
+  SESSION_ENTRY_WORKER_IDENTITY,
+  SESSION_ENTRY_WORKER_DETACH_STATE,
 ] as const;
 
 export type SessionEntryType = (typeof SESSION_ENTRY_TYPES)[number];
@@ -1165,6 +1216,12 @@ export interface SessionStorePort {
     messageID: MessageId;
   }): Promise<MessageWithParts | null>;
   messages(input: { sessionID: SessionId }): Promise<MessageWithParts[]>;
+  /**
+   * 清空会话的全部消息（2026-11-20 触发器会话清空用）：messages/parts/todo 全部删除，
+   * revert/压缩中标记/摘要 diff 统计复位；会话主记录、标题与 worker 身份不动。
+   * 返回删除的消息条数（投影刷新与审计用）。
+   */
+  clearSessionMessages(input: { sessionID: SessionId }): Promise<{ clearedMessages: number }>;
   saveSessionEntry?(input: SessionEntryInfo): Promise<void>;
   sessionEntries?(input: {
     sessionID: SessionId;

@@ -31,18 +31,23 @@ type DesktopBrowserPlatformBridge = Pick<
 export const desktopBrowserPlatformBridge = {
   getPathForFile: (file) => window.robinrun.getPathForFile?.(file) ?? null,
   saveFile: (payload) =>
-    window.robinrun.saveFile?.(payload) ?? Promise.resolve({ success: false, error: "not_supported" }),
+    window.robinrun.saveFile?.(payload) ??
+    Promise.resolve({ success: false, error: "not_supported" }),
   // 条件定义而非兜底返回失败：UI 靠方法是否存在做能力检测，旧 preload 下必须保持 undefined
-  printPageToPdf: window.robinrun.printPageToPdf ? () => window.robinrun.printPageToPdf!() : undefined,
+  printPageToPdf: window.robinrun.printPageToPdf
+    ? () => window.robinrun.printPageToPdf!()
+    : undefined,
   onBrowserViewDownloadStarted: (handler) =>
     window.robinrun.onBrowserViewDownloadStarted?.(handler) ?? (() => {}),
   onBrowserViewReady: (handler) => window.robinrun.onBrowserViewReady?.(handler) ?? (() => {}),
-  onBrowserViewOperation: (handler) => window.robinrun.onBrowserViewOperation?.(handler) ?? (() => {}),
+  onBrowserViewOperation: (handler) =>
+    window.robinrun.onBrowserViewOperation?.(handler) ?? (() => {}),
   onBrowserViewViewportChanged: (handler) =>
     window.robinrun.onBrowserViewViewportChanged?.(handler) ?? (() => {}),
   onBrowserViewVisibility: (handler) =>
     window.robinrun.onBrowserViewVisibility?.(handler) ?? (() => {}),
-  onBrowserViewCloseTab: (handler) => window.robinrun.onBrowserViewCloseTab?.(handler) ?? (() => {}),
+  onBrowserViewCloseTab: (handler) =>
+    window.robinrun.onBrowserViewCloseTab?.(handler) ?? (() => {}),
   onBrowserViewSuspend: (handler) => window.robinrun.onBrowserViewSuspend?.(handler) ?? (() => {}),
   onBrowserViewRestore: (handler) => window.robinrun.onBrowserViewRestore?.(handler) ?? (() => {}),
   browserViewLoadUrl: (payload) => window.robinrun.browserViewLoadUrl!(payload),

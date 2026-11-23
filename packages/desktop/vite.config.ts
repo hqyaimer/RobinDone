@@ -180,13 +180,16 @@ export default defineConfig(({ command, mode }) => {
   const e2eCoverageEnabled =
     env.ROBINRUN_E2E_COVERAGE === "1" || process.env.ROBINRUN_E2E_COVERAGE === "1";
   const e2eStoreBridgeEnabled =
-    env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1" || process.env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1";
+    env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1" ||
+    process.env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1";
   const robinrunEndpointOrigin = resolveRobinRunEndpointOrigin({
     env: robinrunEnv,
     envBaseOrigin:
       env.ROBINRUN_BASE_URL ??
       env.ROBINRUN_ENDPOINT_ORIGIN ??
-      (robinrunEnv === "production" ? env.ROBINRUN_PRODUCTION_BASE_URL : env.ROBINRUN_TEST_BASE_URL),
+      (robinrunEnv === "production"
+        ? env.ROBINRUN_PRODUCTION_BASE_URL
+        : env.ROBINRUN_TEST_BASE_URL),
   });
   const codingPlanWebviewOrigin =
     env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? process.env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? "";

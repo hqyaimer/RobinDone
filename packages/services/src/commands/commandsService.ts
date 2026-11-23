@@ -50,6 +50,9 @@ const ROBINRUN_INLINE_PLUGIN_MARKETPLACE = "inline";
 const ROBINRUN_PLUGIN_MANIFEST_PATH = join(".robinrun-plugin", "plugin.json");
 const CLAUDE_PLUGIN_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
 const CODEX_PLUGIN_MANIFEST_PATH = join(".codex-plugin", "plugin.json");
+// 上游 ZCode 构建产物（官方 CDN 插件 zip）的原生 manifest 目录，读取面保留兼容
+// （RobinRun(2026-11-23)，与 adapters plugins/index.ts findManifest 同名别名）。
+const UPSTREAM_ZCODE_PLUGIN_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
 const ROBINRUN_COMMAND_DESCRIPTOR: CommandAgentSourceDescriptor = {
   agentSource: "robinrunAgent",
   directorySource: "robinrun",
@@ -339,6 +342,7 @@ async function findPluginManifestPath(rootPath: string): Promise<string | null> 
     join(rootPath, ROBINRUN_PLUGIN_MANIFEST_PATH),
     join(rootPath, CLAUDE_PLUGIN_MANIFEST_PATH),
     join(rootPath, CODEX_PLUGIN_MANIFEST_PATH),
+    join(rootPath, UPSTREAM_ZCODE_PLUGIN_MANIFEST_PATH),
   ]) {
     if (existsSync(manifestPath)) {
       return manifestPath;

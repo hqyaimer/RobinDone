@@ -3,7 +3,10 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { HELPER_APP_NAME, HELPER_DISPLAY_NAME } from "@robinrun/robinrun-cua/broker/helperConstants";
+import {
+  HELPER_APP_NAME,
+  HELPER_DISPLAY_NAME,
+} from "@robinrun/robinrun-cua/broker/helperConstants";
 import { afterEach, describe, expect, it } from "vitest";
 
 const isWindows = process.platform === "win32";

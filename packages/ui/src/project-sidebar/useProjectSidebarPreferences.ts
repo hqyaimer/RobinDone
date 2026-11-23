@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type {
-  ProjectAvailability,
-  VirtualProject,
-} from "@/project-sidebar/contract.js";
+import type { ProjectAvailability, VirtualProject } from "@/project-sidebar/contract.js";
 import { projectKey } from "@/project-sidebar/view.js";
 import { getSafeLocalStorage } from "@/lib/browserEnvironment.js";
 import { readWorkspaceExpansionState } from "@/lib/workspaceExpansionPreference.js";

@@ -211,4 +211,84 @@ describe("RobinRun official marketplace partitions", () => {
       });
     }
   });
+
+  // RobinRun(2026-11-23): 官方 source URL 有意保留上游 ZCode CDN，远端 manifest 顶层 name
+  // 仍是旧名 zcode-plugins-official。受信任刷新必须把它归一化为规范 id，而不是抛
+  // "Official marketplace source must provide robinrun-plugins-official" 拒绝整个刷新。
+  it("normalizes the upstream zcode-plugins-official manifest name during trusted refresh", async () => {
+    const storageRoot = await makeStorageRoot();
+    writeBundledOfficialMarketplacePartitionSync({
+      manifest: {
+        name: "robinrun-plugins-official",
+        plugins: [{ name: "bundled", source: "filesystem" }],
+      },
+      storageRoot,
+    });
+
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          name: "zcode-plugins-official",
+          description: "Official ZCode plugins marketplace: built-in and community plugins.",
+          description_i18n: {
+            en: "Official ZCode plugins marketplace.",
+            "zh-CN": "ZCode 官方插件市场。",
+          },
+          plugins: [{ name: "remote", source: { source: "url", type: "zip" } }],
+        }),
+      );
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("test server address missing");
+      await writeFile(
+        join(storageRoot, "known_marketplaces.json"),
+        JSON.stringify({
+          version: 1,
+          marketplaces: [
+            {
+              id: "robinrun-plugins-official",
+              source: { source: "url", url: `http://127.0.0.1:${address.port}/marketplace.json` },
+              name: "robinrun-plugins-official",
+              addedAt: "2026-01-01T00:00:00.000Z",
+              pluginCount: 1,
+            },
+          ],
+        }),
+      );
+
+      const [updated] = await updateMarketplace({
+        marketplace: "robinrun-plugins-official",
+        storageRoot,
+      });
+      expect(updated).toMatchObject({
+        id: "robinrun-plugins-official",
+        name: "robinrun-plugins-official",
+        description: "Official RobinRun plugins marketplace: built-in and community plugins.",
+        pluginCount: 2,
+      });
+
+      const marketplaceRoot = join(storageRoot, "marketplaces", "robinrun-plugins-official");
+      const cdnPartition = JSON.parse(
+        await readFile(join(marketplaceRoot, "cdn-marketplace.json"), "utf8"),
+      ) as { name: string };
+      expect(cdnPartition.name).toBe("robinrun-plugins-official");
+
+      const merged = JSON.parse(
+        await readFile(join(marketplaceRoot, "marketplace.json"), "utf8"),
+      ) as { description?: string; name: string; plugins: Array<{ name: string }> };
+      expect(merged.name).toBe("robinrun-plugins-official");
+      expect(merged.description).toBe(
+        "Official RobinRun plugins marketplace: built-in and community plugins.",
+      );
+      expect(merged.plugins.map((plugin) => plugin.name)).toEqual(["remote", "bundled"]);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  });
 });

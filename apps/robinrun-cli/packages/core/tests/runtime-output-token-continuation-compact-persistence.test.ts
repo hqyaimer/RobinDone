@@ -334,8 +334,14 @@ async function runCompactPersistenceScenario(input: {
 }
 
 function findRequest(requests: readonly CapturedRequest[], lastText: string): CapturedRequest {
+  // P2.6：真实用户输入的 lastText 带 sender 区块前缀，剥掉后匹配。
   const request = requests
-    .filter((candidate) => !candidate.compact && candidate.lastText === lastText)
+    .filter(
+      (candidate) =>
+        !candidate.compact &&
+        candidate.lastText.replace(/^<system-status>[\s\S]*?<\/system-status>\n\n/, "") ===
+          lastText,
+    )
     .at(-1);
   expect(request).toBeDefined();
   return request!;

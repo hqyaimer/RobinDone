@@ -614,7 +614,10 @@ describe(`${CASE_MARKER}: 设置页 Scope 菜单按设备分组`, () => {
       { timeout: 30_000, timeoutMsg: `${CASE_MARKER}: 本机没有写入 ${LOCAL_AGENT}` },
     );
     expect(
-      await remoteContainerPathExists(container, `${REMOTE_HOME}/.robinrun/agents/${LOCAL_AGENT}.md`),
+      await remoteContainerPathExists(
+        container,
+        `${REMOTE_HOME}/.robinrun/agents/${LOCAL_AGENT}.md`,
+      ),
     ).toBe(false);
     await clickTestIdByDom(TID_SETTINGS_BACK_BUTTON, { timeout: 15_000 });
   });
@@ -644,9 +647,9 @@ describe(`${CASE_MARKER}: 设置页 Scope 菜单按设备分组`, () => {
     const remotePath = `${REMOTE_HOME}/.robinrun/commands/${REMOTE_COMMAND}.md`;
     await waitForRemotePath(container, remotePath);
     expect(await readRemoteContainerFile(container, remotePath)).toContain(`${CASE_MARKER} prompt`);
-    expect(await localPathExists(join(homeDir, ".robinrun", "commands", `${REMOTE_COMMAND}.md`))).toBe(
-      false,
-    );
+    expect(
+      await localPathExists(join(homeDir, ".robinrun", "commands", `${REMOTE_COMMAND}.md`)),
+    ).toBe(false);
     await clickTestIdByDom(TID_SETTINGS_BACK_BUTTON, { timeout: 15_000 });
   });
   it("DSYNC-15-03 MCP 只按 Scope 目标读写：本机 tab 选远端「用户」新增、开关写容器；远程 tab 选「本机 · 用户」新增写本机", async function () {

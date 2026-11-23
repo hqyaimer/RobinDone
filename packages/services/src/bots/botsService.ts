@@ -91,7 +91,10 @@ import {
 } from "#src/project-catalog/index.js";
 import type { IProjectService } from "#src/project/contract.js";
 import type { IRemoteProjectService } from "#src/remote-projects/contract.js";
-import { buildRemoteHostWorkspaceIdentity, remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
+import {
+  buildRemoteHostWorkspaceIdentity,
+  remoteHostIdFromWorkspaceIdentity,
+} from "@robinrun/shared";
 import type { IRobinRunTaskService } from "../session/robinrunTaskService.js";
 import { resolveProviderModeIdFromConfigOptions } from "#src/session/sessionModeOptions.js";
 import { deriveSessionTitle as deriveTaskTitle } from "#src/session/sessionTitle.js";
@@ -6861,7 +6864,8 @@ export function createBotsService(
       };
     });
     // 历史文本附件在各条原始附件之后追加，保留它且不归给后续消息。
-    if (topicBatch) admittedAttachments.push(...prepared.robinrunAttachments.slice(attachmentOffset));
+    if (topicBatch)
+      admittedAttachments.push(...prepared.robinrunAttachments.slice(attachmentOffset));
     const source = {
       authorizationId: context.group.authorizationId,
       botIdentity: { name: bot.name, ...(message.botOpenId ? { openId: message.botOpenId } : {}) },
@@ -8692,7 +8696,10 @@ export function createBotsService(
             if (!alias) continue;
             // 默认会话可能已切换工作区；迁移检查必须使用旧任务自己的完整工作区身份。
             const workspace = group.taskWorkspaces?.[alias.taskId] ?? candidate;
-            const service = await resolveRobinRunTaskServiceForContext({ ...candidate, ...workspace });
+            const service = await resolveRobinRunTaskServiceForContext({
+              ...candidate,
+              ...workspace,
+            });
             if (
               !service.getBotGroupTaskBlockReason ||
               (await service.getBotGroupTaskBlockReason({
@@ -9567,7 +9574,8 @@ export function createBotsService(
                   workspaceIdentity: auth.context.workspaceIdentity,
                 });
                 if (executionId) await stopTopicRun(auth.context, executionId.executionId);
-              } else await robinrunTaskService.stopGeneration({ taskId: auth.context.activeTaskId });
+              } else
+                await robinrunTaskService.stopGeneration({ taskId: auth.context.activeTaskId });
             } catch (error) {
               const messageText = error instanceof Error ? error.message : String(error);
               return [

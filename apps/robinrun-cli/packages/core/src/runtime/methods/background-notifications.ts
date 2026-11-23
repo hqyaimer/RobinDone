@@ -1,8 +1,13 @@
 import { createMessageId, traceContextToLogContext } from "../deps.js";
 import type { MessageId, TraceContext } from "../deps.js";
 import type { BackgroundResultOriginMeta } from "@robinrun/contracts";
+import {
+  systemStatusNameValue,
+  type SystemStatusPayload,
+} from "@robinrun/shared";
 import { createRuntimeCommandId, type TaskNotificationRuntimeCommand } from "../command-queue.js";
 import { runtimeInputMetadata } from "../../agent/runtime-input-presentation.js";
+import { legacySyntheticRuntimeMetadata } from "../../agent/message-history.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import type { SealBackgroundTaskNotificationsInput } from "../types.js";
 import { shouldSuppressSealedSubagentBashNotification } from "../../runtime-task/notification-policy.js";
@@ -111,10 +116,45 @@ export interface PersistedBackgroundTaskNotificationBatch {
   backgroundSource?: BackgroundResultOriginMeta["backgroundSource"];
   messageId: MessageId;
   originMeta?: BackgroundResultOriginMeta;
+  /**
+   * P2.6 验收修复第二轮（2026-11-18）：单条 worker/subagent 通知的发送方身份随批返回，
+   * 通知轮的 TurnStarted 据此下发 inputSender/Label/SessionId——投影才能把通知落成
+   * 可见 mailbox 行（此前通知正文只更新派发工具行，用户介入返回的轮连工具行都没有，
+   * worker 的话在主会话完全不可见）。与消息 metadata.systemStatus 同一份，冷热同形。
+   */
+  systemStatus?: SystemStatusPayload;
   text: string;
 }
 
 const MAX_BACKGROUND_RESULT_TITLES = 3;
+
+/**
+ * P2.6：本地 agent 完成通知的发送方身份。仅单条命令且其任务仍在 registry 时标注；
+ * worker（workerChild）用 sender="worker" + wkr-id/显示名，一次性 subagent 用
+ * sender="subagent" + 类型名；fromSessionId = 子会话 id（master 据此可回话/查询）。
+ */
+function resolveNotificationSystemStatus(
+  this: AgentRuntimeInternal,
+  commands: readonly [TaskNotificationRuntimeCommand, ...TaskNotificationRuntimeCommand[]],
+): SystemStatusPayload | undefined {
+  if (commands.length !== 1) return undefined;
+  const task = commands[0].taskId ? this.runtimeTaskRegistry.get(commands[0].taskId) : undefined;
+  if (!task?.childSessionId) return undefined;
+  if (task.workerChild) {
+    const senderName = systemStatusNameValue(task.workerName);
+    return {
+      sender: "worker",
+      senderId: task.agentType,
+      ...(senderName ? { senderName } : {}),
+      fromSessionId: task.childSessionId,
+    };
+  }
+  return {
+    sender: "subagent",
+    senderId: task.agentType,
+    fromSessionId: task.childSessionId,
+  };
+}
 
 function resolveBackgroundTaskNotificationSource(
   commands: readonly [TaskNotificationRuntimeCommand, ...TaskNotificationRuntimeCommand[]],
@@ -182,15 +222,26 @@ export async function persistBackgroundTaskNotificationBatch(
   await this.ensureContextInitialized(firstCommand.traceContext);
   const messageID = createMessageId();
   const inputPresentation = midTurn ? "task_notification_steer" : "task_notification";
+  // P2.6 消息来源区块（docs/message-origin.md）：单条本地 agent 通知标注发送方身份——
+  // worker_child 带 wkr-id/显示名/子会话地址，一次性 subagent 带类型名；混合批不标
+  // （与 backgroundSource 的保守口径一致，避免首项来源误标整批）。
+  const notificationSystemStatus = resolveNotificationSystemStatus.call(this, commands);
+  const notificationMetadata = runtimeInputMetadata(inputPresentation);
   this.messageHistory.addUser(
     blocks ? blocks.map((block) => ({ type: "text" as const, text: block })) : text,
-    runtimeInputMetadata(inputPresentation),
+    notificationSystemStatus
+      ? {
+          ...(notificationMetadata ?? legacySyntheticRuntimeMetadata()),
+          systemStatus: notificationSystemStatus,
+        }
+      : notificationMetadata,
   );
   await this.persistSyntheticUserNoticeForSession({
     messageID,
     metadata: {
       inputPresentation,
       ...(originMeta ? { originMeta } : {}),
+      ...(notificationSystemStatus ? { systemStatus: notificationSystemStatus } : {}),
       visibility: "model-only",
     },
     sessionId: this.sessionId,
@@ -223,6 +274,7 @@ export async function persistBackgroundTaskNotificationBatch(
     ...(backgroundSource ? { backgroundSource } : {}),
     messageId: messageID,
     ...(originMeta ? { originMeta } : {}),
+    ...(notificationSystemStatus ? { systemStatus: notificationSystemStatus } : {}),
     text,
   };
 }

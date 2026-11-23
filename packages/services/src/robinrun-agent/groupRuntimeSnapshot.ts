@@ -6,7 +6,10 @@ import {
   type SessionControl,
   type ConversationTopicWireCandidate,
 } from "@robinrun/shared/robinrun-protocol-v4";
-import type { IRobinRunAgentService, RobinRunAgentSessionTarget } from "#src/robinrun-agent/robinrunAgent.js";
+import type {
+  IRobinRunAgentService,
+  RobinRunAgentSessionTarget,
+} from "#src/robinrun-agent/robinrunAgent.js";
 
 /** Bot 控制操作临时读取 CLI 权威快照，不建立第二份输入队列。 */
 export function readBotGroupRuntimeSnapshot(

@@ -73,7 +73,14 @@ export const robinrunPermissionResponseSchema = z
   })
   .strict();
 export type RobinRunPermissionResponse = z.infer<typeof robinrunPermissionResponseSchema>;
-export const robinrunSessionModeSchema = z.enum(["plan", "build", "edit", "yolo", "guarded", "auto"]);
+export const robinrunSessionModeSchema = z.enum([
+  "plan",
+  "build",
+  "edit",
+  "yolo",
+  "guarded",
+  "auto",
+]);
 export const robinrunSessionStatusSchema = z.enum([
   "idle",
   "running",
@@ -90,6 +97,11 @@ export const robinrunSessionKindSchema = z.enum([
   "workflow_child",
   "subagent_child",
   "nested_workflow_child",
+  // worker 会话通道（2026-11-16 隔离裁决）：主智能体派发名册 worker 的专属 task type。
+  // 列表可见；刻意不进 auxiliary（repairSubagentTaskIndex 的删除名单）。
+  // P2.5（2026-11-16）：worker 会话对用户开放（可打断/输入，延迟返回见 runner detach 机制），
+  // 不再进只读集合；一次性 subagent/工作流子会话仍只读。
+  "worker_child",
 ]);
 // 修复原因：只识别 subagent_child 会漏掉工作流与辅助对话的父归属、隐藏索引规则。
 // fork 和 workflow_parent 是独立任务，即使有 parentSessionId 也不能沿父链改写项目。
@@ -100,6 +112,20 @@ export function isAuxiliarySessionKind(kind: string | undefined): boolean {
 // 辅助对话可继续输入；只有由 Agent / 工作流驱动的子会话对用户只读。
 export function isReadonlyAgentSessionKind(kind: string | undefined): boolean {
   return kind === "subagent_child" || kind === "workflow_child" || kind === "nested_workflow_child";
+}
+
+// worker 会话通道判定（独立 seam，不并入 subagent 的任何集合）：
+// auxiliary 名单喂给 repairSubagentTaskIndex 与父链修复，worker 行绝不能进（否则会被删）。
+// P2.5 起路由层（bootstrap sendText/stop → 父 port）用它识别 worker 会话。
+export function isWorkerSessionKind(kind: string | undefined): boolean {
+  return kind === "worker_child";
+}
+
+// 用户只读输入闸门（UI composer 隐藏 + CLI admitCommandInput/sendPrompt 拒绝）：
+// 一次性 subagent 与工作流子会话仍只读。worker_child 曾在此集合（P2.4），
+// P2.5 移出——worker 会话对用户开放，输入经父 port 路由（延迟返回）。
+export function isUserReadonlySessionKind(kind: string | undefined): boolean {
+  return isReadonlyAgentSessionKind(kind);
 }
 
 export const robinrunSessionGoalSchema = z
@@ -177,7 +203,9 @@ export const robinrunInteractionRequestOriginSchema = z
     parentTurnId: nonEmptyString.optional(),
   })
   .strict();
-export type RobinRunInteractionRequestOrigin = z.infer<typeof robinrunInteractionRequestOriginSchema>;
+export type RobinRunInteractionRequestOrigin = z.infer<
+  typeof robinrunInteractionRequestOriginSchema
+>;
 const messageTimeSchema = z
   .object({
     created: timestampMsSchema,
@@ -500,7 +528,9 @@ export const robinrunContextUsageBreakdownItemSchema = z
     chars: z.number().int().nonnegative(),
   })
   .strict();
-export type RobinRunContextUsageBreakdownItem = z.infer<typeof robinrunContextUsageBreakdownItemSchema>;
+export type RobinRunContextUsageBreakdownItem = z.infer<
+  typeof robinrunContextUsageBreakdownItemSchema
+>;
 export const robinrunContextUsageBreakdownSchema = z.array(robinrunContextUsageBreakdownItemSchema);
 export const robinrunSessionContextUsageSchema = z
   .object({
@@ -533,7 +563,9 @@ export const robinrunSessionRuntimeStateSchema = z
   })
   .strict();
 export type RobinRunSessionRuntimeState = z.infer<typeof robinrunSessionRuntimeStateSchema>;
-export type RobinRunSessionActiveTurnKind = NonNullable<RobinRunSessionRuntimeState["activeTurnKind"]>;
+export type RobinRunSessionActiveTurnKind = NonNullable<
+  RobinRunSessionRuntimeState["activeTurnKind"]
+>;
 export function textFromRobinRunMessageParts(parts: readonly RobinRunMessagePart[]): string {
   return parts
     .filter((part): part is Extract<RobinRunMessagePart, { type: "text" }> => part.type === "text")

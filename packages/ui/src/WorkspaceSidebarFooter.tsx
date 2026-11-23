@@ -4,16 +4,20 @@ import type { Locale, UserInfo } from "@robinrun/shared";
 import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
 import { DesktopCommandIds } from "@robinrun/shared";
 import {
-  TID_LOGIN_MENU_ITEM,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登录/登出菜单项」——恢复时取消本段注释
+  // TID_LOGIN_MENU_ITEM,
   TID_LOGIN_TRIGGER,
-  TID_LOGOUT_BUTTON,
+  // TID_LOGOUT_BUTTON,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   TID_TASK_SETTINGS_BUTTON,
 } from "@robinrun/shared/test-ids";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
-import { Badge } from "@/components/ui/badge.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「rewards 奖励徽章」——恢复时取消本段注释
+// import { Badge } from "@/components/ui/badge.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +35,12 @@ import {
   Copy,
   PencilRuler,
   Globe,
-  Gift,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「rewards/登录/登出图标」——恢复时取消本段注释
+  // Gift,
+  // LogInIcon,
+  // LogOut,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   Loader2,
-  LogInIcon,
-  LogOut,
   Maximize,
   Palette,
   Settings,
@@ -43,18 +49,22 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useOpenRewards } from "@/rewards/RewardsProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「rewards 入口」——恢复时取消本段注释
+// import { useOpenRewards } from "@/rewards/RewardsProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { useRobinRunStore } from "@/store/StoreProvider.js";
 import { normalizeInterfaceMode } from "@/lib/interfaceMode.js";
 import type { Theme } from "@/useTheme.js";
-import { WorkspaceWebRemoteControlTrigger } from "@/WorkspaceWebRemoteControlTrigger.js";
-import {
-  WorkspaceSidebarFooterPlanBadge,
-  WorkspaceSidebarFooterUsageSummaryContent,
-  useWorkspaceSidebarFooterUsageSummaryState,
-} from "@/WorkspaceSidebarFooterUsageSummary.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Web 远程控制触发项 / 套餐徽标与用量摘要」——恢复时取消本段注释
+// import { WorkspaceWebRemoteControlTrigger } from "@/WorkspaceWebRemoteControlTrigger.js";
+// import {
+//   WorkspaceSidebarFooterPlanBadge,
+//   WorkspaceSidebarFooterUsageSummaryContent,
+//   useWorkspaceSidebarFooterUsageSummaryState,
+// } from "@/WorkspaceSidebarFooterUsageSummary.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
 const DESKTOP_ZOOM_MIN_LEVEL = -3;
 const DESKTOP_ZOOM_MAX_LEVEL = 5;
@@ -81,7 +91,10 @@ function getSidebarProfileBadge(
     return getSidebarProfileName(user);
   }
 
-  return formatMessage({ id: "sidebar.profile.notLoggedIn" });
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「未登录徽标」——登录链路已隐藏，未登录恒为常态，
+  // 头像旁不再展示"未登录"。恢复时还原为 formatMessage({ id: "sidebar.profile.notLoggedIn" })
+  void formatMessage;
+  return "RobinRun";
 }
 
 function getAvatarFallbackText(user: UserInfo | null | undefined): string {
@@ -95,8 +108,10 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onLocaleChange,
   onThemeChange,
   onSettingsButtonClick,
-  onUsageClick,
-  onUpgradeClick,
+  // RobinRun(2026-11-22): [hide-upstream-account] usage/upgrade props 已随类型注释移除——恢复时取消以下两行
+  // onUsageClick,
+  // onUpgradeClick,
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   onLogin,
   onLogout,
   settingsButtonMode = "settings",
@@ -114,10 +129,12 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onLocaleChange: (value: string) => void;
   onThemeChange: (value: string) => void;
   onSettingsButtonClick?: () => void;
-  onUsageClick?: () => void;
-  onUpgradeClick?: Parameters<
-    typeof WorkspaceSidebarFooterUsageSummaryContent
-  >[0]["onUpgradeClick"];
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「usage/upgrade 菜单入口 props」——类型引用已注释的组件，恢复时取消本段注释
+  // onUsageClick?: () => void;
+  // onUpgradeClick?: Parameters<
+  //   typeof WorkspaceSidebarFooterUsageSummaryContent
+  // >[0]["onUpgradeClick"];
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   onLogin?: () => void;
   onLogout?: () => void;
   settingsButtonMode?: "settings" | "back";
@@ -132,7 +149,9 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
 }) {
   const { intl } = useRobinRunIntl();
   const platform = usePlatform();
-  const openRewards = useOpenRewards();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「rewards 打开句柄」——恢复时取消本段注释
+  // const openRewards = useOpenRewards();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const interfaceMode = useRobinRunStore((state) => state.interfaceMode);
   const setInterfaceMode = useRobinRunStore((state) => state.setInterfaceMode);
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
@@ -143,11 +162,13 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   const avatarFallbackText = getAvatarFallbackText(user);
   const avatarKey = user?.avatarUrl ?? user?.id ?? "guest";
   const showAuthRestoreLoading = !user && isRestoringOAuthSession;
-  const usageSummaryState = useWorkspaceSidebarFooterUsageSummaryState({
-    enabled: true,
-    workspaceIdentity,
-    workspacePath,
-  });
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「footer 常驻套餐 entitlement 轮询」——恢复时取消本段注释
+  // const usageSummaryState = useWorkspaceSidebarFooterUsageSummaryState({
+  //   enabled: true,
+  //   workspaceIdentity,
+  //   workspacePath,
+  // });
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const copyUserId = async () => {
     if (!user?.id) return;
     try {
@@ -190,7 +211,9 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
     settingsButtonMode === "back"
       ? intl.formatMessage({ id: "workspace.backToWorkspace" })
       : intl.formatMessage({ id: "settings.title" });
-  const usageButtonClick = onUsageClick ?? onSettingsButtonClick;
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「usage 菜单点击句柄」——仅套餐用量菜单项消费，恢复时取消本段注释
+  // const usageButtonClick = onUsageClick ?? onSettingsButtonClick;
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [desktopZoomLevel, setDesktopZoomLevel] = useState(0);
   const runDesktopZoomCommand = useCallback(
@@ -279,12 +302,14 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
                       >
                         {profileBadge}
                       </span>
+                      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「套餐徽标」——依赖账号 entitlement，恢复时取消本段注释
                       <span
                         data-testid="profile-menu-plan"
                         className="flex shrink-0 [&>span]:border-border/50 [&>span]:bg-transparent [&>span]:font-normal"
                       >
                         <WorkspaceSidebarFooterPlanBadge state={usageSummaryState} />
                       </span>
+                      */}
                     </div>
                     {user.id ? (
                       <div className="flex min-w-0 items-center gap-1 text-ui-sm text-foreground-subtle">
@@ -429,8 +454,9 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : null}
-            {/* Bugfix: 升级入口状态不再以菜单开关为生命周期边界。 */}
-            <WorkspaceSidebarFooterUsageSummaryContent
+            {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量摘要 + 升级/续期 / rewards / 登录 / 登出」菜单项——
+                均依赖上游账号 entitlement 或 OAuth，恢复时取消本段注释 */}
+            {/* <WorkspaceSidebarFooterUsageSummaryContent
               state={usageSummaryState}
               onUsageClick={usageButtonClick}
               onUpgradeClick={onUpgradeClick}
@@ -463,9 +489,12 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
                 {intl.formatMessage({ id: "app.logout" })}
               </DropdownMenuItem>
             ) : null}
+            */}
+            {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">
+          {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Web 远程控制/手机配对入口」——依赖上游 relay + 登录 JWT，恢复时取消本段注释
           {isDesktop && workspacePath ? (
             <WorkspaceWebRemoteControlTrigger
               workspacePath={workspacePath}
@@ -475,6 +504,8 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
               compact
             />
           ) : null}
+          */}
+          {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
           <ControlHintTooltip title={settingsButtonLabel}>
             <Button
               type="button"

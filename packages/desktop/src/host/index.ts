@@ -65,6 +65,8 @@ import {
   type RobinRunAgentV4ClientMode,
   collectServiceMemoryDiagnostics,
   createWebRemoteProjectTreeActivityBridge,
+  type TriggerEventBatch,
+  isStaleWorkerTriggerBinding,
 } from "@robinrun/services";
 import {
   createLocalServices,
@@ -1007,6 +1009,151 @@ function trackCronRunOutcome(params: {
       disposable.dispose();
     },
   });
+}
+
+/**
+ * 触发器事件投递提示词（2026-11-19 触发器系统，docs/trigger-system.md）：
+ * 首行注入 system-status 来源区块（sender=trigger），合并事件逐条列出；
+ * 首次投递附带触发器说明（README），让新会话快速理解上下文（裁决 8）。
+ */
+function renderTriggerEventPrompt(batch: TriggerEventBatch): string {
+  // 来源区块不再内嵌正文（2026-11-19 验收）：host 经 sendPrompt.systemStatus 携带结构化
+  // 身份，runtime 动态注入 <system-status>（动态渲染不落存储，P2.6 原则）；内嵌文本曾
+  // 让消息以用户气泡展示原始 JSON（UI 投影按 content 原文渲染）。
+  const lines: string[] = [
+    `Trigger "${batch.triggerName}" (${batch.triggerId}) delivered ${batch.events.length} event(s) (coalesced delivery):`,
+  ];
+  batch.events.forEach((event, index) => {
+    lines.push(`${index + 1}. [${event.kind}] ${event.summary}`);
+    if (event.data !== undefined) {
+      try {
+        lines.push(`   data: ${JSON.stringify(event.data)}`);
+      } catch {
+        lines.push("   data: (unserializable payload)");
+      }
+    }
+    if (event.error !== undefined) {
+      lines.push(`   error: ${event.error}`);
+    }
+  });
+  lines.push(
+    "",
+    "Handle these events autonomously (automated trigger delivery; the user is not necessarily watching). If a script failed, diagnose and repair it, then re-enable the trigger via ManageTriggers.",
+  );
+  return lines.join("\n");
+}
+
+/**
+ * 触发器引擎 → 会话投递（克隆 dispatchCronRun 的最小链路）：
+ * 绑定会话（引擎传 existingTaskId）先 resumeTask 再 sendPrompt（CLI 对非 active 会话
+ * sendPrompt 报 Session is not active 的既有不变量）；未绑定则 createTask 新建
+ * （automationId 参数位传触发器 id → adapter 落 creationOrigin{kind:"trigger"} +
+ * deferred persistence + 关标题生成，与 automation 同一管线）。
+ *
+ * 订阅者寻址（2026-11-20 worker 会话同构化，docs/worker-session-model.md §4——本次
+ * 触发器角色冒领 bug 的修复）：subscriberAgentId 为 wkr-* 时创建带 worker 身份的会话
+ * （agentIdentity 随行 → CLI 按名册解析并以 worker 注入段装配，master 身份材料不沾染）；
+ * master 订阅者与既有链路完全一致。绑定会话（existingTaskId）身份已随会话持久化，
+ * resume 无需（也不得）改写。同构即修复：投递链对两种身份走同一条 create/resume +
+ * sendPrompt 路径，零 worker 特判。
+ */
+async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: string }> {
+  const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
+  if (!robinrunTaskService) {
+    throw new Error("RobinRun task service is not initialized.");
+  }
+  const promptTraceId = `trigger:${batch.triggerId}:${randomUUID()}` as TraceId;
+  const subscriberWorkerId = batch.subscriberAgentId.startsWith("wkr-")
+    ? batch.subscriberAgentId
+    : undefined;
+  let taskId: string;
+  // 绑定会话身份校验（2026-11-22 第十一批，P3 第九批事故收口）：会话 key 路由的
+  // "已有则续用"只保证同 key，不保证订阅者身份一致——注册表归属修正/清绑后引擎
+  // 未重启（绑定表仅挂载时加载）时，事件会继续投进旧 master 材料会话；旧会话按
+  // master 协作契约把事件 ContactAgent 派回订阅者本人，表现为"触发器 contact 自己"
+  // （实测：trg-93c0abac 事件被 master 材料旧会话派给 wkr-5a67dec7，新建其普通会话）。
+  // 订阅者是 worker 时核对绑定行 workerId：同构化后 worker 触发器会话创建必带
+  // agentIdentity，行上缺失或不符 = 旧 master/legacy 会话 → 视为陈旧绑定，按新建处理
+  // （新会话由聚合器写回绑定表，旧会话保留为历史）；meta 读取失败不能证明陈旧，
+  // fail-open 续用，避免存储抖动导致每事件新建会话。
+  let boundTaskId = batch.existingTaskId;
+  if (boundTaskId && subscriberWorkerId) {
+    try {
+      const boundMeta = await robinrunTaskService.getTaskMeta({
+        taskId: boundTaskId,
+        workspacePath: batch.workspacePath,
+        ...(batch.workspaceIdentity !== undefined
+          ? { workspaceIdentity: batch.workspaceIdentity }
+          : {}),
+      });
+      if (isStaleWorkerTriggerBinding(subscriberWorkerId, boundMeta?.workerId)) {
+        logger.warn(
+          `trigger ${batch.triggerId} bound session ${boundTaskId} is not the subscriber ` +
+            `(workerId=${boundMeta?.workerId ?? "none"}, subscriber=${subscriberWorkerId}); ` +
+            "recreating the bound session with subscriber identity",
+        );
+        boundTaskId = undefined;
+      }
+    } catch {
+      // getTaskMeta 失败按陈旧判定失败处理：保留绑定继续投递（fail-open）。
+    }
+  }
+  if (boundTaskId) {
+    await robinrunTaskService.resumeTask({
+      taskId: boundTaskId,
+      workspacePath: batch.workspacePath,
+      workspaceIdentity: batch.workspaceIdentity,
+      automationId: batch.triggerId,
+    });
+    taskId = boundTaskId;
+  } else {
+    const task = await robinrunTaskService.createTask({
+      ...(batch.projectId !== undefined ? { projectId: batch.projectId } : {}),
+      workspacePath: batch.workspacePath,
+      workspaceIdentity: batch.workspaceIdentity,
+      automationId: batch.triggerId,
+      ...(subscriberWorkerId
+        ? { agentIdentity: { kind: "worker" as const, workerId: subscriberWorkerId } }
+        : {}),
+    });
+    taskId = task.taskId;
+    // 触发器会话标题 = 触发器名（2026-11-19 验收：automation 管线关标题生成，fallback
+    // 曾把 prompt 首行 <system-status> JSON 截成标题；仅新建会话钉一次，绑定会话不动
+    // 用户改过的标题）。
+    try {
+      await robinrunTaskService.renameTask({
+        taskId,
+        workspacePath: batch.workspacePath,
+        ...(batch.workspaceIdentity !== undefined
+          ? { workspaceIdentity: batch.workspaceIdentity }
+          : {}),
+        title: batch.triggerName,
+      });
+    } catch {
+      // 标题是展示细节；失败不阻断投递（fallback 已能给出可读前缀）。
+    }
+    reportHostSessionCreate(parentPort, {
+      sessionId: taskId,
+      messageId: promptTraceId,
+      source: "automation_scheduled",
+      workspaceIdentity: batch.workspaceIdentity,
+    });
+  }
+  await robinrunTaskService.sendPrompt({
+    taskId,
+    traceId: promptTraceId,
+    content: renderTriggerEventPrompt(batch),
+    clientMode: "desktop-continuous",
+    automationId: batch.triggerId,
+    // P3 触发器投递（2026-11-19 验收）：结构化来源身份替代正文内嵌区块——投影层据此归
+    // mailbox 形态（左侧全宽 + 触发器徽章），runtime 动态注入 <system-status>。
+    systemStatus: {
+      sender: "trigger",
+      triggerId: batch.triggerId,
+      senderName: batch.triggerName,
+    },
+  });
+  return { taskId };
 }
 
 /**
@@ -2452,7 +2599,8 @@ const windowHostControllerRuntime = createWindowHostControllerRuntime({
             workspaceIdentity: scope.workspaceIdentity,
           },
           taskService:
-            connection?.services.robinrunTaskService ?? registered!.services.get(IRobinRunTaskService),
+            connection?.services.robinrunTaskService ??
+            registered!.services.get(IRobinRunTaskService),
           agentService:
             connection?.services.robinrunAgentService ??
             registered!.services.getOptional(IRobinRunAgentService),
@@ -3363,7 +3511,9 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
   if (msg.type === HostMessageTypes.SessionMessageDeliveryResult) {
     const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
     if (!robinrunTaskService) {
-      logger.warn("session message delivery result received before RobinRun task service initialized");
+      logger.warn(
+        "session message delivery result received before RobinRun task service initialized",
+      );
       return;
     }
     void robinrunTaskService.sendSessionMessageDeliveryResult(msg.result).catch((error) => {
@@ -4101,6 +4251,15 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
                 });
               },
               onAutomationManualRunRequested: dispatchManualAutomationRun,
+              // 触发器引擎的事件投递端口（2026-11-19 触发器系统）：引擎聚合后回调这里。
+              dispatchTriggerEvent: (batch) => dispatchTriggerRun(batch),
+              // 会话忙查询（2026-11-22 忙时合并投递修复）：聚合器据此把忙会话的事件留桶
+              // 累积，空闲后合并为一条投递（裁决 7；服务缺席 fail-open 走旧逐批行为）。
+              isTriggerTaskBusy: async (task) => {
+                const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
+                if (!robinrunTaskService) return false;
+                return robinrunTaskService.isTaskBusy(task);
+              },
               onOffPeakSchedulerWakeRequested: () => {
                 parentPort?.postMessage({ type: HostResponseTypes.OffPeakSchedulerWakeRequest });
               },

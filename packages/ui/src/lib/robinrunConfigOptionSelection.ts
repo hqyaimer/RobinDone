@@ -15,7 +15,9 @@ export function readCurrentAgentModel(options: readonly RobinRunConfigOption[]):
   return readCurrentSelectValue(options, "model");
 }
 
-export function readCurrentAgentThoughtLevel(options: readonly RobinRunConfigOption[]): string | null {
+export function readCurrentAgentThoughtLevel(
+  options: readonly RobinRunConfigOption[],
+): string | null {
   return readCurrentSelectValue(options, "thought_level");
 }
 

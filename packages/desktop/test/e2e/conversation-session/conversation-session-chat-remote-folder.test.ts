@@ -208,7 +208,9 @@ describe(marker, () => {
     expect((await callHandoffHost<ProjectTree>(ServiceChannels.Project, "readTree")).tasks).toEqual(
       before.tasks,
     );
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "folder-required.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "folder-required.png"),
+    );
     await browser.keys("Escape");
     await picker.waitForExist({ reverse: true });
     expect(await getV4ComposerText()).toBe(marker + " must stay unsent");
@@ -384,7 +386,9 @@ describe(marker, () => {
     await picker.$('button[type="submit"]').click();
     await browser.waitUntil(async () => (await picker.getText()).includes("ENOENT"));
     expect(await picker.$('[data-testid="directory-browser-confirm"]').isEnabled()).toBe(false);
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "invalid-folder.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "invalid-folder.png"),
+    );
     expect((await callHandoffHost<ProjectTree>(ServiceChannels.Project, "readTree")).tasks).toEqual(
       before.tasks,
     );

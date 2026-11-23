@@ -132,7 +132,12 @@ export function useWorkspaceSessionReload({
         }
 
         robinrunSessionStore.setWorkspaceInitAttempts(workspaceAbsPath, 0, workspaceIdentity);
-        robinrunSessionStore.setWorkspaceInitState(workspaceAbsPath, "ready", null, workspaceIdentity);
+        robinrunSessionStore.setWorkspaceInitState(
+          workspaceAbsPath,
+          "ready",
+          null,
+          workspaceIdentity,
+        );
 
         logger.info(
           `[App] workspace session 重建完成 workspace=${workspaceAbsPath} provider=${provider} resumeTaskId=${resumeTaskId ?? "<none>"}`,

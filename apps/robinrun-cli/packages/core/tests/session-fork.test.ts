@@ -348,7 +348,7 @@ describe("session fork history", () => {
       });
       expect(request.messages.slice(-2)).toEqual([
         { role: "user", content: `<system-reminder>\n${boundaryText}\n</system-reminder>` },
-        { role: "user", content: "child question" },
+        { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nchild question" },
       ]);
       expect(JSON.stringify(request.messages).split(boundaryText)).toHaveLength(2);
     }
@@ -851,7 +851,7 @@ describe("session fork history", () => {
       });
       expect(request.messages.slice(-2)).toEqual([
         { role: "user", content: `<system-reminder>\n${boundaryText}\n</system-reminder>` },
-        { role: "user", content: "child question" },
+        { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nchild question" },
       ]);
       expect(
         request.messages.filter(

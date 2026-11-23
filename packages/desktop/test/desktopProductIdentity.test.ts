@@ -51,18 +51,21 @@ describe("desktop product identity", () => {
     // `ROBINRUN_PREVIEW_IDENTITY=true` 会落入 @electron/dev 生产验收目录却打出 Preview 身份包。
     for (const flag of ["true", "yes", "on", "false", "no", "off", "2"]) {
       expect(() =>
-        resolveDesktopProductFlavor({ ROBINRUN_ENV: "production", ROBINRUN_PREVIEW_IDENTITY: flag }),
+        resolveDesktopProductFlavor({
+          ROBINRUN_ENV: "production",
+          ROBINRUN_PREVIEW_IDENTITY: flag,
+        }),
       ).toThrow(/expected 1 or 0/);
     }
   });
 
   it("测试后端永远是 Preview 身份，开关无法把它变成正式 RobinRun", () => {
-    expect(resolveDesktopProductFlavor({ ROBINRUN_ENV: "test", ROBINRUN_PREVIEW_IDENTITY: "0" })).toBe(
-      "preview",
-    );
-    expect(resolveDesktopProductFlavor({ ROBINRUN_ENV: "test", ROBINRUN_PREVIEW_IDENTITY: "1" })).toBe(
-      "preview",
-    );
+    expect(
+      resolveDesktopProductFlavor({ ROBINRUN_ENV: "test", ROBINRUN_PREVIEW_IDENTITY: "0" }),
+    ).toBe("preview");
+    expect(
+      resolveDesktopProductFlavor({ ROBINRUN_ENV: "test", ROBINRUN_PREVIEW_IDENTITY: "1" }),
+    ).toBe("preview");
   });
 
   it("产物后缀只标记后端环境，生产后端的 Preview 包靠 productName 区分", () => {

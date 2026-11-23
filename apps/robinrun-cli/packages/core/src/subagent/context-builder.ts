@@ -9,10 +9,14 @@ import {
 import { buildCliPrefixSection } from "../context/sections/cli-prefix.js";
 import { buildCurrentDateSection } from "../context/sections/current-date.js";
 import { buildEnvironmentSections } from "../context/sections/env-info.js";
-import { buildRequestUserContextSection } from "../context/sections/request-user-context.js";
+import {
+  buildProjectInstructionsSection,
+  buildRequestUserContextSection,
+} from "../context/sections/request-user-context.js";
 import { buildSkillsSection } from "../context/sections/skills.js";
 import { estimateTokens } from "../context/utils.js";
 import { SUBAGENT_LAUNCHER_MESSAGES_NOTE, buildSubagentCommonNotes } from "./system-prompt.js";
+import { SYSTEM_STATUS_PROTOCOL_NOTE } from "../context/dynamic-sections.js";
 
 export interface SubagentContextBuilderConfig {
   agentPrompt: string;
@@ -22,6 +26,10 @@ export interface SubagentContextBuilderConfig {
   skillMetadataBudget?: number;
   skills?: ContextBuilderConfig["skills"];
   userInstructions?: ContextBuilderConfig["userInstructions"];
+  // workerNotes 与 triggerSessionReadme 过渡补丁已退役（2026-11-20 worker 会话同构化，
+  // docs/worker-session-model.md §6）：worker 注入面迁至主 ContextBuilder（workerInstructions），
+  // 触发器会话（master 与 worker）都走主 builder 的 Trigger session section；
+  // 本 builder 回归上游纯一次性 subagent 语义。
 }
 
 const EPHEMERAL_CACHE_CONTROL = { type: "ephemeral" as const };
@@ -103,11 +111,22 @@ function buildSubagentContextSections(config: SubagentContextBuilderConfig): Con
       source: "subagent_notes",
       cacheHint: "stable",
       // RobinRun by design：后续 Subagent system block 统一自带双换行左边界。
-      // 启动方消息段排在 Notes 之前。
-      content: `\n\n${SUBAGENT_LAUNCHER_MESSAGES_NOTE}\n\n${buildSubagentCommonNotes()}`,
+      // 启动方消息段排在 Notes 之前；P2.6 消息来源区块协议说明跟在其后（子 agent 同样
+      // 每条输入带 <system-status> 区块，需要读懂 sender）。
+      content: `\n\n${SUBAGENT_LAUNCHER_MESSAGES_NOTE}\n\n${SYSTEM_STATUS_PROTOCOL_NOTE}\n\n${buildSubagentCommonNotes()}`,
     }),
     ...buildEnvironmentSections(config.envInfo, config.model),
   );
+
+  // 2026-11-19 /init 裁决（docs/init-flow.md §4）：个体规则（上方 agent prompt：身份段 +
+  // subagent 自己的规则）在前、项目说明（AGENTS.md）在后，相邻拼进同一
+  // system 消息区——每轮由 config 重建，压缩后仍在；meta_user 块只剩 user scope。
+  const projectInstructionsSection = buildProjectInstructionsSection({
+    userInstructions: config.userInstructions,
+  });
+  if (projectInstructionsSection) {
+    sections.push(projectInstructionsSection);
+  }
 
   const requestUserContextSection = buildRequestUserContextSection({
     userInstructions: config.userInstructions,

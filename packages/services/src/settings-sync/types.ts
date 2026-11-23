@@ -1,7 +1,4 @@
-import type {
-  SettingsSyncAgent,
-  SettingsSyncCategory,
-} from "@robinrun/shared";
+import type { SettingsSyncAgent, SettingsSyncCategory } from "@robinrun/shared";
 
 export interface SettingsSyncSourceItem {
   id: string;

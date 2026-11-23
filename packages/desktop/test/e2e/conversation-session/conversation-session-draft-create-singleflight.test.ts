@@ -121,6 +121,8 @@ describe("A01 草稿首发与预热共享一次创建", () => {
       join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "draft-create-commands.json"),
       JSON.stringify({ pending, commands, pane }, null, 2),
     );
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "draft-first-send.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "draft-first-send.png"),
+    );
   });
 });

@@ -234,7 +234,8 @@ else process.stdout.write("\\n");
     ).toBe(true);
     expect(
       pushCalls.some(
-        (line) => line.includes("cdn.robinrun-ai.com") && line.includes("--profile robinrun-ai-account"),
+        (line) =>
+          line.includes("cdn.robinrun-ai.com") && line.includes("--profile robinrun-ai-account"),
       ),
     ).toBe(true);
     expect(pushCalls.every((line) => !line.includes("--region"))).toBe(true);
@@ -246,7 +247,8 @@ else process.stdout.write("\\n");
     ).toBe(true);
     expect(
       describeCalls.some(
-        (line) => line.includes("task-robinrun-ai") && line.includes("--profile robinrun-ai-account"),
+        (line) =>
+          line.includes("task-robinrun-ai") && line.includes("--profile robinrun-ai-account"),
       ),
     ).toBe(true);
     expect(describeCalls.every((line) => !line.includes("--region"))).toBe(true);

@@ -2,7 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { RobinRunPromptAttachment } from "@robinrun/shared";
 import { PROTOCOL_V4_LIMITS, type AttachmentRef } from "@robinrun/shared/robinrun-protocol-v4";
-import type { IRobinRunAgentService, RobinRunAgentSessionTarget } from "#src/robinrun-agent/robinrunAgent.js";
+import type {
+  IRobinRunAgentService,
+  RobinRunAgentSessionTarget,
+} from "#src/robinrun-agent/robinrunAgent.js";
 
 const CHUNK_BYTES = 384 * 1024;
 type UploadAgent = Pick<

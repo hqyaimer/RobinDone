@@ -48,10 +48,12 @@ describe("model provider restart runtime", () => {
       }),
     });
     const { getE2EAppDataPaths } = await import("./e2e/helpers/desktop-app.js");
-    values[`robinrun-model-selection-recent-v1:${getE2EAppDataPaths().workspace}`] = JSON.stringify({
-      providerId: "legacy",
-      modelId: "legacy",
-    });
+    values[`robinrun-model-selection-recent-v1:${getE2EAppDataPaths().workspace}`] = JSON.stringify(
+      {
+        providerId: "legacy",
+        modelId: "legacy",
+      },
+    );
     values[recentKey] = JSON.stringify({
       modelSelection: {
         providerId: "provider-a",

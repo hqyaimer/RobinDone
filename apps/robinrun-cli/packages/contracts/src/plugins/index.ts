@@ -6,6 +6,13 @@ import type { ExecutionContext, TraceContext } from "../tracing/tracer.js";
 
 export const ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE = "robinrun-plugins-official";
 export const CLAUDE_OFFICIAL_PLUGIN_MARKETPLACE = "claude-plugins-official";
+/**
+ * 上游 ZCode CDN 官方市场 manifest 的旧名。RobinRun 已把官方市场规范 id 改名为
+ * {@link ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE}，但官方 source URL 有意保留上游 CDN
+ * （见 shared/plugin-marketplaces.ts），远端 manifest 顶层 name 仍是本值。仅在受信任的
+ * 官方刷新（trustedId=规范 id）时归一化为规范 id；用户侧新增市场不受影响。
+ */
+export const UPSTREAM_ZCODE_OFFICIAL_PLUGIN_MARKETPLACE = "zcode-plugins-official";
 export const ROBINRUN_INLINE_PLUGIN_MARKETPLACE = "inline";
 export const ROBINRUN_PLUGIN_HOST_COMMAND = "__robinrun-plugin-host";
 /**

@@ -257,7 +257,10 @@ describe("组合输入框焦点", () => {
           width,
         });
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `command-center-focus-${theme}-${width}.png`),
+          join(
+            process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+            `command-center-focus-${theme}-${width}.png`,
+          ),
         );
       }
       await browser.keys("Escape");

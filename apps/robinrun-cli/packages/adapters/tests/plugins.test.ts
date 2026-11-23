@@ -1100,7 +1100,13 @@ describe("NodePluginAdapter", () => {
     // 当路径解析后抛错，市场详情页对内置插件枚举不出组件。现在按 cachePath 直接定位缓存目录。
     const dir = await mkdtemp(join(tmpdir(), "robinrun-plugin-filesystem-describe-"));
     const storageRoot = join(dir, "storage");
-    const cacheRoot = join(storageRoot, "cache", "robinrun-plugins-official", "superpowers", "5.1.0");
+    const cacheRoot = join(
+      storageRoot,
+      "cache",
+      "robinrun-plugins-official",
+      "superpowers",
+      "5.1.0",
+    );
     const marketplaceRoot = join(storageRoot, "marketplaces", "robinrun-plugins-official");
 
     try {
@@ -1738,6 +1744,110 @@ describe("NodePluginAdapter", () => {
     }
   });
 
+  // RobinRun(2026-11-23): 官方 CDN 插件 zip 由上游构建，manifest 在 .zcode-plugin/（改名前旧名）。
+  // 安装校验、组件发现与加载器必须接受该布局，否则 CDN 插件安装一律 "Plugin manifest not found"。
+  it("installs an upstream-layout plugin zip whose manifest lives in .zcode-plugin", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "robinrun-plugin-zcode-manifest-zip-"));
+    const storageRoot = join(dir, "storage");
+    const marketplaceRoot = join(dir, "marketplace");
+    let server: Server | undefined;
+
+    try {
+      const zipBuffer = createStoredZip([
+        {
+          path: "upstream-plugin-0.1.2/.zcode-plugin/plugin.json",
+          content: JSON.stringify({
+            commands: "commands",
+            name: "upstream-plugin",
+            version: "0.1.2",
+          }),
+        },
+        {
+          path: "upstream-plugin-0.1.2/commands/ping.md",
+          content: [
+            "---",
+            "description: Ping through upstream plugin",
+            "allowed-tools: Bash",
+            "---",
+            "",
+            "Ping with $ARGUMENTS.",
+          ].join("\n"),
+        },
+      ]);
+      const sha256 = sha256Buffer(zipBuffer);
+      const fixture = await startZipFixtureServer({ "/upstream-plugin.zip": zipBuffer });
+      server = fixture.server;
+
+      await writeMarketplaceManifest(marketplaceRoot, {
+        name: "upstream-market",
+        plugins: [
+          {
+            name: "upstream-plugin",
+            source: {
+              source: "url",
+              type: "zip",
+              url: `${fixture.baseUrl}/upstream-plugin.zip`,
+              sha256,
+            },
+          },
+        ],
+      });
+
+      await addMarketplace({ source: { source: "directory", path: marketplaceRoot }, storageRoot });
+
+      const diagnostics = await validateMarketplacePlugin({
+        marketplace: "upstream-market",
+        name: "upstream-plugin",
+        storageRoot,
+      });
+      expect(diagnostics.filter((item) => item.severity === "error")).toEqual([]);
+
+      const sourceDescribe = await describeMarketplacePlugin({
+        marketplace: "upstream-market",
+        name: "upstream-plugin",
+        storageRoot,
+      });
+      expect(componentNames(sourceDescribe.components, "command")).toEqual(["ping"]);
+
+      const install = await installMarketplacePlugin({
+        marketplace: "upstream-market",
+        name: "upstream-plugin",
+        storageRoot,
+      });
+      const record = install.installed.find(
+        (item) => item.id === "upstream-plugin@upstream-market",
+      );
+      expect(record).toMatchObject({
+        marketplace: "upstream-market",
+        name: "upstream-plugin",
+        version: "0.1.2",
+      });
+
+      const outcome = await createNodePluginAdapter({ storageRoot }).discoverPlugins({
+        config: {
+          dirs: [],
+          enabled: true,
+          enabledPlugins: {
+            "upstream-plugin@upstream-market": true,
+          },
+          options: {},
+        },
+        env: {},
+        storageRoot,
+        workingDirectory: dir,
+      });
+      expect(
+        outcome.plugins.find((plugin) => plugin.id === "upstream-plugin@upstream-market"),
+      ).toMatchObject({
+        version: "0.1.2",
+      });
+      expect(outcome.commandRoots[0]?.path).toContain(join("upstream-plugin", "0.1.2", "commands"));
+    } finally {
+      await closeServer(server);
+      await rm(dir, { force: true, recursive: true });
+    }
+  });
+
   it("does not fall back to a local plugin when an explicit URL source is invalid", async () => {
     const dir = await mkdtemp(join(tmpdir(), "robinrun-plugin-invalid-url-source-"));
     const storageRoot = join(dir, "storage");
@@ -1883,7 +1993,10 @@ describe("NodePluginAdapter", () => {
       const proxyBaseUrl = await listenLoopbackServer(proxy);
       vi.stubEnv(ROBINRUN_HTTP_PROXY_ENV_KEY, "");
       vi.stubEnv(ROBINRUN_NO_PROXY_ENV_KEY, "");
-      vi.stubEnv(ROBINRUN_TOOL_ENV_PASSTHROUGH_ENV_KEY, JSON.stringify({ HTTP_PROXY: proxyBaseUrl }));
+      vi.stubEnv(
+        ROBINRUN_TOOL_ENV_PASSTHROUGH_ENV_KEY,
+        JSON.stringify({ HTTP_PROXY: proxyBaseUrl }),
+      );
 
       const sourceUrl = "http://127.0.0.2/captured-proxy.zip";
       resolved = await resolveZipPluginSource({

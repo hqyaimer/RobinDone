@@ -22,7 +22,9 @@ type SetFn = (
   partial:
     | RobinRunSessionStoreState
     | Partial<RobinRunSessionStoreState>
-    | ((state: RobinRunSessionStoreState) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
+    | ((
+        state: RobinRunSessionStoreState,
+      ) => RobinRunSessionStoreState | Partial<RobinRunSessionStoreState>),
 ) => void;
 type GetFn = () => RobinRunSessionStoreState;
 

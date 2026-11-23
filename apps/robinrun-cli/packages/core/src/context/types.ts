@@ -47,6 +47,11 @@ export type ContextSource =
   | "session_guidance" // 当前可用内置能力指导
   | "context_management" // 长上下文管理提示
   | "multi_agent_collaboration" // RobinRun 主智能体分流与常驻子智能体协作约定
+  | "trigger_session_context" // 触发器专属会话的触发器说明（README 注入）
+  | "script_runtime_context" // 脚本触发器运行时提示（python 主/node 备选，2026-11-22）
+  | "master_instructions" // 主智能体个人规则（.robinrun/agents/master/agents.md 注入，裁决 10 回小写）
+  | "worker_instructions" // worker 注入段（define.md → agents.md → 预定义段，worker 会话同构化）
+  | "project_instructions" // 项目说明文件（AGENTS.md 注入 system；meta_user 只剩 user scope）
   | "desktop_context"; // RobinRun Desktop 渲染与交互协议
 
 export type ContextInjectionTarget = "system" | "meta_user";
@@ -132,6 +137,35 @@ export interface ContextBuilderConfig {
   outputStyle?: OutputStylePromptConfig;
   compact?: AutoCompactPolicyConfig;
   guidanceToolNames?: readonly string[];
+  /**
+   * 触发器专属会话的说明正文（README.md，2026-11-19 验收裁决）：触发器投递轮到达时由
+   * runtime 读盘缓存（会话级 sticky），进系统提示词 section——压缩后仍在，投递消息正文
+   * 不再内嵌说明（重复冗余）。
+   */
+  triggerSessionReadme?: string;
+  /**
+   * 脚本触发器的运行时提示（2026-11-22 python 主 + node 备选改造）：引擎可用性状态文件
+   * `state/python-runtime.json` 的投影（context 初始化读盘缓存，会话级 sticky）。
+   * "python" = python 可用（提示词只暴露 python 协议与 install_packages，不出现 node
+   * 字样）；"node" = 不可用/未探测（注入 node 桥接协议文案）。仅 master 会话注入
+   * （worker 会话在 worker 注入段携带对应 bullet）；缺席不注入。
+   */
+  scriptRuntimeHint?: "python" | "node";
+  /**
+   * 主智能体的个人规则正文（`.robinrun/agents/master/agents.md`，2026-11-19 /init 裁决；
+   * 裁决 10 起 master 单文件回小写，不拆分）：runtime 在 context 初始化时读盘缓存（会话级
+   * sticky），进系统提示词 section——个体在前、项目 AGENTS.md 在后，同处 system（压缩后
+   * 仍在）。缺席（文件不存在，未跑 /init）时不注入。
+   */
+  masterInstructions?: { filePath: string; content: string };
+  /**
+   * worker 注入段（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §3）：
+   * define.md → agents.md → 预定义段 的拼接正文（worker-prompt.ts 组装；第④段项目
+   * AGENTS.md 与 master 同源同位，不在此）。仅 worker 会话（config.workerIdentity 在场）
+   * 注入，与 masterInstructions 互斥，同一 section 槽位（个体在前、项目说明在后）。
+   * runtime 在 context 初始化时随快照解析缓存（会话级 sticky，压缩后仍在）。
+   */
+  workerInstructions?: { workerId: string; content: string };
 }
 
 /**

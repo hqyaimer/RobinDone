@@ -305,7 +305,10 @@ export function ModelProviderSectionDetail({
   providerSettingsView?: ProviderSettingsView | null;
 }) {
   const { intl } = useRobinRunIntl();
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  // 非可选 hook 无 Provider 会 throw；恢复时随 Root Provider 一并取消注释（连同下方购买横幅/升级入口注释段）
+  // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const loadingLabel = intl.formatMessage({ id: "common.loading" });
   const [upgradePlansVisibleProviderId, setUpgradePlansVisibleProviderId] =
     useState<BuiltinModelProviderId | null>(null);
@@ -520,6 +523,9 @@ export function ModelProviderSectionDetail({
     const handleUpgradePlansVisibleChange = (visible: boolean) => {
       setUpgradePlansVisibleProviderId(visible ? selectedNavItem.presetId : null);
     };
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Coding Plan 购买横幅 + 选择回调」——购买面板依赖
+    // 上游账号/OAuth（登录入口也已隐藏），恢复时取消本段注释并删除下方 planSupplementalContent 的 null 赋值
+    /*
     const purchaseChoiceBannersVisible =
       statusPanelViewState.displayStatus === "notPurchased" &&
       (selectedNavItem.oauthProviderId === ZAI_PROVIDER_ID ||
@@ -571,6 +577,8 @@ export function ModelProviderSectionDetail({
         funnelContext: nextFunnelContext,
       });
     };
+    */
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     const codingPlanFamilyHeader = (
       <ProviderFamilyHeader selectedNavItem={selectedNavItem} trailingAction={planModeSwitch} />
     );
@@ -588,6 +596,10 @@ export function ModelProviderSectionDetail({
             provider.accountState.entitled,
         ),
     );
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「购买横幅渲染」——横幅与选择回调已注释，
+    // 恢复时取消下方原 ternary 注释并删除本行
+    const planSupplementalContent = null;
+    /*
     const planSupplementalContent =
       isStartPlanProvider && hasActivePaidPlan ? null : anonymousPurchaseChoiceBannersVisible ||
         purchaseChoiceBannersVisible ? (
@@ -601,6 +613,8 @@ export function ModelProviderSectionDetail({
       ) : accessBanner ? (
         <CodingPlanAccessBanner title={accessBanner.title} description={accessBanner.description} />
       ) : null;
+    */
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 
     if (shouldShowDedicatedProviderDetail && dedicatedProvider) {
       const statusPanel = (
@@ -681,13 +695,15 @@ export function ModelProviderSectionDetail({
               options,
             );
           }}
-          onOpenUpgradePlans={(options) => {
-            openCodingPlanUpgrade({
-              providerId: selectedNavItem.presetId,
-              initialAudience: options.initialAudience,
-              funnelContext: options.funnelContext ?? undefined,
-            });
-          }}
+          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」——升级弹窗 Provider 已摘除，恢复时取消以下注释
+          // onOpenUpgradePlans={(options) => {
+          //   openCodingPlanUpgrade({
+          //     providerId: selectedNavItem.presetId,
+          //     initialAudience: options.initialAudience,
+          //     funnelContext: options.funnelContext ?? undefined,
+          //   });
+          // }}
+          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
           upgradePlansVisible={upgradePlansVisible}
           onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
           purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}
@@ -801,13 +817,15 @@ export function ModelProviderSectionDetail({
                 : undefined
             }
             disconnectLoading={codingPlanDisconnectProviderId === selectedNavItem.presetId}
-            onOpenUpgradePlans={(options) => {
-              openCodingPlanUpgrade({
-                providerId: selectedNavItem.presetId,
-                initialAudience: options.initialAudience,
-                funnelContext: options.funnelContext ?? undefined,
-              });
-            }}
+            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」（个人/团队卡）——恢复时取消以下注释
+            // onOpenUpgradePlans={(options) => {
+            //   openCodingPlanUpgrade({
+            //     providerId: selectedNavItem.presetId,
+            //     initialAudience: options.initialAudience,
+            //     funnelContext: options.funnelContext ?? undefined,
+            //   });
+            // }}
+            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
             upgradePlansVisible={upgradePlansVisible}
             onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
             purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}

@@ -93,11 +93,12 @@ describe("source-aware provider input presentation", () => {
     const entries: RuntimeMessageEntry[] = [
       ...base,
       marked("subagent_reply_steer", "reply first"),
+      // canonical 构造存裸正文；区块由渲染层注入（P2.6）。
       { message: { role: "user", content: "later user" }, metadata: { source: "real_user" } },
     ];
     // user run 内的 system 文本放到 run 末尾，可以越过 run 内的输入。
     expect(buildProviderRequestMessages({ entries }).messages.slice(-2)).toEqual([
-      { role: "user", content: "later user" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nlater user" },
       { role: "system", content: expected("subagent_reply_steer", "reply first") },
     ]);
     expect(
@@ -107,7 +108,7 @@ describe("source-aware provider input presentation", () => {
         role: "user",
         content: `<system-reminder>\n${expected("subagent_reply_steer", "reply first")}\n</system-reminder>`,
       },
-      { role: "user", content: "later user" },
+      { role: "user", content: "<system-status>{\"sender\":\"user\"}</system-status>\n\nlater user" },
     ]);
   });
   it("keeps later announcements after an earlier mid-turn message", () => {
@@ -124,7 +125,8 @@ describe("source-aware provider input presentation", () => {
     expect(result.messages.slice(-3).map((message) => message.content)).toEqual([
       `<system-reminder>\n${expected("coordinator_steer", "steer")}\n</system-reminder>`,
       "<system-reminder>\ndate\n</system-reminder>",
-      "next",
+      // P2.6：real_user 渲染时带 sender 区块。
+      '<system-status>{"sender":"user"}</system-status>\n\nnext',
     ]);
   });
   it("keeps consecutive incoming messages in order and maps the human identity", () => {
@@ -169,7 +171,18 @@ describe("source-aware provider input presentation", () => {
       const result = buildProviderRequestMessages({
         entries: [...base, input] as RuntimeMessageEntry[],
       });
-      expect(result.messages.at(-1)).toEqual(input.message);
+      // P2.6：real_user（含伪造前缀正文）渲染时统一补 sender 区块。
+      expect(result.messages.at(-1)).toEqual(
+        input.metadata?.source === "real_user"
+          ? {
+              role: "user",
+              content: `<system-status>{"sender":"user"}</system-status>\n\n${String(input.message.content).replace(
+                /^<system-status>[\s\S]*?<\/system-status>\n\n/,
+                "",
+              )}`,
+            }
+          : input.message,
+      );
     }
   });
   describe("background notification in a human turn", () => {

@@ -71,6 +71,9 @@ import { completeNewModelSelection } from "@robinrun/provider";
 import type { OffPeakClientConfig } from "#src/coding-plan-subscription/codingPlanSubscription.js";
 import {
   subagentRuntimeConfigSchema,
+  robinrunAgentContactDispatchParamsSchema,
+  robinrunTriggerRuntimeInstallParamsSchema,
+  robinrunTriggerRuntimeInstallResultSchema,
   robinrunSubagentsReadRuntimeConfigParamsSchema,
   type SubagentRuntimeConfig,
   ROBINRUN_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS,
@@ -159,6 +162,7 @@ import {
   robinrunSessionSendResultSchema,
   robinrunSessionRequestRuntimePreferencesParamsSchema,
   robinrunRuntimeCapabilitiesSchema,
+  robinrunSessionClearMessagesResultSchema,
   robinrunSessionRuntimePreferencesResultSchema,
   robinrunSessionStateSnapshotSchema,
   robinrunSessionSubscribeResultSchema,
@@ -462,7 +466,11 @@ type SessionCreateCompatField =
   | "toolDenylist"
   | "offPeakToolEnabled"
   | "dynamicWorkflowEnabled"
-  | "dynamicWorkflowMode";
+  | "dynamicWorkflowMode"
+  // P2.5 创建来源：内部机制；旧 CLI strict schema 不认时可降级省略（来源回落 CLI 侧 user 缺省）。
+  | "creationOrigin"
+  // agent 会话身份（worker 会话同构化）：旧 CLI 不认时降级省略（会话退回 master 形态）。
+  | "agentIdentity";
 type SessionResumeCompatField =
   | "thoughtLevel"
   | "mcpServers"
@@ -494,6 +502,10 @@ const SESSION_CREATE_OPTIONAL_COMPAT_FIELDS = new Set<SessionCreateCompatField>(
   "dynamicWorkflowEnabled",
   // 灰度 mode（launch.md「On demand: activation」）：只认布尔的 CLI 省略它后按 alwaysOn 行事。
   "dynamicWorkflowMode",
+  // P2.5 创建来源：旧 CLI 不认时省略重试，CLI 侧按 user 缺省补齐（来源仅内部机制）。
+  "creationOrigin",
+  // agent 会话身份：旧 CLI 不认时省略重试（会话退回 master 形态，同 creationOrigin 模式）。
+  "agentIdentity",
 ]);
 const SESSION_RESUME_OPTIONAL_COMPAT_FIELDS = new Set<SessionResumeCompatField>([
   "thoughtLevel",
@@ -712,7 +724,9 @@ function isProtocolRequestTimeout(error: unknown, method: string): boolean {
   if (error instanceof RobinRunProtocolRequestTimeoutError) {
     return error.method === method;
   }
-  return error instanceof Error && error.message === `RobinRun Protocol request timed out: ${method}`;
+  return (
+    error instanceof Error && error.message === `RobinRun Protocol request timed out: ${method}`
+  );
 }
 
 function assertV4AttachmentNdjsonEnvelope(method: string, params: unknown): void {
@@ -743,6 +757,14 @@ function buildSessionCreateParams(
     additionalDirectories: params.additionalDirectories,
     workspace: buildWorkspaceRef(params),
     parentSessionId: params.parentSessionId,
+    // 创建来源（P2.5）：cron/off-peak 派发在 createTask 入口标记；CLI 缺省补 user。
+    ...(params.creationOrigin !== undefined && !omittedFields.has("creationOrigin")
+      ? { creationOrigin: params.creationOrigin }
+      : {}),
+    // agent 会话身份（worker 会话同构化）：worker 会话经主会话路径创建时随行下发。
+    ...(params.agentIdentity !== undefined && !omittedFields.has("agentIdentity")
+      ? { agentIdentity: params.agentIdentity }
+      : {}),
     mode: params.mode,
     model: params.model,
     ...(params.persistence !== undefined && !omittedFields.has("persistence")
@@ -1161,6 +1183,43 @@ interface CreateRobinRunAgentServiceBaseOptions extends Omit<
    */
   browserControlExecutor?: BrowserAmbientContextExecutor;
   channelReplyExecutor?: (request: ChannelReplyHostRequest) => Promise<ChannelReplyResult>;
+  /**
+   * agent 会话跨会话投递（2026-11-20 worker 会话同构化，docs/worker-session-model.md §2/§3）：
+   * ContactAgent master↔worker 的投递落到桌面任务服务（寻址创建/唤醒目标会话 + sendPrompt，
+   * 机制同触发器投递 dispatchTriggerRun）。desktop host 装配时注入；缺省（纯 CLI）时
+   * ContactAgent 跨会话目标不可达（failed），工具面在 CLI 侧已因无投递端口而不注册。
+   */
+  agentContactDispatchExecutor?: (request: {
+    workspacePath: string;
+    workspaceIdentity?: string;
+    remoteSessionId?: string;
+    targetAgentId: string;
+    targetSessionId?: string;
+    fromSessionId: string;
+    senderKind: "master" | "worker";
+    senderId?: string;
+    senderDisplayName: string;
+    message: string;
+    needReply: boolean;
+    trace?: RobinRunProtocolTrace;
+  }) => Promise<{ status: "delivered" | "failed"; sessionId?: string; error?: string }>;
+  /**
+   * 触发器 python 运行时安装（2026-11-22 python 主运行时改造，docs/trigger-python-runtime.md
+   * §3.3）：ManageTriggers install_packages 经反向请求落到触发器引擎（解释器/venv ensure +
+   * pip + 依赖台账 + 重启活跃 python 脚本）。分钟级网络操作，请求在途直至完成/失败（协议
+   * 逐请求超时，本路径不设）。desktop host 装配时注入；缺省（纯 CLI）报错引导。
+   */
+  triggerRuntimeInstallPackagesExecutor?: (request: {
+    workspacePath: string;
+    packages: string[];
+  }) => Promise<{
+    ok: boolean;
+    packages?: string[];
+    error?: string;
+    outputTail?: string;
+    replayFailures?: string[];
+    restartedTriggerIds?: string[];
+  }>;
   topicResourceExecutor?: (
     request: RobinRunTopicResourceReadParams &
       RobinRunAgentWorkspaceTarget & { trace?: RobinRunProtocolTrace },
@@ -2534,7 +2593,9 @@ export function createRobinRunAgentService(
         }
 
         if (message.method === robinrunProtocolNotifications.pluginOperationProgress) {
-          const parsed = robinrunPluginOperationProgressNotificationSchema.safeParse(message.params);
+          const parsed = robinrunPluginOperationProgressNotificationSchema.safeParse(
+            message.params,
+          );
           if (parsed.success) {
             pluginOperationProgressEmitters.get(parsed.data.operationId)?.fire(parsed.data);
           } else {
@@ -2812,6 +2873,56 @@ export function createRobinRunAgentService(
           );
           return;
         }
+        if (request.method === robinrunProtocolMethods.agentContactDispatch) {
+          void (async () => {
+            const params = robinrunAgentContactDispatchParamsSchema.parse(request.params);
+            if (!options?.agentContactDispatchExecutor)
+              throw new Error("Agent contact dispatch is unavailable on this Host");
+            const result = await options.agentContactDispatchExecutor({
+              workspacePath: workspace.workspacePath,
+              workspaceIdentity: workspace.workspaceIdentity,
+              remoteSessionId: workspace.remoteSessionId,
+              targetAgentId: params.targetAgentId,
+              ...(params.targetSessionId ? { targetSessionId: params.targetSessionId } : {}),
+              fromSessionId: params.fromSessionId,
+              senderKind: params.senderKind,
+              ...(params.senderId ? { senderId: params.senderId } : {}),
+              senderDisplayName: params.senderDisplayName,
+              message: params.message,
+              needReply: params.needReply,
+              trace: request.trace,
+            });
+            await client.respond(request.id, result);
+          })().catch((error: unknown) =>
+            client.respondError(request.id, {
+              code: -32603,
+              message: error instanceof Error ? error.message : "Agent contact dispatch failed",
+            }),
+          );
+          return;
+        }
+        if (request.method === robinrunProtocolMethods.triggerRuntimeInstallPackages) {
+          // 触发器 python 运行时安装（2026-11-22）：ManageTriggers install_packages →
+          // 触发器引擎（venv + pip + 台账 + 重启活跃脚本）。分钟级操作，无逐请求超时。
+          void (async () => {
+            const params = robinrunTriggerRuntimeInstallParamsSchema.parse(request.params);
+            if (!options?.triggerRuntimeInstallPackagesExecutor)
+              throw new Error("Trigger runtime install is unavailable on this Host");
+            const result = robinrunTriggerRuntimeInstallResultSchema.parse(
+              await options.triggerRuntimeInstallPackagesExecutor({
+                workspacePath: workspace.workspacePath,
+                packages: params.packages,
+              }),
+            );
+            await client.respond(request.id, result);
+          })().catch((error: unknown) =>
+            client.respondError(request.id, {
+              code: -32603,
+              message: error instanceof Error ? error.message : "Trigger runtime install failed",
+            }),
+          );
+          return;
+        }
         if (request.method === robinrunProtocolMethods.channelReply) {
           void (async () => {
             const params = channelReplyRequestSchema.parse(request.params);
@@ -3007,7 +3118,9 @@ export function createRobinRunAgentService(
         }
 
         if (request.method === robinrunProtocolMethods.interactionRequestProviderRuntimeHeaders) {
-          const parsed = robinrunProviderRuntimeHeadersRequestParamsSchema.safeParse(request.params);
+          const parsed = robinrunProviderRuntimeHeadersRequestParamsSchema.safeParse(
+            request.params,
+          );
           if (!parsed.success) {
             void client.respondError(request.id, {
               code: -32602,
@@ -4388,7 +4501,9 @@ export function createRobinRunAgentService(
         const providerNotReady = isProviderNotReadyError(error);
         logger[providerNotReady ? "info" : "warn"](
           undefined,
-          providerNotReady ? "RobinRun agent 等待 provider/model 就绪" : "RobinRun agent 初始化失败",
+          providerNotReady
+            ? "RobinRun agent 等待 provider/model 就绪"
+            : "RobinRun agent 初始化失败",
           {
             durationMs: Date.now() - startedAt,
             message: error instanceof Error ? error.message : String(error),
@@ -4421,7 +4536,9 @@ export function createRobinRunAgentService(
       );
     },
 
-    async syncAppRuntimePreferences(preferences: RobinRunAgentAppRuntimePreferences): Promise<void> {
+    async syncAppRuntimePreferences(
+      preferences: RobinRunAgentAppRuntimePreferences,
+    ): Promise<void> {
       const normalizedPreferences: RobinRunAgentAppRuntimePreferences = {
         ...preferences,
         modelIoFullRetentionEnabled: preferences.modelIoFullRetentionEnabled === true,
@@ -4654,6 +4771,22 @@ export function createRobinRunAgentService(
         });
         return snapshot;
       }
+    },
+
+    // 清空会话消息（2026-11-20 触发器会话清空）：必须落在持有 session store 的
+    // Agent 进程里执行，标准 start-or-use 语义（与 resumeSession 同款 getClient）。
+    async clearSessionMessages(params) {
+      const client = await getClient(params);
+      return await client.request(
+        robinrunProtocolMethods.sessionClearMessages,
+        {
+          sessionId: params.sessionId,
+          ...(params.workerIdentityTo !== undefined
+            ? { workerIdentity: params.workerIdentityTo }
+            : {}),
+        },
+        robinrunSessionClearMessagesResultSchema,
+      );
     },
 
     async listSessions(params: RobinRunAgentListSessionsParams) {
@@ -5429,7 +5562,9 @@ export function createRobinRunAgentService(
       );
     },
 
-    async resolveSuggestedPluginReference(params: RobinRunAgentResolveSuggestedPluginReferenceParams) {
+    async resolveSuggestedPluginReference(
+      params: RobinRunAgentResolveSuggestedPluginReferenceParams,
+    ) {
       const client = await getPluginManagementClient();
       return client.request(
         robinrunProtocolMethods.pluginsResolveSuggestedReference,
@@ -6135,7 +6270,9 @@ export function createRobinRunAgentService(
           module: "services.robinrun_agent",
           requestId: params.requestId,
         });
-        throw new Error(`RobinRun session runtime preferences request not found: ${params.requestId}`);
+        throw new Error(
+          `RobinRun session runtime preferences request not found: ${params.requestId}`,
+        );
       }
       const responseContext = {
         event: "robinrun_agent.runtime_preferences.host_response_received",
@@ -7033,7 +7170,9 @@ export function createRobinRunAgentService(
     // workflow run 事件日志：同样是只读 query，沿现有 workspace attachment 透传。
     // 分页发生在存储层（JournalStorePort.listEvents 带 afterSequence/limit），这里不切片；
     // 在 RPC 层切等于每翻一页把整条 journal 读进内存。
-    async conversationWorkflowRunEventsV4(params: RobinRunAgentConversationWorkflowRunEventsParams) {
+    async conversationWorkflowRunEventsV4(
+      params: RobinRunAgentConversationWorkflowRunEventsParams,
+    ) {
       const client = await getReadOnlyClient(params);
       return client.request(
         V4_METHODS.conversationWorkflowRunEvents,
@@ -7185,7 +7324,9 @@ export function createRobinRunAgentService(
       );
     },
 
-    async conversationFileRewindPreviewV4(params: RobinRunAgentConversationFileRewindPreviewParams) {
+    async conversationFileRewindPreviewV4(
+      params: RobinRunAgentConversationFileRewindPreviewParams,
+    ) {
       const client = await getReadOnlyClient(params);
       return client.request(
         V4_METHODS.conversationFileRewindPreview,

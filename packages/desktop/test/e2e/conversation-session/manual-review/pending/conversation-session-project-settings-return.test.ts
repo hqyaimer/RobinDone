@@ -162,7 +162,9 @@ describe(marker, () => {
     expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(0);
     expect(await $('[data-testid="virtual-project-device"]').getText()).not.toContain("此电脑");
     expect((await directory()).entries).toHaveLength(0);
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "returned-project.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "returned-project.png"),
+    );
     await writeFile(
       join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "return-facts.json"),
       JSON.stringify(

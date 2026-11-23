@@ -247,26 +247,29 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
       version,
     }),
   ),
-  {
-    // 沿用原聚合文档插件的官方搜图能力，仅拆出独立开关；认证仍由官方 MCP adapter 注入。
-    defaultEnabled: true,
-    listing: {
-      author: ZAI_AUTHOR,
-      category: "productivity",
-      displayName: "Image Search",
-      displayName_i18n: { "zh-CN": "搜图" },
-      description_i18n: { "zh-CN": "查找插图与参考配图。" },
-    },
-    name: "image-search",
-    requiredSeedPaths: [".mcp.json"],
-    rootCandidates: [
-      "packages/image-search-plugin",
-      "../image-search-plugin",
-      "../../image-search-plugin",
-      "../../../image-search-plugin",
-    ],
-    version: "0.1.1",
-  },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「image-search 官方插件」——其 .mcp.json 指向
+  // 上游官方 MCP（auth: robinrun_official），无登录态必然 401。恢复时取消本段注释
+  // {
+  //   // 沿用原聚合文档插件的官方搜图能力，仅拆出独立开关；认证仍由官方 MCP adapter 注入。
+  //   defaultEnabled: true,
+  //   listing: {
+  //     author: ZAI_AUTHOR,
+  //     category: "productivity",
+  //     displayName: "Image Search",
+  //     displayName_i18n: { "zh-CN": "搜图" },
+  //     description_i18n: { "zh-CN": "查找插图与参考配图。" },
+  //   },
+  //   name: "image-search",
+  //   requiredSeedPaths: [".mcp.json"],
+  //   rootCandidates: [
+  //     "packages/image-search-plugin",
+  //     "../image-search-plugin",
+  //     "../../image-search-plugin",
+  //     "../../../image-search-plugin",
+  //   ],
+  //   version: "0.1.1",
+  // },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   {
     listing: {
       author: ZAI_AUTHOR,
@@ -428,47 +431,53 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     // marketplace 条目都对齐；具体版本由原子 producer bump 工作流维护。
     version: "0.6.5",
   },
-  {
-    // RobinRun Sites（技术方案 4）：Skill 指导 Agent 把项目改造并打包成 runner 可直接运行的产物包，
-    // 再用 scripts/robinrun-site.mjs（CLI）上传发布；commands/ 是 /site-* 斜杠命令。
-    // 0.4.0 起自带 Sites 面板（UI plugin）：MCP server 与面板页面构建进 dist/，只给面板用，模型看不到
-    // （docs/site/sites-panel.md）。默认开启，用户不必先去设置里打开就能让 Agent 部署站点。
-    componentTypes: ["ui"],
-    name: "robinrun-site",
-    defaultEnabled: true,
-    listing: {
-      author: ZAI_AUTHOR,
-      category: "productivity",
-      displayName: "RobinRun Sites",
-      displayName_i18n: { "zh-CN": "RobinRun Sites" },
-      description_i18n: {
-        "zh-CN": "把 Web 项目改造为可在云端 Linux 运行的部署包，一个 start.sh 即可启动。",
-      },
-      examplePrompts: ["Deploy this project as a website"],
-      examplePrompts_i18n: { "zh-CN": ["把这个项目部署成网站"] },
-      icon: `${OFFICIAL_PLUGIN_ASSETS_BASE_URL}/robinrun-site/icon.png`,
-    },
-    rootCandidates: [
-      "packages/robinrun-site-plugin",
-      "../robinrun-site-plugin",
-      "../../robinrun-site-plugin",
-      "../../../robinrun-site-plugin",
-    ],
-    requiredSeedPaths: [
-      "commands/site-deploy.md",
-      "scripts/robinrun-site.mjs",
-      "scripts/stage.mjs",
-      "skills/site-deploy/SKILL.md",
-      "skills/site-deploy/templates/static.sh",
-      "skills/site-deploy/templates/static-server.mjs",
-      "skills/site-deploy/templates/node.sh",
-      "skills/site-deploy/templates/python.sh",
-      // 缺了会 seed 出能看到面板入口却启动不了 MCP server 的残缺插件。
-      "dist/server.mjs",
-      "dist/ui/panel.html",
-    ],
-    version: "0.4.2",
-  },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「robinrun-site（Sites 网站部署）官方插件」——
+  // skill（site-deploy）与 /site-* 命令会注入 agent 提示词/技能清单，部署走上游 /api/v1/sites（需登录 JWT，
+  // fork 未登录必 401），含"升级套餐提额"话术。恢复时取消本段注释（并先构建 robinrun-site-plugin 补 dist，
+  // 否则 seed 走 ROBINRUN_PLUGIN_SEED_INCOMPLETE 降级告警），同时同步注释 packages/shared/src/plugin-marketplaces.ts
+  // 的 DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS 名单与 PluginStoreListView 退役过滤
+  // {
+  //   // RobinRun Sites（技术方案 4）：Skill 指导 Agent 把项目改造并打包成 runner 可直接运行的产物包，
+  //   // 再用 scripts/robinrun-site.mjs（CLI）上传发布；commands/ 是 /site-* 斜杠命令。
+  //   // 0.4.0 起自带 Sites 面板（UI plugin）：MCP server 与面板页面构建进 dist/，只给面板用，模型看不到
+  //   // （docs/site/sites-panel.md）。默认开启，用户不必先去设置里打开就能让 Agent 部署站点。
+  //   componentTypes: ["ui"],
+  //   name: "robinrun-site",
+  //   defaultEnabled: true,
+  //   listing: {
+  //     author: ZAI_AUTHOR,
+  //     category: "productivity",
+  //     displayName: "RobinRun Sites",
+  //     displayName_i18n: { "zh-CN": "RobinRun Sites" },
+  //     description_i18n: {
+  //       "zh-CN": "把 Web 项目改造为可在云端 Linux 运行的部署包，一个 start.sh 即可启动。",
+  //     },
+  //     examplePrompts: ["Deploy this project as a website"],
+  //     examplePrompts_i18n: { "zh-CN": ["把这个项目部署成网站"] },
+  //     icon: `${OFFICIAL_PLUGIN_ASSETS_BASE_URL}/robinrun-site/icon.png`,
+  //   },
+  //   rootCandidates: [
+  //     "packages/robinrun-site-plugin",
+  //     "../robinrun-site-plugin",
+  //     "../../robinrun-site-plugin",
+  //     "../../../robinrun-site-plugin",
+  //   ],
+  //   requiredSeedPaths: [
+  //     "commands/site-deploy.md",
+  //     "scripts/robinrun-site.mjs",
+  //     "scripts/stage.mjs",
+  //     "skills/site-deploy/SKILL.md",
+  //     "skills/site-deploy/templates/static.sh",
+  //     "skills/site-deploy/templates/static-server.mjs",
+  //     "skills/site-deploy/templates/node.sh",
+  //     "skills/site-deploy/templates/python.sh",
+  //     // 缺了会 seed 出能看到面板入口却启动不了 MCP server 的残缺插件。
+  //     "dist/server.mjs",
+  //     "dist/ui/panel.html",
+  //   ],
+  //   version: "0.4.2",
+  // },
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 ];
 
 // 在 official plugin 定义里标了 defaultEnabled: true 的, 拼成 `<name>@<marketplace>` 形式,

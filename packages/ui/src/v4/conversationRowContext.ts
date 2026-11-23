@@ -10,6 +10,8 @@ import type { WorkflowCausalityGraphData } from "@/components/workflow-graph/typ
 import type { WorkflowRunSettingsChange } from "@/components/workflow-timeline/workflowRunSettings.js";
 import type { WorkflowDraftPosition, WorkflowRunCardSummary } from "@/ToolCallBlocks/shared.js";
 import type { WorkflowFillGraph } from "@/v4/workflowRunCardJoin.js";
+import type { ConversationAgentBlockSurfaces } from "@/v4/ConversationAgentBlock.js";
+import type { TaskGroupColor as RobinRunTaskGroupColor } from "@/project-sidebar/contract.js";
 import type { Theme } from "@/useTheme.js";
 import type { ModelSelectionView } from "@robinrun/services";
 import type { RobinRunWorkflowsForRunCandidate } from "@robinrun/shared";
@@ -51,6 +53,25 @@ export interface ConversationRowRenderContext {
   sessionId?: string | null;
   /** 当前下钻树的顶层 session；详情 tab 跨嵌套层级按该 id 分组。 */
   rootSessionId?: string | null;
+  /**
+   * P2.6 群聊渲染 → P2.6 验收修复第四轮（2026-11-18）改版：会话本体 agent 的块身份
+   * ——会话区 agent 块（turn 组工作内容 + 通知轮处理段）的块头名称与头像色。
+   * label 沿用旧 conversationSenderLabel 的口径（「主智能体」/「工作者-<显示名>」）；
+   * avatarClass 由 SessionPane 按会话事实取组色推导（worker 会话 = workerGroupId(workerId)，
+   * master 会话 = isMainAgentGroupId 命中主智能体组），解析不到组色时 surfaces 缺席、
+   * 头像走中性回退。第四轮修正：组色只染头像，块底统一半透明灰。需保持引用稳定（memo 依赖）。
+   */
+  conversationAgentBlock?: {
+    label: string;
+    surfaces?: ConversationAgentBlockSurfaces;
+  };
+  /**
+   * P2.6 验收修复第三轮（2026-11-18）：任务组 id → 组色枚举（与侧栏色标同一份数据，
+   * 宿主从 taskGroupService 读 + `state:task-groups` 广播刷新）。mailbox 行据此把发送
+   * 者（workerGroupId(senderId)）的块头头像染成该 agent 的组色，与编制投影一一对应；
+   * 缺席/未命中回退中性。第四轮起值从预拼 class 串改为色枚举。需保持引用稳定（memo 依赖）。
+   */
+  agentGroupColors?: ReadonlyMap<string, RobinRunTaskGroupColor>;
   /** @deprecated 旧内联下钻标记；新的子会话统一打开侧栏详情。 */
   inSubagentDrilldown?: boolean;
   /** 手机 /remote 紧凑模式：隐藏外部 App 打开下拉，只保留应用内预览。 */
@@ -77,6 +98,13 @@ export interface ConversationRowRenderContext {
    * 需保持引用稳定（rowContext 的 memo 依赖）。
    */
   onNavigateToRow?: (sessionId: string, rowId: number) => void;
+  /**
+   * mailbox 跳转（2026-11-18）：mailbox 行（worker/subagent 汇报、master 插话）工具栏的
+   * 「跳转到来源」——打开来源会话并滚动到来源消息位置。sourceTurnId 来自 CLI 投影的
+   * originMeta.senderTurnId（子会话汇报轮），缺席退回打开会话后滚到底部。
+   * 需保持引用稳定（rowContext 的 memo 依赖）。
+   */
+  onNavigateToSourceSession?: (request: { sessionId: string; sourceTurnId?: string }) => void;
   /** Assistant Preview Cards：Website 卡片预览入口，由 app shell 注入 side pane 行为。 */
   onOpenBrowserUrl?: (url: string) => void;
   onOpenAutomationsMain?: OpenAutomationsMain;
@@ -231,4 +259,27 @@ export function isConversationReasoningRowVisible(
     visibility.messageStreamShowReasoning === true ||
     visibility.messageStreamFirstReasoningRowId === rowId
   );
+}
+
+// ── mailbox 跳转（2026-11-18）：跨会话滚动登记 ────────────────────────────
+// 源会话 mailbox 行上的「跳转到来源」按钮把目标写入此处，目标会话的 SessionPane 在
+// 「会话切换 / pane 聚焦」时消费并驱动 ConversationTimeline 滚动。renderer 内单例即可
+// ——所有 pane 同进程；同一目标重复登记以最后一次为准，消费即删除（无 TTL：未打开的
+// 登记只占一条内存）。
+
+export interface PendingSourceJump {
+  /** 来源汇报轮 turnId；缺席 = 旧行无锚点，目标会话滚到底部。 */
+  sourceTurnId?: string;
+}
+
+const pendingSourceJumps = new Map<string, PendingSourceJump>();
+
+export function setPendingSourceJump(sessionId: string, jump: PendingSourceJump): void {
+  pendingSourceJumps.set(sessionId, jump);
+}
+
+export function consumePendingSourceJump(sessionId: string): PendingSourceJump | undefined {
+  const jump = pendingSourceJumps.get(sessionId);
+  pendingSourceJumps.delete(sessionId);
+  return jump;
 }

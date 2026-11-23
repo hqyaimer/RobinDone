@@ -1,7 +1,14 @@
 import type { ToolSearchExecutionContext, ToolSearchMode } from "@robinrun/contracts";
-import type { ExecutionState, RequestVerificationReason } from "@robinrun/shared";
+import type {
+  ExecutionState,
+  RequestVerificationReason,
+  SystemStatusPayload,
+} from "@robinrun/shared";
 import type { GetAgentDefinitions, LoadAgentDefinitions } from "../subagent/definitions.js";
-import type { RuntimeInputPresentation, TurnExecutionModelFallbackReason } from "@robinrun/contracts";
+import type {
+  RuntimeInputPresentation,
+  TurnExecutionModelFallbackReason,
+} from "@robinrun/contracts";
 /* eslint-disable max-lines -- Runtime 类型集中承载 core/runtime 对外结构，拆分需要单独迁移。 */
 import { PermissionService, ToolScheduler } from "./deps.js";
 import type {
@@ -64,6 +71,7 @@ import type {
   SessionEventStorePort,
   SessionId,
   SessionTaskType,
+  SessionCreationOrigin,
   SessionMailboxPort,
   SessionProjection,
   SessionStorePort,
@@ -111,6 +119,13 @@ import type {
   OutputStylePromptConfig,
 } from "./deps.js";
 import type { AgentProfile } from "../subagent/profile.js";
+import type {
+  AgentContactPort,
+  AgentSessionDispatchPort,
+  TriggerRuntimePort,
+  WorkerSessionIdentity,
+} from "@robinrun/contracts";
+import type { AgentContactRegistry } from "../subagent/agent-contact.js";
 import type { RuntimeTaskRegistry } from "../runtime-task/registry.js";
 import type { BashTimeoutPolicy } from "../tool/bash-timeout-policy.js";
 import type { PresentationSurface } from "../context/types.js";
@@ -213,6 +228,19 @@ export interface AgentRuntimeConfig {
   parentSessionId?: SessionId;
   taskType?: SessionTaskType;
   /**
+   * 会话创建来源（P2.5，2026-11-16）：runtime 创建时固定，首部落库时写入
+   * session.creation_origin。缺席由 persistSession 兜底 user。
+   */
+  creationOrigin?: SessionCreationOrigin;
+  /**
+   * agent 会话身份（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md）：
+   * worker = 主智能体级并行会话（taskType 保持 interactive，无父、无派发通道），
+   * 身份由本字段承载（缺席 = master 会话）。在场时：注入 worker 注入段而非
+   * masterInstructions 与 master 协作段，名册投影不进本会话，ManageWorkers 不可用。
+   * 创建时由 bootstrap 按名册解析校验（workerId 必须已注册），冷恢复随会话记录回填。
+   */
+  workerIdentity?: WorkerSessionIdentity;
+  /**
    * 动态工作流灰度门（docs/dynamic-workflow/launch.md「Gray release」）：Host 判定后经
    * RobinRun Protocol 下发，runtime 只消费。**缺席即开启**（进程内嵌入方靠这个极性）；
    * 独立 CLI 的 TUI 与 headless 按 --workflow-mode 显式传 true/false（缺省 disabled，DWG-04），
@@ -245,6 +273,8 @@ export interface AgentRuntimeConfig {
   subagentContext?: {
     agentPrompt: string;
     userInstructions?: ResolvedUserInstructions;
+    // worker 标记已随 worker 会话同构化退役（2026-11-20）：worker 注入面迁主
+    // ContextBuilder（config.workerIdentity → workerInstructions），本管线只服务一次性 subagent。
   };
   language?: string;
   outputStyle?: OutputStylePromptConfig;
@@ -369,6 +399,30 @@ export interface AgentRuntimeDeps {
   mcpPort?: McpPort;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
+  /**
+   * agent 消息端口（2026-11-19，docs/trigger-system.md）：ContactAgent/WaitReply 的执行面。
+   * 主会话形态自建（agent-runtime：master 身份建 master 端口、workerIdentity 建 worker
+   * 端口）；subagent_child 等子形态不建。
+   */
+  agentContactPort?: AgentContactPort;
+  /**
+   * 进程共享 agent 消息登记表（2026-11-20 worker 会话同构化）：同 workspace 全部会话共用
+   * 一个事实源——任一会话的轮终态捕获按接收方 sessionId 结算在途请求。bootstrap 注入；
+   * 缺席时 runtime 自建（单会话形态，如测试与独立运行）。
+   */
+  agentContactRegistry?: AgentContactRegistry;
+  /**
+   * agent 会话跨会话投递通道（2026-11-20）：ContactAgent master↔worker 投递经此落到
+   * Host 任务服务（寻址创建/唤醒目标会话，机制同触发器投递）。bootstrap 注入；独立 CLI
+   * 缺席时 ContactAgent 跨会话目标不可达（failed）。
+   */
+  agentContactDispatchPort?: AgentSessionDispatchPort;
+  /**
+   * 触发器 python 运行时端口（2026-11-22 python 主运行时改造）：ManageTriggers
+   * install_packages 经此反向请求到宿主引擎执行（venv + pip + 台账 + 重启活跃脚本）。
+   * bootstrap 注入；独立 CLI 缺席时 install_packages 报错引导（诚实拒绝）。
+   */
+  triggerRuntimePort?: TriggerRuntimePort;
   /** 工作流 actor 提交终态结果的端口；存在即作为 submit_result 工具的注册门。 */
   workflowSubmitPort?: WorkflowSubmitPort;
   /**
@@ -517,6 +571,12 @@ export interface ExecuteTurnOptionsBase {
   queryId?: QueryId;
   inputSource?: SyntheticUserMessageSource;
   inputPresentation?: RuntimeInputPresentation;
+  /**
+   * P2.6 消息来源区块：本条输入的发送方身份（master 派发/插话、用户、触发器…）。
+   * 随 entry metadata 与消息 metadata.systemStatus 持久化；provider 渲染层据此在正文
+   * 最前注入 <system-status> 区块。真实用户输入不传——渲染层按 real_user 兜底补 user。
+   */
+  systemStatus?: SystemStatusPayload;
   inputVisibility?: MessageVisibility;
   originMeta?: BackgroundResultOriginMeta;
   /** 仅用于冻结 background notification batch 的整批因果来源，不用于展示。 */

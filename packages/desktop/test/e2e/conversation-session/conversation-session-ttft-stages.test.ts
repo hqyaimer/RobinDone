@@ -172,10 +172,11 @@ describe("TTFT01 真实 Composer 到最终 OTLP", () => {
     this.timeout(120000);
     await waitForV4ConversationState((state) => state.state === "idle", "正文轮尚未完成");
     await browser.execute(() => {
-      (window as unknown as { __robinrunTransportDelayE2E: unknown }).__robinrunTransportDelayE2E = {
-        commandMs: 250,
-        ackMs: 7000,
-      };
+      (window as unknown as { __robinrunTransportDelayE2E: unknown }).__robinrunTransportDelayE2E =
+        {
+          commandMs: 250,
+          ackMs: 7000,
+        };
     });
     await setV4ComposerText("E2E_TTFT_STAGE_REASONING: Reply exactly ttft-stage-reasoning-ok.");
     await clickV4Send();

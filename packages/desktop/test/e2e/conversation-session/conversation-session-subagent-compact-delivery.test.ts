@@ -369,7 +369,8 @@ interface DeliveryTimingEvent {
 }
 
 async function readDeliveryTimingEvents(sessionId: string): Promise<DeliveryTimingEvent[]> {
-  const logDir = process.env.ROBINRUN_LOG_DIR?.trim() || join(resolveE2EStorageRoot(), "cli", "log");
+  const logDir =
+    process.env.ROBINRUN_LOG_DIR?.trim() || join(resolveE2EStorageRoot(), "cli", "log");
   const names = (await readdir(logDir)).filter((name) => name.endsWith(".jsonl"));
   const files = await Promise.all(names.map((name) => readFile(join(logDir, name), "utf8")));
   return files

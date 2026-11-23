@@ -4,7 +4,7 @@ import type {
   RobinRunTaskGroupColor,
 } from "@/project-sidebar/grouped/types.js";
 
-import { ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
+import { Bot, ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -29,6 +29,7 @@ import {
   CRON_DEFAULT_GROUP_ID,
   OFF_PEAK_DEFAULT_GROUP_ID,
   isMainAgentGroupId,
+  isWorkerGroupId,
 } from "@robinrun/shared";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
@@ -68,16 +69,15 @@ export function StickyGroupHeader({
     ...(isMainAgentGroupId(node.group.id)
       ? { mainAgent: intl.formatMessage({ id: "taskGroup.mainAgent" }) }
       : {}),
-    ...(isUngroupedGroup
-      ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) }
-      : {}),
+    ...(isUngroupedGroup ? { ungrouped: intl.formatMessage({ id: "taskGroup.ungrouped" }) } : {}),
   });
   // sticky header 的右键菜单要和 GroupItem 一样裁剪保护组的「解散」项：
-  // cron/闲时/主智能体滚动吸顶时不可被误解散；伪组额外隐藏改色与新建入口。
+  // cron/闲时/主智能体/worker 组滚动吸顶时不可被误解散；伪组额外隐藏改色与新建入口。
   const isSystemGroup =
     node.group.id === CRON_DEFAULT_GROUP_ID ||
     node.group.id === OFF_PEAK_DEFAULT_GROUP_ID ||
     isMainAgentGroupId(node.group.id) ||
+    isWorkerGroupId(node.group.id) ||
     isUngroupedGroup;
   const handleToggle = () => onToggleCollapsed(node.group.id);
   const handleGroupColorChange = (color: string) => {
@@ -131,42 +131,49 @@ export function StickyGroupHeader({
             }}
           >
             {isUngroupedGroup ? null : (
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-input-border-focused"
-                  aria-label={intl.formatMessage({ id: "taskGroup.color" })}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-input-border-focused"
+                    aria-label={intl.formatMessage({ id: "taskGroup.color" })}
+                    onClick={(event) => event.stopPropagation()}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onTouchStart={(event) => event.stopPropagation()}
+                  >
+                    <TaskGroupColorMark
+                      color={node.group.color}
+                      icon={
+                        isMainAgentGroupId(node.group.id) || isWorkerGroupId(node.group.id)
+                          ? Bot
+                          : undefined
+                      }
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-40 min-w-40"
                   onClick={(event) => event.stopPropagation()}
-                  onMouseDown={(event) => event.stopPropagation()}
                   onPointerDown={(event) => event.stopPropagation()}
-                  onTouchStart={(event) => event.stopPropagation()}
                 >
-                  <TaskGroupColorMark color={node.group.color} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-40 min-w-40"
-                onClick={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                <DropdownMenuLabel>
-                  {intl.formatMessage({ id: "taskGroup.color" })}
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={node.group.color}
-                  onValueChange={handleGroupColorChange}
-                >
-                  {TASK_GROUP_COLORS.map((color) => (
-                    <DropdownMenuRadioItem key={color} value={color}>
-                      <TaskGroupColorDot color={color} />
-                      <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuLabel>
+                    {intl.formatMessage({ id: "taskGroup.color" })}
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={node.group.color}
+                    onValueChange={handleGroupColorChange}
+                  >
+                    {TASK_GROUP_COLORS.map((color) => (
+                      <DropdownMenuRadioItem key={color} value={color}>
+                        <TaskGroupColorDot color={color} />
+                        <span>{intl.formatMessage({ id: `taskGroup.color.${color}` })}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <div className="flex min-w-0 flex-1 items-center gap-1">
               <SidebarNativeTooltip>

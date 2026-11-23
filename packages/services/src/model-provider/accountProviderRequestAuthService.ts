@@ -40,7 +40,9 @@ export class AccountRequestCredentialUnavailableError extends Error {
 }
 
 export interface AccountRequestAuthResolver {
-  resolveAccessCurrent(access: RobinRunProviderAccountAccess): Promise<RobinRunAccountAccess | null>;
+  resolveAccessCurrent(
+    access: RobinRunProviderAccountAccess,
+  ): Promise<RobinRunAccountAccess | null>;
   resolveCurrent(input: AccountRequestAuthInput): Promise<AccountRequestAuthMaterial>;
   assertCurrent(input: AccountAccessIdentityInput): Promise<void>;
 }
@@ -71,7 +73,9 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
     this.#options = options;
   }
 
-  resolveAccessCurrent(access: RobinRunProviderAccountAccess): Promise<RobinRunAccountAccess | null> {
+  resolveAccessCurrent(
+    access: RobinRunProviderAccountAccess,
+  ): Promise<RobinRunAccountAccess | null> {
     return this.#options.resolveCurrentAccountAccess(access);
   }
 

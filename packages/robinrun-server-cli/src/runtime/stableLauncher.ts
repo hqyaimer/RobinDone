@@ -16,7 +16,7 @@ function quoteShell(value: string): string {
 function stablePosixLauncher(bootstrap?: StableLauncherBootstrap): string {
   const fallback = bootstrap
     ? `exec ${quoteShell(bootstrap.command)} ${quoteShell(bootstrap.entry)} "$@"`
-    : "echo \"No current RobinRun Server release\" >&2; exit 1";
+    : 'echo "No current RobinRun Server release" >&2; exit 1';
   // Bug 原因：远端以 "$HOME/.robinrun/server/bin/robinrun" 调用本脚本，NAS 等环境的 $HOME 经过符号链接
   // （/var/services/homes -> /volume1/homes）。update 写 current.json 时 releaseDir 基于 realpath 后的
   // canonical root，这里原来用逻辑 cd/pwd 计算 ROOT，前缀不同使合法 release 被判越界。改用 cd -P/pwd -P，
@@ -65,7 +65,10 @@ export async function writeStableLauncher(
   bootstrap?: StableLauncherBootstrap,
 ): Promise<string> {
   await mkdir(layout.stableBinDir, { recursive: true, mode: 0o700 });
-  const launcherPath = join(layout.stableBinDir, platform === "win32" ? "robinrun.cmd" : "robinrun");
+  const launcherPath = join(
+    layout.stableBinDir,
+    platform === "win32" ? "robinrun.cmd" : "robinrun",
+  );
   const temporaryPath = `${launcherPath}.${process.pid}.${randomUUID()}.tmp`;
   await writeFile(
     temporaryPath,

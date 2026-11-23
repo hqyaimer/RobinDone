@@ -117,23 +117,19 @@ describe("loadRobinRunAgentProfiles", () => {
     }
   });
 
-  it("loads only direct user and project Markdown files from beta-compatible roots", async () => {
+  it("loads user Markdown files and project workers from the registry (2026-11-15 worker 裁决)", async () => {
     const root = await mkdtemp(join(tmpdir(), "robinrun-subagents-"));
     const storageRoot = join(root, "home");
     const workingDirectory = join(root, "workspace");
     try {
       await mkdir(join(storageRoot, "agents"), { recursive: true });
-      await mkdir(join(workingDirectory, ".robinrun", "agents"), { recursive: true });
-      for (const agentsRoot of [
-        join(storageRoot, "agents"),
-        join(workingDirectory, ".robinrun", "agents"),
-      ]) {
-        await mkdir(join(agentsRoot, "nested"));
-        await writeFile(
-          join(agentsRoot, "nested", "ignored.markdown"),
-          "---\nname: nested-reviewer\ndescription: Nested\n---\nNested prompt",
-        );
-      }
+      const projectAgentsRoot = join(workingDirectory, ".robinrun", "agents");
+      await mkdir(join(projectAgentsRoot, "nested"), { recursive: true });
+      await writeFile(
+        join(projectAgentsRoot, "nested", "ignored.markdown"),
+        "---\nname: nested-reviewer\ndescription: Nested\n---\nNested prompt",
+      );
+      // user scope 保持平铺 Markdown 加载不变。
       await writeFile(
         join(storageRoot, "agents", "reviewer.md"),
         `---
@@ -143,8 +139,9 @@ description: 用户级中文审查 agent
 用户级 prompt`,
         "utf8",
       );
+      // project scope 的旧平铺格式自 worker 编制系统起不再加载（避免绕过注册表）。
       await writeFile(
-        join(workingDirectory, ".robinrun", "agents", "reviewer.md"),
+        join(projectAgentsRoot, "reviewer.md"),
         `---
 name: robinrun-reviewer
 description: 项目级中文审查 agent
@@ -152,6 +149,36 @@ description: 项目级中文审查 agent
 项目级 prompt`,
         "utf8",
       );
+      // project scope 只认 workers.json + <id>/define.md + <id>/agents.md（裁决 10 双文件）。
+      const workerDir = join(projectAgentsRoot, "wkr-test0001");
+      await mkdir(join(workerDir, "plan"), { recursive: true });
+      await writeFile(
+        join(projectAgentsRoot, "workers.json"),
+        JSON.stringify({
+          version: 1,
+          workers: [
+            {
+              id: "wkr-test0001",
+              name: "dev",
+              description: "开发 worker",
+              status: "active",
+              createdAt: "2026-11-15T00:00:00.000Z",
+              updatedAt: "2026-11-15T00:00:00.000Z",
+            },
+            {
+              id: "wkr-test0002",
+              name: "retired",
+              description: "已停用 worker",
+              status: "deactivated",
+              createdAt: "2026-11-15T00:00:00.000Z",
+              updatedAt: "2026-11-15T00:00:00.000Z",
+            },
+          ],
+        }),
+        "utf8",
+      );
+      await writeFile(join(workerDir, "define.md"), "duty definition", "utf8");
+      await writeFile(join(workerDir, "agents.md"), "worker prompt", "utf8");
 
       const result = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory });
 
@@ -159,14 +186,103 @@ description: 项目级中文审查 agent
       expect(result.profiles.map((profile) => profile.source)).toEqual(["user", "project"]);
       expect(result.profiles.map((profile) => profile.description)).toEqual([
         "用户级中文审查 agent",
-        "项目级中文审查 agent",
+        "开发 worker",
+      ]);
+      // key/name 裁决（2026-11-17）：profile.name 位放派发句柄（worker id），显示名在 worker 标记里。
+      expect(result.profiles[1]?.name).toBe("wkr-test0001");
+      // 裁决 10：define.md 随 worker 身份透传（职责定义），agents.md 是 systemPrompt 主正文。
+      expect(result.profiles[1]?.worker).toEqual({
+        workerId: "wkr-test0001",
+        workerName: "dev",
+        defineMd: "duty definition",
+      });
+      expect(result.profiles[1]?.systemPrompt).toBe("worker prompt");
+      expect(result.profiles[1]?.path).toBe(join(workerDir, "define.md"));
+      // 停用 worker 不进名册；其文件仍留在磁盘上。
+      expect(
+        result.profiles.find((profile) => profile.worker?.workerName === "retired"),
+      ).toBeUndefined();
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  it("skips workers missing either rule file with a distinct diagnostic (裁决 10 双文件缺一即跳过)", async () => {
+    // 裁决 10：define.md（职责定义）+ agents.md（自维护）任一缺失即跳过并告警——缺职责
+    // 定义的 worker 不允许静默入册；裁决 9 的旧名兜底随大写回退一并移除，不做迁移。
+    const root = await mkdtemp(join(tmpdir(), "robinrun-subagents-missing-rulefile-"));
+    const storageRoot = join(root, "home");
+    const workingDirectory = join(root, "workspace");
+    try {
+      const projectAgentsRoot = join(workingDirectory, ".robinrun", "agents");
+      const writeRegistry = async () => {
+        await writeFile(
+          join(projectAgentsRoot, "workers.json"),
+          JSON.stringify({
+            version: 1,
+            workers: [
+              {
+                id: "wkr-test0001",
+                name: "dev",
+                description: "开发 worker",
+                status: "active",
+                createdAt: "2026-11-15T00:00:00.000Z",
+                updatedAt: "2026-11-15T00:00:00.000Z",
+              },
+            ],
+          }),
+          "utf8",
+        );
+      };
+      // 只有 agents.md（缺 define.md）→ worker_define_md_missing，名册为空。
+      const noDefineDir = join(projectAgentsRoot, "wkr-test0001");
+      await mkdir(noDefineDir, { recursive: true });
+      await writeRegistry();
+      await writeFile(join(noDefineDir, "agents.md"), "worker prompt", "utf8");
+      const missingDefine = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory });
+      expect(missingDefine.profiles).toEqual([]);
+      expect(missingDefine.diagnostics).toMatchObject([
+        { code: "worker_define_md_missing", path: join(noDefineDir, "define.md") },
+      ]);
+
+      // 只有 define.md（缺 agents.md）→ worker_agents_md_missing。
+      await rm(join(projectAgentsRoot, "wkr-test0001"), { recursive: true, force: true });
+      const noAgentsDir = join(projectAgentsRoot, "wkr-test0001");
+      await mkdir(noAgentsDir, { recursive: true });
+      await writeFile(join(noAgentsDir, "define.md"), "duty definition", "utf8");
+      const missingAgents = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory });
+      expect(missingAgents.profiles).toEqual([]);
+      expect(missingAgents.diagnostics).toMatchObject([
+        { code: "worker_agents_md_missing", path: join(noAgentsDir, "agents.md") },
       ]);
     } finally {
       await rm(root, { force: true, recursive: true });
     }
   });
 
-  it("ignores project Markdown permissionMode because project profiles are untrusted", async () => {
+  it("treats an invalid project worker registry as an empty roster with a diagnostic", async () => {
+    const root = await mkdtemp(join(tmpdir(), "robinrun-subagents-bad-registry-"));
+    const storageRoot = join(root, "home");
+    const workingDirectory = join(root, "workspace");
+    try {
+      await mkdir(join(storageRoot, "agents"), { recursive: true });
+      const projectAgentsRoot = join(workingDirectory, ".robinrun", "agents");
+      await mkdir(projectAgentsRoot, { recursive: true });
+      await writeFile(join(projectAgentsRoot, "workers.json"), "{ not json", "utf8");
+
+      const result = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory });
+
+      // fail-safe 为空编制 + 诊断；不做文件夹扫描兜底，避免已停用 worker 复活。
+      expect(result.profiles).toEqual([]);
+      expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+        "worker_registry_invalid",
+      ]);
+    } finally {
+      await rm(root, { force: true, recursive: true });
+    }
+  });
+
+  it("ignores project Markdown entirely (worker 裁决后 project scope 只认注册表，平铺文件不可信)", async () => {
     const root = await mkdtemp(join(tmpdir(), "robinrun-subagents-project-permission-"));
     const storageRoot = join(root, "home");
     const workingDirectory = join(root, "workspace");
@@ -391,22 +507,49 @@ describe("loadPluginAgentProfiles", () => {
     const storageRoot = join(root, "storage");
     const workingDirectory = join(root, "workspace");
     const pluginRoot = join(root, "plugin");
-    const paths = [
-      join(storageRoot, "agents", "code-architect.md"),
-      join(workingDirectory, ".robinrun", "agents", "code-architect.md"),
-      join(pluginRoot, "agents", "code-architect.md"),
-    ];
     const markdown =
       "---\r\nname: code-architect\r\ndescription: review\r\n# 保留备注\r\nmodel: builtin:zai-coding-plan/GLM\r\nthoughtLevel: high\r\n---\r\n正文 builtin:zai-coding-plan/GLM\r\n";
     try {
-      for (const directory of [
-        join(storageRoot, "agents"),
-        join(workingDirectory, ".robinrun", "agents"),
-        join(pluginRoot, "agents"),
-      ]) {
+      for (const directory of [join(storageRoot, "agents"), join(pluginRoot, "agents")]) {
         await mkdir(directory, { recursive: true });
       }
-      for (const path of paths) await writeFile(path, markdown);
+      const userPath = join(storageRoot, "agents", "code-architect.md");
+      const pluginPath = join(pluginRoot, "agents", "code-architect.md");
+      await writeFile(userPath, markdown);
+      // 插件 agent 不属 worker 编制系统：保持平铺 md 原样。
+      await writeFile(pluginPath, markdown);
+      // project scope（2026-11-15 worker 裁决）以注册表承载：迁移不得改动注册表与规则文件。
+      const projectAgentsRoot = join(workingDirectory, ".robinrun", "agents");
+      const workerDir = join(projectAgentsRoot, "wkr-test0001");
+      await mkdir(workerDir, { recursive: true });
+      const registryJson = `${JSON.stringify(
+        {
+          version: 1,
+          workers: [
+            {
+              id: "wkr-test0001",
+              name: "code-architect",
+              description: "review",
+              modelSelection: {
+                providerId: "builtin:zai-coding-plan",
+                modelId: "GLM",
+                options: { reasoningLevel: "high" },
+              },
+              status: "active",
+              createdAt: "2026-11-15T00:00:00.000Z",
+              updatedAt: "2026-11-15T00:00:00.000Z",
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`;
+      const agentsMd = "正文 builtin:zai-coding-plan/GLM";
+      const defineMd = "职责定义 builtin:zai-coding-plan/GLM";
+      const workersJsonPath = join(projectAgentsRoot, "workers.json");
+      await writeFile(workersJsonPath, registryJson);
+      await writeFile(join(workerDir, "define.md"), defineMd);
+      await writeFile(join(workerDir, "agents.md"), agentsMd);
       for (let load = 0; load < 2; load++) {
         const local = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory });
         const plugins = loadPluginAgentProfiles({
@@ -428,13 +571,16 @@ describe("loadPluginAgentProfiles", () => {
             options: { reasoningLevel: "high" },
           });
         expect(plugins.profiles.length).toBeGreaterThan(0);
-        expect(await readFile(paths[0]!, "utf8")).toBe(
+        expect(await readFile(userPath, "utf8")).toBe(
           markdown.replace(
             "model: builtin:zai-coding-plan",
             "model: account:zai-individual-coding-plan",
           ),
         );
-        for (const path of paths.slice(1)) expect(await readFile(path, "utf8")).toBe(markdown);
+        // 项目注册表与 worker 双规则文件保持字节不变。
+        expect(await readFile(workersJsonPath, "utf8")).toBe(registryJson);
+        expect(await readFile(join(workerDir, "define.md"), "utf8")).toBe(defineMd);
+        expect(await readFile(join(workerDir, "agents.md"), "utf8")).toBe(agentsMd);
       }
     } finally {
       await rm(root, { force: true, recursive: true });
@@ -619,7 +765,10 @@ thoughtLevel: low
         }),
         "utf8",
       );
-      const modelOnlyState = await loadRobinRunAgentProfiles({ storageRoot, workingDirectory: root });
+      const modelOnlyState = await loadRobinRunAgentProfiles({
+        storageRoot,
+        workingDirectory: root,
+      });
       const modelOnly = loadPluginAgentProfiles({
         plugins,
         modelSelectionOverrides: modelOnlyState.pluginAgentModelSelectionOverrides,
@@ -686,24 +835,45 @@ architect prompt`,
   });
 });
 
-it("附加目录 subagent 用限定名并存，权限仍按项目级规则过滤", async () => {
+it("附加目录 worker 注册表用限定名并存（2026-11-15 worker 裁决后 project scope 只认注册表）", async () => {
   const root = await mkdtemp(join(tmpdir(), "robinrun-additional-agents-"));
+  const writeWorker = async (dir: string) => {
+    const agentsRoot = join(dir, ".robinrun", "agents");
+    await mkdir(join(agentsRoot, "wkr-test0001"), { recursive: true });
+    await writeFile(
+      join(agentsRoot, "workers.json"),
+      JSON.stringify({
+        version: 1,
+        workers: [
+          {
+            id: "wkr-test0001",
+            name: "review",
+            description: "review",
+            status: "active",
+            createdAt: "2026-11-15T00:00:00.000Z",
+            updatedAt: "2026-11-15T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+    await writeFile(join(agentsRoot, "wkr-test0001", "define.md"), "Review duty");
+    await writeFile(join(agentsRoot, "wkr-test0001", "agents.md"), "Review");
+  };
   try {
     const main = join(root, "frontend"),
       extra = join(root, "backend");
-    for (const dir of [main, extra]) {
-      await mkdir(join(dir, ".robinrun", "agents"), { recursive: true });
-      await writeFile(
-        join(dir, ".robinrun", "agents", "review.md"),
-        "---\nname: review\ndescription: review\npermissionMode: bypassPermissions\n---\nReview",
-      );
-    }
+    for (const dir of [main, extra]) await writeWorker(dir);
     const result = await loadRobinRunAgentProfiles({
       storageRoot: join(root, "state"),
       workingDirectory: main,
       additionalDirectories: [extra, extra, main],
     });
-    expect(result.profiles.map((p) => p.name).sort()).toEqual(["backend/review", "review"]);
+    // key/name 裁决（2026-11-17）：附加目录限定名 = namespace/id（派发句柄），显示名可重名。
+    expect(result.profiles.map((p) => p.name).sort()).toEqual([
+      "backend/wkr-test0001",
+      "wkr-test0001",
+    ]);
+    // worker 注册表不携带 permissionMode：派生 profile 天然继承会话级权限，没有越权通道。
     expect(result.profiles.every((p) => p.permissionMode === undefined)).toBe(true);
   } finally {
     await rm(root, { recursive: true, force: true });

@@ -299,7 +299,9 @@ export function createRobinRunStore(
     },
     // 默认主题统一收敛到 Zai dark，避免首次启动时 store 与其他主题入口表现不一致。
     // 仍然优先尊重 localStorage 中已保存的用户选择，不覆盖已有偏好。
-    theme: normalizeThemePreference((readSafeLocalStorage("robinrun-theme") as Theme) || "zai-dark"),
+    theme: normalizeThemePreference(
+      (readSafeLocalStorage("robinrun-theme") as Theme) || "zai-dark",
+    ),
     setTheme: (theme: Theme) => {
       const normalizedTheme = normalizeThemePreference(theme);
       writeSafeLocalStorage("robinrun-theme", normalizedTheme);

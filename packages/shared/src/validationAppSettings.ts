@@ -503,7 +503,7 @@ function migrateLegacyWorkspaceSession(value: unknown): unknown {
 }
 
 /**
- * RobinRun 运营项目登记条目 schema：launcher（项目启动台）注册表的运行时校验。
+ * RobinRun 项目登记条目 schema：launcher（项目启动台）注册表的运行时校验。
  * 类型权威定义在 protocol.ts 的 RobinRunProjectEntry；此处用编译期守卫防两处形状漂移。
  */
 const robinrunProjectEntrySchema = z.object({
@@ -512,18 +512,26 @@ const robinrunProjectEntrySchema = z.object({
   path: nonEmptyStringSchema,
   createdAt: z.number().int().nonnegative(),
   lastOpenedAt: z.number().int().nonnegative(),
+  fullAccessConfirmedAt: z.number().int().nonnegative().optional(),
 });
 
 type RobinRunProjectEntryFromSchema = z.infer<typeof robinrunProjectEntrySchema>;
 type RobinRunProjectEntryFromProtocol = NonNullable<AppSettings["robinrunProjects"]>[number];
 // 双向可赋值即视为一致；任一侧字段名/类型漂移会让这条赋值在 typecheck 失败。
-const _robinrunProjectEntryShapeGuard: [RobinRunProjectEntryFromSchema] extends
-  [RobinRunProjectEntryFromProtocol] ? [RobinRunProjectEntryFromProtocol] extends
-  [RobinRunProjectEntryFromSchema]
-  ? true
-  : false
+const _robinrunProjectEntryShapeGuard: [RobinRunProjectEntryFromSchema] extends [
+  RobinRunProjectEntryFromProtocol,
+]
+  ? [RobinRunProjectEntryFromProtocol] extends [RobinRunProjectEntryFromSchema]
+    ? true
+    : false
   : false = true;
 void _robinrunProjectEntryShapeGuard;
+
+/**
+ * 全局权限模式缺省（2026-11-22 升格）：值域与 protocol.ts 的 RobinRunGlobalComposerMode
+ * 一致（排除 plan——写入侧已归一 build）。类型权威在 protocol.ts。
+ */
+const globalComposerModeSchema = z.enum(["build", "edit", "guarded", "yolo"]);
 
 const appSettingsObjectSchema = z.object({
   recentProjects: z.array(z.string()).default([]),
@@ -605,6 +613,7 @@ const appSettingsObjectSchema = z.object({
   webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
   robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
   robinrunProjects: z.array(robinrunProjectEntrySchema).default([]),
+  globalComposerMode: globalComposerModeSchema.optional(),
 });
 
 export const appSettingsSchema = z.preprocess(
@@ -718,4 +727,5 @@ export const appSettingsPatchSchema = z.object({
   webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),
   webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
   robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
+  globalComposerMode: globalComposerModeSchema.optional(),
 });

@@ -157,6 +157,11 @@ CREATE TABLE permission (
         data text not null
       );
 
+CREATE TABLE robinrun_database_identity (
+      scope TEXT PRIMARY KEY,
+      identity TEXT NOT NULL
+    );
+
 CREATE TABLE "schema_migration" (id text primary key, checksum text not null, app_version text, "time_applied" integer not null);
 
 CREATE TABLE session (
@@ -181,7 +186,7 @@ CREATE TABLE session (
         time_compacting integer,
         time_archived integer
       , task_type text not null default 'interactive', title_source text not null default 'first_input'
-        check(title_source in ('default', 'first_input', 'generated', 'custom')), title_message_id text, time_title_updated integer, trace_id text, time_deleted integer, last_outcome text);
+        check(title_source in ('default', 'first_input', 'generated', 'custom')), title_message_id text, time_title_updated integer, trace_id text, time_deleted integer, last_outcome text, creation_origin text, worker_identity text);
 
 CREATE TABLE session_entry (
         id text primary key,
@@ -398,11 +403,6 @@ CREATE TABLE workflow_run (
         time_updated integer not null,
         time_completed integer
       );
-
-CREATE TABLE robinrun_database_identity (
-      scope TEXT PRIMARY KEY,
-      identity TEXT NOT NULL
-    );
 
 CREATE INDEX dwf_actor_run_idx on dwf_actor(run_id);
 

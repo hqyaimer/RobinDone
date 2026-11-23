@@ -1,6 +1,9 @@
 import { getPluginSandboxHost } from "./pluginSandbox/index.js";
 /* eslint-disable max-lines -- 桌面命令分发需要共享窗口与平台上下文，集中维护更便于一致性 */
-import { readRobinRunStdioTapDevState, setRobinRunStdioTapDevEnabled } from "@robinrun/services/node";
+import {
+  readRobinRunStdioTapDevState,
+  setRobinRunStdioTapDevEnabled,
+} from "@robinrun/services/node";
 import {
   buildRobinRunEndpointUrls,
   DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
@@ -585,15 +588,18 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.ShowAbout:
       await showAboutDialog(targetWindow ?? undefined, options.currentApplicationLocale);
       return;
-    case DesktopCommandIds.OpenChangelog:
-      await openChangelog(
-        options.currentApplicationLocale,
-        await resolveCurrentRobinRunEndpointOrigin({
-          ...options.settingService,
-          envBaseOrigin: options.robinrunEndpointEnvBaseOrigin,
-        }),
-      );
-      return;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「changelog / 反馈 / 社群」命令——上游触达面，
+    // 菜单项已注释移除；恢复时取消本段与 desktopApplicationMenu.ts 的对应注释
+    // case DesktopCommandIds.OpenChangelog:
+    //   await openChangelog(
+    //     options.currentApplicationLocale,
+    //     await resolveCurrentRobinRunEndpointOrigin({
+    //       ...options.settingService,
+    //       envBaseOrigin: options.robinrunEndpointEnvBaseOrigin,
+    //     }),
+    //   );
+    //   return;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     case DesktopCommandIds.CheckForUpdates:
       // 按产品身份而不是后端环境放行：生产后端的 Preview 同样没有更新器。
       if (ROBINRUN_PRODUCT_FLAVOR === "production") {
@@ -605,16 +611,18 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.RelaunchApp:
       await options.onRelaunchApp();
       return;
-    case DesktopCommandIds.OpenFeedback:
-      await openFeedback(options.logger, targetWindow, options.fetchHelpConfig);
-      return;
-    case DesktopCommandIds.OpenCommunity:
-      await openCommunity(
-        options.currentApplicationLocale,
-        options.logger,
-        options.fetchHelpConfig,
-      );
-      return;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「反馈 / 社群」命令 case——恢复时取消本段注释
+    // case DesktopCommandIds.OpenFeedback:
+    //   await openFeedback(options.logger, targetWindow, options.fetchHelpConfig);
+    //   return;
+    // case DesktopCommandIds.OpenCommunity:
+    //   await openCommunity(
+    //     options.currentApplicationLocale,
+    //     options.logger,
+    //     options.fetchHelpConfig,
+    //   );
+    //   return;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     case DesktopCommandIds.ExportLogs:
       await exportLogs();
       return;
@@ -651,7 +659,8 @@ export async function executeDesktopCommand(options: {
       return;
     case DesktopCommandIds.SetRobinRunEndpointCustom: {
       const current =
-        (await options.settingService.get()).robinrunEndpointOrigin ?? DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
+        (await options.settingService.get()).robinrunEndpointOrigin ??
+        DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
       const value = await promptCustomRobinRunEndpoint(targetWindow, current);
       if (!value) {
         return;

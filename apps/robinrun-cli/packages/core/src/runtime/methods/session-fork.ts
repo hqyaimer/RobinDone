@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { isHighspeedProviderId, resolveExecutionState, type ExecutionState } from "@robinrun/shared";
+import {
+  isHighspeedProviderId,
+  resolveExecutionState,
+  type ExecutionState,
+} from "@robinrun/shared";
 import { buildExecutionStateEntry, readRuntimeExecutionState } from "../execution-state.js";
 import {
   createModelId,
@@ -172,6 +176,8 @@ function buildForkedSessionInput(
     parentID: runtime.sessionId,
     traceID: runtime.rootTraceContext.traceId,
     taskType: kind,
+    // 创建来源（P2.5）：fork/选区侧聊由用户动作发起（即便由模型经工具代触，入口仍是用户会话）。
+    creationOrigin: { kind: "user", ref: runtime.sessionId },
     slug: `${slugify(parentSession.slug)}-${kind}-${now.toString(36)}`.slice(0, 120),
     directory: parentSession.directory,
     path: parentSession.path,

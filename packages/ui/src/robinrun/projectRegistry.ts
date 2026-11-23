@@ -30,9 +30,7 @@ export function upsertRobinrunProjectEntry(
   const now = Date.now();
   if (existing) {
     return list.map((entry) =>
-      entry.id === existing.id
-        ? { ...entry, lastOpenedAt: now, ...(name ? { name } : {}) }
-        : entry,
+      entry.id === existing.id ? { ...entry, lastOpenedAt: now, ...(name ? { name } : {}) } : entry,
     );
   }
   return [

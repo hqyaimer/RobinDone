@@ -962,7 +962,9 @@ describe("虚拟项目", () => {
       }
     } finally {
       try {
-        await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-final.png"));
+        await browser.saveScreenshot(
+          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-final.png"),
+        );
         // 测试服务退出前回到本地，防止后续用例被已关闭 Source 的活动 tab 阻塞。
         await $('[data-project-name="RobinRunProject"]')
           .$('[data-testid="virtual-project-create-task"]')
@@ -1055,7 +1057,9 @@ describe("虚拟项目", () => {
     expect(second.path).toBe(first.path);
     const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
     await browser.waitUntil(async () => {
-      const settings = JSON.parse(await readFile(join(testHome, ".robinrun/v2/setting.json"), "utf8"));
+      const settings = JSON.parse(
+        await readFile(join(testHome, ".robinrun/v2/setting.json"), "utf8"),
+      );
       return settings.lastActiveWorkspace?.workspacePath === second.path;
     });
     // 此场景使用内存登录夹具；刷新后沿已有真实 API key 入口恢复认证，再检查原目录。

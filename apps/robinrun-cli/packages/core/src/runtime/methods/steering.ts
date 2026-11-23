@@ -151,6 +151,8 @@ export async function steerTurn(
     ...(intent ? { intent } : {}),
     ...(request.attachments ? { attachments: request.attachments } : {}),
     ...(automationId ? { automationId } : {}),
+    // P2.6 消息来源身份按条保留：插话交付时渲染层据此注入 <system-status> 区块。
+    ...(request.systemStatus ? { systemStatus: request.systemStatus } : {}),
     ...(toolDisallowlist ? { toolDisallowlist } : {}),
     turnId: activeTurn.turnId,
   };
@@ -1270,7 +1272,12 @@ async function drainPendingInputUnlocked(
         ),
         resolvedAttachments,
       ),
-      runtimeInputMetadata(inputPresentation) ?? realUserRuntimeMetadata(),
+      // P2.6 消息来源：drain 的输入按条携带 systemStatus（master 插话 / 用户插话 / 触发器），
+      // 与 inputPresentation 一起进 entry metadata；渲染层据此注入 <system-status> 区块。
+      {
+        ...(runtimeInputMetadata(inputPresentation) ?? realUserRuntimeMetadata()),
+        ...(pendingInput.systemStatus ? { systemStatus: pendingInput.systemStatus } : {}),
+      },
     );
     await this.persistUserPrompt(
       messageId,
@@ -1280,6 +1287,8 @@ async function drainPendingInputUnlocked(
       {
         steerDelivery: delivery,
         inputPresentation,
+        // 来源身份落持久 metadata：冷恢复后区块照常渲染，UI 徽章照常取值。
+        ...(pendingInput.systemStatus ? { systemStatus: pendingInput.systemStatus } : {}),
         sessionInputId: pendingInput.id,
         sourceCommandId:
           pendingInput.intent?.sourceCommandId ?? String(pendingInput.queryId ?? pendingInput.id),
@@ -1312,6 +1321,12 @@ async function drainPendingInputUnlocked(
             messageId,
             text: pendingInput.input,
             delivery,
+            // P2.6 群聊投影：行来源按 inputPresentation/systemStatus 区分
+            // （user_steer=用户气泡 / coordinator_steer=master 来源徽章 + 回话地址）。
+            ...(pendingInput.inputPresentation
+              ? { inputPresentation: pendingInput.inputPresentation }
+              : {}),
+            ...(pendingInput.systemStatus ? { systemStatus: pendingInput.systemStatus } : {}),
             ...(pendingInput.intent ? { intent: pendingInput.intent } : {}),
             ...(pendingInput.toolDisallowlist
               ? { toolDisallowlist: pendingInput.toolDisallowlist }

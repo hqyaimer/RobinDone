@@ -879,7 +879,9 @@ export async function waitForSSHConversation(
           // sourceServerId)。必须同时校验 tab 的连接 target(host+port)。
           const tab = state?.tabs?.find((candidate) => {
             if (
-              !candidate.workspacePath?.replace(/\\/gu, "/").endsWith("/.robinrun/workspace/default")
+              !candidate.workspacePath
+                ?.replace(/\\/gu, "/")
+                .endsWith("/.robinrun/workspace/default")
             ) {
               return false;
             }

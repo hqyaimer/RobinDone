@@ -14,5 +14,8 @@ test("CLI 全量测试先准备跨 workspace 的模型映射构建产物", async
   const manifest = JSON.parse(
     await readFile(new URL("../../apps/robinrun-cli/package.json", import.meta.url), "utf8"),
   );
-  assert.equal(manifest.scripts.pretest, "pnpm --dir ../.. --filter @robinrun/model-option-map build");
+  assert.equal(
+    manifest.scripts.pretest,
+    "pnpm --dir ../.. --filter @robinrun/model-option-map build",
+  );
 });

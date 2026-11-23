@@ -61,6 +61,21 @@ export interface CanonicalUserIntentFact extends CanonicalConversationFactBase {
     | "mailbox"
     | "synthetic"
     | "workflowLaunch";
+  /**
+   * P2.6 消息来源（2026-11-18 验收修复）：本轮输入的发送者（TurnStarted.inputSender，
+   * 派发/主智能体插话/触发器轮非 user）。投影据此在 userInput 行写 originMeta.sender，
+   * UI 徽章按枚举选文案；真实用户输入缺省。
+   */
+  inputSender?: import("@robinrun/shared").SystemStatusSender;
+  /**
+   * P2.6 验收修复第二轮（2026-11-18）：发送者显示名与会话地址（TurnStarted
+   * inputSenderLabel / inputSenderSessionId，worker/subagent 通知轮随行）。投影写进
+   * mailbox 行 originMeta（senderLabel = 徽章显示「谁在说话」，senderSessionId = 回话地址）。
+   * 第三轮（同日）：inputSenderId（wkr-id/类型名）随行，UI 据此染徽章图标组色。
+   */
+  inputSenderId?: string;
+  inputSenderLabel?: string;
+  inputSenderSessionId?: string;
   input: string;
   intentText: string;
   intentKind: "sendText" | "sendGoalCommand";
@@ -263,6 +278,18 @@ function normalizeTurnStarted(
     turnNumber: payload.turnNumber,
     executionKind: payload.executionKind ?? "agent",
     turnHeaderOrigin: turnHeaderOrigin(payload.inputSource),
+    // P2.6 消息来源（2026-11-18 验收修复）：发送者随 fact 走，投影写进行 originMeta。
+    // 第二轮（同日）：显示名/会话地址同通道，worker/subagent 通知轮的 mailbox 行据此标注。
+    ...(payload.inputSender && payload.inputSender !== "user"
+      ? {
+          inputSender: payload.inputSender,
+          ...(payload.inputSenderId ? { inputSenderId: payload.inputSenderId } : {}),
+          ...(payload.inputSenderLabel ? { inputSenderLabel: payload.inputSenderLabel } : {}),
+          ...(payload.inputSenderSessionId
+            ? { inputSenderSessionId: payload.inputSenderSessionId }
+            : {}),
+        }
+      : {}),
     ...(payload.originMeta ? { originMeta: payload.originMeta } : {}),
     ...(payload.workflowLaunch ? { workflowLaunch: payload.workflowLaunch } : {}),
     ...(payload.epilogueStart === undefined ? {} : { epilogueStart: payload.epilogueStart }),

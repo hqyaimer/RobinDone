@@ -11,6 +11,7 @@ import {
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
 } from "@/project-sidebar/contract.js";
+import { mainAgentGroupId } from "@robinrun/shared";
 import type {
   IProjectService,
   IRemoteProjectService,
@@ -174,7 +175,14 @@ export function ProjectCreation({
       onCreateTask({
         projectId: project.id,
         hostId: project.hostId,
-        taskGroupId: draft.draftTaskGroupId ?? null,
+        // Bug 原因：`?? null` 把"未选择智能体"变成了显式 null——startDraft 的默认归属
+        // 逻辑（options.taskGroupId !== undefined 优先）被 null 顶掉，新建项目后草稿
+        // 不再默认归主智能体，侧栏主智能体行不选中。与项目行"+"（ProjectSidebarNode
+        // onCreate）同一裁决：草稿未显式选组时，本地项目默认归主智能体（saveProject
+        // 幂等自举保证组已存在）；远程项目保持未归属。
+        taskGroupId:
+          draft.draftTaskGroupId ??
+          (project.hostId === "local" ? mainAgentGroupId(project.id) : null),
         initialComposerDraft: captureV4ComposerDraftHandoff(
           workspacePath,
           workspaceIdentity,

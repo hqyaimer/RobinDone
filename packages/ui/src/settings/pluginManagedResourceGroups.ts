@@ -203,7 +203,10 @@ export function groupCommandsByPlugin(
   return { local, plugin };
 }
 
-export function filterLocalMcpServers(servers: RobinRunMcpServer[], query: string): RobinRunMcpServer[] {
+export function filterLocalMcpServers(
+  servers: RobinRunMcpServer[],
+  query: string,
+): RobinRunMcpServer[] {
   return servers.filter((server) => {
     if (server.source !== "robinrunagentmcp") {
       return false;
@@ -275,7 +278,10 @@ function toPluginMcpServerDisplayName(plugin: RobinRunPluginInfo, serverName: st
     : serverName;
 }
 
-function resolvePluginMcpRuntimeServerName(plugin: RobinRunPluginInfo, displayName: string): string {
+function resolvePluginMcpRuntimeServerName(
+  plugin: RobinRunPluginInfo,
+  displayName: string,
+): string {
   const activeName = plugin.mcpServerNames.find(
     (serverName) =>
       serverName === displayName ||

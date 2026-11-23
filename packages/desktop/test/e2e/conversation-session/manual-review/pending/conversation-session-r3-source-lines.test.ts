@@ -26,7 +26,9 @@ import {
 } from "../../../helpers/ssh-remote-p0.js";
 
 const CASE_MARKER = "E2E_R3_SOURCE_LINES";
-const artifactDir = resolve(process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-source-lines");
+const artifactDir = resolve(
+  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-source-lines",
+);
 const SYMLINK_PATH = "/home/dev/r3-workspace-link";
 
 async function readProvisioningCompletions(): Promise<
@@ -185,7 +187,10 @@ describe(`${CASE_MARKER}: 同一 Source 经两条线路/alias 与 symlink 打开
     expect(results.filter((result) => result.status === "applied").length).toBeGreaterThanOrEqual(
       2,
     );
-    const remoteConfig = await runSSHCommand(config, 'cat "$HOME/.robinrun/v2/provider_config.json"');
+    const remoteConfig = await runSSHCommand(
+      config,
+      'cat "$HOME/.robinrun/v2/provider_config.json"',
+    );
     expect(remoteConfig.stdout).toContain(UPSTREAM_PROVIDER_NAME);
     const sidebar = await browser.execute(() => document.body?.innerText ?? "");
     facts.deviceRowsShowingPort = (

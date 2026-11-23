@@ -69,7 +69,10 @@ describe(`${CASE_MARKER}: SSH 本地下载遵循应用代理`, () => {
     expect(process.env.ROBINRUN_REMOTE_ASSET_CACHE_DIR).toBe(cacheDir);
     const config = readSSHRuntimeConfig(CASE_MARKER);
     const workspacePath = config.workspacePaths[0];
-    const cleanTarget = await runSSHCommand(config, 'test ! -e "$HOME/.robinrun/server/current.json"');
+    const cleanTarget = await runSSHCommand(
+      config,
+      'test ! -e "$HOME/.robinrun/server/current.json"',
+    );
     expect(cleanTarget.code).toBe(0);
     const { version } = JSON.parse(
       await readFile(resolve(DESKTOP_ROOT, "../../package.json"), "utf8"),

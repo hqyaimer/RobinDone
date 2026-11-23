@@ -56,7 +56,10 @@ function resolveMirroredSessionDbPath(path: string, home: string): string | null
 function pickEnvSessionDbPath(env: NodeJS.ProcessEnv): string | undefined {
   let picked: string | undefined;
   for (const [key, value] of Object.entries(env)) {
-    if ((key === "ROBINRUN_SESSION_DB_PATH" || key === "ROBINRUN_SESSION_DB") && value !== undefined) {
+    if (
+      (key === "ROBINRUN_SESSION_DB_PATH" || key === "ROBINRUN_SESSION_DB") &&
+      value !== undefined
+    ) {
       picked = value;
     }
   }

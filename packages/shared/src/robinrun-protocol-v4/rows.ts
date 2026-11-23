@@ -8,10 +8,7 @@ import { highspeedMessageMetaSchema } from "../highspeed.js";
 import { executionOutputPreviewSchema } from "../execution-output-preview.js";
 import { timestampSchema } from "./core.js";
 import { conversationInputSourceSchema } from "./input-intent.js";
-import {
-  backgroundResultOriginMetaSchema,
-  workflowLaunchMetaSchema,
-} from "./workflow-row-meta.js";
+import { backgroundResultOriginMetaSchema, workflowLaunchMetaSchema } from "./workflow-row-meta.js";
 import { attachmentRefSchema } from "./attachment-ref.js";
 
 // RowBase。rowId：session 内单调、永不复用、事件日志的确定性纯函数。
@@ -142,6 +139,17 @@ export const userInputRowSchema = z.object({
       workId: z.string().optional(),
       senderSessionId: z.string().optional(),
       senderLabel: z.string().optional(),
+      // P2.6 消息来源（2026-11-18 验收修复）：mailbox 行的发送者闭合枚举——UI 据此选
+      // 发送者徽章文案（i18n），不从文本/会话类型反推。缺席 = 旧行，UI 回退主智能体。
+      sender: z.enum(["user", "master", "worker", "subagent", "trigger", "system"]).optional(),
+      // P2.6 验收修复第三轮（2026-11-18）：发送方身份 id（worker = wkr-id，subagent =
+      // 类型名）。UI 据此把徽章图标染成该 agent 在侧栏的组色（workerGroupId(senderId)
+      // → 任务组 color），与编制投影一一对应。
+      senderId: z.string().optional(),
+      // mailbox 跳转锚点（2026-11-18）：worker/subagent 通知行的来源会话汇报轮 turnId，
+      // 来自 turnHeader originMeta.sourceTurnId 同一份。UI 打开来源会话后按行 turnId
+      // 精确滚动；缺席（master 插话行/旧行）退回打开会话后滚到底部。
+      senderTurnId: z.string().optional(),
     })
     .optional(),
   // origin === "workflowLaunch" 的行上在场；与 originMeta 并列，与 turnHeader 上同一份。

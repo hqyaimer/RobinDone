@@ -407,6 +407,18 @@ function arePromptHistoryEntriesEqual(left: readonly string[], right: readonly s
 
 export interface ConversationComposerProps {
   snapshot: ConversationSnapshot | null;
+  /**
+   * P2.5 worker 会话的外部运行态（父 runtime 驱动）：本会话快照 control.canStop 看不到，
+   * 在场时同样显示 Stop（stop 命令由 bootstrap 路由到派发者 subagentPort）。
+   */
+  externalStopAvailable?: boolean;
+  /**
+   * P2.5 worker 协同：worker_child 会话没有自有 runtime/生命周期/输入路由——发送由 CLI
+   * 按 sessionId 路由到派发者 subagentPort（运行中 steer / 已结束 resume）。置位后跳过
+   * 快照运行态门控（runtimeBlocked/inputRouting），否则前台派发结束后残留的投影状态
+   * 会把 composer 永久锁死。
+   */
+  workerSession?: boolean;
   /** 真实命令已发出、权威输入投影尚未接管；直接消费 projection store，不另存展示状态。 */
   inputPending?: boolean;
   /** 草稿 scope（sessionId；draft 态 null → "__draft__" scope）。 */
@@ -570,6 +582,8 @@ function formatAttachmentLineCount(attachment: ChatComposerAttachment, locale: s
 
 function ConversationComposerImpl({
   snapshot,
+  externalStopAvailable = false,
+  workerSession = false,
   inputPending = false,
   lifecycle,
   sessionId = null,
@@ -806,9 +820,12 @@ function ConversationComposerImpl({
   );
 
   const initialization = snapshot?.runtimeInitialization;
+  // worker 会话跳过运行态门控（见 workerSession prop 注释）；快照里残留的
+  // 初始化/生命周期状态属于已结束的前台子 runtime，不代表输入路径可用性。
   const runtimeBlocked =
-    (initialization !== undefined && initialization.status !== "ready") ||
-    (lifecycle !== undefined && lifecycle.state !== "ready");
+    !workerSession &&
+    ((initialization !== undefined && initialization.status !== "ready") ||
+      (lifecycle !== undefined && lifecycle.state !== "ready"));
 
   // ── 附件全链路（选择/粘贴/拖拽/画板/预传/门禁）──
   const attachmentsApi = useComposerAttachments({
@@ -1372,7 +1389,8 @@ function ConversationComposerImpl({
     isMobileTextInputViewport,
     isWebRemoteControl,
   });
-  const canStop = Boolean(snapshot?.control.canStop);
+  // P2.5：外部运行（父 runtime 驱动的 worker 会话）在本会话快照里不可见，用外部事实并入。
+  const canStop = Boolean(snapshot?.control.canStop) || externalStopAvailable;
   const modifiedEnterReversesDelivery = modifiedEnterSubmits && canStop;
   const hasText = textPresence.trimmed;
   const hasDraftToSubmit =
@@ -1402,7 +1420,8 @@ function ConversationComposerImpl({
   // choice 保留正常发送按钮；提交后由 SessionPane 按 slash 语义决定是否弹确认框。
   // V4 重构时把 guide 当成“不可提交”状态，导致按钮和 Enter 同时失效；
   // guide 是 CLI 已授权的 busy 输入路由，是否最终 steer 或回退 queue 由命令层裁决。
-  const routingAllowsSend = draftMode || (snapshot !== null && mode !== "reject");
+  // worker 会话运行中输入=steer、已结束=resume，快照路由态不约束发送。
+  const routingAllowsSend = workerSession || draftMode || (snapshot !== null && mode !== "reject");
   const attachmentsReady = !attachmentsApi.hasUnreadyAttachments;
   const recoveryCommand = appSlashCommands?.find(
     (command) => command.recovery && command.value === "reload",
@@ -2761,7 +2780,10 @@ function ConversationComposerImpl({
             onRetry={onRetryError}
             onDismiss={onDismissError}
             onOpenModelSettings={onOpenModelSettings}
-            onOpenUpgrade={onOpenModelUpgrade}
+            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「错误横幅升级按钮」——升级弹窗 Provider 已摘除，
+            // ChatErrorBanner 由 prop 存在性门控自动隐藏按钮。恢复时取消下行注释
+            // onOpenUpgrade={onOpenModelUpgrade}
+            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
             modelConfigTarget={modelConfigTarget}
           />
         </div>

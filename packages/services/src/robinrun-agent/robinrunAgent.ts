@@ -8,8 +8,14 @@ import type {
 import type { RemoteConversationTelemetryEvent } from "@robinrun/shared/conversation-telemetry";
 import type { Event, IDisposable } from "@robinrun/rpc";
 import { ServiceChannels } from "@robinrun/shared";
-import type { AppUsageRange, AppUsageSnapshot, RobinRunTaskTokenUsageResult } from "@robinrun/shared";
+import type {
+  AppUsageRange,
+  AppUsageSnapshot,
+  RobinRunTaskTokenUsageResult,
+  RobinRunSessionClearMessagesResult,
+} from "@robinrun/shared";
 import type { DynamicWorkflowMode } from "@robinrun/shared";
+import type { RobinRunSessionCreationOrigin } from "@robinrun/shared";
 import type { RobinRunAutomation, RobinRunAutomationRun } from "@robinrun/shared";
 import type {
   RobinRunStorageStartupState,
@@ -188,6 +194,15 @@ export interface RobinRunAgentSessionTarget extends RobinRunAgentWorkspaceTarget
   sessionId: string;
 }
 
+/**
+ * 清空会话消息（2026-11-20 触发器会话清空）：会话主记录/标题/绑定保留，消息与
+ * todo 归零；workerIdentityTo 同时重置持久化身份（触发器订阅者变更/旧会话身份
+ * 纠偏）。null = 清除为 master；缺席 = 身份不动。
+ */
+export interface RobinRunAgentClearSessionMessagesParams extends RobinRunAgentSessionTarget {
+  workerIdentityTo?: { workerId: string; workerName?: string } | null;
+}
+
 export interface RobinRunAgentResumeSessionParams extends RobinRunAgentSessionTarget {
   additionalDirectories?: string[];
   model?: ModelSelection;
@@ -239,6 +254,14 @@ export interface RobinRunAgentCreateSessionParams extends RobinRunAgentWorkspace
   sessionId?: string;
   sessionTraceId?: TraceId;
   parentSessionId?: string;
+  /** 创建来源（P2.5）：cron→trigger、off-peak→system；CLI 侧缺省补 user。内部机制，UI 不展示。 */
+  creationOrigin?: RobinRunSessionCreationOrigin;
+  /**
+   * agent 会话身份（2026-11-20 worker 会话同构化，docs/worker-session-model.md）：worker
+   * 会话经主会话路径创建时下发 wkr-id；CLI 按名册解析校验显示名。旧 CLI strict schema
+   * 不认时可降级省略（同 creationOrigin 兼容模式）。
+   */
+  agentIdentity?: { kind: "worker"; workerId: string };
   mode?: RobinRunSessionMode;
   model?: ModelSelection;
   persistence?: RobinRunSessionPersistence;
@@ -612,9 +635,10 @@ export interface RobinRunAgentWorkspaceConfigSubscribeParams extends RobinRunAge
 }
 
 /** Host 为 App 应答方绑定的本次配置；不扩展 Agent wire 协议。 */
-export type RobinRunAgentProviderRuntimeHeadersRequest = RobinRunProviderRuntimeHeadersRequestParams & {
-  requestVerificationConfig?: RequestVerificationConfig;
-};
+export type RobinRunAgentProviderRuntimeHeadersRequest =
+  RobinRunProviderRuntimeHeadersRequestParams & {
+    requestVerificationConfig?: RequestVerificationConfig;
+  };
 
 export type RobinRunAgentServiceEvent =
   | { type: "session.event"; event: RobinRunSessionEvent }
@@ -672,6 +696,10 @@ export interface IRobinRunAgentService {
   ): Promise<RobinRunAgentWorkspaceRuntimeIdentity>;
   createSession(params: RobinRunAgentCreateSessionParams): Promise<RobinRunSessionStateSnapshot>;
   resumeSession(params: RobinRunAgentResumeSessionParams): Promise<RobinRunSessionStateSnapshot>;
+  /** 清空会话消息（可选：旧 wire/测试 double 可缺席）；运行中的会话返回 running 拒绝。 */
+  clearSessionMessages?(
+    params: RobinRunAgentClearSessionMessagesParams,
+  ): Promise<RobinRunSessionClearMessagesResult>;
   listSessions(params: RobinRunAgentListSessionsParams): Promise<RobinRunSessionInfo[]>;
   listSessionSubagents(
     params: RobinRunAgentListSessionSubagentsParams,
@@ -686,7 +714,9 @@ export interface IRobinRunAgentService {
   purgeSessionData?(
     params: V4SessionDataParams & { workspace: RobinRunAgentWorkspaceTarget },
   ): Promise<V4SessionDataPurgeResult>;
-  getTaskTokenUsage(params: RobinRunAgentTaskTokenUsageParams): Promise<RobinRunTaskTokenUsageResult>;
+  getTaskTokenUsage(
+    params: RobinRunAgentTaskTokenUsageParams,
+  ): Promise<RobinRunTaskTokenUsageResult>;
   readSession(params: RobinRunAgentReadSessionParams): Promise<RobinRunSessionStateSnapshot>;
   readSessionMessages(
     params: RobinRunAgentReadSessionMessagesParams,
@@ -701,7 +731,9 @@ export interface IRobinRunAgentService {
     params: RobinRunAgentGrantWorkspaceHookTrustParams,
   ): Promise<RobinRunWorkspaceHookTrustGrantResult>;
   setWorkspaceMcpTrust(params: WorkspaceMcpTrustDecision): Promise<RobinRunWorkspaceMcpTrustResult>;
-  listMcpServerStatuses(params: RobinRunAgentListMcpServerStatusesParams): Promise<RobinRunMcpListResult>;
+  listMcpServerStatuses(
+    params: RobinRunAgentListMcpServerStatusesParams,
+  ): Promise<RobinRunMcpListResult>;
   listPlugins(params: RobinRunAgentPluginViewParams): Promise<RobinRunPluginsListResult>;
   /**
    * Plugin 对话引用 catalog：session-scoped 只读投影。
@@ -729,7 +761,9 @@ export interface IRobinRunAgentService {
   closeMcpUiInstance(
     params: import("../plugin-ui-bridge/contract.js").PluginUiPluginScope,
   ): Promise<void>;
-  readMcpResource(params: RobinRunAgentReadMcpResourceParams): Promise<RobinRunMcpReadResourceResult>;
+  readMcpResource(
+    params: RobinRunAgentReadMcpResourceParams,
+  ): Promise<RobinRunMcpReadResourceResult>;
   /** 插件 UI：UI 发起的工具调用；复用既有权限审批，不产生 transcript row。 */
   sampleMcpApp(
     params: import("../plugin-ui-bridge/samplingContract.js").PluginUiSamplingParams,
@@ -737,7 +771,9 @@ export interface IRobinRunAgentService {
   cancelMcpAppSampling(
     params: import("../plugin-ui-bridge/samplingContract.js").PluginUiCancelSamplingParams,
   ): Promise<{ cancelled: boolean }>;
-  callMcpToolForUi(params: RobinRunAgentCallMcpToolForUiParams): Promise<RobinRunMcpUiCallToolResult>;
+  callMcpToolForUi(
+    params: RobinRunAgentCallMcpToolForUiParams,
+  ): Promise<RobinRunMcpUiCallToolResult>;
   /** 插件 UI 取消带 callId 的进行中 UI 工具调用；agent 侧 abort 到 MCP client。 */
   cancelMcpToolCallForUi(
     params: RobinRunAgentCancelMcpToolCallForUiParams,
@@ -754,7 +790,9 @@ export interface IRobinRunAgentService {
     params: RobinRunAgentListMcpResourcesForUiParams,
   ): Promise<RobinRunMcpUiListResourceTemplatesResult>;
   subscribeMcpResourceForUi(params: RobinRunAgentMcpResourceSubscriptionForUiParams): Promise<void>;
-  unsubscribeMcpResourceForUi(params: RobinRunAgentMcpResourceSubscriptionForUiParams): Promise<void>;
+  unsubscribeMcpResourceForUi(
+    params: RobinRunAgentMcpResourceSubscriptionForUiParams,
+  ): Promise<void>;
   /** App-Provided Tools：页面工具登记 / 注销与模型调用的认领 / 回传（信箱投递走 v4 live 增量）。 */
   registerAppToolsForUi(
     params: RobinRunAgentRegisterAppToolsForUiParams,
@@ -774,8 +812,12 @@ export interface IRobinRunAgentService {
   ): Promise<RobinRunPluginsListUiSurfacesResult>;
   // 已保存工作流的 GUI 中枢：workspace 级、无会话，每次调用现扫 `<cwd>/.robinrun/workflows/`。
   // 全局档传 `scope: "global"`：带 workspace 就用它当载体，不带则由 services 层自选本机载体运行时。
-  listSavedWorkflows(params: RobinRunAgentListSavedWorkflowsParams): Promise<RobinRunWorkflowsListResult>;
-  getSavedWorkflow(params: RobinRunAgentGetSavedWorkflowParams): Promise<RobinRunWorkflowsGetResult>;
+  listSavedWorkflows(
+    params: RobinRunAgentListSavedWorkflowsParams,
+  ): Promise<RobinRunWorkflowsListResult>;
+  getSavedWorkflow(
+    params: RobinRunAgentGetSavedWorkflowParams,
+  ): Promise<RobinRunWorkflowsGetResult>;
   updateSavedWorkflowMeta(
     params: RobinRunAgentUpdateSavedWorkflowMetaParams,
   ): Promise<RobinRunWorkflowsUpdateMetaResult>;
@@ -787,7 +829,9 @@ export interface IRobinRunAgentService {
   ): Promise<RobinRunWorkflowsRunsResult>;
   // 在项目档 / 全局档之间移动同名文件：
   // `workspace` 是载体（移到项目传目标项目、移到全局传源项目），`to` 是落点档；不覆盖已存在的目标。
-  moveSavedWorkflow(params: RobinRunAgentMoveSavedWorkflowParams): Promise<RobinRunWorkflowsMoveResult>;
+  moveSavedWorkflow(
+    params: RobinRunAgentMoveSavedWorkflowParams,
+  ): Promise<RobinRunWorkflowsMoveResult>;
   // 完成卡的「直接保存」（docs/dynamic-workflow/transcript-and-notifications.md）：按 runId 从
   // journal 取这次 run 实际跑过的脚本落盘，不经模型回合。两者都必带 workspace（journal 在那里）。
   saveSavedWorkflowFromRun(
@@ -825,18 +869,24 @@ export interface IRobinRunAgentService {
   cancelPluginOperation(
     params: RobinRunAgentCancelPluginOperationParams,
   ): Promise<RobinRunPluginsCancelOperationResult>;
-  uninstallPlugin(params: RobinRunAgentUninstallPluginParams): Promise<RobinRunPluginsUninstallResult>;
+  uninstallPlugin(
+    params: RobinRunAgentUninstallPluginParams,
+  ): Promise<RobinRunPluginsUninstallResult>;
   updatePlugin(params: RobinRunAgentUpdatePluginParams): Promise<RobinRunPluginsInstallResult>;
   restoreBuiltinPlugin(
     params: RobinRunAgentRestoreBuiltinPluginParams,
   ): Promise<RobinRunPluginsRestoreBuiltinResult>;
-  configurePlugin(params: RobinRunAgentConfigurePluginParams): Promise<RobinRunPluginsConfigureResult>;
+  configurePlugin(
+    params: RobinRunAgentConfigurePluginParams,
+  ): Promise<RobinRunPluginsConfigureResult>;
   resetPluginConfig(
     params: RobinRunAgentResetPluginConfigParams,
   ): Promise<RobinRunPluginsConfigureResult>;
   validatePlugin(params: RobinRunAgentValidatePluginParams): Promise<RobinRunPluginsValidateResult>;
   describePlugin(params: RobinRunAgentDescribePluginParams): Promise<RobinRunPluginsDescribeResult>;
-  setPluginEnabled(params: RobinRunAgentSetPluginEnabledParams): Promise<RobinRunPluginsSetEnabledResult>;
+  setPluginEnabled(
+    params: RobinRunAgentSetPluginEnabledParams,
+  ): Promise<RobinRunPluginsSetEnabledResult>;
   // ---- 定时任务(automation)管理 ----
   listAutomations(params: RobinRunAgentWorkspaceTarget): Promise<RobinRunAutomation[]>;
   listAllAutomations(): Promise<RobinRunAutomation[]>;
@@ -845,7 +895,9 @@ export interface IRobinRunAgentService {
   deleteAutomation(params: RobinRunAgentAutomationIdParams): Promise<void>;
   setAutomationEnabled(params: RobinRunAgentSetAutomationEnabledParams): Promise<void>;
   restartAutomation(params: RobinRunAgentAutomationIdParams): Promise<void>;
-  runAutomationNow(params: RobinRunAgentAutomationIdParams): Promise<RobinRunAgentRunAutomationNowResult>;
+  runAutomationNow(
+    params: RobinRunAgentAutomationIdParams,
+  ): Promise<RobinRunAgentRunAutomationNowResult>;
   listAutomationRuns(params: RobinRunAgentAutomationIdParams): Promise<RobinRunAutomationRun[]>;
   deleteAutomationRun(params: RobinRunAgentDeleteAutomationRunParams): Promise<void>;
   generateWorkspaceText(
@@ -866,7 +918,9 @@ export interface IRobinRunAgentService {
     params: RobinRunAgentSessionTarget & { expectedPersistence?: "deferred" | "immediate" },
   ): Promise<boolean>;
   setModel(params: RobinRunAgentSetModelParams): Promise<RobinRunSessionStateSnapshot>;
-  setThoughtLevel(params: RobinRunAgentSetThoughtLevelParams): Promise<RobinRunSessionStateSnapshot>;
+  setThoughtLevel(
+    params: RobinRunAgentSetThoughtLevelParams,
+  ): Promise<RobinRunSessionStateSnapshot>;
   setMode(params: RobinRunAgentSetModeParams): Promise<RobinRunSessionStateSnapshot>;
   respondProviderRuntimeHeaders(
     params: RobinRunAgentRespondProviderRuntimeHeadersParams,
@@ -918,7 +972,9 @@ export interface IRobinRunAgentService {
    * 仅剩 robinrunTaskServiceAdapter.onDynamicTaskEvent（replayable 读路径）消费。
    * 写路径已收敛 v4 命令面；本订阅是读路径投影源。
    */
-  onDynamicSessionEvent(params: RobinRunAgentSessionSubscribeParams): Event<RobinRunAgentServiceEvent>;
+  onDynamicSessionEvent(
+    params: RobinRunAgentSessionSubscribeParams,
+  ): Event<RobinRunAgentServiceEvent>;
   // ── v4 conversation 通道（竖切）──
   /** RPC attachment 建立后先读取 host 可信 hello。 */
   helloConversationV4(): Promise<HelloMessage>;
@@ -982,10 +1038,14 @@ export interface IRobinRunAgentService {
     params: RobinRunAgentConversationFileRewindPreviewParams,
   ): Promise<V4ConversationFileRewindPreviewResult>;
   sendConversationCommandV4(params: RobinRunAgentConversationCommandParams): Promise<CommandAck>;
-  queryConversationCommandsV4(params: RobinRunAgentCommandsQueryParams): Promise<CommandsQueryResult>;
+  queryConversationCommandsV4(
+    params: RobinRunAgentCommandsQueryParams,
+  ): Promise<CommandsQueryResult>;
   attachmentBeginV4(params: RobinRunAgentAttachmentBeginParams): Promise<V4AttachmentBeginResult>;
   attachmentChunkV4(params: RobinRunAgentAttachmentChunkParams): Promise<V4AttachmentChunkResult>;
-  attachmentCommitV4(params: RobinRunAgentAttachmentTerminalParams): Promise<V4AttachmentCommitResult>;
+  attachmentCommitV4(
+    params: RobinRunAgentAttachmentTerminalParams,
+  ): Promise<V4AttachmentCommitResult>;
   attachmentAbortV4(params: RobinRunAgentAttachmentTerminalParams): Promise<void>;
   /** Desktop local 已发送视频 source query；远端与 Web 返回 chunked。 */
   attachmentPreviewSourceV4(
@@ -1027,7 +1087,9 @@ export interface IRobinRunAgentService {
     params: RobinRunAgentWorkspaceTarget,
   ): Event<import("@robinrun/shared").OffPeakLifecycleNotification>;
   controlOffPeakExecutionV4(
-    params: RobinRunAgentWorkspaceTarget & { control: import("@robinrun/shared").OffPeakControlParams },
+    params: RobinRunAgentWorkspaceTarget & {
+      control: import("@robinrun/shared").OffPeakControlParams;
+    },
   ): Promise<import("@robinrun/shared").OffPeakControlResult>;
   /** 当前窗口全部本地 live task 的 CUA 权限观察；历史、远程与 replayable 不在此事件面。 */
   onDynamicCuaPermissionObservation(): Event<RobinRunAgentCuaPermissionObservation>;

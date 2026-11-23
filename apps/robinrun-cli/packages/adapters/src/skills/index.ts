@@ -32,6 +32,8 @@ const PLUGIN_MANIFEST_RELATIVE_PATHS = [
   ".claude-plugin/plugin.json",
   ".codex-plugin/plugin.json",
   ".cursor-plugin/plugin.json",
+  // 上游 ZCode 构建产物（官方 CDN 插件 zip）的原生 manifest 目录（RobinRun(2026-11-23)）。
+  ".zcode-plugin/plugin.json",
 ] as const;
 
 export interface NodeSkillAdapterOptions extends SkillRootResolutionOptions {

@@ -20,7 +20,8 @@ import { prepareV4ConversationE2E } from "../../../helpers/v4-conversation.js";
 const CASE_MARKER = "E2E_RDUX_14_DEVICE_ONLINE_RESTORES_STALE_TABS";
 const STALE_AGE_MS = 20 * 24 * 60 * 60_000;
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/rdux-14-device-online-restores-stale-tabs",
+  process.env.ROBINRUN_E2E_ARTIFACT_DIR ??
+    ".e2e-artifacts/rdux-14-device-online-restores-stale-tabs",
 );
 
 describe(`${CASE_MARKER}: 设备上线后挂回不再按工作区年龄过滤`, () => {

@@ -1,6 +1,6 @@
 import { SessionLifecycleError } from "../session-lifecycle/index.js";
 import { closeSessionRuntime, getSessionLifecycle } from "./session-residency.js";
-import { isReadonlyAgentSessionKind } from "@robinrun/shared";
+import { isUserReadonlySessionKind } from "@robinrun/shared";
 import { readBackgroundBashOutputFromOwner } from "./background-work-owner.js";
 // v4 网关 binder。
 // 定位：ConversationV4Gateway 是域无关的通道运行时，本文件把它绑到协议服务器上下文：
@@ -789,9 +789,120 @@ export function createConversationV4Gateway(
     timer.unref?.();
     autoDrainRetryTimers.set(sessionId, timer);
   };
+  // ── P2.5 用户协同 worker 会话（worker_child 的 sendText/stop 路由辅助）─────────
+  // 解析派发者：live 期查 gateway worker 注册表（childSessionId → parentSessionId），
+  // 冷期回落 session 记录持久化的 parentID。
+  const resolveWorkerSessionParentSessionId = async (
+    childSessionId: string,
+  ): Promise<string | undefined> => {
+    const live = context.v4Gateway?.getWorkerSessionParent(childSessionId);
+    if (live) return live;
+    const stored = await context.deps.sessionStore?.getSession(childSessionId as SessionId);
+    return stored?.parentID ? String(stored.parentID) : undefined;
+  };
+  // 父会话不在场时冷恢复（与订阅冷恢复同一 activation 链），拿到持有 subagentPort 的 runtime。
+  const ensureSessionRecordResident = async (parentSessionId: string) => {
+    const existing = context.sessions.get(parentSessionId);
+    if (existing) return existing;
+    try {
+      await getSessionLifecycle(context).initialize(
+        parentSessionId,
+        async () => {
+          await activateSessionRuntime(
+            context,
+            { sessionId: parentSessionId as SessionId },
+            { reusePersistedMessages: true },
+          );
+        },
+        undefined,
+      );
+    } catch (error) {
+      context.logger?.warn("worker session route failed to resume dispatcher session", {
+        error: error instanceof Error ? error.message : String(error),
+        event: "robinrun_protocol.v4.worker_route_resume_failed",
+        module: "bootstrap.robinrun_protocol",
+        parentSessionId,
+      });
+      return undefined;
+    }
+    return context.sessions.get(parentSessionId);
+  };
   const coreHost: V4CommandCoreHost = {
     // 同一注册表对象引用：view 是旧 record 的结构化窄视图，字段变更双向可见。
     getRecord: (sessionId) => context.sessions.get(sessionId),
+    // ── P2.5 用户协同 worker 会话（worker_child 的 sendText/stop 路由）─────────
+    routeWorkerSessionInput: async ({ childSessionId, text, sourceCommandId }) => {
+      const parentSessionId = await resolveWorkerSessionParentSessionId(childSessionId);
+      if (!parentSessionId) {
+        return { ok: false, error: "worker_parent_unavailable" };
+      }
+      const parentRecord = await ensureSessionRecordResident(parentSessionId);
+      if (!parentRecord) return { ok: false, error: "worker_parent_unavailable" };
+      const routed =
+        (await parentRecord.app.runtime?.sendChildSessionUserMessage?.({
+          childSessionId: childSessionId as SessionId,
+          text,
+          traceContext: parentRecord.traceContext,
+        })) ?? { ok: false, error: "worker_parent_runtime_unavailable" };
+      // Bug 根因（2026-11-18）：路由成功后子会话的输入账本行（admission 写的
+      // queue_<commandId>，delivery=startNow）永远停在 admitted——路由链路不带身份，
+      // 子会话 transcript 的 user 行没有 anchor，没人 promote 它。CLI 重启时被收口为
+      // discarded(session_resumed) 并回报 inputDiscardedOnRestart；renderer 的静默豁免
+      // 只覆盖 queue/guide 投递，startNow 行于是每次重启都弹「重启前已提交的输入没有
+      // 进入对话」恢复条（输入实际已被 worker 消费，误报），点重发也不收口，死循环。
+      // 路由成功即收口为 cancelled（非 fault./proto./guard. 前缀的 reason 会被归一成
+      // inputCancelled 且不带 inputDisposition，renderer 按普通 failed 静默移除条目）。
+      if (routed.ok && sourceCommandId) {
+        try {
+          await context.deps.sessionStore?.settleSessionInput?.({
+            id: `queue_${sourceCommandId}`,
+            sessionID: childSessionId as SessionId,
+            status: "cancelled",
+            reason: "routed_to_worker",
+          });
+        } catch (error) {
+          context.logger?.warn("worker session input ledger settle failed", {
+            error: error instanceof Error ? error.message : String(error),
+            event: "robinrun_protocol.v4.worker_input_settle_failed",
+            module: "bootstrap.robinrun_protocol",
+            childSessionId,
+            sourceCommandId,
+          });
+        }
+      }
+      return routed;
+    },
+    routeWorkerSessionStop: async ({ childSessionId }) => {
+      const parentSessionId = await resolveWorkerSessionParentSessionId(childSessionId);
+      if (!parentSessionId) {
+        return { ok: false, error: "worker_parent_unavailable" };
+      }
+      const parentRecord = await ensureSessionRecordResident(parentSessionId);
+      if (!parentRecord) return { ok: false, error: "worker_parent_unavailable" };
+      return (
+        (await parentRecord.app.runtime?.stopWorkerSessionTask?.({
+          childSessionId: childSessionId as SessionId,
+          traceContext: parentRecord.traceContext,
+        })) ?? { ok: false, error: "worker_parent_runtime_unavailable" }
+      );
+    },
+    // 项目权限全量同步（2026-11-18）：worker_child 的模式切换与 stop 同一条路由纪律——
+    // 交派发者父 runtime 的 subagentPort 找活子 runtime，绝不写物化 shell runtime。
+    routeWorkerSessionConfig: async ({ childSessionId, mode }) => {
+      const parentSessionId = await resolveWorkerSessionParentSessionId(childSessionId);
+      if (!parentSessionId) {
+        return { ok: false, error: "worker_parent_unavailable" };
+      }
+      const parentRecord = await ensureSessionRecordResident(parentSessionId);
+      if (!parentRecord) return { ok: false, error: "worker_parent_unavailable" };
+      return (
+        (await parentRecord.app.runtime?.setChildSessionExecutionMode?.({
+          childSessionId: childSessionId as SessionId,
+          mode,
+          traceContext: parentRecord.traceContext,
+        })) ?? { ok: false, error: "worker_parent_runtime_unavailable" }
+      );
+    },
     // 同一登记表实例：broker（旧目录）注册反向请求 deferred，
     // v4 resolveInteraction handler 经此投递应答（v4 原生基础设施，非过渡钩子）。
     interactions: context.v4Interactions,
@@ -1576,6 +1687,8 @@ export function createConversationV4Gateway(
         sessionId: String(session.id),
         workspaceId,
         ...(session.parentID ? { parentSessionId: String(session.parentID) } : {}),
+        // 创建来源（P2.5）：冷种子从 session 行回填；旧行缺席按 user 处理（读侧约定）。
+        ...(session.creationOrigin ? { creationOrigin: session.creationOrigin } : {}),
         title: session.title ?? "",
         titleSource: normalizeStoredTitleSource(session.titleSource),
         phase:
@@ -1587,6 +1700,20 @@ export function createConversationV4Gateway(
         ...(session.lastOutcome ? { lastOutcome: session.lastOutcome } : {}),
         sessionEnded: true,
         hasBackgroundWork: false,
+        // worker 会话投影（跨重启可得）：legacy worker_child 只带 kind 标记（旧行身份冷存储
+        // 没有）；同构化的 worker 会话（interactive + worker_identity 列）连身份一并回填。
+        // 显示名缺省回退 wkr-id（sessions-index 身份 schema 要求非空显示名）。
+        ...(session.workerIdentity
+          ? {
+              workerChild: true as const,
+              worker: {
+                workerId: session.workerIdentity.workerId,
+                workerName: session.workerIdentity.workerName ?? session.workerIdentity.workerId,
+              },
+            }
+          : session.taskType === "worker_child"
+            ? { workerChild: true as const }
+            : {}),
         lastActivityAt: session.time?.updated ?? 0,
         createdAt: session.time?.created ?? 0,
       }));
@@ -1792,6 +1919,21 @@ export function createConversationV4Gateway(
         lastActivityAt: record.updatedAt,
         ...(record.lastOutcome ? { lastOutcome: record.lastOutcome } : {}),
         ...(record.parentSessionId ? { parentSessionId: String(record.parentSessionId) } : {}),
+        // 创建来源（P2.5）：record 持有（createRecord 传入/resume 回填），live 投影随行。
+        ...(record.creationOrigin ? { creationOrigin: record.creationOrigin } : {}),
+        // worker 会话身份（同构化）：主会话路径创建的 worker 会话（taskType=interactive +
+        // workerIdentity）与 legacy worker_child 一并投影；身份字段以 record 为准。
+        ...(record.workerIdentity
+          ? {
+              workerChild: true,
+              worker: {
+                workerId: record.workerIdentity.workerId,
+                workerName: record.workerIdentity.workerName,
+              },
+            }
+          : record.taskType === "worker_child"
+            ? { workerChild: true }
+            : {}),
       };
     },
     listWorkspaceSessionIds: (workspaceId) =>
@@ -1831,7 +1973,10 @@ export function createConversationV4Gateway(
         const taskType =
           context.sessions.get(envelope.sessionId)?.taskType ??
           (await context.deps.sessionStore?.getSession(envelope.sessionId as SessionId))?.taskType;
-        if (isReadonlyAgentSessionKind(taskType)) {
+        // 用户只读输入闸门（P2.5）：一次性 subagent / 工作流子会话仍只读。worker_child
+        // 已开放（2026-11-16 用户协同裁决）：本闸门放行，输入由 sendText handler
+        // 路由到派发者 subagentPort（延迟返回），不再在此拒绝。
+        if (isUserReadonlySessionKind(taskType)) {
           throw Object.assign(new Error("Subagent sessions are read-only"), {
             reasonCode: "guard.subagentReadOnly",
           });

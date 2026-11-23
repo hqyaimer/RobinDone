@@ -7,7 +7,9 @@ import { getAppConfigDir, maybeThrowInjectedFsFault } from "@robinrun/services/n
 
 function getLogDir() {
   const e2eLogDir =
-    process.env.ROBINRUN_ENV === "test" ? process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR?.trim() : undefined;
+    process.env.ROBINRUN_ENV === "test"
+      ? process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR?.trim()
+      : undefined;
   if (e2eLogDir) {
     return e2eLogDir;
   }

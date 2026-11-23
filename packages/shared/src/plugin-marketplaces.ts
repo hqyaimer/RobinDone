@@ -18,7 +18,9 @@ export const CLAUDE_OFFICIAL_PLUGIN_MARKETPLACE_ID = "claude-plugins-official";
 /** Settings 三类资源发现共用；Bootstrap 单测与官方 definition 的 defaultEnabled 机械对照。 */
 export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set([
   "browser-use@robinrun-plugins-official",
-  "image-search@robinrun-plugins-official",
+  // RobinRun(2026-11-22): [hide-upstream-account] image-search 依赖上游官方 MCP 身份头，已随
+  // official-plugin-definitions.ts 一并注释——两处名单必须同步（bootstrap 机械对照单测）
+  // "image-search@robinrun-plugins-official",
   "documents@robinrun-plugins-official",
   "pdf@robinrun-plugins-official",
   "presentations@robinrun-plugins-official",
@@ -33,7 +35,9 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
   // visualize（交互视图）随 UI 插件合入时 CLI 定义已标 defaultEnabled，但这里漏加，
   // Settings 会把它当成默认关闭，与 CLI 实际启用状态不一致。
   "visualize@robinrun-plugins-official",
-  "robinrun-site@robinrun-plugins-official",
+  // RobinRun(2026-11-22): [hide-upstream-account] robinrun-site（Sites 部署）依赖上游 /api/v1/sites + 登录
+  // JWT，已随 official-plugin-definitions.ts 一并注释——两处名单必须同步（bootstrap 机械对照单测）
+  // "robinrun-site@robinrun-plugins-official",
   // 电脑控制回退为默认关闭，故 computer-use 不在此名单内。
   // 该集合必须与 official-plugin-definitions.ts 里标了 defaultEnabled 的插件逐一对应，
   // bootstrap 的「Settings 默认启用集合与 CLI 的官方插件声明一致」单测机械对照两者。
@@ -42,11 +46,13 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
 export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   {
     // RobinRun 官方唯一市场：本地 seed 分片与 CDN 分片在 Agent storage 内合并。
-    // CDN manifest 的 name 必须与该 canonical id 一致。
+    // 上游 CDN manifest 的顶层 name 仍是旧名 zcode-plugins-official，由受信任刷新
+    // 在 adapters addMarketplace 归一化为该 canonical id（2026-11-23 别名修复）。
     id: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
     source: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",
     name: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
-    description: "Official RobinRun plugins marketplace: built-in and community plugins for RobinRun.",
+    description:
+      "Official RobinRun plugins marketplace: built-in and community plugins for RobinRun.",
     pluginCount: 0,
   },
   {

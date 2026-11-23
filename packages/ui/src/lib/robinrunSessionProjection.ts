@@ -160,7 +160,9 @@ export function parseModelPickerValue(value: string): ModelSelection {
   return parseSharedModelSelection(value);
 }
 
-export function toRobinRunTaskMode(mode: RobinRunTaskMode | undefined): RobinRunSessionMode | undefined {
+export function toRobinRunTaskMode(
+  mode: RobinRunTaskMode | undefined,
+): RobinRunSessionMode | undefined {
   switch (mode) {
     case "plan":
       return "plan";
@@ -356,7 +358,9 @@ export function robinrunSessionSnapshotToRobinRunTaskSnapshot(
         contextUsageFromProjection(snapshot.projection) ??
         undefined,
       pendingPermissions,
-      backgroundBashJobs: parseRobinRunBackgroundTaskControlItems(snapshot.projection.backgroundJobs),
+      backgroundBashJobs: parseRobinRunBackgroundTaskControlItems(
+        snapshot.projection.backgroundJobs,
+      ),
       pendingElicitations: snapshot.projection.pendingPermissions
         .filter((permission) => isUserInputBackedPermissionToolName(permission.toolName))
         .map((permission) =>
@@ -414,7 +418,10 @@ function summarizeProtocolMessageForTimelineDiag(message: RobinRunMessageWithPar
   };
 }
 
-function summarizePersistedMessageForTimelineDiag(message: RobinRunPersistedMessage, index: number) {
+function summarizePersistedMessageForTimelineDiag(
+  message: RobinRunPersistedMessage,
+  index: number,
+) {
   const timeline = message.syntheticTimeline;
   return {
     index,
@@ -785,7 +792,9 @@ function sessionTodoGroupsToRuntime(
   }));
 }
 
-export function robinrunSessionSnapshotToTaskMeta(snapshot: RobinRunSessionStateSnapshot): RobinRunTaskMeta {
+export function robinrunSessionSnapshotToTaskMeta(
+  snapshot: RobinRunSessionStateSnapshot,
+): RobinRunTaskMeta {
   return {
     taskId: snapshot.session.sessionId,
     traceId: generateTraceId(snapshot.session.sessionId),
@@ -2686,7 +2695,9 @@ function pendingPermissionToStreamEvent(
   };
 }
 
-function permissionOptionsFromPayload(payload: Record<string, unknown>): RobinRunPermissionOption[] {
+function permissionOptionsFromPayload(
+  payload: Record<string, unknown>,
+): RobinRunPermissionOption[] {
   return Array.isArray(payload.options) ? (payload.options as RobinRunPermissionOption[]) : [];
 }
 
@@ -3125,7 +3136,9 @@ function apiRetryFromSessionInfoPayload(
     return runtimeRetry;
   }
 
-  const metaRetry = normalizeRobinRunApiRetryStatus(asRecord(asRecord(payload._meta).robinrun).apiRetry);
+  const metaRetry = normalizeRobinRunApiRetryStatus(
+    asRecord(asRecord(payload._meta).robinrun).apiRetry,
+  );
   if (metaRetry !== undefined) {
     return metaRetry;
   }
@@ -3313,7 +3326,8 @@ function textFromParts(parts: readonly RobinRunMessagePart[]): string {
 function reasoningFromParts(parts: readonly RobinRunMessagePart[]): string | undefined {
   const text = parts
     .filter(
-      (part): part is Extract<RobinRunMessagePart, { type: "reasoning" }> => part.type === "reasoning",
+      (part): part is Extract<RobinRunMessagePart, { type: "reasoning" }> =>
+        part.type === "reasoning",
     )
     .map((part) => part.text)
     .join("");
@@ -3367,7 +3381,9 @@ function fromRobinRunGoal(goal: unknown): RobinRunTaskGoal {
   };
 }
 
-function isRobinRunTaskGoalStatus(status: string | undefined): status is RobinRunTaskGoal["status"] {
+function isRobinRunTaskGoalStatus(
+  status: string | undefined,
+): status is RobinRunTaskGoal["status"] {
   return (
     status === "active" ||
     status === "paused" ||
@@ -3481,7 +3497,9 @@ function goalVerificationTimelineStatusValue(
     : undefined;
 }
 
-function goalVerificationFromRecord(record: Record<string, unknown>): RobinRunGoalVerification | null {
+function goalVerificationFromRecord(
+  record: Record<string, unknown>,
+): RobinRunGoalVerification | null {
   const reason = stringValue(record.reason)?.trim();
   if (!reason) {
     return null;

@@ -28,7 +28,9 @@ export async function resolveSubagentStateFile(options?: SubagentStorageOptions)
   return join(await resolveRobinRunStorageRoot(options), "v2", "agents-state.json");
 }
 
-export async function resolveRobinRunStorageRoot(options?: SubagentStorageOptions): Promise<string> {
+export async function resolveRobinRunStorageRoot(
+  options?: SubagentStorageOptions,
+): Promise<string> {
   const config = await readUserCliConfig(options);
   const storage = isObjectRecord(config.storage) ? config.storage : {};
   const storageDir =

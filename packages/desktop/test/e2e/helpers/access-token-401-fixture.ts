@@ -111,7 +111,8 @@ export async function prepareAccessToken401Fixture(options: {
             },
           ],
         };
-      } else if (path.endsWith("/api_keys")) data = [{ apiKey: "key-e2e", name: "robinrun-api-key" }];
+      } else if (path.endsWith("/api_keys"))
+        data = [{ apiKey: "key-e2e", name: "robinrun-api-key" }];
       else if (path.endsWith("/access_tokens")) {
         tokenRequests++;
         data = {

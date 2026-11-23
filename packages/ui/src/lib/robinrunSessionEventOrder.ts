@@ -16,7 +16,10 @@ export interface RobinRunSessionEventOrderResult {
 export interface RobinRunSessionEventOrderGate {
   clearPendingAfterGap(): void;
   getGap(): RobinRunSessionEventGap | undefined;
-  markSnapshotSeq(seq: number, options?: { preservePendingEvents?: boolean }): RobinRunSessionEvent[];
+  markSnapshotSeq(
+    seq: number,
+    options?: { preservePendingEvents?: boolean },
+  ): RobinRunSessionEvent[];
   push(event: RobinRunSessionEvent): RobinRunSessionEventOrderResult;
   releasePendingAfterGap(options?: {
     preserve?: (event: RobinRunSessionEvent) => boolean;

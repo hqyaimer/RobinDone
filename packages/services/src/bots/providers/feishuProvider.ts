@@ -3,7 +3,11 @@ import {
   createGroupMemberDirectory,
   type GroupMemberPage,
 } from "#src/bots/providers/groupMemberDirectory.js";
-import { channelContentPartsSchema, channelContentText, botGroupCardSchema } from "@robinrun/shared";
+import {
+  channelContentPartsSchema,
+  channelContentText,
+  botGroupCardSchema,
+} from "@robinrun/shared";
 import {
   isFeishuBotSender,
   isGroupControlCard,

@@ -114,6 +114,15 @@ export function useTaskGroups(tree: ProjectTree) {
     },
     [required, refresh],
   );
+  /** worker 名册 → 会话组织组的物化入口（2026-11-16 裁决）：幂等，含标题同步（注册表赢）。 */
+  const ensureWorkerGroup = useCallback(
+    async (input: { projectId: string; workerId: string; title?: string }) => {
+      const result = await required().ensureWorkerGroup(input);
+      await refresh();
+      return result;
+    },
+    [required, refresh],
+  );
   const parents = useMemo(
     () =>
       new Map(
@@ -133,8 +142,9 @@ export function useTaskGroups(tree: ProjectTree) {
       save,
       move,
       ungroup,
+      ensureWorkerGroup,
       available: Boolean(service),
     }),
-    [structure, parents, error, refresh, save, move, ungroup, service],
+    [structure, parents, error, refresh, save, move, ungroup, ensureWorkerGroup, service],
   );
 }

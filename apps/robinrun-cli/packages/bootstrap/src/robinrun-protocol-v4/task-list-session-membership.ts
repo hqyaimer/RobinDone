@@ -11,6 +11,9 @@ export const TASK_LIST_SESSION_TYPES = [
   "interactive",
   "fork",
   "workflow_parent",
+  // worker 会话通道（2026-11-16 隔离裁决）：worker_child 列表可见（独立 seam，
+  // 不并入上游三类；subagent_child 等 auxiliary 类型维持专用投影不进列表）。
+  "worker_child",
 ] as const satisfies readonly SessionTaskType[];
 
 const TASK_LIST_SESSION_TYPE_SET = new Set<SessionTaskType>(

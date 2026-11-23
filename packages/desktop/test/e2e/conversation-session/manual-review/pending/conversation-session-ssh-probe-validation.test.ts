@@ -246,9 +246,9 @@ describe(`${MARKER}: 探测失败不伪装为系统不支持或未安装`, () =>
     expect(recovered.servers.find((item) => item.sourceServerId === sourceId)?.installState).toBe(
       "installed",
     );
-    expect(await readRemoteContainerFile(container, "/home/dev/.robinrun/server/current.json")).toBe(
-      currentBefore,
-    );
+    expect(
+      await readRemoteContainerFile(container, "/home/dev/.robinrun/server/current.json"),
+    ).toBe(currentBefore);
     const profile = recovered.profiles.find((item) => item.sourceServerId === sourceId)!;
     const logs = await callHandoffHost<Array<{ message: string }>>(
       ServiceChannels.SourceServerManagement,

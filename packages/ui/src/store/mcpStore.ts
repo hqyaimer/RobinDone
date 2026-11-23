@@ -97,7 +97,11 @@ interface McpStoreState {
   ) => Promise<void>;
   deleteScopedMcpServer: (source: McpSource, name: string, projectPath?: string) => void;
   addRobinRunAgentMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
-  updateRobinRunAgentMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
+  updateRobinRunAgentMcpServer: (
+    name: string,
+    config: McpServerConfig,
+    projectPath?: string,
+  ) => void;
   deleteRobinRunAgentMcpServer: (name: string, projectPath?: string) => void;
   addClaudeCliMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
   updateClaudeCliMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;

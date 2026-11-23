@@ -324,7 +324,10 @@ function unavailable(feature: string): PluginUiBridgeError {
  * 8 MiB 总量守卫：结果经 MessagePort 结构化克隆进沙箱，
  * agent 侧已按同一常量限流，这里再算一次解码后大小（text 按 UTF-8、blob 按 base64 解码长度）防止旧 agent 漏检。
  */
-export function assertUiReadResourceSize(result: RobinRunMcpUiReadResourceResult, uri: string): void {
+export function assertUiReadResourceSize(
+  result: RobinRunMcpUiReadResourceResult,
+  uri: string,
+): void {
   let total = 0;
   for (const content of result.contents) {
     if (typeof content.text === "string") total += Buffer.byteLength(content.text, "utf8");

@@ -39,7 +39,10 @@ describe("Computer Use producer detection", () => {
   });
 
   it("开源占位包：声明 robinrunCuaPlaceholder 时不算真实 producer", () => {
-    const desktopRoot = createWorkspace({ name: "@robinrun/robinrun-cua", robinrunCuaPlaceholder: true });
+    const desktopRoot = createWorkspace({
+      name: "@robinrun/robinrun-cua",
+      robinrunCuaPlaceholder: true,
+    });
     expect(readComputerUseProducer({ desktopPackageRoot: desktopRoot })).toMatchObject({
       installed: true,
       placeholder: true,
@@ -54,7 +57,10 @@ describe("Computer Use producer detection", () => {
   });
 
   it("占位包下 dev 插件运行时暂存直接跳过，不要求 sharp 与插件清单", () => {
-    const desktopRoot = createWorkspace({ name: "@robinrun/robinrun-cua", robinrunCuaPlaceholder: true });
+    const desktopRoot = createWorkspace({
+      name: "@robinrun/robinrun-cua",
+      robinrunCuaPlaceholder: true,
+    });
     expect(
       stageDevCuaPluginRuntime({
         env: { ROBINRUN_CUA_DEV_MODE: "1" },

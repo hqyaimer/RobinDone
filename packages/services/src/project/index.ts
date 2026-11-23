@@ -96,6 +96,43 @@ async function projectPrimaryRootStatuses(projects: VirtualProject[]): Promise<V
   );
 }
 
+// 编制目录预创建（2026-11-21）：`.robinrun/agents` 原本只在主智能体首次经 ManageWorkers 写入
+// 注册表时才落盘。未初始化编制的项目进入项目页后，侧栏 worker 名册投影（useWorkers）监听
+// `<root>/.robinrun/agents` 会因目录缺失每 3 秒失败重试，host 日志持续刷 ENOENT warn。
+// 改为项目保存/恢复时预创建空目录：「目录存在而 workers.json 缺失 = 空编制」本就是一等合法态
+// （docs/worker-roster.md），ManageWorkers 的注册表写入所有权不变。尽力而为：任何失败只记
+// 日志、不阻断项目打开；root 缺失/不可达时静默跳过，绝不复活被移除的根目录——复检复用带
+// 超时与 in-flight 去重的 readPrimaryRootStatus（不新增裸 stat，规避 ZCT-2113660144497782784
+// 的挂起问题），落盘用两段非递归 mkdir，只允许新建 .robinrun 一层。
+async function ensureWorkerRosterDirectories(roots: VirtualProject["roots"]): Promise<void> {
+  const logger = createServiceLogger("project");
+  await Promise.all(
+    roots.map(async (root) => {
+      try {
+        if ((await readPrimaryRootStatus(root.rootPath)) !== "available") return;
+        try {
+          await mkdir(join(root.rootPath, ".robinrun"), { recursive: false });
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        }
+        try {
+          await mkdir(join(root.rootPath, ".robinrun", "agents"), { recursive: false });
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        }
+      } catch (error) {
+        // 根目录缺失/不可达是恢复已删除项目的常态，按跳过处理；其余失败留日志排查。
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === "ENOENT" || code === "ENOTDIR") return;
+        logger.warn("预创建 worker 编制目录失败（不阻断项目打开）", {
+          rootPath: root.rootPath,
+          error,
+        });
+      }
+    }),
+  );
+}
+
 const saveProjectSchema = z
   .object({
     reuseExistingRoot: z.boolean().optional(),
@@ -234,6 +271,8 @@ export function createProjectService(options: {
           createServiceLogger("project").warn("main agent bootstrap failed", { error });
         }
       }
+      // 编制目录预创建：见 ensureWorkerRosterDirectories 注释（尽力而为，不阻断项目打开）。
+      await ensureWorkerRosterDirectories(result.roots);
       await changed();
       return result;
     },
@@ -259,6 +298,8 @@ export function createProjectService(options: {
         restoreProjectId: id,
         roots: project.roots.map((root) => root.rootPath),
       });
+      // 恢复同样预创建编制目录；root 已被移除时 helper 静默跳过，不代建根目录。
+      await ensureWorkerRosterDirectories(result.roots);
       await changed();
       return result;
     },

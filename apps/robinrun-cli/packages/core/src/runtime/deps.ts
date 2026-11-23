@@ -194,6 +194,7 @@ export type {
   SessionId,
   SessionProjection,
   SessionStorePort,
+  SessionCreationOrigin,
   SessionTaskType,
   SessionTitleSource,
   ContextSourcePort,

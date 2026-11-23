@@ -23,7 +23,9 @@ export const robinrunProcessDiagnosticSchema = z
   .strict();
 export type RobinRunProcessDiagnostic = z.infer<typeof robinrunProcessDiagnosticSchema>;
 
-export function parseRobinRunProcessDiagnostic(line: string): RobinRunProcessDiagnostic | undefined {
+export function parseRobinRunProcessDiagnostic(
+  line: string,
+): RobinRunProcessDiagnostic | undefined {
   if (
     !line.startsWith(ROBINRUN_PROCESS_DIAGNOSTIC_PREFIX) ||
     line.length > ROBINRUN_PROCESS_DIAGNOSTIC_MAX_LINE_CHARS

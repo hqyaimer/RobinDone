@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { decodeRobinRunBuiltinRelease, type RobinRunBuiltinRelease } from "./robinrun-builtin-release.js";
+import {
+  decodeRobinRunBuiltinRelease,
+  type RobinRunBuiltinRelease,
+} from "./robinrun-builtin-release.js";
 
 const clientConfigSchema = z
   .object({

@@ -7,7 +7,10 @@ import {
   robinrunApiRetryFromModelNetworkStatusPayload,
   robinrunApiRetryFromStreamRecoveryPayload,
 } from "@robinrun/shared";
-import type { RobinRunSessionServiceEvent, RobinRunTaskTarget } from "#src/robinrun-session/robinrunSession.js";
+import type {
+  RobinRunSessionServiceEvent,
+  RobinRunTaskTarget,
+} from "#src/robinrun-session/robinrunSession.js";
 
 export function createRobinRunSessionApiRetryRuntimeTracker(): {
   trackApiRetryFromSessionEvent: (
@@ -55,7 +58,9 @@ export function createRobinRunSessionApiRetryRuntimeTracker(): {
     return event;
   }
 
-  function withApiRetryRuntime(snapshot: RobinRunSessionStateSnapshot): RobinRunSessionStateSnapshot {
+  function withApiRetryRuntime(
+    snapshot: RobinRunSessionStateSnapshot,
+  ): RobinRunSessionStateSnapshot {
     const sessionId = snapshot.session?.sessionId;
     const workspacePath = snapshot.session?.workspace?.workspacePath;
     if (!sessionId || !workspacePath) {
@@ -114,7 +119,9 @@ function apiRetryFromSessionPayload(
   if (runtimeRetry !== undefined) {
     return runtimeRetry;
   }
-  const metaRetry = normalizeRobinRunApiRetryStatus(asRecord(asRecord(payload._meta).robinrun).apiRetry);
+  const metaRetry = normalizeRobinRunApiRetryStatus(
+    asRecord(asRecord(payload._meta).robinrun).apiRetry,
+  );
   if (metaRetry !== undefined) {
     return metaRetry;
   }

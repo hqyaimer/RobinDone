@@ -87,7 +87,10 @@ async function seedMentionSelection(position: string) {
       const input = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
       const bridge = (
         input as HTMLElement & {
-          __robinrunLexicalInputE2E?: { setEditorStateJson: (s: string) => void; focus: () => void };
+          __robinrunLexicalInputE2E?: {
+            setEditorStateJson: (s: string) => void;
+            focus: () => void;
+          };
         }
       )?.__robinrunLexicalInputE2E;
       if (!input || !bridge) throw new Error("Lexical bridge unavailable");
@@ -160,8 +163,9 @@ async function seedMentionSelection(position: string) {
 async function readMentionSelection() {
   return browser.execute((testId) => {
     const input = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
-    const bridge = (input as HTMLElement & { __robinrunLexicalInputE2E?: { getText: () => string } })
-      ?.__robinrunLexicalInputE2E;
+    const bridge = (
+      input as HTMLElement & { __robinrunLexicalInputE2E?: { getText: () => string } }
+    )?.__robinrunLexicalInputE2E;
     return {
       selected: window.getSelection()?.toString(),
       collapsed: window.getSelection()?.isCollapsed,

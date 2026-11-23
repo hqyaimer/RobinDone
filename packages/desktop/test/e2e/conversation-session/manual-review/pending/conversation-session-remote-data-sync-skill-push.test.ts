@@ -58,7 +58,12 @@ async function writeLocalSkill(name: string, body: string): Promise<void> {
 
 /** 在本机技能根下按相对目录写技能（目录名可以与 name 不同，例如嵌套技能）。 */
 async function writeLocalSkillAt(directoryName: string, name: string, body: string) {
-  const dir = join(getE2EAppDataPaths().homeDir, ".robinrun", "skills", ...directoryName.split("/"));
+  const dir = join(
+    getE2EAppDataPaths().homeDir,
+    ".robinrun",
+    "skills",
+    ...directoryName.split("/"),
+  );
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "SKILL.md"), skillMarkdown(name, body));
 }

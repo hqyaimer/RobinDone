@@ -2,7 +2,10 @@ import type { RobinRunStreamEvent, RobinRunTaskRuntimeStatus } from "@robinrun/s
 import type { TaskChatMessage } from "@/lib/taskChatMessageTypes.js";
 import { hasRunningRobinRunTimeline } from "@/lib/robinrunTimelineRuntime.js";
 
-type TaskStreamMirrorBatchEvent = Extract<RobinRunStreamEvent, { type: "task_stream_mirror_batch" }>;
+type TaskStreamMirrorBatchEvent = Extract<
+  RobinRunStreamEvent,
+  { type: "task_stream_mirror_batch" }
+>;
 type TaskStreamMirrorOp = TaskStreamMirrorBatchEvent["ops"][number];
 
 export function shouldMarkMainActiveFromStreamMirrorOps(

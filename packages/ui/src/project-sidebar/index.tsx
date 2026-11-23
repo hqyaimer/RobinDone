@@ -39,6 +39,7 @@ import { TaskGroupedView } from "@/project-sidebar/TaskGroupedView.js";
 import { ProjectList } from "@/project-sidebar/ProjectList.js";
 import { taskGroupKey } from "@/project-sidebar/grouped-view.js";
 import {
+  ProjectHeaderActions,
   ProjectSidebarNode,
   runProjectAction as action,
 } from "@/project-sidebar/ProjectSidebarNode.js";
@@ -54,7 +55,10 @@ import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { useTabStoreApi } from "@/store/TabStoreProvider.js";
 import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
 import { useRobinRunStore } from "@/store/StoreProvider.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级入口」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+// 非可选 hook 无 Provider 会 throw，恢复时随 Root Provider 一并取消注释
+// import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 export { attachRemoteProjectWorkspace } from "@/project-sidebar/remote-navigation.js";
 export { resolveEntryProject } from "@/project-sidebar/view.js";
 export type {
@@ -88,7 +92,9 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
   const { intl, localePreference, setLocalePreference } = useRobinRunIntl();
   const tabStore = useTabStoreApi();
   const setTheme = useRobinRunStore((state) => state.setTheme);
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级 hook」——恢复时取消本行注释
+  // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const scrollRef = useRef<HTMLDivElement>(null);
   const [groupedToolbar, setGroupedToolbar] = useState<HTMLDivElement | null>(null);
   const [groupedSticky, setGroupedSticky] = useState<HTMLDivElement | null>(null);
@@ -136,15 +142,15 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
       .getWorkspaceState(props.workspacePath, props.workspaceIdentity);
     // 侧栏已固定为智能体列表：未显式指定归属时继承活动任务的智能体，否则继承草稿意图。
     const inheritedGroup = !projectId
-      ? (workspaceState.activeTaskId
-          ? (groups.parents.get(
-              taskGroupKey({
-                taskId: workspaceState.activeTaskId,
-                workspacePath: props.workspacePath,
-                workspaceIdentity: props.workspaceIdentity,
-              }),
-            ) ?? null)
-          : (workspaceState.draftTaskGroupId ?? null))
+      ? workspaceState.activeTaskId
+        ? (groups.parents.get(
+            taskGroupKey({
+              taskId: workspaceState.activeTaskId,
+              workspacePath: props.workspacePath,
+              workspaceIdentity: props.workspaceIdentity,
+            }),
+          ) ?? null)
+        : (workspaceState.draftTaskGroupId ?? null)
       : null;
     props.onCreateTask({
       projectId: projectId ?? null,
@@ -261,12 +267,15 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
     [setLocalePreference],
   );
   const changeTheme = useCallback((value: string) => setTheme(value as Theme), [setTheme]);
-  const upgrade = useCallback<
-    NonNullable<Parameters<typeof WorkspaceSidebarFooter>[0]["onUpgradeClick"]>
-  >(
-    (providerId, funnelContext) => openCodingPlanUpgrade({ providerId, funnelContext }),
-    [openCodingPlanUpgrade],
-  );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级回调」——footer onUpgradeClick prop 已注释移除，
+  // 恢复时取消本段注释
+  // const upgrade = useCallback<
+  //   NonNullable<Parameters<typeof WorkspaceSidebarFooter>[0]["onUpgradeClick"]>
+  // >(
+  //   (providerId, funnelContext) => openCodingPlanUpgrade({ providerId, funnelContext }),
+  //   [openCodingPlanUpgrade],
+  // );
+  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
   const banner = useMemo(() => <SidebarBottomActivity />, []);
   // 手机远控 home-only 没有 base attachment，也就没有项目契约；改用 relay 层工作区列表与重连入口。
   const homeOnlySwitcher = service ? undefined : props.webRemoteControlWorkspaceSwitcher;
@@ -300,13 +309,38 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                   }
                   onBack={agentPageMode ? () => setEnteredProjectKey(null) : undefined}
                   backLabel={intl.formatMessage({ id: "project.back" })}
+                  /* 智能体页（2026-11-15 裁决）：项目文件夹行移除，行尾按钮原样上移到标题行。 */
+                  projectActions={
+                    agentPageMode && enteredProject ? (
+                      <ProjectHeaderActions
+                        project={enteredProject}
+                        remoteHost={directory.hosts.find(
+                          (host) => host.id === enteredProject.hostId,
+                        )}
+                        service={service}
+                        remoteService={remoteService}
+                        isDesktop={props.isDesktop}
+                        isWebRemoteControl={props.isWebRemoteControl}
+                        onCreateTask={props.onCreateTask}
+                        onReconnectRemoteWorkspace={props.onReconnectRemoteWorkspace}
+                        onEdit={setEditor}
+                        onViewFiles={openFiles}
+                        remoteActions={remoteSync.actions}
+                        refresh={refresh}
+                        availability={availability.get(projectKey(enteredProject))}
+                      />
+                    ) : undefined
+                  }
                 />
                 {/* 原因：仅设 overflow-y:auto 会让拖拽位移打开水平滚动；列表始终只允许纵向滚动。 */}
                 {/* 原因：项目侧栏迁移后普通滚动容器遗漏边缘渐隐；复用统一 mask，随实际滚动边界更新。 */}
                 <div className="relative flex min-h-0 flex-1 flex-col">
                   <div ref={setGroupedSticky} />
                   <ScrollFadeViewport ref={scrollRef} className="overflow-x-hidden">
-                    <div className="flex flex-col gap-3 pb-3">
+                    {/* 项目列表页的项目行是本容器的直接 flex 子节点（ProjectList 的
+                          DndContext/SortableContext 不产生 DOM），原 gap-3 会在行与行之间
+                          多出 12px 空隙（2026-11-20 用户裁决：与 ZCode 一致，行贴行排列）。 */}
+                    <div className="flex flex-col pb-3">
                       {homeOnlySwitcher ? (
                         <HomeOnlyWorkspaceRows switcher={homeOnlySwitcher} />
                       ) : navigationEnabled && !agentPageMode ? (
@@ -333,8 +367,10 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                           workspacePath={props.workspacePath}
                           workspaceIdentity={props.workspaceIdentity}
                           onOpenAutomations={props.onOpenAutomations}
-                          onCreate={(groupId) =>
-                            action(() => start(undefined, undefined, groupId))
+                          // 智能体行"+"新建（2026-11-16 验收修复）：携带组归属项目（远程项目带 hostId），
+                          // 草稿预选该项目与该智能体，而不是把项目显式清空。
+                          onCreate={(groupId, projectId, hostId) =>
+                            action(() => start(projectId ?? undefined, hostId, groupId))
                           }
                           projects={agentPageMode && enteredProject ? [enteredProject] : projects}
                           renderProject={renderProject}
@@ -346,16 +382,22 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                                 ? () => setCreating(true)
                                 : undefined
                           }
-                          newAgentProject={agentPageMode ? enteredProject : null}
+                          // 智能体页数据范围（2026-11-15 裁决）：进入的项目非空即页面模式，
+                          // 驱动 worker 投影与按项目收敛（树模式恒为 null，全量渲染）。
+                          enteredProject={agentPageMode ? enteredProject : null}
+                          // worker 组"查看文件"：复用文件面板打开 worker 的 .robinrun/agents/<id>/ 目录
+                          // （远程项目带当前工作区 remoteSessionId，文件树服务按完整 attachment 解析）。
+                          onOpenWorkerFolder={props.onOpenFileManager}
+                          workspaceRemoteSessionId={props.workspaceRemoteSessionId}
                         />
                       )}
                       {loading && !homeOnlySwitcher ? (
-                        <p className="px-4 text-ui-sm text-foreground-subtle">
+                        <p className="mt-2 px-4 text-ui-sm text-foreground-subtle">
                           {intl.formatMessage({ id: "common.loading" })}
                         </p>
                       ) : null}
                       {error && !homeOnlySwitcher ? (
-                        <p role="alert" className="px-4 text-ui-sm text-destructive">
+                        <p role="alert" className="mt-2 px-4 text-ui-sm text-destructive">
                           {error}
                         </p>
                       ) : null}
@@ -370,10 +412,13 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                 onLocaleChange={changeLocale}
                 onThemeChange={changeTheme}
                 onSettingsButtonClick={openSettings}
-                onUsageClick={openSettings}
-                onUpgradeClick={upgrade}
-                onLogin={props.onLogin}
-                onLogout={props.onLogout}
+                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「footer usage/upgrade/登录/登出传参」——
+                // footer 侧对应 props 已注释移除，恢复时取消以下注释
+                // onUsageClick={openSettings}
+                // onUpgradeClick={upgrade}
+                // onLogin={props.onLogin}
+                // onLogout={props.onLogout}
+                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
                 user={props.user}
                 workspacePath={props.workspacePath}
                 // 项目侧栏不再从 tab 反推身份；远控入口必须沿用当前 attachment 的精确 scope。

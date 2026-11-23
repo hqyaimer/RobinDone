@@ -467,7 +467,8 @@ describe("虚拟项目手机 shared-host 导航", () => {
       await page.getByTestId("sidebar-view-menu").waitFor();
       expect(
         await page.evaluate(
-          () => JSON.parse(localStorage.getItem("robinrun-project-sidebar-preferences") ?? "{}").view,
+          () =>
+            JSON.parse(localStorage.getItem("robinrun-project-sidebar-preferences") ?? "{}").view,
         ),
       ).toBe("timeline");
       await page.getByTestId("sidebar-view-menu").tap();

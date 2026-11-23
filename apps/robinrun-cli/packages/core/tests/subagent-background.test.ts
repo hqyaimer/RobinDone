@@ -1702,7 +1702,10 @@ describe("subagent background notifications", () => {
       ...actualFs,
       writeFile: vi.fn(async (...args: Parameters<typeof actualFs.writeFile>) => {
         const [path] = args;
-        if (String(path).endsWith("/output.txt") && !outputWriteStarted) {
+        // Windows 的 join() 产生反斜杠路径，仅匹配 "/output.txt" 会让 mock 永远不命中
+        //（本机实测：waitForCondition 直接超时）。归一化分隔符后再比较。
+        const normalizedPath = String(path).replace(/\\/g, "/");
+        if (normalizedPath.endsWith("/output.txt") && !outputWriteStarted) {
           outputWriteStarted = true;
           await blockedArtifactWrite.promise;
         }

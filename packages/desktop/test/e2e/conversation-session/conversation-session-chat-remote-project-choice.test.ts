@@ -195,7 +195,9 @@ describe(marker, () => {
         window as Window & { __testActions?: { setLocale(locale: string): void } }
       ).__testActions?.setLocale("zh-CN"),
     );
-    await browser.saveScreenshot(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "choice-desktop.png"));
+    await browser.saveScreenshot(
+      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "choice-desktop.png"),
+    );
     await browser.keys("Escape");
     await picker.waitForExist({ reverse: true });
     expect(await getV4ComposerText()).toBe(marker + " retained original draft");

@@ -24,7 +24,8 @@ function getCachedProfileSchemaVersion(profile: OAuthUserProfile): number | null
     return null;
   }
 
-  const version = (rawProfile as { robinrunProfileSchemaVersion?: unknown }).robinrunProfileSchemaVersion;
+  const version = (rawProfile as { robinrunProfileSchemaVersion?: unknown })
+    .robinrunProfileSchemaVersion;
   return typeof version === "number" ? version : null;
 }
 

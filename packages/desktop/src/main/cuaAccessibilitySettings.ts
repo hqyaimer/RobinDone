@@ -188,13 +188,17 @@ async function verifyHelperPermissionIdentityUnchanged(
   const fingerprint = captureCuaHelperBundleFingerprint(identity.appPath);
   await options.verifyHelperInstalled?.(identity.appPath);
   if (!cuaHelperBundleFingerprintUnchanged(identity.appPath, fingerprint)) {
-    throw new Error(`RobinRun Computer Use changed while its ${phase} signature was being verified`);
+    throw new Error(
+      `RobinRun Computer Use changed while its ${phase} signature was being verified`,
+    );
   }
   const currentIdentity = await (
     options.resolveHelperIdentity ?? resolveHelperPermissionSubjectIdentity
   )(identity.appPath);
   if (!sameHelperPermissionIdentity(identity, currentIdentity)) {
-    throw new Error(`RobinRun Computer Use permission identity changed during ${phase} verification`);
+    throw new Error(
+      `RobinRun Computer Use permission identity changed during ${phase} verification`,
+    );
   }
   if (!cuaHelperBundleFingerprintUnchanged(identity.appPath, fingerprint)) {
     throw new Error(

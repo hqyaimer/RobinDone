@@ -116,7 +116,9 @@ async function isUserAgentsSkillCoveredByRobinrun(params: {
   if (rootPath !== getUserAgentsSkillRoot()) {
     return false;
   }
-  if (await exists(join(getUserRobinrunSkillRoot(), basename(dirname(skillPath)), SKILL_FILE_NAME))) {
+  if (
+    await exists(join(getUserRobinrunSkillRoot(), basename(dirname(skillPath)), SKILL_FILE_NAME))
+  ) {
     return true;
   }
   return userRobinrunSkillNameKeys.has(await readSkillNameKey(skillPath));

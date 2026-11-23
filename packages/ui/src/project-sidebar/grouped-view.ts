@@ -2,6 +2,7 @@ import {
   CRON_DEFAULT_GROUP_ID,
   MAIN_AGENT_GROUP_TITLE,
   OFF_PEAK_DEFAULT_GROUP_ID,
+  TRIGGER_ID_PREFIX,
   isMainAgentGroupId,
 } from "@robinrun/shared";
 import type {
@@ -46,10 +47,25 @@ function ungroupedGroupNode(tasks: ProjectTask[]): TaskGroup {
 }
 
 /**
+ * 触发器会话判定（2026-11-19 验收裁决）：触发器投递的会话由触发器文件夹独占承载
+ * （条目点击切换会话），任务组视图不再渲染其会话行——否则与触发器文件夹双重呈现。
+ * cronAutomationId 可能被后续 meta 刷新清列，creationOrigin{kind:"trigger",ref} 是
+ * sticky 权威；trg- 前缀与真 cron automation（automation-<uuid>）互斥。
+ */
+function isTriggerSessionTask(task: ProjectTask): boolean {
+  return (
+    task.cronAutomationId?.startsWith(TRIGGER_ID_PREFIX) ??
+    (task.creationOrigin?.kind === "trigger" &&
+      (task.creationOrigin.ref?.startsWith(TRIGGER_ID_PREFIX) ?? false))
+  );
+}
+
+/**
  * 智能体平面投影：一级=智能体、二级=会话；顶层不再渲染独立会话行。
  * - 未归属任何智能体的会话收入固定"未分组"伪组（仅在有这类会话时出现，排在平面末尾）；
  * - 置顶会话在所属智能体内置顶（全局置顶区已取消）；
- * - 会话存在性只来自 Host 树；分组结构保留不可见成员，投影不能反向删写。
+ * - 会话存在性只来自 Host 树；分组结构保留不可见成员，投影不能反向删写；
+ * - 触发器会话不进本投影（见 isTriggerSessionTask）。
  */
 export function projectGroupedNodes(
   tasks: ProjectTask[],
@@ -57,7 +73,9 @@ export function projectGroupedNodes(
   collapsed: ReadonlySet<string>,
 ): GroupedRow[] {
   const visible = new Map(
-    tasks.filter((task) => !task.archived).map((task) => [taskGroupKey(task), task]),
+    tasks
+      .filter((task) => !task.archived && !isTriggerSessionTask(task))
+      .map((task) => [taskGroupKey(task), task]),
   );
   const groups = new Map(structure.groups.map((group) => [group.id, group]));
   const memberKeys = new Set<string>();
@@ -98,9 +116,17 @@ export function projectGroupedNodes(
   for (const node of groupOrder) {
     const group = groups.get(node.key);
     if (!group) continue;
+    const children = members.get(group.id) ?? [];
+    // 系统组（cron/闲时）是机器归组容器：成员清空（如触发器会话自愈迁出、会话删除）
+    // 后整体不渲染——空容器没有操作语义，且下次系统会话到达时 systemKind 分支会重建
+    // 组行。普通智能体组保留空态（empty 行承载新建会话入口，见下）。
+    if (
+      !children.length &&
+      (group.id === CRON_DEFAULT_GROUP_ID || group.id === OFF_PEAK_DEFAULT_GROUP_ID)
+    )
+      continue;
     rows.push({ type: "group", key: `group:${group.id}`, group });
     if (collapsed.has(group.id)) continue;
-    const children = members.get(group.id) ?? [];
     rows.push(
       ...(children.length
         ? children.map(

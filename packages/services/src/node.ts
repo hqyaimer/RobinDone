@@ -21,6 +21,15 @@ export { createLegacySingleRootProjectService } from "#src/project/index.js";
 export { createRemoteProjectService } from "#src/remote-projects/index.js";
 import { getRobinRunDataRootDir as projectDataRoot } from "#src/paths.js";
 import { createTaskGroupService, ITaskGroupService, groupTaskKey } from "#src/task-groups/index.js";
+// RobinRun 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：desktop host 常驻
+// 服务，调度 cron/interval、执行脚本、收本地 webhook，事件经 dispatchTriggerEvent 端口
+// 投递给订阅智能体的会话（host 装配 dispatchCronRun 同款链）。
+import {
+  createTriggerEngineService,
+  createTriggerPythonRuntimePort,
+  ITriggerEngineService,
+  type TriggerEventBatch,
+} from "#src/trigger-engine/index.js";
 import { IGenUiService } from "./gen-ui/contract.js";
 import { createGenUiService } from "./gen-ui/node.js";
 // import { channelReplyHostRequestSchema, channelReplyResultSchema } from "@robinrun/shared";
@@ -440,6 +449,7 @@ import type { RobinRunAgentCommandResolver } from "./robinrun-agent/robinrunAgen
 import { buildAgentTelemetrySpawnEnv } from "./robinrun-agent/agentTelemetryEnv.js";
 import { resolveRobinRunAgentPresentationSurface } from "./robinrun-agent/robinrunAgentPresentationSurface.js";
 import { createRobinRunTaskServiceAdapter } from "./robinrun-agent/robinrunTaskServiceAdapter.js";
+import { dispatchAgentContactToTaskService } from "./robinrun-agent/agentContactDispatch.js";
 import { createRobinRunSessionService } from "./robinrun-session/robinrunSessionService.js";
 import { createRobinRunTaskIndexSyncer } from "./robinrun-agent/robinrunTaskIndexSyncer.js";
 import { TaskIndexRepo } from "./session/taskIndexRepo.js";
@@ -549,7 +559,10 @@ import {
   buildAgentRuntimeEnv,
 } from "./runtime-tools/agentProxyEnv.js";
 import { ensureAppCaCert } from "./runtime-tools/appCaCert.js";
-import { buildHelperOpenArgs, isCuaLocalDevelopmentRuntime } from "@robinrun/robinrun-cua/broker/server";
+import {
+  buildHelperOpenArgs,
+  isCuaLocalDevelopmentRuntime,
+} from "@robinrun/robinrun-cua/broker/server";
 import { createServiceLogger, type ServiceLogger } from "#src/logger/serviceLogger.js";
 import { ensureTelemetryDeviceMid } from "#src/telemetry/telemetryCore.js";
 import { IOffPeakTaskService } from "./session/offPeakTask.js";
@@ -1237,6 +1250,20 @@ export function createLocalServices(options: {
     automation: RobinRunAutomation;
     run: RobinRunAutomationRun;
   }) => Promise<void>;
+  /**
+   * 触发器引擎的事件投递端口（desktop host 装配：对绑定会话 resumeTask / 否则 createTask，
+   * 再 sendPrompt 合并事件——dispatchCronRun 同款链）。缺省时引擎只调度不投递（测试形态）。
+   */
+  dispatchTriggerEvent?: (batch: TriggerEventBatch) => Promise<{ taskId: string }>;
+  /**
+   * 触发器绑定会话忙查询（desktop host 装配：task facade 的 active input 簿记）。
+   * 裁决 7"忙时排队、空闲后合并投递"的忙感知来源；缺省时聚合器退化为逐批投递。
+   */
+  isTriggerTaskBusy?: (task: {
+    taskId: string;
+    workspacePath: string;
+    workspaceIdentity?: string;
+  }) => Promise<boolean> | boolean;
   /** 闲时任务翻 schedulable 后请求宿主立即唤醒 scheduler（desktop host 注入 parentPort 转发）。 */
   onOffPeakSchedulerWakeRequested?: () => void;
   // 注入点：默认 resolver 已能覆盖 dev/桌面/SSH 远端三类形态；
@@ -1690,7 +1717,8 @@ export function createLocalServices(options: {
     listMcpResourceTemplatesForUi: (params) =>
       robinrunAgentService.listMcpResourceTemplatesForUi(params),
     subscribeMcpResourceForUi: (params) => robinrunAgentService.subscribeMcpResourceForUi(params),
-    unsubscribeMcpResourceForUi: (params) => robinrunAgentService.unsubscribeMcpResourceForUi(params),
+    unsubscribeMcpResourceForUi: (params) =>
+      robinrunAgentService.unsubscribeMcpResourceForUi(params),
     listPluginUiSurfaces: (params) => robinrunAgentService.listPluginUiSurfaces(params),
     registerSandbox: options?.registerPluginSandbox,
   });
@@ -2207,7 +2235,8 @@ export function createLocalServices(options: {
       port: createProjectDataPort({
         agent: {
           measure: (params) => {
-            if (!robinrunAgentService.measureSessionData) throw new Error("project.data-unavailable");
+            if (!robinrunAgentService.measureSessionData)
+              throw new Error("project.data-unavailable");
             return robinrunAgentService.measureSessionData(params);
           },
           purge: (params) => {
@@ -2246,6 +2275,70 @@ export function createLocalServices(options: {
       return results.flat();
     },
     afterChange: () => broadcastService.send({ channel: "state:task-groups", payload: {} }),
+  });
+  // python 供给日志独立 scope（下载/venv/pip 进度可追踪，不与引擎轮询日志混流）。
+  const triggerEngineLogger = createServiceLogger("trigger-engine-python-runtime");
+  const triggerEngineService = createTriggerEngineService({
+    // 项目树 → 工作区列表（主 root）；引擎逐项挂载、轮询注册表。
+    listWorkspaces: async () => {
+      const hostId = options?.projectStorageHostId ?? "local";
+      const tree = await projectService.readTree({ hostId, includeDeleted: false });
+      return tree.projects
+        .filter((project) => project.deleted !== true)
+        .flatMap((project) => {
+          const root = project.roots.find((candidate) => candidate.isPrimary) ?? project.roots[0];
+          return root ? [{ workspacePath: root.rootPath, projectId: project.id }] : [];
+        });
+    },
+    dispatch: {
+      dispatchTriggerEvent: async (batch) => {
+        if (!options?.dispatchTriggerEvent) {
+          throw new Error("trigger dispatch port is not wired in this host");
+        }
+        return options.dispatchTriggerEvent(batch);
+      },
+    },
+    // 忙感知放引擎选项顶层（TriggerEngineOptions.isTaskBusy）；此前误放进 dispatch
+    // 端口对象里被引擎静默忽略（TS 对 spread 属性不做多余属性检查，typecheck 拦不住），
+    // 聚合器因此退化为逐批投递——2026-11-22 实测"忙时仍逐条投递"的本批接线 bug。
+    ...(options?.isTriggerTaskBusy !== undefined ? { isTaskBusy: options.isTriggerTaskBusy } : {}),
+    tasks: {
+      // UI"清空会话"端口（2026-11-20）：lateBound 与 agentContactDispatchExecutor 同款
+      // ——服务装配顺序上 task service adapter 在引擎之后创建，闭包运行期取值。
+      // 订阅者 → 身份重置目标："master" = 清除 worker 身份；wkr-* = 落库该身份。
+      clearTask: async (params) => {
+        const taskService = lateBoundRobinRunTaskService;
+        if (!taskService) {
+          throw new Error("RobinRun task service is not initialized.");
+        }
+        await taskService.clearTaskMessages({
+          taskId: params.taskId,
+          workspacePath: params.workspacePath,
+          ...(params.workspaceIdentity !== undefined
+            ? { workspaceIdentity: params.workspaceIdentity }
+            : {}),
+          workerIdentityTo:
+            params.subscriberAgentId === "master" ? null : { workerId: params.subscriberAgentId },
+        });
+      },
+    },
+    notify: {
+      // 熔断通知 v1：广播给 UI（触发器文件夹徽章 + 应用内通知接线用）；邮件/待办落地后接入。
+      notifyCircuitBreak: (params) => {
+        void broadcastService
+          .send({ channel: "state:triggers", payload: { type: "circuit-break", ...params } })
+          .catch(() => undefined);
+      },
+    },
+    // python 主运行时端口（2026-11-22，docs/trigger-python-runtime.md）：托管解释器供给
+    // （自动下载 + sha256 预置 + 镜像 env）+ 按项目 venv + pip 安装；挂载即后台 ensure
+    // 可用性并落 `state/python-runtime.json`（CLI 门控与提示词双模式的事实源）。缺席 =
+    // python 触发器退化为系统 PATH 探测旧行为、install_packages 大声失败。
+    pythonRuntime: createTriggerPythonRuntimePort({
+      log: (message) => {
+        void triggerEngineLogger.info(message);
+      },
+    }),
   });
   const prepareProjectExecution = async (projectId: string) => ({
     ...(await projectService.prepareSession({ projectId })),
@@ -2306,6 +2399,29 @@ export function createLocalServices(options: {
     spawnFallbackCwd: options?.robinrunAgentSpawnFallbackCwd,
     // browser-use：host→main 执行桥透传给 agent service 的 onRequest browserExecute 路由。
     browserControlExecutor: options?.browserControlExecutor,
+    // agent 会话跨会话投递（worker 会话同构化）：ContactAgent master↔worker 投递落到
+    // task service（寻址创建/唤醒目标会话 + sendPrompt，机制同触发器投递）。晚绑定引用
+    // task service（创建顺序晚于 agent service，见 robinrunTaskService 声明处）。
+    agentContactDispatchExecutor: async (request) =>
+      dispatchAgentContactToTaskService(lateBoundRobinRunTaskService, request, {
+        // ContactAgent 新建会话的项目归属（2026-11-21 实测修复）：host 项目树按工作区
+        // root 解析 projectId——与触发器引擎 listWorkspaces 同源；协议/模型零感知，
+        // 缺省回退（解析不到 = 未归属）由 dispatch 内部兜住。
+        resolveProjectId: async (workspacePath) => {
+          const hostId = options?.projectStorageHostId ?? "local";
+          const tree = await projectService.readTree({ hostId, includeDeleted: false });
+          const project = tree.projects.find(
+            (candidate) =>
+              candidate.deleted !== true &&
+              candidate.roots.some((root) => root.rootPath === workspacePath),
+          );
+          return project?.id;
+        },
+      }),
+    // 触发器 python 运行时安装（2026-11-22）：install_packages 反向请求 → 触发器引擎
+    // （引擎在 agent service 之前创建，闭包直引；分钟级 pip 在途，协议无逐请求超时）。
+    triggerRuntimeInstallPackagesExecutor: async ({ workspacePath, packages }) =>
+      triggerEngineService.installPackages({ workspacePath, packages }),
     // 机器人凭据只归属于授权 Host；远端独立服务不能借用本机配置扩大读取范围。
     // 渠道工具等待插件入口接入，仅停用默认发送接线，保留完整实现。
     // channelReplyExecutor: async (value) => {
@@ -2452,7 +2568,8 @@ export function createLocalServices(options: {
         ...createNodeProviderRuntimePathEnv({
           // Built-in Active 路径按当前 Endpoint 隔离，不能通过同步的固定路径
           // getter 读取；Agent spawn 必须等待本轮 Endpoint Source 完成解析和物化。
-          robinrunBuiltinFilePath: await providerConfigRuntime.resolveRobinRunBuiltinActiveFilePath(),
+          robinrunBuiltinFilePath:
+            await providerConfigRuntime.resolveRobinRunBuiltinActiveFilePath(),
           personalFilePath: join(resolveAppConfigDir(), PERSONAL_PROVIDER_CONFIG_FILE_NAME),
         }),
       };
@@ -2561,6 +2678,9 @@ export function createLocalServices(options: {
     commitMessageGenerator: gitCommitMessageGenerator,
   });
   // task wrapper 由 RobinRun task service adapter 提供；核心 session 状态由 RobinRun agent server 维护。
+  // agentContactDispatchExecutor（worker 会话同构化）需要 task service，但其创建晚于 agent
+  // service；executor 是请求期回调，这里用晚绑定持有者，注册后指向 adapter。
+  let lateBoundRobinRunTaskService: IRobinRunTaskService | undefined;
   const robinrunTaskService = createRobinRunTaskServiceAdapter({
     robinrunAgentService,
     taskIndexRepo,
@@ -2568,6 +2688,7 @@ export function createLocalServices(options: {
     settingService,
     cuaProductMcpServerResolver,
   });
+  lateBoundRobinRunTaskService = robinrunTaskService;
   const botsRepo = new BotsRepo();
   const botLog = createServiceLogger("bots");
   const botRemoteWorkspaceService = options.resolveBotProjectConnection
@@ -2729,6 +2850,7 @@ export function createLocalServices(options: {
     .register(IRobinRunSessionService, robinrunSessionService)
     .register(IProjectService, projectService)
     .register(ITaskGroupService, taskGroupService)
+    .register(ITriggerEngineService, triggerEngineService)
     .register(IRemoteProjectService, remoteProjectService)
     .register(ICuaPermissionService, cuaPermissionService)
     .register(ICuaPipSessionService, cuaPipSessionService)

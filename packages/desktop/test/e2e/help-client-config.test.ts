@@ -22,7 +22,8 @@ async function command(command: string) {
 }
 async function available(locale: "zh-CN" | "en-US") {
   return browser.execute(
-    async (value) => (window as unknown as { robinrun: DesktopBridge }).robinrun.canOpenCommunity(value),
+    async (value) =>
+      (window as unknown as { robinrun: DesktopBridge }).robinrun.canOpenCommunity(value),
     locale,
   );
 }
@@ -74,7 +75,9 @@ describe("帮助配置 client/configs", () => {
     else await writeFile(localPath, originalLocal, "utf8");
     await seedSettings(originalSettings);
     await browser.execute(async (locale) => {
-      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale(locale);
+      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale(
+        locale,
+      );
     }, originalSettings.locale ?? "en-US");
   });
 
@@ -99,7 +102,9 @@ describe("帮助配置 client/configs", () => {
     await expectExternal(fixture.remote.community_urls!["en-US"]!);
     expect(await available("zh-CN")).toBe(true);
     await browser.execute(async () => {
-      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale("zh-CN");
+      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale(
+        "zh-CN",
+      );
     });
     await command("openCommunity");
     await expectExternal(fixture.remote.community_urls!["zh-CN"]!);

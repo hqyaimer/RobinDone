@@ -37,7 +37,8 @@ import { selectTaskOrganizeMode } from "#e2e/helpers/workspace-agent-warmup";
 // attachment”），旧点击在连接迟到成功后释放共享 session，最新点击也失败。
 const CASE_MARKER = "E2E_RPN18_CONCURRENT_REMOTE_TASK_NAVIGATION";
 const artifactDir = join(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/rpn-18-concurrent-remote-task-navigation",
+  process.env.ROBINRUN_E2E_ARTIFACT_DIR ??
+    ".e2e-artifacts/rpn-18-concurrent-remote-task-navigation",
 );
 const ERROR_TOAST = /Error:|renderer attachment|navigation-cancelled/u;
 type Handler = (...args: unknown[]) => Promise<unknown>;

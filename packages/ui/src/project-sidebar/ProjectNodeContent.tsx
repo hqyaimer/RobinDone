@@ -52,6 +52,212 @@ import { RemoteConnectionStateIcon } from "@/remote-connection/RemoteConnectionS
 const DEFAULT_AVAILABILITY: ProjectAvailability = { online: true };
 const EMPTY_ADDITIONAL_ACTIONS: ProjectRowAction[] = [];
 
+/**
+ * 项目行/智能体页头部共用的动作装配（2026-11-15 裁决：项目行移除后按钮上移到列表头，
+ * 两处必须共用同一份操作定义，避免再次出现 hover 菜单与右键菜单的分叉）。
+ */
+export interface ProjectRowActionInput {
+  project: VirtualProject;
+  availability: ProjectAvailability;
+  /** 在线且非 legacy 单 root 才可编辑（与 ProjectNode 的行内判定一致）。 */
+  editable: boolean;
+  additionalActions: ProjectRowAction[];
+  onOpenDeviceSettings?(): void;
+  onManageProjects?(): void;
+  onRemoveEntry?(): void;
+  onCreate(): void;
+  onViewFiles?(rootPath: string): void;
+  onEdit(): void;
+  onDelete(): void;
+  onPin(): void;
+}
+
+export function useProjectRowActionLists(input: ProjectRowActionInput) {
+  const { intl } = useRobinRunIntl();
+  const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
+  const { project, availability, editable, additionalActions } = input;
+  const primaryRootDisabledReason =
+    project.primaryRootStatus === "missing"
+      ? msg("primaryRootMissing")
+      : project.primaryRootStatus === "unavailable"
+        ? msg("primaryRootUnavailable")
+        : undefined;
+  const showFiles = intl.formatMessage({ id: "workspaceSidebar.showFileTree" });
+  const more = intl.formatMessage({ id: "common.more" });
+  const management: ProjectRowAction[] = [
+    ...additionalActions,
+    ...(input.onOpenDeviceSettings
+      ? [
+          {
+            id: "device-settings",
+            label: msg("deviceSettings"),
+            icon: Settings,
+            run: input.onOpenDeviceSettings,
+          },
+        ]
+      : []),
+    ...(editable
+      ? [
+          { id: "edit", label: msg("edit"), icon: Pencil, run: input.onEdit },
+          {
+            id: "pin",
+            label: project.pinned ? msg("unpin") : msg("pin"),
+            icon: project.pinned ? PinOff : Pin,
+            run: input.onPin,
+          },
+          {
+            id: "delete",
+            label: msg("delete"),
+            icon: Trash2,
+            run: input.onDelete,
+            destructive: true,
+          },
+        ]
+      : []),
+    // 可编辑的远程项目菜单与本地项目一致；从本机移除只在不能删除项目时（离线、legacy 单 root）兜底。
+    ...(!editable && availability.entryId && input.onRemoveEntry
+      ? [
+          {
+            id: "remove-entry",
+            label: msg("removeEntry"),
+            icon: FolderMinus,
+            run: input.onRemoveEntry,
+          },
+        ]
+      : []),
+    ...(input.onManageProjects
+      ? [
+          {
+            id: "manage-projects",
+            label: intl.formatMessage({ id: "projectManagement.manage" }),
+            icon: Folders,
+            run: input.onManageProjects,
+            separatorBefore: true,
+          },
+        ]
+      : []),
+  ];
+  const files: ProjectRowAction[] = project.roots.map((root, index) => ({
+    id: `files-${index}`,
+    label: project.roots.length > 1 ? `${showFiles} · ${root.rootPath}` : showFiles,
+    icon: ListTree,
+    run: () => input.onViewFiles?.(root.rootPath),
+    disabled: Boolean(primaryRootDisabledReason) || !input.onViewFiles,
+  }));
+  const contextActions = [
+    ...(availability.online
+      ? [
+          {
+            id: "create-task",
+            label: msg("createTask"),
+            icon: MessageCirclePlus,
+            run: input.onCreate,
+            disabled: Boolean(primaryRootDisabledReason),
+          },
+          ...files,
+        ]
+      : []),
+    ...management,
+  ];
+  return { management, files, contextActions, primaryRootDisabledReason, showFiles, more };
+}
+
+/** 行尾/头部共用的三个动作控件（更多菜单、文件树、新建会话）；可见性由外层容器决定。 */
+export function ProjectRowActionButtons({
+  management,
+  files,
+  primaryRootDisabledReason,
+  showFiles,
+  more,
+  online,
+  onCreate,
+}: {
+  management: ProjectRowAction[];
+  files: ProjectRowAction[];
+  primaryRootDisabledReason: string | undefined;
+  showFiles: string;
+  more: string;
+  online: boolean;
+  onCreate(): void;
+}) {
+  const { intl } = useRobinRunIntl();
+  const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
+  return (
+    <>
+      <DropdownMenu modal={false}>
+        <ControlHintTooltip title={more}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              data-testid="virtual-project-menu"
+              variant="ghost"
+              size="icon-sm"
+              disabled={!management.length}
+              aria-label={more}
+              className="text-foreground-subtle hover:text-foreground"
+            >
+              <Ellipsis className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+        </ControlHintTooltip>
+        <DropdownMenuContent align="end">
+          <ProjectMenuItems actions={management} />
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {online ? (
+        <>
+          {/* 主目录失效时多 root 也复用禁用按钮，避免菜单仍能打开附加目录。 */}
+          {files.length > 1 && !primaryRootDisabledReason ? (
+            <DropdownMenu modal={false}>
+              <ControlHintTooltip title={showFiles}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    data-testid="virtual-project-files"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={showFiles}
+                    className="text-foreground-subtle hover:text-foreground"
+                  >
+                    <ListTree className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </ControlHintTooltip>
+              <DropdownMenuContent align="end">
+                <ProjectMenuItems actions={files} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <TaskRowActionButton
+              testId="virtual-project-files"
+              label={showFiles}
+              showTooltip
+              disabledReason={
+                primaryRootDisabledReason ??
+                (!files.length || files.every((action) => action.disabled)
+                  ? msg("noFolders")
+                  : undefined)
+              }
+              className="text-foreground-subtle hover:text-foreground"
+              onClick={() => files[0]?.run()}
+            >
+              <ListTree className="size-3.5" />
+            </TaskRowActionButton>
+          )}
+          <TaskRowActionButton
+            testId="virtual-project-create-task"
+            label={msg("createTask")}
+            showTooltip
+            disabledReason={primaryRootDisabledReason}
+            className="text-foreground-subtle hover:text-foreground"
+            onClick={onCreate}
+          >
+            <MessageCirclePlus className="size-3.5" />
+          </TaskRowActionButton>
+        </>
+      ) : null}
+    </>
+  );
+}
+
 export type ProjectNodeProps = {
   project: VirtualProject;
   remoteHost?: RemoteProjectHost;
@@ -139,77 +345,21 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
         projectError: diagnostics?.error ?? remoteHost.lastConnectionError,
       })
     : undefined;
-  const primaryRootDisabledReason =
-    project.primaryRootStatus === "missing"
-      ? msg("primaryRootMissing")
-      : project.primaryRootStatus === "unavailable"
-        ? msg("primaryRootUnavailable")
-        : undefined;
-  const showFiles = intl.formatMessage({ id: "workspaceSidebar.showFileTree" });
-  const more = intl.formatMessage({ id: "common.more" });
-  // 原因：右键是快捷入口的补充；与更多菜单共用操作定义，避免再次删掉 hover 功能。
-  const management: ProjectRowAction[] = [
-    ...additionalActions,
-    ...(onOpenDeviceSettings
-      ? [
-          {
-            id: "device-settings",
-            label: msg("deviceSettings"),
-            icon: Settings,
-            run: onOpenDeviceSettings,
-          },
-        ]
-      : []),
-    ...(editable
-      ? [
-          { id: "edit", label: msg("edit"), icon: Pencil, run: onEdit },
-          {
-            id: "pin",
-            label: project.pinned ? msg("unpin") : msg("pin"),
-            icon: project.pinned ? PinOff : Pin,
-            run: onPin,
-          },
-          { id: "delete", label: msg("delete"), icon: Trash2, run: onDelete, destructive: true },
-        ]
-      : []),
-    // 可编辑的远程项目菜单与本地项目一致；从本机移除只在不能删除项目时（离线、legacy 单 root）兜底。
-    ...(!editable && availability.entryId && onRemoveEntry
-      ? [{ id: "remove-entry", label: msg("removeEntry"), icon: FolderMinus, run: onRemoveEntry }]
-      : []),
-    ...(onManageProjects
-      ? [
-          {
-            id: "manage-projects",
-            label: intl.formatMessage({ id: "projectManagement.manage" }),
-            icon: Folders,
-            run: onManageProjects,
-            separatorBefore: true,
-          },
-        ]
-      : []),
-  ];
-  const files: ProjectRowAction[] = project.roots.map((root, index) => ({
-    id: `files-${index}`,
-    label: project.roots.length > 1 ? `${showFiles} · ${root.rootPath}` : showFiles,
-    icon: ListTree,
-    run: () => onViewFiles?.(root.rootPath),
-    disabled: Boolean(primaryRootDisabledReason) || !onViewFiles,
-  }));
-  const contextActions = [
-    ...(availability.online
-      ? [
-          {
-            id: "create-task",
-            label: msg("createTask"),
-            icon: MessageCirclePlus,
-            run: onCreate,
-            disabled: Boolean(primaryRootDisabledReason),
-          },
-          ...files,
-        ]
-      : []),
-    ...management,
-  ];
+  const { management, files, contextActions, primaryRootDisabledReason, showFiles, more } =
+    useProjectRowActionLists({
+      project,
+      availability,
+      editable,
+      additionalActions,
+      onOpenDeviceSettings,
+      onManageProjects,
+      onRemoveEntry,
+      onCreate,
+      onViewFiles,
+      onEdit,
+      onDelete,
+      onPin,
+    });
   // 导航模式（项目列表页）与树模式共用同一份标题内容；外壳只在点击语义与测试 id 上分叉。
   const titleBody = (
     <>
@@ -360,74 +510,15 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
                 data-testid="virtual-project-actions"
                 className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/project-row:opacity-100 group-focus-within/project-row:opacity-100 [&:has([data-state=open])]:opacity-100 [@media(hover:none)]:opacity-100"
               >
-                <DropdownMenu modal={false}>
-                  <ControlHintTooltip title={more}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        data-testid="virtual-project-menu"
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={!management.length}
-                        aria-label={more}
-                        className="text-foreground-subtle hover:text-foreground"
-                      >
-                        <Ellipsis className="size-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </ControlHintTooltip>
-                  <DropdownMenuContent align="end">
-                    <ProjectMenuItems actions={management} />
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {availability.online ? (
-                  <>
-                    {/* 主目录失效时多 root 也复用禁用按钮，避免菜单仍能打开附加目录。 */}
-                    {files.length > 1 && !primaryRootDisabledReason ? (
-                      <DropdownMenu modal={false}>
-                        <ControlHintTooltip title={showFiles}>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              data-testid="virtual-project-files"
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={showFiles}
-                              className="text-foreground-subtle hover:text-foreground"
-                            >
-                              <ListTree className="size-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                        </ControlHintTooltip>
-                        <DropdownMenuContent align="end">
-                          <ProjectMenuItems actions={files} />
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <TaskRowActionButton
-                        testId="virtual-project-files"
-                        label={showFiles}
-                        showTooltip
-                        disabledReason={
-                          primaryRootDisabledReason ??
-                          (!files.length || !onViewFiles ? msg("noFolders") : undefined)
-                        }
-                        className="text-foreground-subtle hover:text-foreground"
-                        onClick={() => files[0]?.run()}
-                      >
-                        <ListTree className="size-3.5" />
-                      </TaskRowActionButton>
-                    )}
-                    <TaskRowActionButton
-                      testId="virtual-project-create-task"
-                      label={msg("createTask")}
-                      showTooltip
-                      disabledReason={primaryRootDisabledReason}
-                      className="text-foreground-subtle hover:text-foreground"
-                      onClick={onCreate}
-                    >
-                      <MessageCirclePlus className="size-3.5" />
-                    </TaskRowActionButton>
-                  </>
-                ) : null}
+                <ProjectRowActionButtons
+                  management={management}
+                  files={files}
+                  primaryRootDisabledReason={primaryRootDisabledReason}
+                  showFiles={showFiles}
+                  more={more}
+                  online={availability.online}
+                  onCreate={onCreate}
+                />
               </div>
             </div>
           </ContextMenuTrigger>

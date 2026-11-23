@@ -69,6 +69,11 @@ import {
   type RuntimeTaskRegistry,
   type RuntimeTaskSnapshot,
 } from "../runtime-task/registry.js";
+import {
+  agentContactTakeoverReply,
+  agentContactTurnFailedReply,
+  AgentContactRegistry,
+} from "./agent-contact.js";
 
 export interface ExploreSubagentRuntimeRequest {
   agentId: string;
@@ -85,6 +90,8 @@ export interface ExploreSubagentRuntimeRequest {
   permissionMode?: AgentProfile["permissionMode"];
   prompt: string;
   profile: AgentProfile;
+  /** P2.5：用户在 worker 会话直接输入的恢复轮——子 runtime 按真实用户输入记账展示。 */
+  initiator?: "coordinator" | "user";
   registerMessageSink?: (sink: RuntimeTaskMessageSink) => void;
   reportActivity?: () => void;
   resumeFromStore?: boolean;
@@ -98,6 +105,12 @@ export interface ExploreSubagentRuntimeResult {
   response: string;
   traceId: TraceContext["traceId"];
   events: SessionEvent[];
+  /**
+   * 本轮 turnId（2026-11-18 mailbox 跳转）：生产实现返回 childRuntime.executeTurn 的完整
+   * TurnResult，turnId 随行；完成通知把它经 originMeta.sourceTurnId 透传给 master 会话的
+   * mailbox 行，作为跳回子会话汇报轮的精确滚动锚点。测试桩/旧实现缺席时锚点降级为滚到底。
+   */
+  turnId?: string;
 }
 
 export interface ParentTaskNotificationCommand {
@@ -105,6 +118,17 @@ export interface ParentTaskNotificationCommand {
   text: string;
   traceContext: TraceContext;
   taskId: string;
+}
+
+/**
+ * 项目权限全量同步（2026-11-18）：按 childSessionId 定位仍在运行的子 runtime 并切换
+ * 协作模式。由 createDefaultSubagentPort 用 ownedRuntimes 实装——只有它拿得到活子
+ * runtime 集合；配置类命令不能落在物化 shell runtime 上（那不是持有执行态的 runtime）。
+ */
+export interface SetChildSessionModeInput {
+  childSessionId: SessionId;
+  mode: string;
+  traceContext?: TraceContext;
 }
 
 export type EnqueueParentTaskNotification = (
@@ -122,9 +146,28 @@ export interface ExploreSubagentPortOptions {
   // background completion 必须同步写入父 runtime command queue；
   // 返回 undefined 可让 TypeScript 拒绝 async enqueue，避免 fake-notified。
   enqueueParentTaskNotification?: EnqueueParentTaskNotification;
+  /**
+   * 项目权限全量同步（2026-11-18）：按 childSessionId 找活子 runtime 切协作模式。
+   * 由 createDefaultSubagentPort 提供（ownedRuntimes 在它手里）；缺席时端口方法
+   * 返回 unavailable，上层同步循环按失败跳过。
+   */
+  setChildSessionMode?: (input: SetChildSessionModeInput) => Promise<{
+    ok: boolean;
+    error?: string;
+  }>;
   outputRootDir?: string;
   profiles?: readonly AgentProfile[];
   getAgentDefinitions?: GetAgentDefinitions;
+  /**
+   * 名册快照按 turn 冻结（turn 开始时 prepare 一次），同轮新建的 worker 不在当前快照里，
+   * "建队即派工"会以 unknown agent type 失败——主智能体组建团队后立即派工是自然流程，
+   * 不能要求它等到下一轮。解析 miss 时经本钩子重新加载一次定义（Host 的配置监听早已
+   * 刷新共享快照，这次调用只是把新快照取回 runtime 内存）再重试解析。缺席保持旧行为。
+   */
+  reloadAgentDefinitions?: (input: {
+    signal: AbortSignal;
+    traceContext: TraceContext;
+  }) => Promise<void>;
   builtInModelSelectionOverrides?: Partial<
     Record<"general-purpose" | "Explore", import("@robinrun/shared").ModelSelection>
   >;
@@ -134,6 +177,21 @@ export interface ExploreSubagentPortOptions {
   inactivityTimeoutMs?: number;
   autoBackgroundMs?: number;
   logger?: Logger;
+  /**
+   * P2.5 用户介入脱钩状态（延迟返回）的持久化钩子：写/删 child session 的
+   * `runtime/worker-detach-state` entry。内存 registry 会随 CLI 重启丢失，这个 entry
+   * 是跨重启的持久事实；runner 在武装/解除脱钩时调用。缺席只丢跨重启语义，不影响单进程。
+   */
+  persistWorkerDetachState?(
+    childSessionId: SessionId | undefined,
+    detached: boolean,
+  ): Promise<void> | void;
+  /**
+   * agent 消息登记表（2026-11-19，docs/trigger-system.md）：master 侧进程内在途
+   * needReply 请求。轮终态捕获（resolveReceiverReplies）与用户介入合成回复
+   * （resolveReceiverSynthetic）都落在 master 的登记表上；缺席即无消息功能。
+   */
+  agentContactRegistry?: AgentContactRegistry;
 }
 
 export function createExploreSubagentPort(options: ExploreSubagentPortOptions): SubagentPort {
@@ -180,10 +238,21 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
       rawRequest: SubagentLaunchRequest,
       launchOptions?: SubagentLaunchOptions,
     ): Promise<AgentOutput> {
-      const { profile, request } = resolveAgentProfileForRequest(getProfiles(), rawRequest);
+      const { profile, request } = await resolveAgentProfileWithRosterRefresh(
+        getProfiles,
+        rawRequest,
+        options,
+        launchOptions?.signal,
+      );
       const executionRequest = toSubagentExecutionRequest(request);
-      const backgroundRequested =
-        rawRequest.runInBackground === true || profile.background === true;
+      // worker 会话通道（2026-11-16 裁决 + 等待模式扩展）：worker 派发默认异步——主智能体
+      // 不阻塞等待，会话实时落侧栏 worker 名下；完成经 task-notification 唤醒，插话/打断走
+      // SendMessage/TaskStop。显式 run_in_background: false 时改走前台阻塞等待，语义与
+      // subagent 前台调用一致（worker_child 会话仍落侧栏，结果直接随工具结果返回）。
+      const workerDispatch = !!profile.worker;
+      const backgroundRequested = workerDispatch
+        ? rawRequest.runInBackground !== false
+        : rawRequest.runInBackground === true || profile.background === true;
       if (backgroundRequested) {
         if (launchOptions?.modelOverride?.background === "deny") {
           // 单次执行的模型与动态鉴权不能脱离父 loop 生命周期进入后台。
@@ -213,7 +282,12 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
       rawRequest: SubagentRunRequest,
       runOptions?: SubagentRunOptions,
     ): Promise<AgentOutput> {
-      const { profile, request } = resolveAgentProfileForRequest(getProfiles(), rawRequest);
+      const { profile, request } = await resolveAgentProfileWithRosterRefresh(
+        getProfiles,
+        rawRequest,
+        options,
+        runOptions?.signal,
+      );
       const lifecycle = createSubagentLifecycle(options, request, profile);
       const startedAt = new Date(lifecycle.startedAt);
 
@@ -288,6 +362,9 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
                 model: profile.modelSelection
                   ? `${profile.modelSelection.providerId}/${profile.modelSelection.modelId}`
                   : undefined,
+                // worker 会话通道：worker_child 派发携带名册身份，bootstrap 据此注册进
+                // worker 注册表并投影 SessionSummary.worker（gateway→syncer→侧栏 worker 组）。
+                ...(profile.worker ? { worker: profile.worker } : {}),
               },
             );
             readyGate.resolve();
@@ -482,7 +559,12 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
       rawRequest: SubagentStartRequest,
       startOptions?: SubagentStartOptions,
     ): Promise<AgentBackgroundedOutput> {
-      const { profile, request } = resolveAgentProfileForRequest(getProfiles(), rawRequest);
+      const { profile, request } = await resolveAgentProfileWithRosterRefresh(
+        getProfiles,
+        rawRequest,
+        options,
+        startOptions?.signal,
+      );
       const lifecycle = createSubagentLifecycle(options, request, profile);
       const startedAt = new Date(lifecycle.startedAt);
       const output = createAgentBackgroundedOutput(request, lifecycle);
@@ -541,6 +623,8 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
                   model: profile.modelSelection
                     ? `${profile.modelSelection.providerId}/${profile.modelSelection.modelId}`
                     : undefined,
+                  // worker 会话通道：worker_child 派发携带名册身份（同 run 路径）。
+                  ...(profile.worker ? { worker: profile.worker } : {}),
                 },
               );
               readyGate.resolve();
@@ -601,6 +685,17 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
       if (!task || task.type !== "local_agent") return task;
       if (isTerminalRuntimeTask(task)) return task;
 
+      // P2.5 用户介入脱钩：用户在 worker 会话里打断 → 置 detached + 持久化，
+      // 终态通知改为暂缓（finalizeBackgroundStopped 判定），直到 worker 调返回工具。
+      // 一次性 subagent 与模型发起的 TaskStop 不脱钩，通知照旧。
+      if (stopOptions?.initiator === "user" && task.workerChild === true) {
+        registry.update(taskId, (current) => ({ ...current, detached: true }));
+        await options.persistWorkerDetachState?.(task.childSessionId, true);
+        // 介入瞬间话语权切换（2026-11-19 话语权裁决）：其在途 ContactAgent 请求立即
+        // 以合成回复解除；本轮（被停轮）输出不再捕获为回复。
+        resolveAgentContactSynthetic(options, task, "takeover");
+      }
+
       const stopped = createBackgroundStoppedTask(registry, task, stopOptions?.initiator);
       if (!stopped) return undefined;
       return finalizeBackgroundStopped(options, registry, stopped, () => {
@@ -625,6 +720,36 @@ export function createExploreSubagentPort(options: ExploreSubagentPortOptions): 
         track,
       );
     },
+
+    // ---- P2.5 用户协同 worker 会话（路由层入口） ----
+
+    async getTaskByChildSessionId(
+      childSessionId: SessionId,
+    ): Promise<SubagentTaskSnapshot | undefined> {
+      return findTaskByChildSessionId(registry, childSessionId);
+    },
+
+    async stopTaskForChildSession(
+      childSessionId: SessionId,
+      stopOptions?: SubagentStopOptions,
+    ): Promise<SubagentTaskSnapshot | undefined> {
+      const task = findTaskByChildSessionId(registry, childSessionId);
+      if (!task) return undefined;
+      return port.stopTask!(task.taskId, stopOptions);
+    },
+
+    async setChildSessionMode(
+      input: SetChildSessionModeInput,
+    ): Promise<{ ok: boolean; error?: string }> {
+      if (!options.setChildSessionMode) {
+        return { ok: false, error: "child_mode_unavailable" };
+      }
+      return options.setChildSessionMode(input);
+    },
+
+    // requestReturnToDispatcher 已移除（2026-11-19）：ReturnToDispatcher 工具退役，
+    // 脱钩退出路径并入 ContactAgent（subagent/agent-contact.ts 的 worker 端口 submit
+    // 交还话语权分支；detached/returnRequested 状态机与 finalize 投递保持不变）。
   };
 
   // 后台只脱离父 turn；owner 始终持有真实执行和收尾链，不能把 abort guard 返回当作关闭完成。
@@ -787,6 +912,41 @@ function createAutoBackgroundTimer(
   };
 }
 
+/**
+ * 解析派发 profile；miss（unknown/ambiguous agent type）时刷新一次名册快照再重试。
+ *
+ * 根因（2026-11-18 验收）：名册快照在 turn 开始时 prepare 一次后冻结，ManageWorkers
+ * 同轮新建的 worker 不在其中——主智能体"创建团队 → 立即派工"必然失败并退化成一次性
+ * subagent。Host 端 workers.json 监听在写入后约 1.5s 就刷新了共享快照，这里 miss 时
+ * 经 reloadAgentDefinitions 把新快照取回再解析一次即可打通同轮派发。
+ * 只对 unknown-type miss 重载（expectedKind 角色错位是策略错误，重载不会改变判定）；
+ * 每次调用至多重载一次，重载本身失败时抛出原始 miss 错误（对模型更有诊断价值）。
+ */
+async function resolveAgentProfileWithRosterRefresh(
+  getProfiles: () => readonly AgentProfile[],
+  request: SubagentRunRequest,
+  options: Pick<ExploreSubagentPortOptions, "reloadAgentDefinitions">,
+  signal: AbortSignal | undefined,
+): Promise<{ profile: AgentProfile; request: SubagentRunRequest }> {
+  try {
+    return resolveAgentProfileForRequest(getProfiles(), request);
+  } catch (error) {
+    const reload = options.reloadAgentDefinitions;
+    const isUnknownTypeMiss =
+      isCoreError(error) && error.context?.code === AgentErrorCode.UNKNOWN_AGENT_TYPE;
+    if (!reload || !isUnknownTypeMiss || signal?.aborted) throw error;
+    try {
+      await reload({
+        signal: signal ?? new AbortController().signal,
+        traceContext: request.trace,
+      });
+    } catch {
+      throw error;
+    }
+    return resolveAgentProfileForRequest(getProfiles(), request);
+  }
+}
+
 function resolveAgentProfileForRequest(
   profiles: readonly AgentProfile[],
   request: SubagentRunRequest,
@@ -794,6 +954,36 @@ function resolveAgentProfileForRequest(
   const resolution = resolveAgentProfileByType(profiles, request.agentType);
   if (resolution.kind === "matched") {
     const { profile } = resolution;
+    // P2.6 工具分离（裁决 13）：名册 worker 与一次性 subagent 解析互斥。DispatchWorker 已退役（2026-11-20 同构化），本校验仅剩 legacy worker_child 会话的 resume 链路使用。
+    // 即使两者底层能力同构，语义角色也必须在入口校验，避免编排与认知混乱。
+    if (request.expectedKind === "worker" && !profile.worker) {
+      throw createCoreError(
+        CoreErrorType.ToolExecutionFailed,
+        `'${request.agentType}' is not a roster worker. The legacy worker dispatch channel only accepts workers listed in the roster (wkr-* ids); use the Agent tool for one-off subagent types.`,
+        {
+          context: {
+            code: "dispatch_worker_not_a_worker",
+            agentType: request.agentType,
+            parentToolCallId: request.parentToolCallId,
+          },
+          recoverable: true,
+        },
+      );
+    }
+    if (request.expectedKind === "subagent" && profile.worker) {
+      throw createCoreError(
+        CoreErrorType.ToolExecutionFailed,
+        `'${request.agentType}' is a roster worker (wkr-*). One-off subagent dispatch (Agent tool) must not target workers — hand tasks to the worker via the ContactAgent tool with its immutable id.`,
+        {
+          context: {
+            code: AgentErrorCode.WORKER_DISPATCH_FORBIDDEN,
+            agentType: request.agentType,
+            parentToolCallId: request.parentToolCallId,
+          },
+          recoverable: true,
+        },
+      );
+    }
     return {
       profile,
       request:
@@ -850,16 +1040,39 @@ function resolveAgentProfileByType(
   const exact = profiles.find((candidate) => candidate.name === requestedAgentType);
   if (exact) return { kind: "matched", profile: exact };
 
+  // key/name 裁决（2026-11-17）：worker 的派发句柄是 id（profile.name 位即 id），名字匹配
+  // 只作兜底——升级前派发的会话（身份 entry / 消息 agent 字段）记录的是旧显示名，且
+  // 显示名允许重名，重名时按歧义处理让模型改用 id。
+  const workerIdMatches = profiles.filter(
+    (candidate) =>
+      candidate.worker?.workerId === requestedAgentType ||
+      candidate.worker?.workerName === requestedAgentType,
+  );
+  if (workerIdMatches.length === 1) {
+    return { kind: "matched", profile: workerIdMatches[0]! };
+  }
+
   const availableAgentTypes = profiles.map((profile) => profile.name);
 
   const requestedNormalized = normalizeAgentTypeForMatch(requestedAgentType);
-  if (!requestedNormalized) return { availableAgentTypes, kind: "not_found" };
+  if (!requestedNormalized) {
+    if (workerIdMatches.length > 1) {
+      return {
+        availableAgentTypes,
+        kind: "ambiguous",
+        matches: workerIdMatches.map((profile) => profile.name),
+      };
+    }
+    return { availableAgentTypes, kind: "not_found" };
+  }
 
   const normalizedMatches = profiles.filter(
-    (candidate) => normalizeAgentTypeForMatch(candidate.name) === requestedNormalized,
+    (candidate) =>
+      normalizeAgentTypeForMatch(candidate.name) === requestedNormalized ||
+      normalizeAgentTypeForMatch(candidate.worker?.workerName ?? "") === requestedNormalized,
   );
   if (normalizedMatches.length === 1) {
-    return { kind: "matched", profile: normalizedMatches[0] };
+    return { kind: "matched", profile: normalizedMatches[0]! };
   }
   if (normalizedMatches.length > 1) {
     return {
@@ -1001,7 +1214,12 @@ async function sendMessageToLocalAgent(
     return createSendMessageFailure(request, `SendMessage was aborted for ${request.to}.`);
   }
 
-  const task = registry.get(request.to);
+  let task = registry.get(request.to);
+  if ((!task || task.type !== "local_agent") && request.identity) {
+    // P2.5 注册表未命中兜底：CLI 重启后 registry 为空，路由层凭持久化 worker 身份
+    // 合成终态快照走既有 resume 链（profile 按 agentType 从 roster 重解析）。
+    task = createSyntheticWorkerTaskSnapshot(options, request);
+  }
   if (!task || task.type !== "local_agent") {
     return createSendMessageFailure(
       request,
@@ -1009,9 +1227,22 @@ async function sendMessageToLocalAgent(
     );
   }
 
+  // P2.5 用户介入脱钩：用户在 worker 会话里直接输入（无论打断后的恢复轮还是运行中
+  // 插话）→ 先武装 detached + 持久化。该 worker 的终态通知从此暂缓，直到它调返回工具；
+  // 一次性 subagent 与主智能体 SendMessage 不受影响。
+  let currentTask = task;
+  if (request.initiator === "user" && task.workerChild === true) {
+    currentTask =
+      registry.update(task.taskId, (current) => ({ ...current, detached: true })) ?? task;
+    await options.persistWorkerDetachState?.(task.childSessionId, true);
+    // 介入瞬间话语权切换（2026-11-19 话语权裁决）：其在途 ContactAgent 请求立即以
+    // 合成回复解除；本轮输出不再捕获为回复（收尾是说给用户听的）。
+    resolveAgentContactSynthetic(options, currentTask, "takeover");
+  }
+
   const message = createRuntimeTaskPendingMessage(request);
-  if (!isTerminalRuntimeTask(task)) {
-    return deliverMessageToRunningAgent(registry, task, message);
+  if (!isTerminalRuntimeTask(currentTask)) {
+    return deliverMessageToRunningAgent(registry, currentTask, message);
   }
 
   return resumeTerminalAgentInBackground(
@@ -1019,7 +1250,7 @@ async function sendMessageToLocalAgent(
     getProfiles(),
     registry,
     abortControllers,
-    task,
+    currentTask,
     request,
     message,
     sendOptions,
@@ -1057,7 +1288,15 @@ async function resumeTerminalAgentInBackground(
   sendOptions: SubagentSendMessageOptions | undefined,
   track: <T>(work: Promise<T>, critical?: boolean) => Promise<T>,
 ): Promise<SubagentSendMessageResult> {
-  const profile = profiles.find((candidate) => candidate.name === task.agentType);
+  // 恢复解析（key/name 裁决 2026-11-17）：新派发的 task.agentType 是 id（= profile.name）；
+  // 升级前的任务记录的是旧显示名，按 worker 身份标记兜底（重名歧义取首个，恢复场景可接受）。
+  const profile =
+    profiles.find((candidate) => candidate.name === task.agentType) ??
+    profiles.find(
+      (candidate) =>
+        candidate.worker?.workerId === task.agentType ||
+        candidate.worker?.workerName === task.agentType,
+    );
   if (!profile) {
     return createSendMessageFailure(
       request,
@@ -1077,6 +1316,10 @@ async function resumeTerminalAgentInBackground(
     workingDirectory: request.workingDirectory,
     workspaceRoot: request.workspaceRoot,
     trace: request.trace,
+    // P2.5：用户在 worker 会话里直接输入的恢复轮按真实用户记账；插话链路不变。
+    ...(request.initiator === "user" ? { initiator: "user" as const } : {}),
+    // ContactAgent 管线轮（2026-11-19）：恢复轮继承管线标记，终态通知被回复捕获取代。
+    ...(request.contact ? { contactRequestId: request.contact.requestId } : {}),
   };
   const lifecycle = createSubagentLifecycleFromTask(options, resumeRequest, profile, task);
   if (!lifecycle) {
@@ -1094,6 +1337,8 @@ async function resumeTerminalAgentInBackground(
       request: resumeRequest,
       startedAt,
       status: "running",
+      // 恢复重臂不得清空用户介入状态：脱钩期跨恢复轮保持，直到返回工具触发。
+      carryDetachStateFrom: task,
     }),
   );
   try {
@@ -1140,6 +1385,8 @@ async function resumeTerminalAgentInBackground(
               prompt: resumeRequest.prompt,
               resumed: true,
               status: "running",
+              // worker 会话通道：resume 按 agentType 重解析 profile，worker 身份随之恢复。
+              ...(profile.worker ? { worker: profile.worker } : {}),
             },
           );
           readyGate.resolve();
@@ -1177,6 +1424,8 @@ function createRuntimeTaskPendingMessage(
       kind: "coordinator",
       toolCallId: String(request.parentToolCallId),
     },
+    // P2.6：发起者随消息走（修复 sink 固定 initiator——用户插话不得误标 coordinator）。
+    ...(request.initiator ? { initiator: request.initiator } : {}),
     queuedAt: new Date(),
     summary: request.summary,
     traceContext: request.trace,
@@ -1253,6 +1502,8 @@ async function runAgentToCompletion(
       permissionMode: lifecycle.profile.permissionMode,
       prompt: request.prompt,
       profile: lifecycle.profile,
+      // P2.5：用户驱动的恢复轮标记随行——子 runtime 据此按真实用户输入记账展示。
+      ...(request.initiator === "user" ? { initiator: "user" as const } : {}),
       registerMessageSink: createMessageSinkRegistration(options, lifecycle, registry),
       reportActivity: monitorOptions.reportActivity,
       resumeFromStore: executionOptions.resumeFromStore,
@@ -1286,6 +1537,12 @@ async function runAgentToCompletion(
     ],
     totalToolUseCount,
     totalDurationMs,
+    // key/name 裁决（2026-11-17）：worker 派发带用户可读显示名，UI 用它替代 id 展示。
+    ...(lifecycle.profile.worker
+      ? { workerName: lifecycle.profile.worker.workerName }
+      : {}),
+    // mailbox 跳转锚点：子会话汇报轮 turnId，随完成通知经 originMeta 透传到 master 会话。
+    ...(childResult.turnId ? { sourceTurnId: childResult.turnId } : {}),
     ...(totalTokens === undefined ? {} : { totalTokens }),
     ...(usage === undefined ? {} : { usage }),
   };
@@ -1548,13 +1805,65 @@ async function flushPendingMessages(
   }
 }
 
+/**
+ * P2.5 注册表未命中兜底：凭路由层传入的持久化 worker 身份合成一个终态快照，
+ * 复用 resumeTerminalAgentInBackground 的既有链（历史校验、profile 重解析、通知生命周期）。
+ * 合成条目只进 registry（TaskStop/TaskOutput/通知去重都按它工作），不落 worker-identity 之外的盘。
+ */
+function createSyntheticWorkerTaskSnapshot(
+  options: ExploreSubagentPortOptions,
+  request: SubagentSendMessageRequest,
+): RuntimeTaskSnapshot | undefined {
+  const identity = request.identity;
+  if (!identity?.agentType || !identity.childSessionId) return undefined;
+  const agentId = options.createAgentId?.() ?? `agent_worker_resume_${Date.now().toString(36)}`;
+  const startedAt = new Date(Date.now() - 1);
+  return {
+    taskId: agentId,
+    agentId,
+    agentType: identity.agentType,
+    childSessionId: identity.childSessionId,
+    description: identity.workerName ?? identity.agentType,
+    status: "completed",
+    startedAt,
+    completedAt: new Date(),
+    parentSessionId: request.sessionId,
+    parentToolCallId: request.parentToolCallId,
+    taskType: "local_agent",
+    type: "local_agent",
+    workerChild: true,
+    ...(identity.workerName ? { workerName: identity.workerName } : {}),
+    detached: true,
+  };
+}
+
+/**
+ * P2.5 路由辅助：按 child session 反查任务。同一 agentId 的旧终态与新运行并存时
+ * 优先非终态（用户打断/输入针对的是此刻的运行）。
+ */
+function findTaskByChildSessionId(
+  registry: RuntimeTaskRegistry,
+  childSessionId: SessionId,
+): RuntimeTaskSnapshot | undefined {
+  let fallback: RuntimeTaskSnapshot | undefined;
+  for (const task of Object.values(registry.all())) {
+    if (task.type !== "local_agent" || task.childSessionId !== childSessionId) continue;
+    if (!isTerminalRuntimeTask(task)) return task;
+    fallback ??= task;
+  }
+  return fallback;
+}
+
 function createRuntimeTaskSnapshot(input: {
   isBackgrounded: boolean;
   lifecycle: SubagentLifecycle;
   request: SubagentRunRequest;
   startedAt: Date;
   status: RuntimeTaskSnapshot["status"];
+  /** P2.5：恢复/重臂时透传旧任务的用户介入状态（脱钩/返回意图），否则会被重置。 */
+  carryDetachStateFrom?: RuntimeTaskSnapshot;
 }): RuntimeTaskSnapshot {
+  const carried = input.carryDetachStateFrom;
   return {
     taskId: input.lifecycle.agentId,
     agentId: input.lifecycle.agentId,
@@ -1572,12 +1881,41 @@ function createRuntimeTaskSnapshot(input: {
     traceContext: input.lifecycle.runTraceContext,
     type: "local_agent",
     turnId: input.request.turnId,
+    // worker 会话通道（P2.5）：脱钩/返回生命周期只作用于名册 worker 派生的任务。
+    workerChild: input.lifecycle.profile.worker !== undefined,
+    // ContactAgent 管线轮（2026-11-19）：终态通知抑制的判定键（stopped 路径无 request 可读）。
+    ...(input.request.contactRequestId ? { contactRequestId: input.request.contactRequestId } : {}),
+    // P2.6：显示名随任务留存，完成通知的来源区块（senderName）用它。
+    ...(input.lifecycle.profile.worker
+      ? { workerName: input.lifecycle.profile.worker.workerName }
+      : {}),
+    ...(carried?.detached ? { detached: true } : {}),
+    ...(carried?.returnRequested
+      ? {
+          returnRequested: true,
+          ...(carried.returnSummary ? { returnSummary: carried.returnSummary } : {}),
+        }
+      : {}),
   };
 }
 
 function withoutRuntimeMessageState(task: RuntimeTaskSnapshot): RuntimeTaskSnapshot {
   const { messageSink: _messageSink, pendingMessages: _pendingMessages, ...snapshot } = task;
   return snapshot;
+}
+
+/** P2.5：返回投递后解除脱钩（内存侧；持久 entry 由 persistWorkerDetachState 删除）。 */
+function clearWorkerDetachState(): Partial<RuntimeTaskSnapshot> {
+  return { detached: false, returnRequested: false, returnSummary: undefined };
+}
+
+/** 延迟返回通知：worker 轮结果在前，用户在场期间的交接摘要随后（缺席段省略）。 */
+function joinNotificationResult(result: string | undefined, handoff: string | undefined): string {
+  const sections = [result?.trim(), handoff?.trim()].filter((section): section is string =>
+    Boolean(section),
+  );
+  if (sections.length <= 1) return sections[0] ?? "";
+  return `${sections.join("\n\n")}`;
 }
 
 function createAgentBackgroundedOutput(
@@ -1594,8 +1932,59 @@ function createAgentBackgroundedOutput(
     childSessionId: lifecycle.childSessionId,
     backgroundTaskId: lifecycle.agentId,
     outputFile: lifecycle.outputFile,
+    // key/name 裁决（2026-11-17）：worker 派发带用户可读显示名，UI 用它替代 id 展示。
+    ...(lifecycle.profile.worker
+      ? { workerName: lifecycle.profile.worker.workerName }
+      : {}),
     canReadOutputFile: request.callerCanReadOutputFile === true,
   };
+}
+
+/**
+ * agent 消息（2026-11-19，docs/trigger-system.md）：轮终态把该 worker 的最终输出回投给
+ * 在途 ContactAgent 请求（回复捕获取代任务完成通知）。返回结算条数——>0 即抑制本次
+ * 完成通知，避免同一段输出以「任务完成通知」重复到达 master。
+ */
+function resolveAgentContactReplies(
+  options: ExploreSubagentPortOptions,
+  task: { agentId: string; childSessionId?: SessionId },
+  text: string,
+): number {
+  return (
+    options.agentContactRegistry?.resolveReceiverReplies({
+      receiverAgentId: task.agentId,
+      ...(task.childSessionId ? { receiverSessionId: task.childSessionId } : {}),
+      reply: {
+        text,
+        ...(task.childSessionId ? { sourceSessionId: task.childSessionId } : {}),
+      },
+    }) ?? 0
+  );
+}
+
+/**
+ * 合成回复解除（无静默路径）：用户接管（takeover，介入瞬间话语权切换，本轮输出不再
+ * 捕获）与轮次失败（turn_failed）都立即解除该 worker 的全部在途 needReply 请求。
+ */
+function resolveAgentContactSynthetic(
+  options: ExploreSubagentPortOptions,
+  task: { agentId: string; childSessionId?: SessionId; workerName?: string },
+  kind: "takeover" | "turn_failed",
+): number {
+  const contacts = options.agentContactRegistry;
+  if (!contacts) return 0;
+  const displayName = task.workerName ?? task.agentId;
+  return contacts.resolveReceiverSynthetic({
+    receiverAgentId: task.agentId,
+    ...(task.childSessionId ? { receiverSessionId: task.childSessionId } : {}),
+    synthetic: {
+      text:
+        kind === "takeover"
+          ? agentContactTakeoverReply(displayName)
+          : agentContactTurnFailedReply(displayName),
+      receiverDisplayName: displayName,
+    },
+  });
 }
 
 async function finalizeBackgroundCompletion(
@@ -1607,6 +1996,17 @@ async function finalizeBackgroundCompletion(
 ): Promise<void> {
   const current = registry.get(lifecycle.agentId);
   if (current && isTerminalRuntimeTask(current)) return;
+  // P2.5 延迟返回判定：detached = 用户介入过，通知暂缓；returnRequested = worker 已
+  // 调返回工具，本轮终态真正投递（附交接摘要）并解除脱钩。
+  const returning = current?.detached === true && current.returnRequested === true;
+  // agent 消息（2026-11-19）：先捕获回复再决定通知——捕获结算数 >0 时完成通知被抑制。
+  const contactCaptured = resolveAgentContactReplies(
+    options,
+    lifecycle,
+    completed.output.content
+      .map((block) => block.text)
+      .join("\n\n"),
+  );
 
   await writeCompletedAgentArtifacts(lifecycle, request, completed.output);
   const notification: LocalAgentTaskNotificationInput = {
@@ -1614,12 +2014,16 @@ async function finalizeBackgroundCompletion(
     description: completed.output.description,
     outputFile: lifecycle.outputFile,
     parentToolCallId: String(request.parentToolCallId),
-    result: completed.output.content.map((block) => block.text).join("\n\n"),
+    result: joinNotificationResult(
+      completed.output.content.map((block) => block.text).join("\n\n"),
+      returning ? current?.returnSummary : undefined,
+    ),
     status: "completed",
     totalDurationMs: completed.output.totalDurationMs,
     totalTokens: completed.output.totalTokens,
     totalToolUseCount: completed.output.totalToolUseCount,
     usage: completed.output.usage,
+    ...(completed.output.sourceTurnId ? { sourceTurnId: completed.output.sourceTurnId } : {}),
   };
   const completedAt = new Date();
   const task = registry.update(lifecycle.agentId, (current) => ({
@@ -1627,6 +2031,7 @@ async function finalizeBackgroundCompletion(
     status: "completed",
     completedAt,
     output: completed.output,
+    ...(returning ? clearWorkerDetachState() : {}),
     usage: {
       durationMs: completed.output.totalDurationMs,
       modelUsage: completed.output.usage,
@@ -1634,13 +2039,42 @@ async function finalizeBackgroundCompletion(
       totalTokens: completed.output.totalTokens,
     },
   }));
-  enqueueBackgroundNotification(
-    options,
-    registry,
-    lifecycle.agentId,
-    notification,
-    lifecycle.runTraceContext,
-  );
+  if (current?.detached === true && !returning) {
+    options.logger?.info("Subagent completion notification deferred (detached by user)", {
+      ...traceContextToLogContext(lifecycle.runTraceContext),
+      agentId: lifecycle.agentId,
+      event: "subagent.background.notification_deferred",
+      module: "core.subagent",
+    });
+  } else if (returning) {
+    // 延迟返回：积压通知 + 交接摘要投递并解除脱钩（优先级高于 ContactAgent 抑制）。
+    enqueueBackgroundNotification(
+      options,
+      registry,
+      lifecycle.agentId,
+      notification,
+      lifecycle.runTraceContext,
+    );
+  } else if (contactCaptured > 0 || request.contactRequestId !== undefined) {
+    // ContactAgent 管线轮：回复捕获（或 needReply=false 的投递轮）取代任务完成通知。
+    options.logger?.info("Subagent completion notification suppressed (ContactAgent reply path)", {
+      ...traceContextToLogContext(lifecycle.runTraceContext),
+      agentId: lifecycle.agentId,
+      contactCaptured,
+      contactRequestId: request.contactRequestId,
+      event: "subagent.background.notification_suppressed_contact",
+      module: "core.subagent",
+    });
+  } else {
+    enqueueBackgroundNotification(
+      options,
+      registry,
+      lifecycle.agentId,
+      notification,
+      lifecycle.runTraceContext,
+    );
+  }
+  if (returning) void options.persistWorkerDetachState?.(lifecycle.childSessionId, false);
   if (task) {
     await emitBackgroundTaskCompletedEvent(options, request, lifecycle.runTraceContext, task);
   }
@@ -1685,6 +2119,8 @@ async function finalizeBackgroundFailure(
 ): Promise<void> {
   const current = registry.get(lifecycle.agentId);
   if (current && isTerminalRuntimeTask(current)) return;
+  // P2.5 延迟返回判定（与 completion 同规则）。
+  const returning = current?.detached === true && current.returnRequested === true;
 
   // background runner 收到的通常是 Turn failure wrapper，直接读 message
   // 会把 provider 的 429 原文替换成通用的 “Turn execution failed”；这里只选择
@@ -1701,23 +2137,48 @@ async function finalizeBackgroundFailure(
     parentToolCallId: String(request.parentToolCallId),
     status: "failed",
     totalDurationMs,
+    // 延迟返回：失败轮若已登记返回，把 worker 的交接摘要随通知带给派发者。
+    ...(returning && current?.returnSummary ? { result: current.returnSummary } : {}),
   };
   const task = registry.update(lifecycle.agentId, (current) => ({
     ...withoutRuntimeMessageState(current),
     status: "failed",
     completedAt,
     error: errorMessage,
+    ...(returning ? clearWorkerDetachState() : {}),
     usage: {
       durationMs: totalDurationMs,
     },
   }));
-  enqueueBackgroundNotification(
-    options,
-    registry,
-    lifecycle.agentId,
-    notification,
-    lifecycle.runTraceContext,
-  );
+  if (current?.detached === true && !returning) {
+    options.logger?.info("Subagent failure notification deferred (detached by user)", {
+      ...traceContextToLogContext(lifecycle.runTraceContext),
+      agentId: lifecycle.agentId,
+      event: "subagent.background.notification_deferred",
+      module: "core.subagent",
+    });
+  } else if (returning || request.contactRequestId === undefined) {
+    // 延迟返回照常投递；非 ContactAgent 管线轮维持失败通知原语义。
+    enqueueBackgroundNotification(
+      options,
+      registry,
+      lifecycle.agentId,
+      notification,
+      lifecycle.runTraceContext,
+    );
+  } else {
+    // ContactAgent 管线轮失败：失败通知被合成回复路径取代（无静默路径）。
+    options.logger?.info("Subagent failure notification suppressed (ContactAgent reply path)", {
+      ...traceContextToLogContext(lifecycle.runTraceContext),
+      agentId: lifecycle.agentId,
+      contactRequestId: request.contactRequestId,
+      event: "subagent.background.notification_suppressed_contact",
+      module: "core.subagent",
+    });
+  }
+  // 失败轮没有最终输出：在途请求以合成回复解除（登记已结算，与用户接管互不重复触发）。
+  resolveAgentContactSynthetic(options, lifecycle, "turn_failed");
+  if (returning) void options.persistWorkerDetachState?.(lifecycle.childSessionId, false);
   if (task) {
     await emitBackgroundTaskCompletedEvent(options, request, lifecycle.runTraceContext, task);
   }
@@ -1796,6 +2257,9 @@ async function finalizeBackgroundStopped(
   stopped: StoppedBackgroundAgentTask,
   onCommitted?: () => void,
 ): Promise<RuntimeTaskSnapshot | undefined> {
+  // P2.5 延迟返回判定：用户打断（脱钩已武装在 detached 上）暂缓 killed 通知；
+  // 脱钩期间 worker 轮被停止且已请求返回 → 本轮终态投递（附交接摘要）并解除脱钩。
+  const returning = stopped.task.detached === true && stopped.task.returnRequested === true;
   const notification: LocalAgentTaskNotificationInput = {
     agentId: stopped.task.agentId,
     description: stopped.task.description,
@@ -1804,25 +2268,63 @@ async function finalizeBackgroundStopped(
     status: BACKGROUND_AGENT_STOPPED_STATE.notificationStatus,
     stoppedBy: stopped.initiator,
     totalDurationMs: stopped.totalDurationMs,
+    ...(returning && stopped.task.returnSummary ? { result: stopped.task.returnSummary } : {}),
   };
   await writeStoppedAgentArtifacts(stopped.task);
   registry.update(stopped.task.taskId, (current) => ({
     ...stopped.task,
     notified: current.notified,
   }));
-  const enqueued = enqueueBackgroundNotification(
-    options,
-    registry,
-    stopped.task.taskId,
-    notification,
-    stopped.traceContext,
-  );
-  if (!enqueued) {
-    registry.register(stopped.previousTask);
-    throw new Error(
-      `Background agent task stopped notification was not enqueued: ${stopped.task.taskId}`,
+  const deferred = stopped.task.detached === true && !returning;
+  if (deferred) {
+    options.logger?.info("Subagent stop notification deferred (detached by user)", {
+      ...traceContextToLogContext(stopped.traceContext),
+      agentId: stopped.task.agentId,
+      event: "subagent.background.notification_deferred",
+      module: "core.subagent",
+      registryStatus: BACKGROUND_AGENT_STOPPED_STATE.registryStatus,
+    });
+  } else if (
+    !returning &&
+    stopped.initiator === "model" &&
+    stopped.task.contactRequestId !== undefined
+  ) {
+    // ContactAgent 管线轮被模型侧停止：终止通知被合成回复取代（普通派发的 TaskStop
+    // 通知语义不变；用户停走 deferred 分支，stopTask 已在介入瞬间做过合成解除）。
+    options.logger?.info("Subagent stop notification suppressed (ContactAgent reply path)", {
+      ...traceContextToLogContext(stopped.traceContext),
+      agentId: stopped.task.agentId,
+      event: "subagent.background.notification_suppressed_contact",
+      module: "core.subagent",
+    });
+  } else {
+    const enqueued = enqueueBackgroundNotification(
+      options,
+      registry,
+      stopped.task.taskId,
+      notification,
+      stopped.traceContext,
     );
+    if (!enqueued) {
+      registry.register(stopped.previousTask);
+      throw new Error(
+        `Background agent task stopped notification was not enqueued: ${stopped.task.taskId}`,
+      );
+    }
   }
+  if (returning) {
+    registry.update(stopped.task.taskId, (current) => ({
+      ...current,
+      ...clearWorkerDetachState(),
+    }));
+    void options.persistWorkerDetachState?.(stopped.task.childSessionId, false);
+  }
+  // 停止轮没有最终输出：在途请求以合成回复解除（用户停 → 接管文案；模型停 → 失败文案）。
+  resolveAgentContactSynthetic(
+    options,
+    stopped.task,
+    stopped.initiator === "user" ? "takeover" : "turn_failed",
+  );
 
   const committed = registry.get(stopped.task.taskId);
   if (!committed) return undefined;
@@ -1971,6 +2473,8 @@ function enqueueBackgroundNotification(
         workId: taskId,
         // 通知文本与结构化终态出自同一份输入，App 不解析文本。
         subagentResult: localAgentSubagentResult(notification),
+        // mailbox 跳转锚点：子会话汇报轮 turnId，master 会话的 mailbox 行据此精确滚动。
+        ...(notification.sourceTurnId ? { sourceTurnId: notification.sourceTurnId } : {}),
       },
       taskId,
       text: formatLocalAgentTaskNotification(notification),

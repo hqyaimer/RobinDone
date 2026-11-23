@@ -123,7 +123,9 @@ function rowToTask(row: OffPeakTaskRow): RobinRunOffPeakTask {
   };
 }
 
-function readOffPeakModelSelection(row: OffPeakTaskRow): RobinRunOffPeakTask["modelSelection"] | null {
+function readOffPeakModelSelection(
+  row: OffPeakTaskRow,
+): RobinRunOffPeakTask["modelSelection"] | null {
   if (row.model_selection) {
     try {
       const parsed = modelSelectionSchema.safeParse(JSON.parse(row.model_selection));

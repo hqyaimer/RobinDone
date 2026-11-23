@@ -1,12 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import {
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { FolderPlus } from "lucide-react";
 import type { VirtualProject } from "@/project-sidebar/contract.js";

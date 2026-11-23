@@ -236,7 +236,10 @@ export function createRobinRunDataSizeTelemetryScheduler(
       await dependencies.writeState(restoredState);
       persistedState = previousState;
     } catch (error) {
-      dependencies.logger.warn("[robinrun-data-size] failed to roll back report reservation", error);
+      dependencies.logger.warn(
+        "[robinrun-data-size] failed to roll back report reservation",
+        error,
+      );
     }
   }
 

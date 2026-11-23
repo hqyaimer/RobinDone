@@ -1,9 +1,6 @@
 import type { RobinRunConfigOption, RobinRunTaskMeta } from "@robinrun/shared";
 import { getRobinRunAgentModeSelectOptions } from "@robinrun/shared";
-import {
-  decodeCustomModelValue,
-  encodeCustomModelValue,
-} from "@/lib/robinrunCustomModelValue.js";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
 
 function parseProviderQualifiedModel(
   model: string,
@@ -27,9 +24,7 @@ function isSyntheticModelPlaceholder(model: string): boolean {
   return model.trim().toLocaleLowerCase() === "<synthetic>";
 }
 
-export function resolveGlmRecoveredTaskModelValue(
-  taskModel: string | undefined,
-): string | null {
+export function resolveGlmRecoveredTaskModelValue(taskModel: string | undefined): string | null {
   const normalizedTaskModel = taskModel?.trim();
   if (!normalizedTaskModel || isSyntheticModelPlaceholder(normalizedTaskModel)) {
     return null;

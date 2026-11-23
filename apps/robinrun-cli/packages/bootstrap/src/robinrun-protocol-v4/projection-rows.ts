@@ -101,7 +101,21 @@ export function buildUserInputRow(base: RowBaseInput, payload: TurnStartedPayloa
       payload.intent?.conversationQuotes || payload.intent?.botGroupSource
         ? (payload.intent.text ?? payload.input)
         : payload.input,
-    origin: mapUserInputOrigin(payload.inputSource),
+    // 触发器/ContactAgent 投递（P3，2026-11-19 验收；2026-11-22 实测修复）：inputSender
+    // 在场的非 user 轮一律按 mailbox 形态投影（左侧全宽 + 发送者徽章），不渲染成用户
+    // 气泡——与 product-projection 活路径同规则（此前只兜 trigger，ContactAgent 直投的
+    // master/worker 轮伪成用户气泡）。
+    origin:
+      payload.inputSender !== undefined &&
+      payload.inputSender !== "user" &&
+      mapUserInputOrigin(payload.inputSource) === "realUser"
+        ? "mailbox"
+        : mapUserInputOrigin(payload.inputSource),
+    // P2.6 消息来源（2026-11-18 验收修复）：mailbox 行带发送者枚举，UI 徽章按它选文案
+    // （master=主智能体 / trigger=触发器…）；真实用户输入缺省，不占字段。
+    ...(payload.inputSender && payload.inputSender !== "user"
+      ? { originMeta: { sender: payload.inputSender } }
+      : {}),
     ...(sourceCommandId ? { sourceCommandId } : {}),
     ...(rootSourceCommandId ? { rootSourceCommandId } : {}),
     ...(payload.intent?.clientId ? { clientId: payload.intent.clientId } : {}),

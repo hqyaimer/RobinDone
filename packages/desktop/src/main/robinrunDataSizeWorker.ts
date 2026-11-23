@@ -1,6 +1,9 @@
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
 
-import { scanRobinRunDataDirectory, type RobinRunDataSizeScanRequest } from "./robinrunDataSizeScanner.js";
+import {
+  scanRobinRunDataDirectory,
+  type RobinRunDataSizeScanRequest,
+} from "./robinrunDataSizeScanner.js";
 
 type WorkerResponse =
   | { ok: true; result: Awaited<ReturnType<typeof scanRobinRunDataDirectory>> }

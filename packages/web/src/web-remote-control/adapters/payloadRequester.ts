@@ -114,7 +114,8 @@ export function createWebRemoteControlAppPayloadRequester({
 
     acceptPayload(payload: WebRemoteControlAppPayload): boolean {
       if (
-        (payload.robinrun_type === "app-error" || payload.robinrun_type === "workspace-bridge-error") &&
+        (payload.robinrun_type === "app-error" ||
+          payload.robinrun_type === "workspace-bridge-error") &&
         payload.requestId
       ) {
         // Bugfix: remote session 关闭这类异步 bridge error 会带合成 requestId，

@@ -91,9 +91,9 @@ describe("custom OpenAI Provider E2E seed", () => {
       }),
     );
 
-    await expect(stat(join(homeDir, ".robinrun", "v2", "model-providers.json"))).rejects.toMatchObject(
-      { code: "ENOENT" },
-    );
+    await expect(
+      stat(join(homeDir, ".robinrun", "v2", "model-providers.json")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     expect(JSON.parse(await readFile(cliConfigFile, "utf-8"))).toEqual({
       mcp: { example: { command: "example" } },
     });

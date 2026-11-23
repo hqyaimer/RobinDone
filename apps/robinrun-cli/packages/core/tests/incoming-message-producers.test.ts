@@ -12,6 +12,8 @@ function runtime() {
     messageHistory: new MessageHistoryImpl(),
     persistSyntheticUserNoticeForSession: vi.fn(),
     sessionStore: undefined,
+    // P2.6 来源标注要查任务注册表取 worker 身份；桩统一给空注册表（= 一次性 subagent）。
+    runtimeTaskRegistry: { get: () => undefined },
   };
 }
 
@@ -52,6 +54,9 @@ describe("incoming message trusted producers", () => {
     expect(target.messageHistory.toRuntimeEntries()[0]?.metadata).toEqual({
       source: "legacy_synthetic",
       inputPresentation: marker,
+      // P2.6 消息来源标注：空注册表查不到任务 → 按一次性 subagent 标注（senderId/
+      // fromSessionId 在桩命令上缺席，toEqual 忽略 undefined 键）。
+      systemStatus: { sender: "subagent" },
     });
     expect(target.persistSyntheticUserNoticeForSession).toHaveBeenCalledWith(
       expect.objectContaining({

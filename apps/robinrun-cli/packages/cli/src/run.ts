@@ -22,7 +22,8 @@ import { loadBootstrapModule } from "./bootstrap-loader.js";
 import { runEmbeddedSearchCli } from "./internal-search/embedded-search-cli.js";
 import { runCommandsCommand } from "./commands-command.js";
 import { resolveCliCwd } from "./cwd.js";
-import { runLoginCommand, runLogoutCommand } from "./login-command.js";
+// RobinRun(2026-11-22): [hide-upstream-account] login/logout 子命令已注释——恢复时取消本行
+// import { runLoginCommand, runLogoutCommand } from "./login-command.js";
 import { CLI_COMMAND_NAME, CLI_PROCESS_NAME } from "./process-name.js";
 import { isPluginHostInvocation, runPluginHostCommand } from "./plugin-host-command.js";
 import { isDwfChildInvocation, runDwfChildCommand } from "./dwf-child-command.js";
@@ -616,16 +617,19 @@ export const run = async (ctx: RunContext, deps: RunDependencies = {}): Promise<
       );
     case "doctor":
       return runDoctor(ctx, options, workingDirectory);
-    case "login":
-      return await runLoginCommand(
-        ctx,
-        options,
-        commandDeps,
-        parsed.values["no-browser"] === true,
-        parsed.positionals.slice(1),
-      );
-    case "logout":
-      return await runLogoutCommand(ctx, options, commandDeps);
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「robinrun login / logout 子命令」——上游 Coding Plan
+    // OAuth 不可用；恢复时取消本段注释（login-command.ts / logout-command.ts 文件保留）
+    // case "login":
+    //   return await runLoginCommand(
+    //     ctx,
+    //     options,
+    //     commandDeps,
+    //     parsed.values["no-browser"] === true,
+    //     parsed.positionals.slice(1),
+    //   );
+    // case "logout":
+    //   return await runLogoutCommand(ctx, options, commandDeps);
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
     case "commands":
       return await runCommandsCommand(ctx, options, commandDeps, parsed.positionals.slice(1));
     case "plugin":

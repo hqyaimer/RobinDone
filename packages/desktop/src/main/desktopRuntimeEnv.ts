@@ -4,7 +4,10 @@ import { homedir } from "node:os";
 import { join, resolve, win32 } from "node:path";
 import type { ConnectOptions } from "@robinrun/server/remote";
 import { listSSHConfigAliasesFromLocalConfig } from "@robinrun/services/node";
-import { DEV_HELPER_APP_NAME, HELPER_APP_NAME } from "@robinrun/robinrun-cua/broker/helperConstants";
+import {
+  DEV_HELPER_APP_NAME,
+  HELPER_APP_NAME,
+} from "@robinrun/robinrun-cua/broker/helperConstants";
 import {
   ROBINRUN_APP_VERSION_ENV,
   ROBINRUN_BUILD_COMMIT_ID_ENV,
@@ -39,7 +42,9 @@ import {
 } from "./remoteCdn.js";
 import { getElectronAppPath, isElectronAppPackaged } from "./desktopElectronApp.js";
 
-declare const __ROBINRUN_PACKAGED_AGENT_TELEMETRY_ENV__: Readonly<Record<string, string>> | undefined;
+declare const __ROBINRUN_PACKAGED_AGENT_TELEMETRY_ENV__:
+  | Readonly<Record<string, string>>
+  | undefined;
 
 const isLocalDevelopmentRuntime = !isElectronAppPackaged();
 export const desktopRuntimeEnv: RobinRunRuntimeEnv = isLocalDevelopmentRuntime
@@ -64,7 +69,11 @@ function isTruthyRuntimeEnvOverride(name: string): boolean {
 // 这里允许测试显式隔离运行时身份，正常桌面/远控路径保持原来的默认值。
 export const runtimeApplicationName =
   readRuntimeEnvOverride("ROBINRUN_DESKTOP_APPLICATION_NAME") ??
-  (isLocalDevelopmentRuntime ? "RobinRun Dev" : isPreviewPackagedRuntime ? "RobinRun Preview" : "RobinRun");
+  (isLocalDevelopmentRuntime
+    ? "RobinRun Dev"
+    : isPreviewPackagedRuntime
+      ? "RobinRun Preview"
+      : "RobinRun");
 // Electron 的 app.getPath("home") 不一定跟随测试进程里的 HOME 覆盖。
 // e2e 默认工作区依赖 home 路径，因此提供显式覆盖，避免测试写到开发者真实 ~/RobinRunProject。
 export const runtimeHomePath = readRuntimeEnvOverride("ROBINRUN_DESKTOP_HOME_DIR");
@@ -585,7 +594,9 @@ export function buildHostProcessEnv(hostProcessLocalEnv: Record<string, string>)
     // 工作树或根据安装路径猜测；否则同一产品版本的不同修复包无法在 ARMS 中区分。
     [ROBINRUN_BUILD_COMMIT_ID_ENV]: ROBINRUN_COMMIT,
     ...(dataBaseDir !== homedir() ? { ROBINRUN_DATA_BASE_DIR: dataBaseDir } : {}),
-    ...(windowsAppInstallDir ? { [ROBINRUN_WINDOWS_APP_INSTALL_DIR_ENV]: windowsAppInstallDir } : {}),
+    ...(windowsAppInstallDir
+      ? { [ROBINRUN_WINDOWS_APP_INSTALL_DIR_ENV]: windowsAppInstallDir }
+      : {}),
     ...(bundledCuaHelperAppPath
       ? { [ROBINRUN_CUA_BUNDLED_HELPER_APP_PATH_ENV]: bundledCuaHelperAppPath }
       : {}),

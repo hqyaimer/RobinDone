@@ -21,6 +21,7 @@ import {
   CheckIcon,
   Clock,
   CopyIcon,
+  CornerUpLeftIcon,
   FileClockIcon,
   FileIcon,
   GitBranchIcon,
@@ -31,7 +32,7 @@ import {
   TrendingUpDownIcon,
   XIcon,
 } from "lucide-react";
-import { parseAutomationRunId } from "@robinrun/shared";
+import { parseAutomationRunId, workerGroupId } from "@robinrun/shared";
 import {
   TID_V4_EDIT,
   TID_V4_EDIT_ATTACHMENT_REMOVE,
@@ -137,6 +138,8 @@ import { PptxElementReferenceChip } from "@/v4/composer/PptxElementReferenceChip
 import { useOpenPptxElementReference } from "@/v4/composer/useOpenPptxElementReference.js";
 import { ConversationFileRewindDialog } from "@/v4/ConversationFileRewindDialog.js";
 import { BotGroupSourceLabel } from "@/v4/BotGroupSourceLabel.js";
+import { ConversationAgentBlock } from "@/v4/ConversationAgentBlock.js";
+import { TASK_GROUP_COLOR_CLASS } from "@/project-sidebar/grouped/types.js";
 import { splitUserInputEpilogue } from "@/v4/ConversationUserInputEpilogue.js";
 import { ConversationHookDetailsAction } from "@/v4/ConversationHookDetailsAction.js";
 import { formatModelChangeLabel } from "@/v4/composer/modelTriggerDisplay.js";
@@ -236,6 +239,53 @@ function getAttachmentTypeLabel(filename: string, mimeType: string): string {
     return leaf.slice(dotIndex + 1).toUpperCase();
   }
   return (mimeType.split("/").at(-1) ?? mimeType).toUpperCase();
+}
+
+/**
+ * P2.6 消息来源（2026-11-18 验收修复）：mailbox 行的发送者徽章文案。
+ * 按行携带的 sender 闭合枚举选 i18n（触发器/系统行不再误标「主智能体」）；
+ * 旧行（originMeta 缺席）与 master 回退主智能体——worker 会话里 mailbox 行只会来自 master。
+ */
+function mailboxSenderLabel(
+  intl: { formatMessage: (descriptor: { id: string }, values?: Record<string, string>) => string },
+  sender: "user" | "master" | "worker" | "subagent" | "trigger" | "system" | undefined,
+): string {
+  switch (sender) {
+    case "worker":
+      return intl.formatMessage({ id: "chat.sender.badge.worker" });
+    case "subagent":
+      return intl.formatMessage({ id: "chat.sender.badge.subagent" });
+    case "trigger":
+      return intl.formatMessage({ id: "chat.sender.badge.trigger" });
+    case "system":
+      return intl.formatMessage({ id: "chat.sender.badge.system" });
+    default:
+      return intl.formatMessage({ id: "chat.message.sentByMasterAgent" });
+  }
+}
+
+/**
+ * 2026-11-21 实测修复：可见输入行与 drain 行的 originMeta 此前只带 sender 泛称枚举
+ * （身份明细仅在通知行携带），ContactAgent 投递的可见消息徽章回退成泛称「工作者」，看不出
+ * 具体是哪个工作者。投影补齐 senderLabel 后，徽章据此升级：worker → 「工作者-<显示名>」
+ * （与会话本体块标签同格式）；subagent → 类型名；master 丢弃 "master" 字面量回退规范名
+ * 「主智能体」；trigger 一律泛称「触发器」——触发器投递只进它自己绑定的会话（一触发器
+ * 一会话），名字与会话标题重复（2026-11-21 用户裁决）；明细缺席（旧行）维持泛称回退。
+ */
+function resolveMailboxSenderLabel(
+  intl: { formatMessage: (descriptor: { id: string }, values?: Record<string, string>) => string },
+  originMeta: { sender?: "user" | "master" | "worker" | "subagent" | "trigger" | "system" } & {
+    senderLabel?: string;
+  },
+): string {
+  const label = originMeta.senderLabel?.trim();
+  if (label && originMeta.sender === "worker") {
+    return intl.formatMessage({ id: "chat.sender.worker" }, { name: label });
+  }
+  if (label && originMeta.sender === "subagent") {
+    return label;
+  }
+  return mailboxSenderLabel(intl, originMeta.sender);
 }
 
 export type AssistantFeedbackHandler = (
@@ -1028,6 +1078,22 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
   // Bug 根因：旧逻辑只接受 schedule runId，导致用户点击「立即运行」产生的 manual run
   // 没有来源标识。两种合法 automation runId 都应展示；普通会话输入仍因解析失败而不展示。
   const isScheduledAutomationPrompt = parseAutomationRunId(row.sourceCommandId ?? "") !== null;
+  // P2.6 群聊渲染（docs/message-origin.md）：只有真实用户消息在右侧；主智能体派发/插话
+  // （origin=mailbox）一律左侧并带发送者徽章——此前 master 插话伪成用户气泡，
+  // 是 worker 分不清对话方的 UI 侧根源之一。
+  const fromOtherAgent = row.origin === "mailbox";
+  // P2.6 验收修复第四轮（2026-11-18）：mailbox 行块化——行自带 agent 块（半透明灰底 +
+  // 放大块头）。发送者头像色：senderId（wkr-id）→ workerGroupId → 任务组色枚举 →
+  // TASK_GROUP_COLOR_CLASS（块头组色圆）；一次性 subagent / 触发器 / 旧行解析不到组色，
+  // surfaces 缺席走中性回退（块头裸 Bot 图标）。第四轮修正：组色只染头像，块底统一
+  // 半透明灰，不再用组色淡底。
+  const senderColor =
+    row.originMeta?.senderId !== undefined
+      ? context.agentGroupColors?.get(workerGroupId(row.originMeta.senderId))
+      : undefined;
+  const senderSurfaces =
+    senderColor !== undefined ? { avatarClass: TASK_GROUP_COLOR_CLASS[senderColor] } : undefined;
+  const senderLabel = resolveMailboxSenderLabel(intl, row.originMeta ?? {});
   const openPptxElementReference = useOpenPptxElementReference({
     workspacePath: context.workspacePath,
     workspaceIdentity: context.workspaceIdentity,
@@ -1067,6 +1133,17 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
     setEditPromptContexts(parsedPrompt);
     setEditing(true);
   }, [parsedPrompt, parsedShareContext, row.attachments]);
+
+  // mailbox 跳转（2026-11-18）：打开来源会话并滚动到来源消息位置。来源锚点（汇报轮
+  // turnId）随行下发；跨会话滚动目标经 rowContext 的 sourceJump registry 登记给目标 pane 消费。
+  const sourceSessionId = fromOtherAgent ? row.originMeta?.senderSessionId : undefined;
+  const handleJumpToSource = useCallback(() => {
+    if (!sourceSessionId || !context.onNavigateToSourceSession) return;
+    context.onNavigateToSourceSession({
+      sessionId: sourceSessionId,
+      ...(row.originMeta?.senderTurnId ? { sourceTurnId: row.originMeta.senderTurnId } : {}),
+    });
+  }, [context, row.originMeta?.senderTurnId, sourceSessionId]);
 
   const handleCancelEdit = useCallback(() => {
     setDraft(parsedShareContext.visibleContent);
@@ -1296,108 +1373,173 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
     );
   }
 
+  // 第四轮 mailbox 行块化：群来源与附件区在块内（mailbox 行）外的渲染完全一致，
+  // 抽成共享节点供两条分支复用同一份 JSX，避免复制漂移。
+  const botGroupSourceNode = row.botGroupSource ? (
+    // 群来源原先插在材料与正文之间，割裂同一输入；统一放在材料之前。
+    <div data-v4-user-input-source="true" className="mb-2 flex min-w-0 max-w-full">
+      <BotGroupSourceLabel source={row.botGroupSource} />
+    </div>
+  ) : null;
+  const attachmentAreaNode = hasAttachmentArea ? (
+    <div
+      data-v4-user-input-attachments="true"
+      data-testid={testId(TID_V4_ROW_ATTACHMENTS, String(row.rowId))}
+      className={cn(
+        "mb-2 flex max-w-xl flex-col gap-2",
+        fromOtherAgent ? "items-start" : "items-end",
+      )}
+    >
+      {row.botGroupSource && conversationSelections.length > 0 ? (
+        <div
+          data-v4-user-input-quotes="true"
+          className={cn("flex max-w-full", fromOtherAgent ? "justify-start" : "justify-end")}
+        >
+          <ConversationSelectionReferenceChip
+            references={conversationSelections}
+            contentAlign="end"
+          />
+        </div>
+      ) : null}
+      {hasMediaAttachments ? (
+        <div
+          data-v4-user-input-media-attachments="true"
+          className={cn(
+            "flex max-w-full flex-wrap gap-2",
+            fromOtherAgent ? "justify-start" : "justify-end",
+          )}
+        >
+          <UserInputAttachmentList
+            attachments={row.attachments}
+            entityId={row.entityId}
+            attachmentKind="media"
+            directItems
+            rowId={row.rowId}
+            sessionId={context.sessionId ?? undefined}
+            readAttachment={context.readAttachment}
+            readAttachmentRange={context.readAttachmentRange}
+          />
+        </div>
+      ) : null}
+      {hasAttachmentPills ? (
+        <div
+          data-v4-user-input-attachment-pills="true"
+          // 非媒体文件与上下文引用必须共享这一层，才能在换行时
+          // 保持“文件→评论→网页→PPT→对话引用”的顺序和对齐方向（用户行右对齐，来源行左对齐）。
+          className={cn(
+            "flex max-w-full flex-wrap gap-2",
+            fromOtherAgent ? "justify-start" : "justify-end",
+          )}
+        >
+          {hasFileAttachments ? (
+            <UserInputAttachmentList
+              attachments={row.attachments}
+              entityId={row.entityId}
+              attachmentKind="file"
+              directItems
+              rowId={row.rowId}
+              sessionId={context.sessionId ?? undefined}
+              readAttachment={context.readAttachment}
+              readAttachmentRange={context.readAttachmentRange}
+            />
+          ) : null}
+          <CodeCommentAttachmentChip comments={codeCommentContexts} contentAlign="end" />
+          <WebElementContextAttachmentChip contexts={webElementContexts} contentAlign="end" />
+          <PptxElementReferenceChip
+            references={pptxElementReferences}
+            contentAlign="end"
+            onOpen={context.onOpenCodeViewer ? openPptxElementReference : undefined}
+          />
+          {!row.botGroupSource ? (
+            <ConversationSelectionReferenceChip
+              references={conversationSelections}
+              contentAlign="end"
+            />
+          ) : null}
+          <PluginUiModelContextChip contexts={pluginUiContexts} contentAlign="end" />
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
-    <RowShell rowId={row.rowId} className="group/user-row flex flex-col items-end">
+    <RowShell
+      rowId={row.rowId}
+      className={cn("group/user-row flex flex-col", fromOtherAgent ? "items-start" : "items-end")}
+    >
       {isScheduledAutomationPrompt ? (
         <div
           data-v4-user-input-automation-origin="schedule"
-          className="mb-1 flex max-w-xl items-center gap-1 text-ui-sm text-foreground-subtle"
+          className={cn(
+            "mb-1 flex max-w-xl items-center gap-1 text-ui-sm text-foreground-subtle",
+            fromOtherAgent ? "justify-start" : "justify-end",
+          )}
         >
           <Clock data-cron-task-icon="true" aria-hidden="true" className="size-3.5 shrink-0" />
           <span>{intl.formatMessage({ id: "chat.message.sentByScheduledTask" })}</span>
         </div>
       ) : null}
-      {row.botGroupSource ? (
-        // 群来源原先插在材料与正文之间，割裂同一输入；统一放在材料之前。
-        <div data-v4-user-input-source="true" className="mb-2 flex min-w-0 max-w-full">
-          <BotGroupSourceLabel source={row.botGroupSource} />
-        </div>
-      ) : null}
-
-      {hasAttachmentArea ? (
-        <div
-          data-v4-user-input-attachments="true"
-          data-testid={testId(TID_V4_ROW_ATTACHMENTS, String(row.rowId))}
-          className="mb-2 flex max-w-xl flex-col items-end gap-2"
-        >
-          {row.botGroupSource && conversationSelections.length > 0 ? (
-            <div data-v4-user-input-quotes="true" className="flex max-w-full justify-end">
-              <ConversationSelectionReferenceChip
-                references={conversationSelections}
-                contentAlign="end"
-              />
-            </div>
-          ) : null}
-          {hasMediaAttachments ? (
-            <div
-              data-v4-user-input-media-attachments="true"
-              className="flex max-w-full flex-wrap justify-end gap-2"
-            >
-              <UserInputAttachmentList
-                attachments={row.attachments}
-                entityId={row.entityId}
-                attachmentKind="media"
-                directItems
-                rowId={row.rowId}
+      {fromOtherAgent ? (
+        // P2.6 验收修复第四轮（2026-11-18）：mailbox 行块化——行自带 agent 块（半透明
+        // 灰底 + 放大块头，组色只染块头头像），不再复用用户输入行的裸布局；块内是
+        // 「块头（原徽章升级）+ 材料 + 正文」，正文保持第三轮的全宽 markdown 管线。
+        // 块外仍是行级 hover 动作。第三轮口径不变：mailbox 行是 agent 的发言（worker
+        // 汇报 / master 插话），不是用户输入；通知行 static 渲染（completed + 非 streaming）。
+        <ConversationAgentBlock label={senderLabel} surfaces={senderSurfaces} className="gap-2">
+          {botGroupSourceNode}
+          {attachmentAreaNode}
+          {hasBubble ? (
+            // 第四轮修正（验收反馈）：去掉旧气泡属性——styles.css 的
+            // `[data-v4-user-input-bubble]` 全局规则会把它涂成用户气泡底色
+            // （--color-user-message-bubble），块内正文出现第二层背景。mailbox 正文
+            // 现在直接落在 agent 块的底色上，不再承担气泡语义。
+            <div className="w-full max-w-full text-ui-base">
+              <GenUiMessageResponse
+                completed
+                messageKey={`${row.rowId}:${row.entityId ?? ""}`}
+                renderRobinRunFileCitations
+                streaming={false}
+                workspacePath={context.workspacePath}
+                workspaceIdentity={context.workspaceIdentity}
+                workspaceRemoteSessionId={context.workspaceRemoteSessionId}
+                theme={context.theme}
+                codePreviewSettings={context.codePreviewSettings}
+                onOpenCodeViewer={context.onOpenCodeViewer}
+                onOpenFileLink={context.onOpenFileLink}
+                onOpenExternalUrl={context.onOpenBrowserUrl}
                 sessionId={context.sessionId ?? undefined}
                 readAttachment={context.readAttachment}
-                readAttachmentRange={context.readAttachmentRange}
-              />
+              >
+                {visibleText}
+              </GenUiMessageResponse>
             </div>
           ) : null}
-          {hasAttachmentPills ? (
-            <div
-              data-v4-user-input-attachment-pills="true"
-              // 非媒体文件与上下文引用必须共享这一层，才能在换行时
-              // 保持“文件→评论→网页→PPT→对话引用”的顺序和统一右对齐。
-              className="flex max-w-full flex-wrap justify-end gap-2"
-            >
-              {hasFileAttachments ? (
-                <UserInputAttachmentList
-                  attachments={row.attachments}
-                  entityId={row.entityId}
-                  attachmentKind="file"
-                  directItems
-                  rowId={row.rowId}
-                  sessionId={context.sessionId ?? undefined}
-                  readAttachment={context.readAttachment}
-                  readAttachmentRange={context.readAttachmentRange}
-                />
-              ) : null}
-              <CodeCommentAttachmentChip comments={codeCommentContexts} contentAlign="end" />
-              <WebElementContextAttachmentChip contexts={webElementContexts} contentAlign="end" />
-              <PptxElementReferenceChip
-                references={pptxElementReferences}
-                contentAlign="end"
-                onOpen={context.onOpenCodeViewer ? openPptxElementReference : undefined}
-              />
-              {!row.botGroupSource ? (
-                <ConversationSelectionReferenceChip
-                  references={conversationSelections}
-                  contentAlign="end"
-                />
-              ) : null}
-              <PluginUiModelContextChip contexts={pluginUiContexts} contentAlign="end" />
-            </div>
+        </ConversationAgentBlock>
+      ) : (
+        <>
+          {botGroupSourceNode}
+          {attachmentAreaNode}
+          {hasBubble ? (
+            // 附件和上下文引用只属于消息行，不属于气泡；否则仅附件消息会留下空气泡。
+            // 同一 row 会渲染在主会话和 Subagent 侧栏，固定宽度会忽略实际宿主宽度。
+            // 气泡保留 flex item 的自动宽度；宿主至少 624px 时再以 36rem 封顶并保留 48px 余量。
+            <ConversationUserInputBubble
+              text={visibleText}
+              contentParts={row.botGroupSource?.contentParts}
+              rowId={row.rowId}
+              epilogue={epilogue}
+              attachments={row.attachments}
+              contextAttachmentCount={countComposerPromptContexts(parsedPrompt)}
+            />
           ) : null}
-        </div>
-      ) : null}
-      {hasBubble ? (
-        // 附件和上下文引用只属于消息行，不属于气泡；否则仅附件消息会留下空气泡。
-        // 同一 row 会渲染在主会话和 Subagent 侧栏，固定宽度会忽略实际宿主宽度。
-        // 气泡保留 flex item 的自动宽度；宿主至少 624px 时再以 36rem 封顶并保留 48px 余量。
-        <ConversationUserInputBubble
-          text={visibleText}
-          contentParts={row.botGroupSource?.contentParts}
-          rowId={row.rowId}
-          epilogue={epilogue}
-          attachments={row.attachments}
-          contextAttachmentCount={countComposerPromptContexts(parsedPrompt)}
-        />
-      ) : null}
+        </>
+      )}
       {row.source?.kind === "genUi" && (
         <div
-          className="mt-1 text-right text-ui-sm text-foreground-subtlest"
+          className={cn(
+            "mt-1 text-ui-sm text-foreground-subtlest",
+            fromOtherAgent ? "text-left" : "text-right",
+          )}
           data-v4-user-input-source="genUi"
         >
           {intl.formatMessage({ id: "genUi.from" }, { name: row.source.title || "Gen UI" })}
@@ -1407,7 +1549,10 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
         // 插件 UI 代发：来源标记来自 CLI 持久化的 intent.source，不由 renderer 推断。
         <div
           data-v4-user-input-source={row.source.pluginId}
-          className="mt-1 text-right text-ui-sm text-foreground-subtlest"
+          className={cn(
+            "mt-1 text-ui-sm text-foreground-subtlest",
+            fromOtherAgent ? "text-left" : "text-right",
+          )}
         >
           {intl.formatMessage(
             { id: "pluginUi.fromPlugin" },
@@ -1418,7 +1563,10 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
       {status ? (
         <div
           data-v4-user-input-status="true"
-          className="mt-1 text-right text-ui-sm text-foreground-subtlest"
+          className={cn(
+            "mt-1 text-ui-sm text-foreground-subtlest",
+            fromOtherAgent ? "text-left" : "text-right",
+          )}
           aria-live="polite"
         >
           {status}
@@ -1439,6 +1587,18 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
           rowId={row.rowId}
           label={intl.formatMessage({ id: "chat.message.copy" })}
         />
+        {/* mailbox 跳转（2026-11-18）：worker/subagent 汇报与 master 插话行提供「跳转到来源」，
+            打开来信会话并定位到来源消息；真实用户行与无来源地址的旧行不显示。 */}
+        {sourceSessionId && context.onNavigateToSourceSession ? (
+          <MessageAction
+            label={intl.formatMessage({ id: "chat.message.jumpToSource" })}
+            tooltip={intl.formatMessage({ id: "chat.message.jumpToSource" })}
+            data-testid={`v4-jump-source-${row.rowId}`}
+            onClick={handleJumpToSource}
+          >
+            <CornerUpLeftIcon className="size-3.5" />
+          </MessageAction>
+        ) : null}
         {onEdit && row.entityId ? (
           <MessageAction
             label={intl.formatMessage({ id: "chat.message.edit" })}

@@ -126,6 +126,10 @@ export const backgroundResultOriginMetaSchema = z.object({
   workflowBlocked: workflowBlockedMetaSchema.optional().catch(undefined),
   // 只在 subagent 的单条通知轮上在场；形状不认识时当作缺席，界面退回通知文本。
   subagentResult: subagentResultMetaSchema.optional().catch(undefined),
+  // mailbox 跳转锚点（2026-11-18）：worker/subagent 完成通知的子会话汇报轮 turnId，
+  // master 会话的 mailbox 行据此跳回子会话精确滚动。与 subagentResult 同口径（单条通知
+  // 轮才在场，合并轮/bash/workflow 缺席）；旧 CLI 不发，旧桌面 zod 剥离未知键不受影响。
+  sourceTurnId: z.string().min(1).max(200).optional(),
 });
 export type BackgroundResultOriginMeta = z.infer<typeof backgroundResultOriginMetaSchema>;
 

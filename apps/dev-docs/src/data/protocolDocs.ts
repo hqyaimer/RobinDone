@@ -143,7 +143,8 @@ export const concepts: Concept[] = [
     name: "clientMessageId",
     kind: "compat",
     summary: "旧字段名，过去承载 UI 每次 prompt 的相关性 ID；已统一改名为 inputId。",
-    lifecycle: "旧协议字段；新 RobinRun Protocol schema 不再接受它，继续发送会触发 Invalid params。",
+    lifecycle:
+      "旧协议字段；新 RobinRun Protocol schema 不再接受它，继续发送会触发 Invalid params。",
     owner: "deprecated",
     source: "dae26032: packages/shared/src/robinrun-protocol/index.ts",
     related: ["inputId", "sessionSend"],
@@ -230,7 +231,8 @@ export const concepts: Concept[] = [
     lifecycle:
       "UI 在 busy 时提交输入；agent 返回 pendingInputId，并在 drained/discarded/rejected 中更新状态。",
     owner: "agent runtime",
-    source: "packages/shared/src/robinrun-protocol/index.ts#robinrunTurnSteerQueuedEventPayloadSchema",
+    source:
+      "packages/shared/src/robinrun-protocol/index.ts#robinrunTurnSteerQueuedEventPayloadSchema",
     related: ["pendingInputId", "turnId", "inputId"],
   },
   {

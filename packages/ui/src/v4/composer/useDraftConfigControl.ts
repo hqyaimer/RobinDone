@@ -22,11 +22,14 @@ import {
 import { submissionModeSchema } from "@robinrun/shared/robinrun-protocol-v4";
 import { prepareWorkspaceWithRobinRunSessionService } from "@/hooks/useWorkspacePrepare.js";
 import { useRobinRunSessionService } from "@/hooks/useRobinRunSessionService.js";
-import { useSettings } from "@/hooks/useSettingService.js";
+import { useSettings, updateSettingsAndRefreshSnapshot } from "@/hooks/useSettingService.js";
 import { parseModelPickerValue } from "@/lib/robinrunSessionProjection.js";
-import { resolveDraftInitialModelSelection } from "@/lib/composerRecent.js";
+import {
+  recordGlobalComposerMode,
+  resolveDraftInitialModelSelection,
+} from "@/lib/composerRecent.js";
 import { initializeNewTaskDraft } from "@/v4/composer/newTaskDraft.js";
-import { useComposerClientNamespace } from "@/hooks/useServices.js";
+import { useComposerClientNamespace, useOptionalServices } from "@/hooks/useServices.js";
 import { resolveComposerScope, composerScopeKey } from "@/v4/composer/composerDraftStore.js";
 import {
   clearV4ComposerDraft,
@@ -185,6 +188,8 @@ export function useDraftConfigControl(params: {
   const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
   const robinrunSessionService = useRobinRunSessionService(workspacePath, null, workspaceIdentity);
   const { settings: sharedSettings } = useSettings();
+  // 全局权限模式升格（2026-11-22）：改档双写 AppSettings（host 可读，自动创建的会话继承）。
+  const services = useOptionalServices();
   const appFollowupMode = resolveAppFollowupMode(sharedSettings);
   const scopeId = sessionId ?? V4_DRAFT_SCOPE_ROOT;
   const clientNamespace = useComposerClientNamespace();
@@ -257,12 +262,22 @@ export function useDraftConfigControl(params: {
   const modelSelectionView =
     modelSelectionRead.state.status === "ready" ? modelSelectionRead.state.view : null;
   if (currentState.initialization === "new-task" && !draft.mode && modelSelectionView) {
+    // 项目权限全量同步（2026-11-18）：项目确认过完全访问后，新会话草稿默认完全访问
+    // （Recent 显式意图仍优先）。提交链路自带 mode，worker 派发经继承链同步拿到。
+    const projectDefaultFullAccess =
+      sharedSettings?.robinrunProjects?.some(
+        (entry) => entry.path === workspacePath && entry.fullAccessConfirmedAt !== undefined,
+      ) ?? false;
     draft = initializeNewTaskDraft(
       draft,
       workspacePath,
       workspaceIdentity,
       modelSelectionView,
       rootScope,
+      projectDefaultFullAccess ? "yolo" : undefined,
+      // 全局权限模式升格（2026-11-22）：设置快照优先（跨上下文一致），localStorage 键
+      // 作渲染层回退（写入侧双写，newTaskDraft 内部处理）。
+      sharedSettings?.globalComposerMode,
     );
   }
   // 空配置先初始化了权限，旧逻辑便因已有 mode 永久跳过模型初始化。
@@ -524,6 +539,27 @@ export function useDraftConfigControl(params: {
     (update: (current: Partial<SessionConfigState>) => Partial<SessionConfigState>) => {
       const next = update(draftConfigRef.current);
       const mode = submissionModeSchema.safeParse(next.mode);
+      // 显式权限切换同步全局缺省（2026-11-21）：改档即写，不依赖提交——新会话草稿
+      // 经 readGlobalComposerMode 继承，免去每个新会话手动重选权限。
+      if (mode.success) {
+        recordGlobalComposerMode(mode.data);
+        // 全局权限模式升格（2026-11-22，P3 第十三批）：同步写 AppSettings——host/CLI 可读，
+        // 触发器/ContactAgent 等自动创建的会话经 adapter 缺省解析继承同一选择；此前的
+        // localStorage 键只有渲染进程能读，自动会话永远落 CLI 缺省 build。plan 是草稿层
+        // 独立开关位，落盘前归一 build（设置值域不含 plan）。写失败不阻断改档本身。
+        const persistedMode = mode.data === "plan" ? ("build" as const) : mode.data;
+        if (services) {
+          void updateSettingsAndRefreshSnapshot({
+            settingService: services.settingService,
+            patch: { globalComposerMode: persistedMode },
+          }).catch((error) => {
+            logger.warn(
+              "[v4-draft-config] 全局权限模式写入设置失败，保留 localStorage 缺省",
+              error,
+            );
+          });
+        }
+      }
       updateComposerDraft((current) => ({
         ...current,
         mode: mode.success ? mode.data : current.mode,
@@ -532,7 +568,7 @@ export function useDraftConfigControl(params: {
         ...(current.mode ? {} : { mode: mode.success ? mode.data : "build" }),
       }));
     },
-    [updateComposerDraft],
+    [updateComposerDraft, services],
   );
   const observeDraftPermissionGrant = useCallback(
     (sourceSessionId: string, config: Partial<SessionConfigState>) => {

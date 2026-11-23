@@ -1,52 +1,10 @@
 import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
 import { memo } from "react";
-import { useDroppable } from "@dnd-kit/core";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 
-import { MessageCirclePlus } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { GroupedTaskRow } from "@/project-sidebar/grouped/task-row.js";
 import type { TaskGroupMenuItem } from "@/project-sidebar/grouped/shared.js";
-
-export function EmptyGroupDropZone({
-  groupId,
-  onCreateTask,
-}: {
-  groupId: string;
-  onCreateTask: () => void;
-}) {
-  const { intl } = useRobinRunIntl();
-  const droppable = useDroppable({
-    id: `group-empty-drop:${groupId}`,
-    data: {
-      type: "grouped-empty-drop-zone",
-      groupId,
-    },
-  });
-  return (
-    <button
-      ref={droppable.setNodeRef}
-      type="button"
-      data-grouped-empty-drop-zone-id={groupId}
-      className={cn(
-        "flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border px-2 py-2 text-center text-ui-base text-foreground-subtle transition-[background-color,border-color,color] duration-150 ease-out motion-reduce:transition-none",
-        "hover:border-border-hover hover:bg-surface-hover hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-input-border-focused",
-      )}
-      onClick={(event) => {
-        event.stopPropagation();
-        onCreateTask();
-      }}
-      onMouseDown={(event) => event.stopPropagation()}
-      onPointerDown={(event) => event.stopPropagation()}
-      onTouchStart={(event) => event.stopPropagation()}
-    >
-      <MessageCirclePlus aria-hidden="true" className="size-3.5 shrink-0" />
-      <span className="min-w-0">{intl.formatMessage({ id: "taskGroup.emptyDropZoneAction" })}</span>
-    </button>
-  );
-}
 
 function GroupedTaskItemComponent({
   task,
@@ -58,7 +16,6 @@ function GroupedTaskItemComponent({
   workspaceLabel,
   onSelectTask,
   onCloseTask,
-  onOpenFileTree,
   onMoveTaskToGroup,
   onMoveTaskToTop,
   onStartRenameTask,
@@ -78,7 +35,6 @@ function GroupedTaskItemComponent({
   workspaceLabel: string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
   onCloseTask: (task: RobinRunTaskMeta) => void;
-  onOpenFileTree?: (task: RobinRunTaskMeta) => void;
   onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
   onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
   onStartRenameTask: (task: RobinRunTaskMeta) => void;
@@ -101,7 +57,6 @@ function GroupedTaskItemComponent({
         workspaceLabel={workspaceLabel}
         onSelectTask={onSelectTask}
         onCloseTask={onCloseTask}
-        onOpenFileTree={onOpenFileTree}
         onMoveTaskToGroup={onMoveTaskToGroup}
         onMoveTaskToTop={onMoveTaskToTop}
         onStartRenameTask={onStartRenameTask}

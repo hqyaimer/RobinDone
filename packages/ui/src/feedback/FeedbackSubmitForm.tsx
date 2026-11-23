@@ -51,7 +51,10 @@ import type { IFeedbackService } from "@robinrun/services";
 import type { IPlatformService } from "@robinrun/shared";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 
 export { SubmitProgressView } from "@/feedback/FeedbackSubmitProgressView.js";
 export { readCurrentAgentModelContext } from "@/feedback/feedbackSubmitModelContext.js";

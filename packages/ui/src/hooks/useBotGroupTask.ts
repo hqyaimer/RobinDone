@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { isFeishuBotProvider, type BotContextState, type FeishuBotProvider } from "@robinrun/shared";
+import {
+  isFeishuBotProvider,
+  type BotContextState,
+  type FeishuBotProvider,
+} from "@robinrun/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 

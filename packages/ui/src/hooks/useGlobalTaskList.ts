@@ -7,7 +7,10 @@ import type {
 import { logger } from "@/logger.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import type { WorkspaceTabState } from "@/store/tabStore.js";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 import { attachTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 import { stabilizeTaskListItems } from "@/v4/taskListItemStabilization.js";
 import { getWindowControllerTaskListRegistry } from "@/v4/windowControllerTaskListRegistry.js";
@@ -18,7 +21,9 @@ type GlobalTaskListItem = WindowHostControllerTaskListItem;
 const subscribeToNothing = () => () => {};
 const zeroRevision = () => 0;
 
-function buildWorkspaceScopes(workspaceTabs: WorkspaceTabState[]): RobinRunTaskListWorkspaceScope[] {
+function buildWorkspaceScopes(
+  workspaceTabs: WorkspaceTabState[],
+): RobinRunTaskListWorkspaceScope[] {
   const scopes = new Map<string, RobinRunTaskListWorkspaceScope>();
   for (const tab of workspaceTabs) {
     const scope = {

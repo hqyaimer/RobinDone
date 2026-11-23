@@ -1,5 +1,8 @@
 import type { IUsageStatsService } from "@robinrun/services";
-import type { CodingPlanResetOpportunityResult, CodingPlanResetScopeRequest } from "@robinrun/shared";
+import type {
+  CodingPlanResetOpportunityResult,
+  CodingPlanResetScopeRequest,
+} from "@robinrun/shared";
 import { logger } from "@/logger.js";
 
 const STATUS_POLL_INTERVAL_MS = 5 * 60_000;

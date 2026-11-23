@@ -41,7 +41,8 @@ export async function resolveBuiltinProviderBuildEnvironment({
 /** @param {{root?: string, env?: Record<string, string | undefined>}} options */
 export async function loadBuiltinProviderConfig({ root = repositoryRoot, env = process.env } = {}) {
   const environment = await resolveBuiltinProviderBuildEnvironment({ root, env });
-  const filename = environment === "production" ? "robinrun-builtin.json" : "robinrun-builtin.test.json";
+  const filename =
+    environment === "production" ? "robinrun-builtin.json" : "robinrun-builtin.test.json";
   const sourcePath = resolve(root, "config/provider", filename);
   try {
     const content = await readFile(sourcePath, "utf8");
@@ -49,8 +50,9 @@ export async function loadBuiltinProviderConfig({ root = repositoryRoot, env = p
     // tsx 仅供构建工具加载仓库 TS，不进入产品 bundle，也不复制一份校验规则。
     // Windows 绝对路径的盘符会被 ESM 当作协议，转为 file URL 后各平台共用同一加载入口。
     const { decodeRobinRunBuiltinRelease } = await tsImport(
-      pathToFileURL(resolve(repositoryRoot, "packages/provider-node/src/robinrun-builtin-release.ts"))
-        .href,
+      pathToFileURL(
+        resolve(repositoryRoot, "packages/provider-node/src/robinrun-builtin-release.ts"),
+      ).href,
       import.meta.url,
     );
     decodeRobinRunBuiltinRelease(JSON.parse(content));

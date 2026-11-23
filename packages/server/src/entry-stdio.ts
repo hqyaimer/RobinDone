@@ -61,10 +61,11 @@ async function main() {
 
   // Phase 3: Initialize services and start stdio RPC server
   let topicResourceChannel: IChannel | undefined;
-  const robinrunBuiltinProviderConfigFilePath = await materializeBundledRobinRunBuiltinProviderConfig({
-    environmentConfigRoot: getAppConfigDir(),
-    content: readBundledRobinRunBuiltinProviderConfig(),
-  });
+  const robinrunBuiltinProviderConfigFilePath =
+    await materializeBundledRobinRunBuiltinProviderConfig({
+      environmentConfigRoot: getAppConfigDir(),
+      content: readBundledRobinRunBuiltinProviderConfig(),
+    });
   await migrateApplicationStorage(await createSettingService().get());
   const { authorityModeParseResult, services } = createStdioServices({
     env: process.env,

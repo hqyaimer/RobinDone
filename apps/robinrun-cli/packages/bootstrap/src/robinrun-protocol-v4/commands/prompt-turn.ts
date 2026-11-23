@@ -1,4 +1,4 @@
-import { OFF_PEAK_EXECUTION_TOOL_DENYLIST } from "@robinrun/shared";
+import { OFF_PEAK_EXECUTION_TOOL_DENYLIST, type SystemStatusPayload } from "@robinrun/shared";
 // 原生 prompt turn 运行器。
 //
 // Core admission 只负责接受输入并建立 session-scoped reservation；本文件不再拥有
@@ -29,6 +29,11 @@ export interface StartPromptTurnParamsBase {
   requireIdle?: boolean;
   /** Bot 入站 turn 的稳定回推地址；仅在本 turn 内暴露给 CronCreate。 */
   botDeliveryTarget?: RobinRunAutomationBotDeliveryTarget;
+  /**
+   * P3 触发器投递（2026-11-19 验收）：host 携带的完整来源身份（senderName/sessionKey）。
+   * 在场时优先于按 automationId 合成的最小区块。
+   */
+  systemStatus?: SystemStatusPayload;
 }
 
 export type StartPromptTurnParams = StartPromptTurnParamsBase & TurnBackgroundAttribution;
@@ -215,6 +220,18 @@ async function startPromptTurnAfterPreflight(
           offPeakTaskId: activeOffPeakTaskId,
           offPeakRunType: params.offPeakRunType,
         }),
+        // P2.6 消息来源区块（docs/message-origin.md）：触发器/闲时轮的模型可见标注——
+        // 上游只在 turn 元数据记 automationId（模型盲），这里补进 sender 区块，
+        // 让 agent 明确知道这一轮不是用户在说话。真实用户输入不传（渲染层兜底 user）。
+        // P3 触发器投递（2026-11-19 验收）：host 携带的完整 systemStatus（含
+        // senderName/sessionKey）优先；缺席才按 automationId 合成最小区块。
+        ...(params.systemStatus
+          ? { systemStatus: params.systemStatus }
+          : activeAutomationId
+            ? { systemStatus: { sender: "trigger" as const, triggerId: activeAutomationId } }
+            : activeOffPeakTaskId
+              ? { systemStatus: { sender: "system" as const } }
+              : {}),
         intent: params.intent,
         ...(params.modelExecution ? { modelExecution: params.modelExecution } : {}),
         ...(params.sharedContextRefs ? { sharedContextRefs: params.sharedContextRefs } : {}),

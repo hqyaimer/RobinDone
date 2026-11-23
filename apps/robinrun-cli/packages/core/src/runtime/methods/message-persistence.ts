@@ -1,5 +1,6 @@
 import type { RuntimeInputPresentation } from "@robinrun/contracts";
 import { createModelId, createModelProviderId } from "@robinrun/contracts";
+import type { SystemStatusPayload } from "@robinrun/shared";
 import { SessionEventType, createPartId, traceContextToLogContext } from "../deps.js";
 import { withConversationQuotes } from "../helpers/conversation-quotes.js";
 import type {
@@ -45,6 +46,11 @@ export async function persistUserPrompt(
      */
     steerDelivery?: "guide" | "queue";
     inputPresentation?: RuntimeInputPresentation;
+    /**
+     * P2.6 消息来源身份：随 metadata.systemStatus 持久化（message 表 data JSON，零迁移），
+     * 冷恢复后渲染层照常注入 <system-status> 区块、UI 徽章照常取值。
+     */
+    systemStatus?: SystemStatusPayload;
     /**
      * （promotion 原子性）：给定账本 id 且 store 支持时，账本置 promoted
      * 与 message/parts 持久化走同一事务——杜绝「queue 已消费但 transcript 无
@@ -100,11 +106,14 @@ export async function persistUserPrompt(
     options?.clientId ||
     options?.intent ||
     options?.executionKind ||
+    options?.systemStatus ||
     options?.epilogueStart !== undefined
       ? {
           metadata: {
             ...(options?.steerDelivery ? { turnSteerDelivery: options.steerDelivery } : {}),
             ...(options?.inputPresentation ? { inputPresentation: options.inputPresentation } : {}),
+            // P2.6 消息来源身份：渲染层区块与 UI 徽章的持久事实源。
+            ...(options?.systemStatus ? { systemStatus: options.systemStatus } : {}),
             ...(options?.intent ? { inputIntent: options.intent } : {}),
             ...(conversationInputIntent ? { conversationInputIntent } : {}),
             ...((options?.intent?.clientId ?? options?.clientId)

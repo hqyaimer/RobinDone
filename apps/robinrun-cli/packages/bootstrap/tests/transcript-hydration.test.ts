@@ -14,6 +14,7 @@ import {
 import {
   toolCallGetWorkflowRunDisplaySchema,
   type CommandEnvelope,
+  type ConversationRow,
 } from "@robinrun/shared/robinrun-protocol-v4";
 import { ProductProjection } from "../src/robinrun-protocol-v4/index.js";
 import { inputIntentMetadata } from "../src/robinrun-protocol-v4/commands/input-intent.js";
@@ -3847,4 +3848,163 @@ it("cold canonical input retains Gen UI context for edit/retry while rows expose
     genUiContext,
   });
   expect(JSON.stringify(projection.getSnapshot().rows)).not.toContain("FROZEN_CONTEXT");
+});
+
+// P2.6 消息来源（2026-11-18 验收回归）：master 派发/插话与触发器轮的持久消息带
+// metadata.systemStatus——冷恢复必须还原成 inputSource=subagent + inputSender，
+// 投影归 mailbox（左侧 + 发送者徽章）。此前 hydration 丢来源，派发首条消息
+// 在 worker 会话里伪成用户气泡（右侧）。
+describe("P2.6 消息来源冷恢复", () => {
+  function masterDispatchMessage(id: string, text: string, created: number): MessageWithParts {
+    const message = userMessage(id, text, created);
+    message.info.metadata = {
+      systemStatus: { sender: "master", fromSessionId: "sess-master" },
+    };
+    return message;
+  }
+
+  function userRowOf(
+    projection: ProductProjection,
+    text: string,
+  ): Extract<ConversationRow, { kind: "userInput" }> | undefined {
+    const rows = projection.getSnapshot().rows.window;
+    return rows.find((row): row is Extract<ConversationRow, { kind: "userInput" }> =>
+      row.kind === "userInput" ? row.text === text : false,
+    );
+  }
+
+  it("派发首条消息冷恢复归 mailbox，行带 sender 徽章枚举", () => {
+    const { events, projection } = reduce([
+      masterDispatchMessage("dispatch-input", "任务：写一份简报", 1000),
+      assistantMessage("dispatch-reply", "dispatch-input", "已完成", 1001),
+    ]);
+    const started = events.find((event) => event.type === SessionEventType.TurnStarted);
+    expect(started?.payload).toMatchObject({
+      inputSource: "subagent",
+      inputSender: "master",
+    });
+    const inputRow = userRowOf(projection, "任务：写一份简报");
+    expect(inputRow?.origin).toBe("mailbox");
+    expect(inputRow?.originMeta?.sender).toBe("master");
+  });
+
+  // 2026-11-21 实测修复二轮：可见轮冷恢复此前只回填 inputSource/inputSender，
+  // senderId/senderLabel/senderSessionId 丢失——ContactAgent 投递的消息重开会话
+  // 徽章回退泛称「工作者」。明细都在持久 metadata.systemStatus 上，照实回填。
+  it("ContactAgent 投递消息冷恢复带发送者身份明细", () => {
+    const delivered = userMessage("contact-delivery", "【触发器测试转告】webhook 收到事件", 1100);
+    delivered.info.metadata = {
+      systemStatus: {
+        sender: "worker",
+        senderId: "wkr-ops-1",
+        senderName: "运营专员",
+        fromSessionId: "sess-worker-1",
+      },
+    };
+    const { events, projection } = reduce([
+      delivered,
+      assistantMessage("contact-reply", "contact-delivery", "已收到转告", 1101),
+    ]);
+    const started = events.find((event) => event.type === SessionEventType.TurnStarted);
+    expect(started?.payload).toMatchObject({
+      inputSource: "subagent",
+      inputSender: "worker",
+      inputSenderId: "wkr-ops-1",
+      inputSenderLabel: "运营专员",
+      inputSenderSessionId: "sess-worker-1",
+    });
+    const inputRow = userRowOf(projection, "【触发器测试转告】webhook 收到事件");
+    expect(inputRow?.origin).toBe("mailbox");
+    expect(inputRow?.originMeta).toMatchObject({
+      sender: "worker",
+      senderId: "wkr-ops-1",
+      senderLabel: "运营专员",
+      senderSessionId: "sess-worker-1",
+    });
+  });
+
+  it("真实用户消息不带 systemStatus，保持 realUser 右侧", () => {
+    const { events, projection } = reduce([
+      userMessage("user-input", "帮我改一下", 2000),
+      assistantMessage("user-reply", "user-input", "好的", 2001),
+    ]);
+    const started = events.find((event) => event.type === SessionEventType.TurnStarted);
+    expect(started?.payload).not.toHaveProperty("inputSender");
+    expect(started?.payload).not.toHaveProperty("inputSource");
+    const inputRow = userRowOf(projection, "帮我改一下");
+    expect(inputRow?.origin).toBe("realUser");
+    expect(inputRow?.originMeta?.sender).toBeUndefined();
+  });
+
+  it("guide 插话冷恢复把 systemStatus 带回 drainedInputs，行归 mailbox", () => {
+    const steer = masterDispatchMessage("guide-steer", "补充：加上表格", 3000);
+    steer.info.metadata = {
+      ...steer.info.metadata,
+      turnSteerDelivery: "guide",
+    };
+    const { events, projection } = reduce([
+      userMessage("turn-input", "写报告", 2900),
+      steer,
+      assistantMessage("turn-reply", "turn-input", "报告完成", 3001),
+    ]);
+    const drained = events.find((event) => event.type === SessionEventType.TurnSteerDrained);
+    const item = (
+      drained?.payload as { drainedInputs?: Array<{ systemStatus?: unknown }> } | undefined
+    )?.drainedInputs?.[0];
+    expect(item?.systemStatus).toMatchObject({ sender: "master", fromSessionId: "sess-master" });
+    const steerRow = userRowOf(projection, "补充：加上表格");
+    expect(steerRow?.origin).toBe("mailbox");
+    expect(steerRow?.originMeta?.sender).toBe("master");
+  });
+
+  // P2.6 验收修复第二轮（2026-11-18）：worker 返回通知（task-notification）此前冷恢复为
+  // 纯 model-only 轮，worker 的话在主会话不可见。发送方身份从持久 metadata.systemStatus
+  // 还原为 TurnStarted inputSender/Label/SessionId，投影据此落可见 mailbox 行（与 live 同形）。
+  it("worker 返回通知冷恢复带发送方身份，通知落可见 mailbox 行", () => {
+    const notificationText = [
+      "<task-notification>",
+      "<task-id>wkr-task-1</task-id>",
+      "<tool-use-id>call-dispatch</tool-use-id>",
+      "<status>completed</status>",
+      '<summary>Agent "调研撰稿员" finished</summary>',
+      "<result>二次汇报：简报已完成，无遗留事项。</result>",
+      "</task-notification>",
+    ].join("\n");
+    const notice = syntheticUserMessage("worker-return-notice", notificationText, 4000, {
+      source: "background_task",
+      visibility: "model-only",
+      metadata: {
+        inputPresentation: "task_notification",
+        originMeta: { backgroundSource: "subagent", title: "调研撰稿员", workId: "wkr-task-1" },
+        systemStatus: {
+          sender: "worker",
+          senderId: "wkr-c7408343",
+          senderName: "调研撰稿员",
+          fromSessionId: "sess-worker-1",
+        },
+      },
+    });
+    const { events, projection } = reduce([
+      notice,
+      assistantMessage("master-reply", "worker-return-notice", "收到，辛苦了", 4001),
+    ]);
+    const started = events.find((event) => event.type === SessionEventType.TurnStarted);
+    expect(started?.payload).toMatchObject({
+      inputSource: "background_task",
+      inputVisibility: "model-only",
+      inputSender: "worker",
+      inputSenderId: "wkr-c7408343",
+      inputSenderLabel: "调研撰稿员",
+      inputSenderSessionId: "sess-worker-1",
+      originMeta: { title: "调研撰稿员" },
+    });
+    const mailboxRow = userRowOf(projection, "二次汇报：简报已完成，无遗留事项。");
+    expect(mailboxRow?.origin).toBe("mailbox");
+    expect(mailboxRow?.originMeta).toMatchObject({
+      sender: "worker",
+      senderId: "wkr-c7408343",
+      senderLabel: "调研撰稿员",
+      senderSessionId: "sess-worker-1",
+    });
+  });
 });

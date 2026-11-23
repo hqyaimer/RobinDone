@@ -8,7 +8,11 @@ import {
   ServiceChannels,
   type WebRemoteControlAppPayload,
 } from "@robinrun/shared";
-import { TID_V4_COMPOSER_INPUT, TID_V4_COMPOSER_SEND, TID_V4_STOP } from "@robinrun/shared/test-ids";
+import {
+  TID_V4_COMPOSER_INPUT,
+  TID_V4_COMPOSER_SEND,
+  TID_V4_STOP,
+} from "@robinrun/shared/test-ids";
 import { clearAppData, DEFAULT_WORKSPACE } from "#e2e/helpers/desktop-app";
 import { releaseControlledReplay } from "#e2e/helpers/controlled-replay";
 import { resolveE2ERuntimePath } from "#e2e/helpers/e2e-runtime-paths";
@@ -378,7 +382,8 @@ describe(`${CASE}: 失效通知补发与长后台恢复原项目任务`, () => {
           const payload = parseWebRemoteControlAppPayload(frame.payload);
           if (payload?.robinrun_type === "workspace-bridge-ready")
             evidence.bridgeAtEnd = payload.bridgeSessionId;
-          if (hidden && payload?.robinrun_type === "rpc-frame") evidence.hiddenDownlinkRawFrames += 1;
+          if (hidden && payload?.robinrun_type === "rpc-frame")
+            evidence.hiddenDownlinkRawFrames += 1;
           route.send(message);
         });
       });

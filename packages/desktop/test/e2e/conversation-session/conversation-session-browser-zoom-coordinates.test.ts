@@ -178,7 +178,9 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
       }
       const appliedZoom = await browser.execute(async () => {
         return (
-          window as unknown as { robinrun: { getDesktopZoomLevel(): Promise<{ zoomLevel: number }> } }
+          window as unknown as {
+            robinrun: { getDesktopZoomLevel(): Promise<{ zoomLevel: number }> };
+          }
         ).robinrun.getDesktopZoomLevel();
       });
       expect(appliedZoom.zoomLevel).toBe(zoomLevel);

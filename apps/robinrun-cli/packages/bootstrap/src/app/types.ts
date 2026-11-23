@@ -58,6 +58,8 @@ import type {
   TodoItem,
   ToolArtifactReadResult,
   ToolArtifactStorePort,
+  AgentSessionDispatchPort,
+  TriggerRuntimePort,
   TraceContext,
   TurnId,
   TurnInputIntentMetadata,
@@ -107,6 +109,7 @@ import type { ModelProviderSourceTitle } from "../model-config.js";
 import type { RobinRunInstalledPluginData } from "../plugins.js";
 import type { SessionTranscriptMessage } from "../session-transcript.js";
 import type { NodeReplBrowserBroker } from "./node-repl-browser-broker.js";
+import type { AgentContactRegistry } from "@robinrun/core";
 import type { ProviderRegistryModelSource } from "./provider-registry-model-runtime.js";
 import type { WorkspaceHookReviewCommandResult } from "./workspace-hook-review-controller.js";
 export type { RobinRunModelOption } from "@robinrun/shared";
@@ -218,6 +221,22 @@ export interface RobinRunAppOptions {
   automationPort?: AutomationPort;
   offPeakPort?: OffPeakPort;
   topicResourcePort?: TopicResourcePort;
+  /**
+   * 进程共享 agent 消息登记表（2026-11-20 worker 会话同构化）：同 workspace 全部会话
+   * 共用一个在途 ContactAgent 请求事实源（任一会话轮终态按接收方 sessionId 结算）。
+   * 协议宿主注入；缺席时各 app 自建（独立运行/测试形态）。
+   */
+  agentContactRegistry?: AgentContactRegistry;
+  /**
+   * agent 会话跨会话投递通道（ContactAgent master↔worker）：协议宿主以 CLI→Host 反向
+   * 请求实现（落桌面任务服务，机制同触发器投递）；缺席（独立 CLI）时不建 contact 端口。
+   */
+  agentContactDispatchPort?: AgentSessionDispatchPort;
+  /**
+   * 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；
+   * 协议宿主按 context 注入；缺席（独立 CLI）时 ManageTriggers install_packages 报错引导。
+   */
+  triggerRuntimePort?: TriggerRuntimePort;
   /** 首次真实用户执行或 cold-resume fallback 时解析一次，之后由 app 生命周期缓存。 */
   resolveInitialBashShellSelection?: () => Promise<ExecutionShellSelection | undefined>;
   /** Trusted embedder policy; workspace/project files cannot populate this field. */
@@ -246,6 +265,11 @@ export interface SubmitPromptOptionsBase {
   browserAmbientContext?: ExecuteTurnOptions["browserAmbientContext"];
   /** 标准 Selection 的单次执行约束；不进入 Session Selection 或持久化。 */
   modelExecution?: ModelExecutionContext;
+  /**
+   * P2.6 消息来源身份（docs/message-origin.md）：触发器/闲时等非用户轮在此显式打标，
+   * 随输入进 metadata.systemStatus（渲染层注入 <system-status> 区块）。真实用户输入不传。
+   */
+  systemStatus?: ExecuteTurnOptions["systemStatus"];
 }
 
 export type SubmitPromptOptions = SubmitPromptOptionsBase &

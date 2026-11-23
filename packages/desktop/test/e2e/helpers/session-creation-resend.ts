@@ -53,7 +53,9 @@ DatabaseSync.prototype.prepare = function(sql) {
       () => {},
     );
     const receipt = JSON.parse(await readFile(receiptPath, "utf8"));
-    const database = new DatabaseSync(join(homeDir, ".robinrun/cli/db/db.sqlite"), { readOnly: true });
+    const database = new DatabaseSync(join(homeDir, ".robinrun/cli/db/db.sqlite"), {
+      readOnly: true,
+    });
     try {
       const input = database.prepare("SELECT * FROM session_input WHERE id=?").get(receipt.inputId);
       assert.equal(input?.status, "admitted");

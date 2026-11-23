@@ -43,7 +43,10 @@ export function areStabilizedValuesEquivalent(left: unknown, right: unknown): bo
 }
 
 /** 逐字段等价（嵌套字段结构比较；task meta 是小对象，代价可忽略）。 */
-export function areTaskListItemsEquivalent(left: RobinRunTaskMeta, right: RobinRunTaskMeta): boolean {
+export function areTaskListItemsEquivalent(
+  left: RobinRunTaskMeta,
+  right: RobinRunTaskMeta,
+): boolean {
   return areStabilizedValuesEquivalent(left, right);
 }
 

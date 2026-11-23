@@ -1,6 +1,9 @@
 import { existsSync } from "node:fs";
 import { delimiter } from "node:path";
-import { buildRobinRunToolEnvPassthroughEnv, sanitizeRobinRunRuntimeEnvInPlace } from "@robinrun/shared";
+import {
+  buildRobinRunToolEnvPassthroughEnv,
+  sanitizeRobinRunRuntimeEnvInPlace,
+} from "@robinrun/shared";
 import { appendPathEntries, buildRuntimeToolEnvPatch } from "./runtimeToolResolver.js";
 import {
   buildShellBootstrapPath,

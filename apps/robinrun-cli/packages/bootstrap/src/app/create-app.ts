@@ -27,6 +27,7 @@ import {
   PermissionService,
   buildPluginReferenceCatalog,
   writeWorkflowDraft,
+  type AgentProfile,
   type AmendWorkflowRunSettingsInput,
   type ResumeSessionResult,
 } from "@robinrun/core";
@@ -115,7 +116,9 @@ import {
   loadRobinRunAgentProfiles,
 } from "../subagents.js";
 import { createRuntimeAiSdkModelExecutionConfig } from "../model-config.js";
-import { withOfficialCommandEnv } from "../official-command-endpoint/index.js";
+// RobinRun(2026-11-22): [hide-upstream-account] official-command-endpoint 已隐藏——恢复时取消本行
+// import { withOfficialCommandEnv } from "../official-command-endpoint/index.js";
+// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
 import { ApiProviderModelRuntime } from "./provider-registry-model-runtime.js";
 import {
   completeAppStartup,
@@ -164,6 +167,37 @@ function decodePromptAttachmentDataUrl(
     throw new Error("fault.attachment.previewTooLarge");
   }
   return { bytes, mediaType };
+}
+
+/**
+ * worker 会话身份解析（2026-11-20 worker 会话模型同构化，docs/worker-session-model.md §1/§2）：
+ * 按名册解析 workerId → 最终身份（含显示名）。创建路径名册缺项抛错（未注册的 worker
+ * 不能凭空物化）；resume 路径不抛错——名册缺项（worker 已删除/停用）降级为持久化
+ * 显示名或 id（会话仍可恢复，注入段由 runtime 降级）。缺席 = master 会话，原样返回
+ * undefined。
+ */
+function resolveWorkerSessionIdentity(input: {
+  profiles: readonly AgentProfile[];
+  requested?: { workerId: string; workerName?: string };
+  resume: boolean;
+}): { workerId: string; workerName: string } | undefined {
+  const requested = input.requested;
+  if (!requested) return undefined;
+  const profile = input.profiles.find(
+    (candidate) => candidate.worker?.workerId === requested.workerId,
+  );
+  if (profile?.worker) {
+    return { workerId: profile.worker.workerId, workerName: profile.worker.workerName };
+  }
+  // resume 名册缺项（worker 已删除/停用）：降级为持久化名或 id，会话继续可恢复，
+  // 注入段由 runtime 降级（resolveWorkerInstructions warn）。只有创建路径才大声失败
+  // （不能凭空物化未注册的 worker）。
+  if (input.resume) {
+    return { workerId: requested.workerId, workerName: requested.workerName ?? requested.workerId };
+  }
+  throw new Error(
+    `Worker session identity cannot be resolved: "${requested.workerId}" is not in the worker roster. Create the worker via ManageWorkers first.`,
+  );
 }
 
 export async function createRobinRunApp(options: RobinRunAppOptions): Promise<RobinRunApp> {
@@ -242,6 +276,15 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
           additionalDirectories: options.additionalDirectories,
         });
     const robinrunSubagentProfiles = robinrunSubagentProfileOutcome.profiles;
+    // worker 会话身份解析校验（2026-11-20 worker 会话同构化，docs/worker-session-model.md）：
+    // workerId 必须已注册（workers.json 是身份唯一事实源），显示名以名册为准；创建路径
+    // 名册缺项大声失败（不能凭空物化未注册的 worker），resume 路径回退持久化显示名——
+    // 会话继续、注入段降级（resolveWorkerInstructions 留 warn）。
+    const workerIdentity = resolveWorkerSessionIdentity({
+      profiles: robinrunSubagentProfiles,
+      requested: options.runtimeConfig?.workerIdentity,
+      resume: options.resume === true,
+    });
     const pluginOutcome = resolveStartupPlugins({
       cliStorageRoot,
       configResult,
@@ -296,6 +339,7 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
           robinrunSubagentProfileOutcome.builtInModelSelectionOverrides,
         subagentOutputRootDir: join(cliStorageRoot, "agents"),
         subagentProfiles,
+        workerIdentity,
         storageRoot,
         workingDirectory,
         workspaceIdentity: options.runtimeConfig?.memory?.workspaceIdentity,
@@ -470,20 +514,24 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
         bashOutputTempDir: tmpdir(),
         processEnv: options.env ?? process.env,
       });
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「official-command-endpoint env 注入」——
+    // 消费者 robinrun-site 插件已退役；恢复时取消本段注释并删除下方 executionPort 直传
     // 本 app 只服务一个 session：它的子进程统一带上这个 session 的官方命令端点 env。
-    const officialCommandEnv = options.officialCommandEnv;
-    const officialCommandIdentity = options.runtimeConfig?.memory?.workspaceIdentity;
-    const officialCommandWorkspace = {
-      workspacePath: workingDirectory,
-      ...(officialCommandIdentity ? { workspaceIdentity: officialCommandIdentity } : {}),
-    };
-    const executionPort = officialCommandEnv
-      ? withOfficialCommandEnv(
-          baseExecutionPort,
-          () => officialCommandEnv(sessionId, officialCommandWorkspace),
-          logger,
-        )
-      : baseExecutionPort;
+    // const officialCommandEnv = options.officialCommandEnv;
+    // const officialCommandIdentity = options.runtimeConfig?.memory?.workspaceIdentity;
+    // const officialCommandWorkspace = {
+    //   workspacePath: workingDirectory,
+    //   ...(officialCommandIdentity ? { workspaceIdentity: officialCommandIdentity } : {}),
+    // };
+    // const executionPort = officialCommandEnv
+    //   ? withOfficialCommandEnv(
+    //       baseExecutionPort,
+    //       () => officialCommandEnv(sessionId, officialCommandWorkspace),
+    //       logger,
+    //     )
+    //   : baseExecutionPort;
+    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    const executionPort = baseExecutionPort;
     const ownsExecutionPort = options.executionPort === undefined;
     const pdfDocumentPort =
       options.pdfDocumentPort ?? createPopplerPdfDocumentAdapter({ executionPort });
@@ -948,6 +996,11 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
       automationPort: options.automationPort,
       offPeakPort: options.offPeakPort,
       topicResourcePort: options.topicResourcePort,
+      // agent 消息（worker 会话同构化）：进程共享登记表 + Host 投递通道由协议宿主注入。
+      agentContactRegistry: options.agentContactRegistry,
+      agentContactDispatchPort: options.agentContactDispatchPort,
+      // 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎。
+      triggerRuntimePort: options.triggerRuntimePort,
       appVersion,
       traceContext,
     });

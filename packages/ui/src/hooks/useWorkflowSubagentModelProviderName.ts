@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import type { RobinRunConfigOption } from "@robinrun/shared";
-import { selectWorkspaceRobinRunState, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import {
+  selectWorkspaceRobinRunState,
+  useRobinRunSessionStore,
+} from "@/store/robinrunSessionStore.js";
 
 /**
  * 子代理模型的 provider 名从哪儿来：会话的模型清单

@@ -104,6 +104,8 @@ describe("AgentRuntime turn cancellation", () => {
       messages
         .filter((message) => message.role === "user")
         .map((message) => modelMessageContentToText(message.content))
+        // P2.6 消息来源区块：剥掉 sender 前缀后再比较（区块形状由专项测试锁定）。
+        .map((text) => text.replace(/^<system-status>[\s\S]*?<\/system-status>\n\n/, ""))
         .filter((text) => !text.startsWith("<system-reminder>"));
 
     function createCancelRuntime(

@@ -1272,8 +1272,8 @@ html[data-document-hidden] *::after {
 }
 
 .robinrun-task-interaction-countdown-fill {
-  animation: robinrun-task-interaction-countdown var(--robinrun-interaction-remaining-ms, 240000ms) linear
-    forwards;
+  animation: robinrun-task-interaction-countdown var(--robinrun-interaction-remaining-ms, 240000ms)
+    linear forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
