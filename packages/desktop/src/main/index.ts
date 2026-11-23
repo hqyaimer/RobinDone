@@ -85,6 +85,7 @@ import {
   ROBINRUN_ENV,
   ROBINRUN_PRODUCT_FLAVOR,
   ROBINRUN_AUTO_UPDATE_ENABLED,
+  ROBINRUN_MAC_AUTO_UPDATE_READY,
   DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
   DEFAULT_LOCALE,
   TEST_ROBINRUN_ENDPOINT_ORIGIN,
@@ -2239,7 +2240,9 @@ app.whenReady().then(async () => {
     // 打包态必须与 NSIS 快捷方式使用同一 AUMID，否则 Shell 把它们当成不同应用。
     // 使用构建期产品身份，不依赖用户机器环境；开发态继续保持独立身份。
     app.setAppUserModelId(
-      resolveWindowsAppUserModelIdForFlavor(ROBINRUN_PRODUCT_FLAVOR, { isPackaged: app.isPackaged }),
+      resolveWindowsAppUserModelIdForFlavor(ROBINRUN_PRODUCT_FLAVOR, {
+        isPackaged: app.isPackaged,
+      }),
     );
   }
 
@@ -2297,8 +2300,16 @@ app.whenReady().then(async () => {
   // Preview 身份无论连接哪个后端都不自动更新：stable feed 上只分发正式 RobinRun 安装包，
   // 不向 Preview 渠道提供更新。构建期未启用自动更新时同样不更新
   // （见 docs/desktop/build-time-optional-capabilities.md）。
+  // macOS 更新安装（Squirrel.Mac）强制要求应用持有 Developer ID 签名：未签名 mac 打包
+  // （构建期未开 ROBINRUN_MAC_AUTO_UPDATE）必须整体禁用自动更新，否则用户在更新弹窗里
+  // 点击安装必然失败。门控只针对打包态——开发态走 --update-feed-url 调试链路不受影响。
+  const macAutoUpdateAllowed =
+    !app.isPackaged || process.platform !== "darwin" || ROBINRUN_MAC_AUTO_UPDATE_READY;
   void initAutoUpdater({
-    enabled: ROBINRUN_PRODUCT_FLAVOR === "production" && ROBINRUN_AUTO_UPDATE_ENABLED,
+    enabled:
+      ROBINRUN_PRODUCT_FLAVOR === "production" &&
+      ROBINRUN_AUTO_UPDATE_ENABLED &&
+      macAutoUpdateAllowed,
     onBeforeQuitAndInstall: async () => {
       notifyStabilityLifecycle("update_install");
       await prepareAppQuit("auto-update quitAndInstall", "update-install");

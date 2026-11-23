@@ -11,6 +11,8 @@ declare const __ROBINRUN_PRODUCT_FLAVOR__: string;
 declare const __ROBINRUN_ARMS_RUM_ENDPOINT__: string;
 declare const __ROBINRUN_TELEMETRY_REPORT_ENDPOINT__: string;
 declare const __ROBINRUN_AUTO_UPDATE_ENABLED__: boolean;
+declare const __ROBINRUN_UPDATE_FEED_BASE__: string;
+declare const __ROBINRUN_MAC_AUTO_UPDATE_READY__: boolean;
 
 export function normalizeRobinRunEnv(value: string | undefined): RobinRunEnv {
   return value?.trim().toLowerCase() === "production" ? "production" : "test";
@@ -59,7 +61,25 @@ export const ROBINRUN_TELEMETRY_REPORT_ENDPOINT: string =
     : "";
 /** 桌面自动更新是否启用。 */
 export const ROBINRUN_AUTO_UPDATE_ENABLED: boolean =
-  typeof __ROBINRUN_AUTO_UPDATE_ENABLED__ !== "undefined" ? __ROBINRUN_AUTO_UPDATE_ENABLED__ : false;
+  typeof __ROBINRUN_AUTO_UPDATE_ENABLED__ !== "undefined"
+    ? __ROBINRUN_AUTO_UPDATE_ENABLED__
+    : false;
+/**
+ * 静态更新源 base（RobinRun 发布工程，见 docs/desktop/robinrun-release-updates.md）。
+ * 非空时打包态更新器请求 "{base}/{releasePlatform}/latest.yml" 静态清单；
+ * 为空时保持既有服务端 manifest API 行为。这是构建期钉死的信任源：
+ * 与调试态 --update-feed-url 不同，它随安装包发布，不受启动参数/环境变量接管。
+ */
+export const ROBINRUN_UPDATE_FEED_BASE: string =
+  typeof __ROBINRUN_UPDATE_FEED_BASE__ !== "undefined" ? __ROBINRUN_UPDATE_FEED_BASE__ : "";
+/**
+ * macOS 自动更新准入（构建期开关）。macOS 更新安装（Squirrel.Mac）强制要求 Developer ID
+ * 签名；未签名 mac 构建必须置 false 关闭自动更新，否则用户点击安装必然失败。
+ */
+export const ROBINRUN_MAC_AUTO_UPDATE_READY: boolean =
+  typeof __ROBINRUN_MAC_AUTO_UPDATE_READY__ !== "undefined"
+    ? __ROBINRUN_MAC_AUTO_UPDATE_READY__
+    : false;
 
 /** 将本地运行态与编译期 ROBINRUN_ENV 映射为 ARMS 控制台识别的上报环境标签 */
 export function mapRobinRunEnvToArmsRumEnv(runtimeEnv: RobinRunRuntimeEnv): ArmsRumEnv {

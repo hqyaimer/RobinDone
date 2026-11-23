@@ -1,0 +1,183 @@
+# RobinRun 发布流水线（2026-11-23 发布工程第一批）
+#
+# 触发：推送 v* tag。三平台矩阵各自原生出包（mac 包必须在 macOS 上构建：
+# dmg/codesign 工具链不可跨平台；linux rpm 需要 rpmbuild，由 ubuntu runner 安装）。
+#
+# 产物链路（方案 B：静态 manifest + Release 附件，见 docs/desktop/robinrun-release-updates.md）：
+# 1. build 矩阵：pnpm bundle:desktop -- --os <os> --arch <arch>，构建期 env 把
+#    ROBINRUN_AUTO_UPDATE=1 与静态 feed base 钉进安装包；
+# 2. release job：gh release create 上传安装包 + latest*.yml + blockmap；
+# 3. 用 scripts/release/rewrite-update-manifests.mjs 把清单改写为绝对 URL，
+#    推到本仓库 updates 分支（客户端 feed = raw.githubusercontent.com/<repo>/updates/<platform>/latest.yml）。
+#
+# 签名状态（首版）：
+# - mac 未签名：不设 ROBINRUN_ENABLE_MAC_SIGN / ROBINRUN_MAC_AUTO_UPDATE，打出的包
+#   Gatekeeper 需右键打开，且客户端自动更新被构建期门控整体禁用（Squirrel.Mac 硬限制），
+#   新版本走"提示 + 手动下载"。上签名后补 ROBINRUN_ENABLE_MAC_SIGN=1 + 证书 secret
+#   + ROBINRUN_MAC_AUTO_UPDATE=1 三个 env 即恢复完整自动更新（配置已就绪，见
+#   docs/desktop/macos-dmg-signing-notarization.md 的公证两段式）。
+# - Windows 未签名：SmartScreen 提示"更多信息 → 仍要运行"；自动更新可用。
+# - Linux：AppImage 自动更新可用；deb/rpm 更新本质是装系统包需提权，客户端虽带
+#   DebUpdater/RpmUpdater 管道，首版以手动下载为主。
+#
+# 平台覆盖（v1）：win-x64 / mac-arm64 / mac-x64 / linux-x64。arm64 的 win/linux 需要交叉
+# 编译与额外验证，暂缓；要加时在 matrix 追加并在对应 runner 上验证 prepare:runtime-assets
+# 的平台资产下载。
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+            arch: x64
+          - os: macos-latest
+            target: mac
+            arch: arm64
+          # Intel mac 独立 runner（macos-13 已进入退役名单；若该标签不可用改用 macos-13）
+          - os: macos-15-intel
+            target: mac
+            arch: x64
+          - os: ubuntu-latest
+            target: linux
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    env:
+      # 构建期可选能力（scripts/build-time-config.mjs → define 注入）：
+      # 开启自动更新并把静态 feed base 钉进安装包；不设 ROBINRUN_MAC_AUTO_UPDATE
+      # （未签名 mac 自动更新禁用，见文件头注释）。
+      ROBINRUN_AUTO_UPDATE: "1"
+      ROBINRUN_UPDATE_FEED_BASE: https://raw.githubusercontent.com/${{ github.repository }}/updates
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # linux rpm 产物由 fpm 驱动，构建机必须提供 rpmbuild（xz runner 自带）。
+      - name: Install rpm build tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+          pnpm bootstrap
+
+      - name: Bundle desktop installer
+        run: pnpm bundle:desktop -- --os ${{ matrix.target }} --arch ${{ matrix.arch }}
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}-${{ matrix.arch }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            packages/desktop/dist/*.exe
+            packages/desktop/dist/*.dmg
+            packages/desktop/dist/*.zip
+            packages/desktop/dist/*.AppImage
+            packages/desktop/dist/*.deb
+            packages/desktop/dist/*.rpm
+            packages/desktop/dist/*.pkg.tar.zst
+            packages/desktop/dist/*.blockmap
+            packages/desktop/dist/latest*.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+      RELEASE_ASSET_BASE: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release files
+        run: |
+          mkdir -p release-files
+          # 安装包/blockmap 文件名自带平台架构，直接平铺；两台 mac 的 latest-mac.yml 同名，
+          # 必须带 artifact 目录前缀，否则 Release 附件互相覆盖（updates 分支清单不受影响）。
+          find artifacts -type f \( \
+            -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" \
+            -o -name "*.deb" -o -name "*.rpm" -o -name "*.pkg.tar.zst" \
+            -o -name "*.blockmap" \) \
+            -exec cp {} release-files/ \;
+          while IFS= read -r f; do
+            flat=$(echo "${f#artifacts/}" | tr '/' '_')
+            cp "$f" "release-files/$flat"
+          done < <(find artifacts -type f -name "latest*.yml")
+          ls -la release-files
+
+      - name: Create GitHub release and upload assets
+        run: |
+          gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" release-files/*
+
+      - name: Rewrite update manifests for static feed
+        run: |
+          node scripts/release/rewrite-update-manifests.mjs \
+            --manifest artifacts/dist-win-x64/latest.yml \
+            --platform windows-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+          node scripts/release/rewrite-update-manifests.mjs \
+            --manifest artifacts/dist-mac-arm64/latest-mac.yml \
+            --platform darwin-aarch64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+          node scripts/release/rewrite-update-manifests.mjs \
+            --manifest artifacts/dist-mac-x64/latest-mac.yml \
+            --platform darwin-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+          node scripts/release/rewrite-update-manifests.mjs \
+            --manifest artifacts/dist-linux-x64/latest-linux.yml \
+            --platform linux-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+          find updates-staging -type f
+
+      - name: Publish update manifests to updates branch
+        run: |
+          REPO_CLONE="$(mktemp -d)/repo"
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$REPO_CLONE"
+          cd "$REPO_CLONE"
+          git config user.name "robinrun-release-bot"
+          git config user.email "actions@github.com"
+          if git ls-remote --exit-code --heads origin updates >/dev/null 2>&1; then
+            git fetch --depth 1 origin updates
+            git checkout -b updates origin/updates
+          else
+            git checkout --orphan updates
+            git rm -rf --cached . >/dev/null
+            rm -rf -- * .github 2>/dev/null || true
+          fi
+          cp -r "${GITHUB_WORKSPACE}/updates-staging"/. .
+          git add -A
+          git commit -m "release: publish update manifests for ${TAG}"
+          git push origin updates

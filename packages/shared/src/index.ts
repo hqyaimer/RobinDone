@@ -77,6 +77,8 @@ export {
   ROBINRUN_ARMS_RUM_ENDPOINT,
   ROBINRUN_TELEMETRY_REPORT_ENDPOINT,
   ROBINRUN_AUTO_UPDATE_ENABLED,
+  ROBINRUN_UPDATE_FEED_BASE,
+  ROBINRUN_MAC_AUTO_UPDATE_READY,
   mapRobinRunEnvToArmsRumEnv,
   normalizeRobinRunEnv,
   normalizeRobinRunProductFlavor,
@@ -352,6 +354,15 @@ export * from "./subagent-runtime-config.js";
 
 export * from "./subagent-profile.js";
 export { parseAgentProfileFromMarkdown } from "./subagent-profile-parser.js";
+
+export * from "./worker-roster/index.js";
+
+// 触发器系统协议（2026-11-19 设计定稿，docs/trigger-system.md）：注册表 schema、
+// 会话 key 路由协议、存储布局常量。引擎（host）与 ManageTriggers 工具面共用。
+export * from "./trigger-system/index.js";
+
+// 消息来源区块协议（P2.6）：schema/渲染/解析单一收口，CLI 注入端与 UI 共享。
+export * from "./message-origin/index.js";
 
 export * from "./local-ttft/contract.js";
 export * from "./pluginStoreOrder.js";

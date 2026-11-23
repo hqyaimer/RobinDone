@@ -10,6 +10,7 @@ import {
   TEST_ROBINRUN_ENDPOINT_ORIGIN,
   PlatformChannels,
   ROBINRUN_VERSION,
+  ROBINRUN_UPDATE_FEED_BASE,
   desktopMenuMessageIds,
   formatDesktopMenuMessage,
   getDesktopMenuMessage,
@@ -837,14 +838,20 @@ async function syncAutoUpdateCheckChannelFromSettings(
 function applyManifestUpdateProvider(options: InitAutoUpdaterOptions): void {
   // 在更新器装配边界再次约束，避免内部调用绕过启动配置解析。
   const manifestUrl = app.isPackaged ? undefined : options.updateFeedSource?.url.trim();
+  // RobinRun 发布工程静态 feed：构建期钉死的 base（打包态专用），与调试态 manifestUrl
+  // 互斥——前者随安装包发布不受启动输入接管，后者仍只在开发态生效。
+  const staticManifestBase = app.isPackaged ? ROBINRUN_UPDATE_FEED_BASE.trim() : "";
   autoUpdater.setFeedURL({
     provider: "custom",
     updateProvider: ManifestUpdateProvider,
     endpointOrigin: DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+    ...(staticManifestBase ? { staticManifestBase } : {}),
     ...(manifestUrl ? { manifestUrl } : {}),
     releasePlatform: getElectronReleasePlatform(),
     deviceMid: options.deviceMid,
     resolveEndpointOrigin: async () => {
+      // 静态 feed 模式不走 endpointOrigin（buildElectronManifestUrl 直接返回静态清单地址），
+      // 这里的官方入口锁定只约束 manifest API 模式，无需为静态 base 增加旁路。
       const origin = await (
         options.resolveEndpointOrigin ?? (() => resolveRuntimeRobinRunEndpointOrigin(process.env))
       )();
@@ -869,6 +876,11 @@ function applyManifestUpdateProvider(options: InitAutoUpdaterOptions): void {
       ? `[auto-update] service manifest provider applied platform=${getElectronReleasePlatform()} manifestUrl=${redactUpdateFeedUrlForLog(manifestUrl)}`
       : `[auto-update] service manifest provider applied platform=${getElectronReleasePlatform()}`,
   );
+  if (staticManifestBase) {
+    logger.info(
+      `[auto-update] static update feed enabled platform=${getElectronReleasePlatform()} base=${redactUpdateFeedUrlForLog(staticManifestBase)}`,
+    );
+  }
 }
 
 function pickFallbackReleaseNotesMarkdown(

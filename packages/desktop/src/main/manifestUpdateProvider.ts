@@ -26,6 +26,14 @@ const MANIFEST_ACCEPT_HEADER = "application/x-yaml,text/yaml,text/plain,*/*";
 export interface ManifestUpdateProviderOptions extends CustomPublishOptions {
   endpointOrigin?: string;
   manifestUrl?: string;
+  /**
+   * 静态更新源 base（RobinRun 发布工程方案，见 docs/desktop/robinrun-release-updates.md）。
+   * 非空时清单地址固定为 "{base}/{releasePlatform}/latest.yml"，不再拼接 manifest API
+   * 路径与查询参数；清单内的 files[].url 必须是绝对 URL（指向 Release 附件）。
+   * 与调试态 manifestUrl 的区别：该值来自构建期 define，随安装包钉死，运行期不可被
+   * 启动参数/环境变量覆盖（resolveUpdateFeedSourceFromStartupConfig 在打包态已被剥离）。
+   */
+  staticManifestBase?: string;
   deviceMid?: string;
   releasePlatform?: string;
   releaseChannel?: ElectronReleaseChannel;
@@ -74,13 +82,34 @@ export function getElectronReleasePlatform(
   return `${mapElectronReleasePlatform(platform)}-${mapElectronReleaseArch(arch)}`;
 }
 
+/**
+ * 解析静态更新源 base。不能用 normalizeRobinRunEndpointOrigin：它会把 URL 归一成裸 origin
+ * （剥掉 pathname），而静态 base 需要保留路径段（如 GitHub raw 的 /<owner>/<repo>/updates/<branch>）。
+ */
+export function resolveStaticManifestBase(rawBase: string): URL {
+  const trimmed = rawBase.trim();
+  const parsed = new URL(trimmed);
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error(`Static update feed base must use http(s): ${trimmed}`);
+  }
+  const pathname = parsed.pathname.endsWith("/") ? parsed.pathname : `${parsed.pathname}/`;
+  return new URL(pathname, parsed);
+}
+
 export function buildElectronManifestUrl(options: {
   endpointOrigin: string;
   manifestUrl?: string;
+  staticManifestBase?: string;
   platform: string;
   deviceMid?: string;
   channel: ElectronReleaseChannel;
 }): URL {
+  // 静态 feed 模式：{base}/{releasePlatform}/latest.yml。不带查询参数与 device_mid/channel
+  // 维度（灰度由发布侧控制哪个 yml 指向哪个版本），静态托管服务器对多余参数也不可靠。
+  const staticBase = options.staticManifestBase?.trim();
+  if (staticBase) {
+    return new URL(`${options.platform}/latest.yml`, resolveStaticManifestBase(staticBase));
+  }
   const url = options.manifestUrl?.trim()
     ? new URL(options.manifestUrl.trim())
     : new URL(ELECTRON_MANIFEST_API_PATH, normalizeRobinRunEndpointOrigin(options.endpointOrigin));
@@ -208,6 +237,7 @@ export class ManifestUpdateProvider extends Provider<UpdateInfo> {
     const manifestUrl = buildElectronManifestUrl({
       endpointOrigin,
       manifestUrl: this.options.manifestUrl,
+      staticManifestBase: this.options.staticManifestBase,
       platform: this.releasePlatform,
       deviceMid: this.options.deviceMid,
       channel: releaseChannel,
