@@ -99,6 +99,8 @@ __pycache__/
 # .agents/skills/feature-boundary-planner/references/robinrun-feature-graph.yaml，新 clone 缺该文件；
 # 本机文件保留不受影响，若将来要恢复单一 YAML 入库需用逐级 ! 反选（父目录被禁时反选无效）。
 .agents/
+# 仓库根被用作项目工作区时的运行时状态（worker 编制、触发器状态），纯内部不入库（2026-11-24）。
+/.robinrun/
 # 本机临时工作文件与调试截图。
 /tmp/
 /f3-v4.png
