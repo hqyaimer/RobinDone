@@ -1,8 +1,8 @@
 version: 0.0.1
 files:
   - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-win-x64.exe
-    sha512: hmLT08Yvtj+xfCCDXrc8nJkTYdYAK6Dq2GIHKt0p+PJDiCPpKsMZCN1Uj1te+Q9GLTa6i8X+j/G5ppRsFdJc4Q==
-    size: 197884386
+    sha512: 4xCiPeSugbllcB3qxXEHDx54qYp5ukIhXPOXyHM1lafs98MezRFAs3k7MiZGpnGf0oij9y1EGXXClQq6pEfQng==
+    size: 197885950
 path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-win-x64.exe
-sha512: hmLT08Yvtj+xfCCDXrc8nJkTYdYAK6Dq2GIHKt0p+PJDiCPpKsMZCN1Uj1te+Q9GLTa6i8X+j/G5ppRsFdJc4Q==
-releaseDate: '2026-11-23T16:05:39.353Z'
+sha512: 4xCiPeSugbllcB3qxXEHDx54qYp5ukIhXPOXyHM1lafs98MezRFAs3k7MiZGpnGf0oij9y1EGXXClQq6pEfQng==
+releaseDate: '2026-11-24T03:03:45.827Z'

@@ -1,18 +1,18 @@
 version: 0.0.1
 files:
   - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.AppImage
-    sha512: /JXjKZu5nWWJXRl+2iYrvY2jdHb1S8+nx8q4U3SFdAtnHdbk9kCQNJeaxB3Gp5313xeBZYYThEkQqVcb5GZBwQ==
-    size: 241419319
-    blockMapSize: 250955
+    sha512: 9c/C4LlcCZiJmbBI1eZ4BJPNsylqb0aSWWardpxQpqTaTpV2HAjntkTUyzIvFomi9D99ac3Jy7rZ0Otp//WY/Q==
+    size: 241423445
+    blockMapSize: 250985
   - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-amd64.deb
-    sha512: H0V5Xle+Ft5TcrZYByfyc2JhJAEcnhS75phkdhirkaNx4J+o5bGSzCggyj8A6fMOQKlNnNNMjkj/bGyI3TcrsA==
-    size: 181699460
+    sha512: a4GzIvNXnOM+5Dh4nsWon6Q23A/jRhZOE1ljQc9R4ylfM9fdirkFaurQzYeM2am8MlMBaIdEV+6n1RQMbK/1UA==
+    size: 181691428
   - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.rpm
-    sha512: W8uZdwpYg+UHkPHEc6CZdd9iD6aJ0S0Jn+fTVU4IUx/GNuoqyHEFB0bMfD5MXcxJKUzwxA5sWAizgDO4FUpk6w==
-    size: 150308945
+    sha512: 9WrkPNuPer9rcyNCrE+Kl8Top95nNS0aB149X+MrnDUU2bNKNle13uK8Ch8V+BxxP5We/EMlvtLtX9KRY3edUQ==
+    size: 150328517
   - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x64.pkg.tar.zst
-    sha512: sNfCRG2gEhputc4K54S1mgO5Jzym4yIpdG5EbQvvqAgghH0Ta2SMepoFQ9RZX9avcHqPprH6HgEoatVwmaPMvA==
-    size: 159945248
+    sha512: q43fmxgVKytvjJ6jfVMoOr1McrOi8GCtLPVWzL111Z7igApiBWeBqs9uZW0oA2Ft+jfI3ywAYqkERa2ksYPnig==
+    size: 159955912
 path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.AppImage
-sha512: /JXjKZu5nWWJXRl+2iYrvY2jdHb1S8+nx8q4U3SFdAtnHdbk9kCQNJeaxB3Gp5313xeBZYYThEkQqVcb5GZBwQ==
-releaseDate: '2026-11-23T16:04:35.671Z'
+sha512: 9c/C4LlcCZiJmbBI1eZ4BJPNsylqb0aSWWardpxQpqTaTpV2HAjntkTUyzIvFomi9D99ac3Jy7rZ0Otp//WY/Q==
+releaseDate: '2026-11-24T03:00:48.761Z'
