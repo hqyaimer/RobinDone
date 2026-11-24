@@ -86,6 +86,7 @@ import {
   ROBINRUN_PRODUCT_FLAVOR,
   ROBINRUN_AUTO_UPDATE_ENABLED,
   ROBINRUN_MAC_AUTO_UPDATE_READY,
+  ROBINRUN_UPDATE_FEED_BASE,
   DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
   DEFAULT_LOCALE,
   TEST_ROBINRUN_ENDPOINT_ORIGIN,
@@ -2627,7 +2628,10 @@ app.whenReady().then(async () => {
       ? await maybeBlockStartupForForceUpdate({
           locale: currentApplicationLocale,
           logger,
-          endpointOrigin: await resolveCurrentRobinRunEndpointOrigin(),
+          // 强更最低版本检查与更新 feed 同源（updates 分支 min-version.json，2026-11-24 裁决）；
+          // 上游 client-configs API 会把 ZCode 的最低版本套在 RobinRun 头上，已退役。
+          // 未配置静态源时守卫整体跳过，绝不退回上游 API。
+          staticFeedBase: ROBINRUN_UPDATE_FEED_BASE.trim() || undefined,
           onBlocked: () => {
             forceUpdateMainWindowCreationBlocked = true;
           },

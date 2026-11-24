@@ -1,16 +1,13 @@
 import {
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
   ROBINRUN_VERSION,
-  buildRobinRunEndpointUrls,
-  getForceUpdateMinimalVersionFromConfig,
   resolveForceUpdateRequirement,
   type ForceUpdateRequirement,
   type Locale,
 } from "@robinrun/shared";
 import { requestForceAutoUpdate, type ForceAutoUpdateState } from "./autoUpdater.js";
+import { resolveStaticManifestBase } from "./manifestUpdateProvider.js";
 import { showForceUpdatePrompt } from "./forceUpdatePrompt.js";
 
-const ROBINRUN_CLIENT_CONFIG_API_PATH = "/api/v1/client/configs";
 const FORCE_UPDATE_CONFIG_REQUEST_TIMEOUT_MS = 10_000;
 const FORCE_UPDATE_CONFIG_MAX_RESPONSE_BYTES = 1024 * 1024;
 
@@ -36,7 +33,13 @@ export interface ForceUpdateGuardResult {
 export interface ForceUpdateGuardOptions {
   locale: Locale;
   logger: ForceUpdateGuardLogger;
-  endpointOrigin?: string;
+  /**
+   * 静态更新源 base（构建期钉死，与更新 feed 同源）。强制升级检查改走自有静态配置
+   * `"{base}/min-version.json"`（2026-11-24 裁决：上游 SaaS 的 client-configs API 会把
+   * ZCode 的最低可用版本（v3.5.3）套到 RobinRun 头上，0.0.1 启动即被强更拦截——
+   * RobinRun 不再请求上游 API；未配置静态源时整体跳过远端强更检查）。
+   */
+  staticFeedBase?: string;
   fetchRemoteConfig?: () => Promise<unknown>;
   requestAutoUpdate?: (
     onStateChange?: (state: ForceAutoUpdateState) => void,
@@ -44,37 +47,38 @@ export interface ForceUpdateGuardOptions {
   onBlocked?: (requirement: ForceUpdateRequirement) => void;
 }
 
-export function resolveForceUpdateClientConfigUrl(
-  endpointOrigin = DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-): string {
-  const url = new URL(
-    `${buildRobinRunEndpointUrls(endpointOrigin).origin}${ROBINRUN_CLIENT_CONFIG_API_PATH}`,
-  );
-  url.searchParams.set("app_version", ROBINRUN_VERSION);
-  url.searchParams.set("platform", `${process.platform}-${process.arch}`);
-  return url.toString();
+/** 静态强更配置契约（updates 分支根目录 min-version.json）。 */
+interface ForceUpdateStaticConfig {
+  /** 最低可用版本；缺省表示当前不强制升级。 */
+  minimalVersion?: string;
+  /** 手动升级跳转地址；缺省时手动升级按钮不可用。 */
+  downloadUrl?: string;
 }
 
-function getForceUpdateMinimalVersionFromClientConfig(config: unknown): string | undefined {
-  if (typeof config !== "object" || config === null) {
-    return undefined;
-  }
+export function resolveForceUpdateMinVersionConfigUrl(staticFeedBase: string): string {
+  return new URL("min-version.json", resolveStaticManifestBase(staticFeedBase)).toString();
+}
 
-  const envelope = config as {
-    code?: unknown;
-    data?: {
-      configs?: unknown;
-    };
-  };
-  if (typeof envelope.code === "number" && envelope.code !== 0) {
-    // /client/configs 与服务层一样只有 code=0 才可信，避免错误 envelope 携带旧 data 时误触发启动强更。
-    throw new Error(`RobinRun client config failed: ${envelope.code}`);
+function getForceUpdateStaticConfig(config: unknown): ForceUpdateStaticConfig {
+  if (typeof config !== "object" || config === null) {
+    return {};
   }
-  return getForceUpdateMinimalVersionFromConfig(envelope.data?.configs);
+  const record = config as ForceUpdateStaticConfig;
+  return {
+    ...(typeof record.minimalVersion === "string" ? { minimalVersion: record.minimalVersion } : {}),
+    ...(typeof record.downloadUrl === "string" ? { downloadUrl: record.downloadUrl } : {}),
+  };
+}
+
+/** 404 与其他错误分开：清单未发布 = 无最低版本要求，属正常状态而非故障。 */
+class ForceUpdateConfigNotFoundError extends Error {
+  constructor() {
+    super("force update config not found (404)");
+  }
 }
 
 async function fetchRemoteForceUpdateConfig(
-  endpointOrigin?: string,
+  url: string,
   fetchRemoteConfig?: () => Promise<unknown>,
 ): Promise<unknown> {
   if (fetchRemoteConfig) {
@@ -113,9 +117,13 @@ async function fetchRemoteForceUpdateConfig(
     }, FORCE_UPDATE_CONFIG_REQUEST_TIMEOUT_MS);
     timer.unref?.();
 
-    request = net.request(resolveForceUpdateClientConfigUrl(endpointOrigin));
+    request = net.request(url);
     request.on("response", (response) => {
       const statusCode = response.statusCode ?? 0;
+      if (statusCode === 404) {
+        fail(new ForceUpdateConfigNotFoundError());
+        return;
+      }
       if (statusCode < 200 || statusCode >= 300) {
         // 启动前强更 gate 不能把 4xx/5xx/HTML 错页当正常配置解析，统一走离线降级路径。
         fail(new Error(`force update config request failed with status ${statusCode}`));
@@ -151,44 +159,46 @@ async function fetchRemoteForceUpdateConfig(
 
 export async function resolveDesktopForceUpdateRequirement(options: {
   logger: ForceUpdateGuardLogger;
-  endpointOrigin?: string;
+  staticFeedBase?: string;
   fetchRemoteConfig?: () => Promise<unknown>;
 }): Promise<ForceUpdateRequirement | null> {
-  const resolveFromConfig = (config: unknown) =>
-    resolveForceUpdateRequirement({
-      currentVersion: ROBINRUN_VERSION,
-      forceUpdate: {
-        minimalVersion:
-          getForceUpdateMinimalVersionFromClientConfig(config) ??
-          getForceUpdateMinimalVersionFromConfig(config) ??
-          "",
-      },
-    });
+  const staticFeedBase = options.staticFeedBase?.trim();
+  if (!staticFeedBase) {
+    // 未配置静态更新源 = RobinRun 没有可用的强更决策来源（上游 SaaS 的 client-configs
+    // 已退役，见 ForceUpdateGuardOptions 注释），整体跳过，绝不退回上游 API。
+    options.logger.warn(
+      "[force-update] 未配置静态更新源（ROBINRUN_UPDATE_FEED_BASE），跳过远端强制升级检查",
+    );
+    return null;
+  }
 
+  let config: ForceUpdateStaticConfig;
   try {
     const remoteConfig = await fetchRemoteForceUpdateConfig(
-      options.endpointOrigin,
+      resolveForceUpdateMinVersionConfigUrl(staticFeedBase),
       options.fetchRemoteConfig,
     );
-    const remoteRequirement = resolveFromConfig(remoteConfig);
-    if (remoteRequirement) {
-      return remoteRequirement;
-    }
+    config = getForceUpdateStaticConfig(remoteConfig);
   } catch (error) {
+    if (error instanceof ForceUpdateConfigNotFoundError) {
+      options.logger.info(
+        "[force-update] 未发布 min-version.json，视为无最低版本要求，跳过强制升级校验",
+      );
+      return null;
+    }
     // 预留离线跳过接口：完全离线时先不拉闸，后续可在这里接入显式 offline bypass 策略。
     options.logger.warn("[force-update] 读取远端强制升级配置失败，跳过强制升级校验", { error });
     return null;
   }
 
-  return null;
-}
-
-export function resolveForceUpdateDownloadUrl(
-  locale: Locale,
-  endpointOrigin = DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-): string {
-  const origin = buildRobinRunEndpointUrls(endpointOrigin).origin;
-  return locale === "zh-CN" ? `${origin}/cn` : `${origin}/en`;
+  const requirement = resolveForceUpdateRequirement({
+    currentVersion: ROBINRUN_VERSION,
+    forceUpdate: { minimalVersion: config.minimalVersion ?? "" },
+  });
+  if (!requirement) {
+    return null;
+  }
+  return { ...requirement, ...(config.downloadUrl ? { downloadUrl: config.downloadUrl } : {}) };
 }
 
 export function formatForceUpdateDialogText(
@@ -219,10 +229,7 @@ export function formatForceUpdateDialogText(
 export async function maybeBlockStartupForForceUpdate(
   options: ForceUpdateGuardOptions,
 ): Promise<ForceUpdateGuardResult> {
-  const requirement = await resolveDesktopForceUpdateRequirement({
-    ...options,
-    endpointOrigin: options.endpointOrigin,
-  });
+  const requirement = await resolveDesktopForceUpdateRequirement(options);
   if (!requirement) {
     return { blocked: false };
   }
@@ -245,9 +252,13 @@ export async function maybeBlockStartupForForceUpdate(
   }
 
   if (action === "manual") {
-    const url = resolveForceUpdateDownloadUrl(options.locale, options.endpointOrigin);
-    options.logger.info(`[force-update] 用户选择手动升级：${url}`);
-    await shell.openExternal(url);
+    if (!requirement.downloadUrl) {
+      // 静态强更配置未下发下载页地址时手动升级不可用；守卫语义不变（阻止进入主界面）。
+      options.logger.warn("[force-update] 用户选择手动升级，但强更配置未提供 downloadUrl，跳过跳转");
+    } else {
+      options.logger.info(`[force-update] 用户选择手动升级：${requirement.downloadUrl}`);
+      await shell.openExternal(requirement.downloadUrl);
+    }
   }
 
   // 强制升级命中后不能进入主界面；非自动升级路径处理完弹窗后退出，避免露出旧客户端功能。

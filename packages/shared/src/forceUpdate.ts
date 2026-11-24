@@ -3,6 +3,8 @@ import type { ForceUpdateConfig } from "./coding-plan-subscription.js";
 export interface ForceUpdateRequirement {
   currentVersion: string;
   minimalVersion: string;
+  /** 手动升级跳转地址（静态强更配置下发）；缺失时不展示可用的手动升级跳转。 */
+  downloadUrl?: string;
 }
 
 interface ParsedSemver {

@@ -190,6 +190,11 @@ jobs:
             rm -rf -- * .github 2>/dev/null || true
           fi
           cp -r "${GITHUB_WORKSPACE}/updates-staging"/. .
+          # 强更策略文件（forceUpdateGuard 读取）：只在不存在时播种 downloadUrl；
+          # minimalVersion 由人工按需编辑（见 docs/desktop/robinrun-release-updates.md），发布流水线不覆盖。
+          if [ ! -f min-version.json ]; then
+            printf '{"downloadUrl":"https://github.com/%s/releases/latest"}\n' "$GITHUB_REPOSITORY" > min-version.json
+          fi
           git add -A
           git commit -m "release: publish update manifests for ${TAG}"
           git push origin updates

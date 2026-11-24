@@ -79,6 +79,23 @@ deb/rpm 以手动下载为主（系统包更新需提权）。
 （调试输入只在非打包态生效）把更新器指过去，把测试包版本调低一档即可完整走一遍检测 → 弹窗 →
 下载 → 安装。`packages/desktop/dev-app-update.yml` 是 electron-updater dev 初始化的配套占位。
 
+## 强制升级（最低可用版本）
+
+启动前强更守卫（`forceUpdateGuard.ts`）与更新 feed 同源：打包态读 `updates` 分支根目录的
+`min-version.json`，契约：
+
+```json
+{ "minimalVersion": "0.0.2", "downloadUrl": "https://github.com/<owner>/<repo>/releases/latest" }
+```
+
+- `minimalVersion` 缺省/空 = 不强制升级；文件 404 = 同样跳过（正常状态，不是故障）。
+- `downloadUrl` 供"手动升级"按钮跳转；缺失时按钮不跳转。
+- 发布流水线只在文件**不存在**时播种 `downloadUrl`（不覆盖人工策略值）；需要强制全量升级时
+  人工改 `minimalVersion` 后直接提交到 updates 分支即可生效。
+- 历史：2026-11-24 前守卫请求上游 SaaS 的 `/api/v1/client/configs`，会把 ZCode 的最低可用
+  版本（v3.5.3）套在 RobinRun 头上（0.0.1 启动即被强更拦截）——该链路已整体退役；
+  未配置 `ROBINRUN_UPDATE_FEED_BASE` 的构建整体跳过强更检查，绝不退回上游 API。
+
 ## 已知边界与后续
 
 - **未验证项**：release.yml 全链路需首 tag 实测（尤其 fpm 产 rpm 在 runner 上的依赖、
