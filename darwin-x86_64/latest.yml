@@ -1,0 +1,12 @@
+version: 0.0.1
+files:
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-mac-x64.zip
+    sha512: zJO5wsu0i3YHbirGCxW0hm03axjD7NIrvboXtbVy68VhTf7he4zAH944pStgkedlbuWp0p5PGCg7CiIxJOpA5Q==
+    size: 231718094
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-mac-x64.dmg
+    sha512: JDEKW4kaKKGw4YzN7eQIaSAbd28i1G++jBki8hQgJWtprCOuVl2txrO5hvqRHRZAMQu7YjaWQWzSI5PUHDTnyg==
+    size: 239220740
+path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-mac-x64.zip
+sha512: zJO5wsu0i3YHbirGCxW0hm03axjD7NIrvboXtbVy68VhTf7he4zAH944pStgkedlbuWp0p5PGCg7CiIxJOpA5Q==
+releaseDate: '2026-11-23T16:17:12.710Z'
+minimumSystemVersion: 22.0.0
