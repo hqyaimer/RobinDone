@@ -94,6 +94,11 @@ __pycache__/
 /docs/worker-roster.md
 /docs/worker-session-model.md
 /docs/ui/task-grouped-view.md
+# .agents/ = 工作区 agent 技能（上游自带 + RobinRun 自建），纯开发侧工具不入库（2026-11-24 补充，
+# 246 个文件已 git rm --cached）。注意：apps/dev-docs 的 feature-boundary 图谱消费
+# .agents/skills/feature-boundary-planner/references/robinrun-feature-graph.yaml，新 clone 缺该文件；
+# 本机文件保留不受影响，若将来要恢复单一 YAML 入库需用逐级 ! 反选（父目录被禁时反选无效）。
+.agents/
 # 本机临时工作文件与调试截图。
 /tmp/
 /f3-v4.png
