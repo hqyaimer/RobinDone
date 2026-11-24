@@ -182,7 +182,9 @@ jobs:
           git config user.name "robinrun-release-bot"
           git config user.email "actions@github.com"
           if git ls-remote --exit-code --heads origin updates >/dev/null 2>&1; then
-            git fetch --depth 1 origin updates
+            # 显式 refspec（首跑实测）：浅克隆下 `git fetch origin updates` 只写 FETCH_HEAD，
+            # 不会创建 origin/updates 跟踪引用，后续 checkout -b 会 exit 128。
+            git fetch --depth 1 origin updates:refs/remotes/origin/updates
             git checkout -b updates origin/updates
           else
             git checkout --orphan updates
