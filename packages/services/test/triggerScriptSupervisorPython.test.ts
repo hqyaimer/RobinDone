@@ -73,11 +73,12 @@ async function makePythonFixture(
   const audits: Array<Record<string, unknown>> = [];
   const circuitBreaks: Array<{ triggerId: string; consecutiveFailures: number }> = [];
   const resolveCalls: string[] = [];
-  const resolvePythonRuntime: NonNullable<ScriptSupervisorCallbacks["resolvePythonRuntime"]> =
-    async (workspacePath) => {
-      resolveCalls.push(workspacePath);
-      return resolution;
-    };
+  const resolvePythonRuntime: NonNullable<
+    ScriptSupervisorCallbacks["resolvePythonRuntime"]
+  > = async (workspacePath) => {
+    resolveCalls.push(workspacePath);
+    return resolution;
+  };
   const supervisor = new TriggerScriptSupervisor({
     log: () => undefined,
     onEvent: (sessionKey, event) => {
@@ -231,7 +232,10 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
     );
     expect(fixture.events[0]?.summary).toContain("sanity assertion failed");
     // 脚本观察到拒绝后干净退出 → completed（与 node nack 语义一致：进程不因此终止）。
-    await waitFor(() => fixture!.entry.status === "completed", "script exits cleanly after ack rejection");
+    await waitFor(
+      () => fixture!.entry.status === "completed",
+      "script exits cleanly after ack rejection",
+    );
   });
 
   it("emit 端点信任面：未运行/不存在的触发器 POST → 404", async () => {
@@ -359,7 +363,10 @@ describe("停止分层：POSIX SIGKILL 升级（win 跳过）", () => {
       "utf8",
     );
     await fixtureKill.reconcile();
-    await waitFor(() => fixtureKill.audits.some((record) => record.action === "start"), "resident started");
+    await waitFor(
+      () => fixtureKill.audits.some((record) => record.action === "start"),
+      "resident started",
+    );
     expect(fixtureKill.entry.status).toBe("active");
 
     fixtureKill.entry.status = "deactivated";

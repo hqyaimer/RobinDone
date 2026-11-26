@@ -17,6 +17,7 @@ import {
   IProjectService,
   ITaskGroupService,
   ITriggerEngineService,
+  IOpsPanelService,
   IRemoteProjectService,
   ICuaPermissionService,
   IConversationShareService,
@@ -88,6 +89,8 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly taskGroupService: ITaskGroupService;
   /** 触发器引擎（desktop host 注册；远端 scope 未注册时经可选能力消费）。 */
   readonly triggerEngineService?: ITriggerEngineService;
+  /** 需求/审批/反馈面板服务（2026-11-24 MVP；desktop host 注册，旧 wire 缺席时 UI 隐藏入口）。 */
+  readonly opsPanelService?: IOpsPanelService;
   readonly projectService: IProjectService;
   readonly remoteProjectService: IRemoteProjectService;
   // cuaPermissionService 在 IServiceAccessor 上是可选（远端/bots host 不提供），但桌面 renderer
@@ -208,6 +211,11 @@ export class RemoteServiceAccess implements IServiceAccessor {
     // 返回的代理调用会失败，消费方按可选能力处理（UI 侧已有缺席即隐藏的分支）。
     this.triggerEngineService = ProxyChannel.toService<ITriggerEngineService>(
       channelClient.getChannel(ITriggerEngineService.channelName),
+    );
+    // 需求/审批/反馈面板（2026-11-24 MVP）：desktop host 注册了该频道（node.ts）；旧 wire/
+    // 远端 scope 未注册时 getChannel 代理调用会失败，UI 按可选能力隐藏面板入口。
+    this.opsPanelService = ProxyChannel.toService<IOpsPanelService>(
+      channelClient.getChannel(IOpsPanelService.channelName),
     );
     this.projectService = ProxyChannel.toService<IProjectService>(
       channelClient.getChannel(IProjectService.channelName),

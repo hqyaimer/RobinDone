@@ -54,6 +54,8 @@ import { GitBranchSwitcher } from "@/GitBranchSwitcher.js";
 import { ScopedErrorBoundary } from "@/ErrorBoundary.js";
 
 import { AUTOMATIONS_TOAST_ANCHOR_ID, AutomationsSection } from "@/settings/AutomationsSection.js";
+// 需求/审批/反馈面板整页视图（2026-11-24 MVP）：hook 自含数据面，装配只传 workspacePath。
+import { OpsPanelPage } from "@/ops-panel/OpsPanelPage.js";
 import type {
   SavedWorkflowLaunchTarget,
   SavedWorkflowsOpenArtifactParams,
@@ -289,6 +291,7 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
   onOpenAutomationConsumed,
   handleOpenAutomations,
   handleOpenPluginStore,
+  handleOpenOpsPanel,
   onConnectRemote,
   onSelectRemoteProject,
   onCancelRemoteProject,
@@ -1452,7 +1455,9 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
   useEffect(() => {
     if (
       isWebRemoteControlShell &&
-      (workspaceMainView === "automations" || workspaceMainView === "plugin-store")
+      (workspaceMainView === "automations" ||
+        workspaceMainView === "plugin-store" ||
+        workspaceMainView === "ops-panel")
     ) {
       // 修复原因：手机远控复用桌面 shell 时可能保留上一次主视图状态；
       // 远控不承载 Automations，必须立即回落到 continuous/replayable 边界之外的聊天页。
@@ -2231,6 +2236,8 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
       automationsActive={workspaceMainView === "automations"}
       onOpenPluginStore={handleOpenPluginStore}
       pluginStoreActive={workspaceMainView === "plugin-store"}
+      onOpenOpsPanel={handleOpenOpsPanel}
+      opsPanelActive={workspaceMainView === "ops-panel"}
       // 桌面没有 mobile 导航动作；内联包装曾让右侧开关穿透侧栏 memo，重复渲染全部项目。
       onWebRemoteTaskOpen={
         mobile
@@ -2383,6 +2390,22 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
                   </ScopedErrorBoundary>
                 </div>
               </AutomationsMainBreadcrumbFrame>
+            </main>
+          ) : workspaceMainView === "ops-panel" && !isWebRemoteControlShell ? (
+            <main className="flex h-full min-h-0 flex-1 flex-col bg-background">
+              <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+                {/* ops-panel 无面包屑/页头，顶部只留窄边距（2026-11-24 用户实测：py-4/6 的顶距过大）。 */}
+                <div className="mx-auto flex w-full max-w-5xl flex-col px-4 pb-4 pt-2 md:px-6 md:pb-6">
+                  <ScopedErrorBoundary
+                    scope="ops-panel-main"
+                    resetKeys={workspaceOnlyResetKeys}
+                    variant="panel"
+                    className="min-h-full"
+                  >
+                    <OpsPanelPage workspacePath={workspaceAbsPath} onOpenCodeViewer={handleOpenCodeViewer} />
+                  </ScopedErrorBoundary>
+                </div>
+              </div>
             </main>
           ) : workspaceMainView === "plugin-store" && !isWebRemoteControlShell ? (
             <main className="flex h-full min-h-0 flex-1 flex-col bg-background">
@@ -2832,6 +2855,22 @@ const WorkspaceShellLayoutContent = memo(function WorkspaceShellLayoutComponent(
                                 </ScopedErrorBoundary>
                               </div>
                             </AutomationsMainBreadcrumbFrame>
+                          </main>
+                        ) : workspaceMainView === "ops-panel" && !isWebRemoteControlShell ? (
+                          <main className="flex h-full min-h-0 flex-1 flex-col bg-background">
+                            <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+                              {/* 同桌面分支：ops-panel 无页头，顶距收窄。 */}
+                              <div className="mx-auto flex w-full max-w-5xl flex-col px-4 pb-4 pt-2 md:px-6 md:pb-6">
+                                <ScopedErrorBoundary
+                                  scope="ops-panel-main"
+                                  resetKeys={workspaceOnlyResetKeys}
+                                  variant="panel"
+                                  className="min-h-full"
+                                >
+                                  <OpsPanelPage workspacePath={workspaceAbsPath} onOpenCodeViewer={handleOpenCodeViewer} />
+                                </ScopedErrorBoundary>
+                              </div>
+                            </div>
                           </main>
                         ) : workspaceMainView === "plugin-store" && !isWebRemoteControlShell ? (
                           <main className="flex h-full min-h-0 flex-1 flex-col bg-background">

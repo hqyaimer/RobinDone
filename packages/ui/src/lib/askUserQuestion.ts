@@ -138,6 +138,54 @@ function parseClaudeAskUserQuestionOutput(
   return Object.keys(answers).length > 0 ? answers : undefined;
 }
 
+/** 工具终态 output 的展示文本（toolCall.output = { text } 或裸字符串；见 toolDisplay.ts）。 */
+function readOutputDisplayText(candidate: unknown): string | undefined {
+  if (typeof candidate === "string" && candidate.trim().length > 0) {
+    return candidate;
+  }
+  if (isPlainRecord(candidate) && typeof candidate.text === "string" && candidate.text.trim().length > 0) {
+    return candidate.text;
+  }
+  return undefined;
+}
+
+/** runtime 自动继续（超时未答）的模型文案前缀：空 answers 的显式成功语义。 */
+const AUTO_CONTINUED_OUTPUT_PREFIX = "The user did not provide answers";
+
+/**
+ * 以 input 的确切问题文本为锚点，从模型可见的应答文本（formatAskUserQuestionModelContent
+ * 产物：`User has answered your questions: "q"="a", ...`）解析答案。
+ * 2026-11-26 实测缺陷（用户手写回答展开显示"未提供回答"）：问题文本含 ASCII 双引号时，
+ * 朴素配对正则 `"([^"]+)"="([^"]*)"` 被内嵌引号截断——配对键错位后按问题原文查不到答案。
+ * 模型侧收到的是完整文本不受影响，只有显示层丢失。锚点方案对任意引号内容稳健：
+ * 非末题答案终止于下一题分隔 `", "`；末题终止于收尾句点前的最后一个引号（答案自身可含引号）。
+ */
+function parseAnchoredAnswers(
+  outputText: string,
+  questionTexts: string[],
+): RobinRunUserQuestionAnswers | undefined {
+  const answers: RobinRunUserQuestionAnswers = {};
+  questionTexts.forEach((questionText, index) => {
+    const anchor = `"${questionText}"="`;
+    const start = outputText.indexOf(anchor);
+    if (start < 0) {
+      return;
+    }
+    const rest = outputText.slice(start + anchor.length);
+    const isLastQuestion = index === questionTexts.length - 1;
+    let answer: string;
+    if (isLastQuestion) {
+      const closingQuote = rest.lastIndexOf('"');
+      answer = closingQuote < 0 ? rest : rest.slice(0, closingQuote);
+    } else {
+      const separator = rest.indexOf('", "');
+      answer = separator < 0 ? rest : rest.slice(0, separator);
+    }
+    answers[questionText] = answer;
+  });
+  return Object.keys(answers).length > 0 ? answers : undefined;
+}
+
 function parseJsonRecord(output: unknown): Record<string, unknown> | undefined {
   if (isPlainRecord(output)) {
     return output;
@@ -316,6 +364,26 @@ export function readAskUserQuestionAnswers(value: {
   output?: unknown;
   raw?: unknown;
 }): RobinRunUserQuestionAnswers | undefined {
+  // 锚点解析优先于朴素配对（2026-11-26 实测缺陷修复）：朴素正则在问题/答案含 ASCII
+  // 引号时会配对错位且仍返回非空结果，抢占后续读取路径——必须先按确切问题文本锚定。
+  const raw = isPlainRecord(value.raw) ? value.raw : undefined;
+  const displayText =
+    readOutputDisplayText(value.output) ??
+    readOutputDisplayText(raw?.rawOutput) ??
+    readOutputDisplayText(raw?.output);
+  if (displayText !== undefined) {
+    if (displayText.trimStart().startsWith(AUTO_CONTINUED_OUTPUT_PREFIX)) {
+      // runtime 自动继续的显式语义：空对象让渲染层显示"已自动继续"而非"未提供回答"。
+      return {};
+    }
+    const questionTexts = normalizeAskUserQuestionInput(readAskUserQuestionInput(value)).questions.map(
+      (question) => question.question,
+    );
+    const anchored = parseAnchoredAnswers(displayText, questionTexts);
+    if (anchored !== undefined) {
+      return anchored;
+    }
+  }
   const nestedOutputAnswers = readNestedAskUserQuestionAnswers(value.output);
   if (nestedOutputAnswers) {
     return nestedOutputAnswers;

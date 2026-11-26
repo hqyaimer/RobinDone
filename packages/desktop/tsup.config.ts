@@ -237,6 +237,13 @@ const desktopNodeRuntimeExternals = [
   "node-forge",
   // ZIP 解包器内部依赖 CommonJS require("fs")，不能内联到 ESM main/host 产物。
   "yauzl",
+  // @puppeteer/browsers（触发器浏览器供给）内部动态 require("http")，内联后 host 报
+  // Dynamic require of "http" is not supported → chromium 下载永远失败静默回退系统
+  // Chrome（2026-11-25 真机日志实锤）。运行时外部依赖，desktop package.json 已有同款。
+  "@puppeteer/browsers",
+  // playwright-core（触发器浏览器 CDP 数据面 storageState 导出/注入，services 动态
+  // import）：体量大且内部有 CJS require，不内联；desktop 运行时已有同款依赖。
+  "playwright-core",
 ];
 
 function createDevReadyMarkerHook(target: "main" | "host" | "preload"): string {

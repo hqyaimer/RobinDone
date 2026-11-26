@@ -25,6 +25,7 @@ import {
   FileSearch,
   RefreshCw,
   User,
+  Zap,
 } from "lucide-react";
 import { isSettingsSectionEnabled, type SettingsSectionId } from "@/lib/settingsNavigation.js";
 import type { Theme } from "@/useTheme.js";
@@ -135,6 +136,14 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     id: "hooks",
     icon: Anchor,
     titleId: "settings.hooks.title",
+    groupId: "agentCapabilities",
+  },
+  // RobinRun 触发器（docs/trigger-system.md）：常驻脚本并发配额等引擎级配置，
+  // 紧跟 hooks（同为 agent 感知/自动化能力域）。
+  {
+    id: "triggers",
+    icon: Zap,
+    titleId: "settings.triggers.title",
     groupId: "agentCapabilities",
   },
   {

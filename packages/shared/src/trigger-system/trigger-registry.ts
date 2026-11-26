@@ -143,10 +143,17 @@ export const triggerConfigSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("script"),
       /**
-       * 运行周期与超时（2026-11-21 常驻模型修订后弃用）：脚本触发器是常驻事件源进程，
-       * 引擎只托管生命周期（active 即拉起、崩溃退避重启、exit 0 → completed 终态），
-       * 定时/订阅由脚本自实现。两字段保留为 optional 仅为旧注册表解析兼容，引擎忽略；
-       * 新创建不得写入。
+       * 运行模式（2026-11-25 定时执行模式裁决，docs/trigger-system.md「触发器类型 → 脚本」）：
+       * resident=常驻事件源进程（active 即拉起、崩溃退避重启、exit 0 → completed 终态）；
+       * scheduled=定时执行（引擎按 schedule 到点 spawn 一趟：采集 → emit → exit 0，状态
+       * 保持 active 不置 completed，重入默认跳过记审计，不占常驻并发配额）。缺省 resident
+       * ——存量条目零迁移。
+       */
+      runMode: z.enum(["resident", "scheduled"]).default("resident"),
+      /**
+       * 定时计划：resident 模式下为 2026-11-21 常驻模型弃用字段（optional 仅为旧注册表
+       * 解析兼容，引擎忽略）；scheduled 模式下为必填的执行计划（cron/interval，语义同
+       * cron/interval 型触发器）。superRefine 保证 scheduled ⇒ schedule 在场。
        */
       schedule: triggerScheduleSchema.optional(),
       /**
@@ -165,6 +172,35 @@ export const triggerConfigSchema = z.discriminatedUnion("kind", [
       headed: z.boolean().optional(),
     })
     .strict(),
+  z
+    .object({
+      /**
+       * 系统订阅型（2026-11-24 需求/审批/反馈面板引入的首个系统特权订阅）：平台服务
+       * （如 ops-panel）经引擎 ensureSystemSubscription 播种的事件订阅；不经 cron/
+       * webhook/script 任何调度路径 fire，事件由播种方服务直接驱动投递。事件名由播种方
+       * 定义语义，触发器系统不解释内容。
+       */
+      kind: z.literal("system"),
+      /** 订阅的事件名（如 approval.decided / feedback.created）。 */
+      events: z.array(z.string().min(1).max(64)).min(1).max(16),
+      /**
+       * 每事件唤醒豁免规则（2026-11-24 用户裁决的通用机制，规则随订阅配置播种而非系统
+       * 写死）：键 = 事件名，exemptRecordedBy = 录入者词表（user|master|worker:<id>）——
+       * 录入者在列时该事件不产生唤醒（录入方在场，无需投递）。订阅事件缺席规则时一律
+       * 唤醒；未订阅的事件与唤醒无关。语义由播种方定义，触发器系统不解释内容。
+       */
+      wakeRules: z
+        .record(
+          z.string().min(1).max(64),
+          z
+            .object({
+              exemptRecordedBy: z.array(z.string().min(1).max(64)).max(16),
+            })
+            .strict(),
+        )
+        .optional(),
+    })
+    .strict(),
 ]);
 export type TriggerConfig = z.infer<typeof triggerConfigSchema>;
 export type TriggerType = TriggerConfig["kind"];
@@ -173,6 +209,20 @@ export type TriggerType = TriggerConfig["kind"];
 export function triggerTypeOf(entry: Pick<TriggerEntry, "config">): TriggerType {
   return entry.config.kind;
 }
+
+/**
+ * 路由策略（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：
+ * - direct：现行为——一 key 一绑定会话，事件直投绑定会话就地处理（docs/trigger-system.md
+ *   裁决 7 语义）。存量与简单场景。
+ * - fixed：规则直投——每个事件批次按固定规则开创建者新会话，零 LLM 轮次（通知型触发器）。
+ * - dispatcher：绑定会话升格为分发器（话题聚类分箱），按标记路由到创建者本人的
+ *   处理会话（新开或续用）。
+ * schema 缺省 direct：旧注册表条目解析时自动填充（零迁移——旧行为），新 create 由
+ * ManageTriggers handler 显式写 dispatcher（新建缺省，见其裁决注释）。组订阅的
+ * 有效策略取组条目的 routing（成员条目字段被忽略），见 resolveRoutingForSessionKey。
+ */
+export const triggerRoutingSchema = z.enum(["direct", "fixed", "dispatcher"]);
+export type TriggerRouting = z.infer<typeof triggerRoutingSchema>;
 
 /**
  * 出口契约的合理性断言（裁决 5，结构化部分）。数据突变类断言（环比等）留待后续按需扩展；
@@ -209,6 +259,11 @@ export const triggerEntrySchema = z
      * 指向组 id（会话 key `trigger-group:<组id>`）。交叉一致性在注册表级 refine。
      */
     groupId: triggerGroupIdSchema.nullable().default(null),
+    /**
+     * 路由策略（2026-11-25 分发器裁决）：仅直连订阅生效；组订阅取组条目 routing。
+     * schema 缺省 direct = 旧注册表条目零迁移（解析时填充）。
+     */
+    routing: triggerRoutingSchema.default("direct"),
     config: triggerConfigSchema,
     /**
      * 状态机（裁决 5）：active ↔ deactivated（启停）；连续异常达阈值由工具置
@@ -228,23 +283,41 @@ export const triggerEntrySchema = z
      * 仅经 ManageTriggers delete / UI 删除项写入；不可逆（如需同语义触发器请新建）。
      */
     deleted: z.boolean().optional(),
+    /**
+     * 系统特权订阅标记（2026-11-24 需求/审批/反馈面板，平台级保证——不是约定俗成）：
+     * true = 平台播种的系统级订阅。任何智能体与用户都不可停用/删除/修改
+     * （ManageTriggers set_status/delete/update 与引擎 setTriggerStatus/deleteTrigger
+     * 一律拒绝，也不可经 create 伪造 system 条目）；ownerAgentId 仅作展示归组
+     * （面板订阅归 master 触发器文件夹）。若注册表中缺失或被外部改动破坏，引擎
+     * ensureSystemSubscription 会幂等重建。
+     */
+    system: z.boolean().optional(),
     createdAt: isoTimestampSchema,
     updatedAt: isoTimestampSchema,
   })
   .strict();
 export type TriggerEntry = z.infer<typeof triggerEntrySchema>;
 
+/** 系统特权订阅判定（保护逻辑的唯一判据；播种与各消费面共用）。 */
+export function isSystemTriggerEntry(entry: Pick<TriggerEntry, "system">): boolean {
+  return entry.system === true;
+}
+
 export const triggerGroupEntrySchema = z
   .object({
     id: triggerGroupIdSchema,
     name: z.string().min(1).max(64),
     /** 成员触发器 id 列表（允许空组=建组后逐步加成员；唯一）；与 triggers[].groupId 双向一致由注册表级 refine 校验。 */
-    memberTriggerIds: z
-      .array(triggerIdSchema)
-      .refine((ids) => new Set(ids).size === ids.length, {
-        message: "Group member trigger ids must be unique",
-      }),
+    memberTriggerIds: z.array(triggerIdSchema).refine((ids) => new Set(ids).size === ids.length, {
+      message: "Group member trigger ids must be unique",
+    }),
     subscriberAgentId: agentIdSchema,
+    /**
+     * 路由策略（2026-11-25 分发器裁决）：组订阅的有效策略（成员条目的 routing 被忽略——
+     * 组内事件共用一个 key 一个绑定会话，策略必须唯一，放组上避免成员不一致）。
+     * 组是 dispatcher 档的最大受益场景（多源混批拆流）。schema 缺省 direct = 零迁移。
+     */
+    routing: triggerRoutingSchema.default("direct"),
     createdAt: isoTimestampSchema,
     updatedAt: isoTimestampSchema,
   })
@@ -294,6 +367,16 @@ export const triggerRegistrySchema = z
     const groupsById = new Map(registry.groups.map((group) => [group.id, group]));
 
     for (const trigger of registry.triggers) {
+      // 定时执行模式必须有执行计划（2026-11-25 runMode 裁决；resident+schedule 是旧注册表
+      // 的合法遗留形状，引擎忽略，不在此拦截）。
+      if (trigger.config.kind === "script" && trigger.config.runMode === "scheduled") {
+        if (trigger.config.schedule === undefined) {
+          issue(
+            "triggers",
+            `Script trigger ${trigger.id} uses runMode "scheduled" but has no schedule`,
+          );
+        }
+      }
       if (trigger.groupId === null) continue;
       const group = groupsById.get(trigger.groupId);
       if (!group) {
@@ -422,6 +505,53 @@ export const pythonPackagesLedgerSchema = z
 export type PythonPackagesLedger = z.infer<typeof pythonPackagesLedgerSchema>;
 
 // ---------------------------------------------------------------------------
+// 引擎托管浏览器（2026-11-25，specs/trigger-browser-hosting.md）：可用性状态文件
+// （state/browser-runtime.json，引擎写、CLI 读）——schema 镜像 python-runtime 状态机，
+// 门控 script config 的 profile 字段（浏览器不可用时带 profile 创建被拒）。
+// ---------------------------------------------------------------------------
+
+export const TRIGGER_BROWSER_RUNTIME_STATE_VERSION = 1 as const;
+export const triggerBrowserRuntimeStateFileName = "browser-runtime.json" as const;
+
+export const browserRuntimeSourceSchema = z.enum(["managed", "system"]);
+export type BrowserRuntimeSource = z.infer<typeof browserRuntimeSourceSchema>;
+
+export const browserRuntimeAvailabilitySchema = z.enum(["probing", "available", "unavailable"]);
+
+export const triggerBrowserRuntimeStateSchema = z
+  .object({
+    version: z.literal(TRIGGER_BROWSER_RUNTIME_STATE_VERSION),
+    state: browserRuntimeAvailabilitySchema,
+    /** available 时给出生效浏览器可执行文件绝对路径（managed 缓存或系统回退）。 */
+    executablePath: z.string().min(1).optional(),
+    source: browserRuntimeSourceSchema.optional(),
+    /** unavailable 的失败原因（直出给工具结果与提示词的文案）。 */
+    error: z.string().min(1).optional(),
+    updatedAt: isoTimestampSchema,
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.state === "available") {
+      if (value.executablePath === undefined || value.source === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["executablePath"],
+          message: "available state requires executablePath and source",
+        });
+      }
+      return;
+    }
+    if (value.state === "unavailable" && value.error === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["error"],
+        message: "unavailable state requires an error message",
+      });
+    }
+  });
+export type TriggerBrowserRuntimeStateFile = z.infer<typeof triggerBrowserRuntimeStateSchema>;
+
+// ---------------------------------------------------------------------------
 // 会话 key（裁决 7 路由规则）——协议级常量，引擎（host）与 CLI 两侧共用
 // ---------------------------------------------------------------------------
 
@@ -456,4 +586,23 @@ export function parseTriggerSessionKey(key: string): ParsedTriggerSessionKey | n
     return { kind: "trigger", triggerId: key.slice(TRIGGER_SESSION_KEY_PREFIX.length) };
   }
   return null;
+}
+
+/**
+ * 会话 key 的有效路由策略（2026-11-25 分发器裁决）：直连 key 取触发器条目 routing，
+ * 组 key 取组条目 routing（成员字段被忽略）。条目缺席（伪删除/注册表损坏等，正常
+ * 投递链不会走到）按 direct 收口——调用方的 active/deleted 过滤先于本解析。
+ */
+export function resolveRoutingForSessionKey(
+  registry: Pick<TriggerRegistry, "triggers" | "groups">,
+  key: string,
+): TriggerRouting {
+  const parsed = parseTriggerSessionKey(key);
+  if (parsed === null) return "direct";
+  if (parsed.kind === "trigger") {
+    return (
+      registry.triggers.find((trigger) => trigger.id === parsed.triggerId)?.routing ?? "direct"
+    );
+  }
+  return registry.groups.find((group) => group.id === parsed.groupId)?.routing ?? "direct";
 }

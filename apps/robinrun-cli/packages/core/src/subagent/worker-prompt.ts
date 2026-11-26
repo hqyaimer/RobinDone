@@ -90,9 +90,9 @@ function buildWorkerPredefinedPrompt(
 ): string {
   const scriptRuntimeBullet =
     scriptRuntimeHint === "python"
-      ? '- Script triggers run Python in this project (managed interpreter + per-project venv): declare runtime "python", report events with the injected helper — `import robinrun; robinrun.emit("summary", data)` (blocks until the engine accepts the event, raises on contract violation; stdout is audit logs only) — catch SIGTERM on POSIX for cleanup, and install third-party packages only via the ManageTriggers install_packages action.'
+      ? '- Script triggers run Python in this project (managed interpreter + per-project venv): declare runtime "python", report events with the injected helper — `import robinrun; robinrun.emit("summary", data)` (blocks until the engine accepts the event, raises on contract violation; stdout is audit logs only) — catch SIGTERM on POSIX for cleanup, and install third-party packages only via the ManageTriggers install_packages action. Size resident scripts by responsibility boundary: one domain (e.g. one platform\'s data surface) = one script emitting its several event types with routing "dispatcher"; prefer runMode "scheduled" for plain periodic checks.'
       : scriptRuntimeHint === "node"
-        ? '- Python is currently unavailable, so script triggers run on the node fallback (bundled runtime + injected bridge, standard library only): report events with the injected global robinrun.emit({ summary, data }) (await it) and register robinrun.onShutdown(fn) for cleanup; create new script triggers with runtime "python" once python becomes available, and migrate existing ones via ManageTriggers update.'
+        ? '- Python is currently unavailable, so script triggers run on the node fallback (bundled runtime + injected bridge, standard library only): report events with the injected global robinrun.emit({ summary, data }) (await it) and register robinrun.onShutdown(fn) for cleanup; create new script triggers with runtime "python" once python becomes available, and migrate existing ones via ManageTriggers update. Size resident scripts by responsibility boundary: one domain = one script with routing "dispatcher"; prefer runMode "scheduled" for plain periodic checks.'
         : undefined;
   return [
     `# Identity: worker agent (工作者)`,
@@ -114,6 +114,9 @@ function buildWorkerPredefinedPrompt(
     "- ContactAgent reply mechanics: a request whose <system-status> says replyExpected=true makes YOUR final output for that turn the reply — it is returned verbatim to the master automatically. Deliver it once; never also send the same content again as a follow-up ContactAgent (that double-delivers). Use a follow-up ContactAgent only for new matters or later updates; replyExpected=false messages are notification-only.",
     "- ContactAgent addressing is explicit: omitting `sessionId` opens a NEW master session (it never lands in the master's latest session implicitly). To continue an ongoing exchange, pass the sessionId an earlier ContactAgent returned, or the fromSessionId in the <system-status> of the master's messages to you.",
     "- Trigger sessions you subscribe to handle ONLY the trigger they are bound to — never mention, manage, or report on unrelated triggers, unless the user or the master explicitly instructed you about that trigger.",
+    // 需求/审批/反馈面板（2026-11-24 MVP，权限矩阵 §4）：反馈入口是 worker 向上走的
+    // 唯一面板通道；可见性（只见自己提交的条目）与过滤都在 host 服务层强制。
+    "- The ops panel (ManageOpsPanel) is your upward channel for anything a task request didn't cover: submit problems, blockers, and improvement observations as feedback — the master triages them and follows up. You can only read entries you submitted yourself, and you have no requirement or approval actions: requirements come from the user (the master transcribes them) and approvals are drafted by the master.",
     ...(scriptRuntimeBullet !== undefined ? [scriptRuntimeBullet] : []),
     "- The user may join your session and talk with you directly; every input tells you who sent it via its <system-status> block.",
     // F3（2026-11-23 用户裁决补齐）：worker 是收投递最频繁的角色，此前防伪与权限边界

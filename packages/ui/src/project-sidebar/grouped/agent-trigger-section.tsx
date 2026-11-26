@@ -6,6 +6,7 @@ import {
   ChevronRightIcon,
   FolderClosed,
   FolderOpen,
+  GitBranch,
   Zap,
 } from "lucide-react";
 import type { TriggerStatus } from "@robinrun/shared";
@@ -54,6 +55,22 @@ function TriggerErrorPausedBadge() {
   );
 }
 
+/**
+ * 分发角色徽章（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §7）：dispatcher
+ * 档条目的绑定会话是分发器（只有事件进/路由标记出，没有业务产出）——不标注用户会困惑
+ * "这个会话怎么不干活"。密度规则同熔断徽章（2026-11-20 列表密度裁决：只保留需要解释
+ * 的文字徽章）。
+ */
+function TriggerDispatcherBadge() {
+  const { intl } = useRobinRunIntl();
+  return (
+    <Badge className="border-transparent bg-surface-active text-foreground-subtle">
+      <GitBranch aria-hidden="true" data-icon="inline-start" />
+      {intl.formatMessage({ id: "triggerSidebar.routing.dispatcher" })}
+    </Badge>
+  );
+}
+
 /** 本地 webhook 完整地址：base 去尾斜杠 + 路由 path + token（token 双重校验的另一半）。 */
 function buildWebhookTriggerUrl(baseUrl: string, path: string, token: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/${path}?token=${token}`;
@@ -89,6 +106,10 @@ function TriggerEntryRow({
       ? buildWebhookTriggerUrl(webhookBaseUrl, entry.webhook.path, entry.webhook.token)
       : null;
   const actions = useMemo<TriggerStatusAction[]>(() => {
+    // 系统特权订阅（2026-11-24 需求/审批/反馈面板，需求 §3.1）：平台播种、不可停用/
+    // 删除（引擎与 ManageTriggers 双层拒绝）——整行不包右键菜单（下方 system 早返回，
+    // 2026-11-25 用户反馈：无菜单项就不弹菜单，空壳菜单很难看）。
+    if (entry.system === true) return [];
     // 组条目按成员各自状态精确作用（只动该状态的成员），直连条目退化为单触发器。
     const statuses = entry.memberStatuses ?? [entry.status];
     const idsWith = (status: TriggerStatus) =>
@@ -125,8 +146,19 @@ function TriggerEntryRow({
   }, [entry]);
   const lastFireMs = entry.lastFireAt ? Date.parse(entry.lastFireAt) : Number.NaN;
   const timeLabel = Number.isFinite(lastFireMs) ? formatTaskRelativeTime(lastFireMs, intl) : null;
+  // 触发与否的权威事实是 lastFireAt（2026-11-25 分发器裁决修正）：fixed 档每批次开
+  // 新会话、不写绑定表，旧"无绑定 = 尚未触发过"判据对它恒真——已触发的 fixed 条目
+  // 会一直显示"尚未触发过"。提示按档位分文案；灰态保持（fixed 无固定会话可切换）。
+  const hasFired = Number.isFinite(lastFireMs);
+  const hintMessageId = !hasFired
+    ? "triggerSidebar.notTriggered"
+    : entry.routing === "fixed"
+      ? "triggerSidebar.routing.fixedHint"
+      : "triggerSidebar.notTriggered";
+  const showHint = !tooltipsDisabled && boundTaskId === undefined;
   const handleClick = () => {
     // 未触发过的条目没有可切换的会话（懒创建，首次触发才建），点击无效果。
+    // fixed 档无绑定会话（每批次新会话在订阅者名下），点击同样无落点。
     if (!boundTaskId) return;
     onSelect();
   };
@@ -180,15 +212,29 @@ function TriggerEntryRow({
           </span>
         ) : null}
         <span className="ml-auto flex shrink-0 items-center gap-1.5 text-ui-sm text-foreground-subtle">
+          {entry.routing === "dispatcher" ? <TriggerDispatcherBadge /> : null}
           {entry.status === "error-paused" ? <TriggerErrorPausedBadge /> : null}
           {timeLabel ? <span className="mr-1">{timeLabel}</span> : null}
         </span>
       </span>
     </div>
   );
+  // 系统特权订阅没有任何菜单项（启停/清会话/复制地址/删除全部不可用）——不包
+  // ContextMenu 壳，右键不弹空菜单（2026-11-25 用户反馈）；提示 Tooltip 语义不变。
+  if (entry.system === true) {
+    if (!showHint || (hasFired && entry.routing !== "fixed")) return row;
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{row}</TooltipTrigger>
+        <TooltipContent side="right" align="center" sideOffset={6}>
+          <span className="text-ui-sm">{intl.formatMessage({ id: hintMessageId })}</span>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
   return (
     <ContextMenu>
-      {tooltipsDisabled || boundTaskId ? (
+      {!showHint || (hasFired && entry.routing !== "fixed") ? (
         <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
       ) : (
         <Tooltip>
@@ -196,9 +242,7 @@ function TriggerEntryRow({
             <ContextMenuTrigger asChild>{row}</ContextMenuTrigger>
           </TooltipTrigger>
           <TooltipContent side="right" align="center" sideOffset={6}>
-            <span className="text-ui-sm">
-              {intl.formatMessage({ id: "triggerSidebar.notTriggered" })}
-            </span>
+            <span className="text-ui-sm">{intl.formatMessage({ id: hintMessageId })}</span>
           </TooltipContent>
         </Tooltip>
       )}
@@ -209,8 +253,8 @@ function TriggerEntryRow({
           </ContextMenuItem>
         ))}
         {/* 菜单风格（2026-11-21 用户裁决）：与普通会话右键菜单同风格，选项间不放
-            分割线；触发器/组 id 不再展示（用户不需要知道内部 id）；删除属破坏性
-            操作，固定放菜单最后。 */}
+        分割线；触发器/组 id 不再展示（用户不需要知道内部 id）；删除属破坏性
+        操作，固定放菜单最后。系统特权订阅走上方早返回，不进本菜单。 */}
         {boundTaskId !== undefined ? (
           // 清空会话（2026-11-20）：清空消息 + 身份按当前订阅者重置，会话与绑定
           // 保留，下次 fire 在同一会话继续。仅在已有绑定时出现。

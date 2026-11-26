@@ -1,5 +1,8 @@
 import { TASK_GROUP_ADMISSIONS_SQL } from "#src/task-groups/migration-v6.js";
 import { TASK_GROUP_PROJECT_BINDING_SQL } from "#src/task-groups/migration-v7.js";
+import { OPS_PANEL_SCHEMA_SQL } from "#src/ops-panel/migration-v8.js";
+import { OPS_PANEL_RECORDED_BY_SQL } from "#src/ops-panel/migration-v9.js";
+import { PROGRESS_SCHEMA_SQL } from "#src/ops-panel/migration-v10.js";
 import { basename, dirname, join } from "node:path";
 import { createHash } from "node:crypto";
 import { databaseMigrationIdSchema, type DatabaseMigrationFacts } from "@robinrun/shared";
@@ -126,6 +129,29 @@ const definitions = [
     touchedTables: ["task_groups"],
     checksumInput: [TASK_GROUP_PROJECT_BINDING_SQL],
     apply: (db: DatabaseSync) => db.exec(TASK_GROUP_PROJECT_BINDING_SQL),
+  },
+  {
+    // 需求/审批/反馈面板条目表（2026-11-24 MVP，ops-panel 模块）：三 kind 同表 +
+    // 判别列，串行唤醒队列状态（wakeup_state）与条目状态同落库（重启不丢）。
+    id: "0008_ops_panel_entries",
+    touchedTables: ["ops_panel_entries"],
+    checksumInput: [OPS_PANEL_SCHEMA_SQL],
+    apply: (db: DatabaseSync) => db.exec(OPS_PANEL_SCHEMA_SQL),
+  },
+  {
+    // 录入与来源拆分（2026-11-24 用户裁决）：recorded_by 列 + 存量回填（author 即录入者）。
+    id: "0009_ops_panel_recorded_by",
+    touchedTables: ["ops_panel_entries"],
+    checksumInput: [OPS_PANEL_RECORDED_BY_SQL],
+    apply: (db: DatabaseSync) => db.exec(OPS_PANEL_RECORDED_BY_SQL),
+  },
+  {
+    // 项目进度账本条目表（2026-11-25，specs/progress-ledger.md）：无状态机无唤醒，
+    // master 原位维护（update/delete）；删除为软删（读路径过滤，UI 无痕）。
+    id: "0010_progress_entries",
+    touchedTables: ["progress_entries"],
+    checksumInput: [PROGRESS_SCHEMA_SQL],
+    apply: (db: DatabaseSync) => db.exec(PROGRESS_SCHEMA_SQL),
   },
 ] as const;
 

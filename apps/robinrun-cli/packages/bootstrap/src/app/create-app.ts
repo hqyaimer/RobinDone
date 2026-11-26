@@ -1001,6 +1001,8 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
       agentContactDispatchPort: options.agentContactDispatchPort,
       // 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎。
       triggerRuntimePort: options.triggerRuntimePort,
+      // 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求端口由协议宿主注入。
+      opsPanelRuntimePort: options.opsPanelRuntimePort,
       appVersion,
       traceContext,
     });
@@ -1008,6 +1010,12 @@ export async function createRobinRunApp(options: RobinRunAppOptions): Promise<Ro
       hasInjectedModelAdapter: options.modelAdapter !== undefined,
       sessionId,
       startupTimer,
+    });
+    // 探针（2026-11-24 需求/审批/反馈面板排障）：runtime 构造后立即记录面板端口注入
+    // 结果——CLI 日志（bootstrap.app.startup.*）可离线核查，一次复现即可定位注入断点。
+    logger.info("ops panel port injection probe", {
+      opsPanelRuntimePortInjected: options.opsPanelRuntimePort !== undefined,
+      triggerRuntimePortInjected: options.triggerRuntimePort !== undefined,
     });
     completeAppStartup({
       sessionId,

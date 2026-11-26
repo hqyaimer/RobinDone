@@ -51,13 +51,20 @@ function ungroupedGroupNode(tasks: ProjectTask[]): TaskGroup {
  * （条目点击切换会话），任务组视图不再渲染其会话行——否则与触发器文件夹双重呈现。
  * cronAutomationId 可能被后续 meta 刷新清列，creationOrigin{kind:"trigger",ref} 是
  * sticky 权威；trg- 前缀与真 cron automation（automation-<uuid>）互斥。
+ *
+ * **已被部分修订（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §7）**：
+ * 独占承载只对**绑定会话**成立（引擎 sessionBindings 的值集 = 触发器文件夹点击的
+ * 落点）；dispatcher/fixed 档的处理会话不写绑定表，按裁决"散布在创建者名下"回归
+ * 智能体列表投影——否则多开的处理会话在 UI 上完全不可达（数据在、出口全无）。
+ * boundTaskIds 缺席（旧调用方/快照未达）保持旧全量隐藏行为（fail-safe 收窄）。
  */
-function isTriggerSessionTask(task: ProjectTask): boolean {
-  return (
+function isTriggerSessionTask(task: ProjectTask, boundTaskIds?: ReadonlySet<string>): boolean {
+  const isTriggerOrigin =
     task.cronAutomationId?.startsWith(TRIGGER_ID_PREFIX) ??
     (task.creationOrigin?.kind === "trigger" &&
-      (task.creationOrigin.ref?.startsWith(TRIGGER_ID_PREFIX) ?? false))
-  );
+      (task.creationOrigin.ref?.startsWith(TRIGGER_ID_PREFIX) ?? false));
+  if (!isTriggerOrigin) return false;
+  return boundTaskIds ? boundTaskIds.has(task.taskId) : true;
 }
 
 /**
@@ -71,10 +78,11 @@ export function projectGroupedNodes(
   tasks: ProjectTask[],
   structure: TaskGroupStructure,
   collapsed: ReadonlySet<string>,
+  triggerBoundTaskIds?: ReadonlySet<string>,
 ): GroupedRow[] {
   const visible = new Map(
     tasks
-      .filter((task) => !task.archived && !isTriggerSessionTask(task))
+      .filter((task) => !task.archived && !isTriggerSessionTask(task, triggerBoundTaskIds))
       .map((task) => [taskGroupKey(task), task]),
   );
   const groups = new Map(structure.groups.map((group) => [group.id, group]));

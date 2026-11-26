@@ -1,7 +1,10 @@
-import { Cron } from "croner";
-import { mkdir, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { parseTriggerSessionKey, sessionKeyForTrigger, type TriggerEntry } from "@robinrun/shared";
+import { join } from "node:path";
+import {
+  parseTriggerSessionKey,
+  resolveRoutingForSessionKey,
+  sessionKeyForTrigger,
+  type TriggerEntry,
+} from "@robinrun/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import {
   appendAudit,
@@ -22,7 +25,18 @@ import {
   type TriggerTaskPort,
 } from "./contract.js";
 import { TriggerEventAggregator, resolveBatchTriggerFromRegistry } from "./event-aggregator.js";
-import { LocalWebhookServer } from "./local-webhook-server.js";
+import type { TriggerBrowserHost } from "./browser-host.js";
+import { openTriggerLoginForEngine } from "./trigger-login.js";
+import { createEngineRouteMarkQueue, routeEventsForEngine } from "./route-marks.js";
+import {
+  deleteTriggerForEngine,
+  resetTriggerSessionForEngine,
+  setTriggerStatusForEngine,
+} from "./trigger-lifecycle.js";
+import { computeNextFireMs, MAX_TIMER_MS, type ScheduleHandle } from "./trigger-scheduling.js";
+import { ensureSystemSubscriptionEntry } from "./system-subscription.js";
+import { dispatchSystemSubscriptionWakeup } from "./system-wakeup.js";
+import { LocalWebhookServer, persistWebhookBaseUrlFile } from "./local-webhook-server.js";
 import { TriggerScriptSupervisor, type ScriptWorkspaceSnapshot } from "./script-supervisor.js";
 
 /**
@@ -38,12 +52,13 @@ import { TriggerScriptSupervisor, type ScriptWorkspaceSnapshot } from "./script-
  * 引擎对注册表只写运行时字段（lastFireAt/lastResult/consecutiveFailures/status 熔断与
  * completed），每次写都重新读盘-改-原子写（与 ManageTriggers 的并发窗口最小化，
  * v1 接受 last-writer-wins）。
+ * 2026-11-25 分发器裁决（specs/trigger-dispatcher-routing.md）：聚合器按 key 有效路由
+ * 策略分流（direct/fixed/dispatcher）；dispatcher 档的事件池与 RouteEvents 标记兑现由
+ * route-marks.ts 的 RouteMarkQueue 承接。
  */
 
 const POLL_INTERVAL_MS = 5_000;
 const DEBOUNCE_MS = 3_000;
-// setTimeout 单次上限约 24.8 天（2^31-1 ms）；长周期 cron 分片等待。
-const MAX_TIMER_MS = 2 ** 31 - 1;
 
 export interface TriggerEngineOptions {
   /** 全部已注册项目工作区（host 项目树投影；引擎逐个挂载/卸载）。 */
@@ -73,6 +88,18 @@ export interface TriggerEngineOptions {
    * `state/python-runtime.json` 供 CLI 门控与提示词双模式）。
    */
   pythonRuntime?: TriggerPythonRuntimePort;
+  /**
+   * 引擎托管浏览器（2026-11-25，specs/trigger-browser-hosting.md）：实例托管端口
+   * （browser-host.ts）。缺席 = 旧行为（脚本自管 playwright）；在场时声明 profile 的
+   * 脚本触发器经 CDP endpoint 接入引擎持有的实例，`open_login` 登录会话同端口。
+   */
+  browserHost?: TriggerBrowserHost;
+  /**
+   * 常驻脚本并发配额解析（2026-11-25 可配置化；host 装配：读 AppSettings
+   * triggerScriptResidentPerWorkspace / triggerScriptResidentGlobalMax）。每轮 reconcile
+   * 起点调用一次，设置改动 ≤5s 生效；缺席时 supervisor 用内置缺省（20/60）。
+   */
+  resolveScriptQuotas?(): Promise<{ perWorkspace: number; globalMax: number }>;
   /** 引擎日志（缺省 createServiceLogger）。 */
   log?(message: string): void;
   /** 测试钩子：覆盖轮询/去抖间隔。 */
@@ -87,41 +114,8 @@ interface WorkspaceState extends RegistryWritableState {
   mountedAt: number;
 }
 
-interface ScheduleHandle {
-  timer: NodeJS.Timeout;
-  /**
-   * arm 时算定的目标时刻（未截断的 nextMs）。到点判定以它为准——不能用
-   * computeNextFireMs 重算判定，见 onScheduleFire 内注释（2026-11-19 实测 bug）。
-   */
-  intendedMs: number;
-}
-
 export interface TriggerEngineHandle {
   dispose(): Promise<void>;
-}
-
-/**
- * cron 下一次触发（毫秒，本地时区；严格晚于 fromMs）。
- * 与 session/automationCron.computeNextRunAt 同款 croner 惯用法——在本模块内复制薄包装，
- * 避免 trigger-system 对 session 模块的跨模块深引（architecture:check 纪律）。
- */
-function computeNextCronRunMs(expr: string, fromMs: number): number | null {
-  // 修复（2026-11-23）：croner 对数值越界的表达式（如 99 99 99 99 99）直接 throw，而
-  // shared/contracts 的 schema 只校验"5 段 + 字符集"不校验数值——语义非法的表达式可以
-  // 入库。此前 rebuildSchedules 先清空全部已 armed 定时器再逐个重排，迭代到这里抛错会把
-  // 本轮重排中断：本轮已被清空的定时器不恢复、坏触发器之后的全部 cron/interval 永不
-  // re-arm，且 pollTick 的 changed 检测（注册表未变即不重建）使停摆永久化——一个坏表达式
-  // 瘫痪全项目调度。此处捕获并跳过该触发器，坏表达式经 emitWarning 留痕。
-  try {
-    const next = new Cron(expr).nextRun(new Date(fromMs));
-    return next ? next.getTime() : null;
-  } catch (error) {
-    process.emitWarning(
-      `trigger cron expression invalid, schedule skipped: "${expr}" — ${error instanceof Error ? error.message : String(error)}`,
-      { code: "ROBINRUN_TRIGGER_CRON_INVALID" },
-    );
-    return null;
-  }
 }
 
 function triggersRoot(workspacePath: string): string {
@@ -146,9 +140,36 @@ export function createTriggerEngineService(
   // 文件行数上限）；此处经导入使用，fail-safe 纪律见其头注。
 
   // ---------------------------------------------------------------------------
+  // 分发器路由标记队列（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §6）：
+  // dispatcher 档的事件池 + RouteEvents 标记兑现（分发器空闲后按 target 拆批投递）。
+  // 实例化与 routeEvents 服务面逻辑在 route-marks.ts（文件行数上限拆分，system-wakeup
+  // 同模式）；auditRoute 沿 reset_session 先例（直连记 JSONL、组记引擎日志）在其内部。
+  // ---------------------------------------------------------------------------
+
+  const routeMarkQueue = createEngineRouteMarkQueue({
+    log,
+    resolveWorkspace: (sessionKey) => resolveWorkspaceForSessionKey(sessionKey),
+    resolveWorkspaceByPath: async (workspacePath) =>
+      workspaces.get(workspacePath) ?? (await ensureWorkspace(workspacePath, undefined)),
+    ...(options.isTaskBusy !== undefined ? { isTaskBusy: options.isTaskBusy } : {}),
+    dispatch: options.dispatch,
+    appendAudit: (workspacePath, triggerId, record) =>
+      void appendAudit(workspacePath, triggerId, record),
+  });
+
+  // ---------------------------------------------------------------------------
   // 事件聚合（会话 key 维度：忙时排队、去抖合并投递——裁决 7 路由规则）。
   // 聚合器抽到 event-aggregator.ts（文件行数上限拆分）；对引擎状态的访问经回调。
   // ---------------------------------------------------------------------------
+
+  // 生命周期服务面（启停/伪删除/清空会话）的引擎闭包投影（trigger-lifecycle.ts 消费）。
+  const lifecycleDeps = {
+    log,
+    resolveState: async (workspacePath: string) =>
+      workspaces.get(workspacePath) ?? (await ensureWorkspace(workspacePath, undefined)),
+    rebuildSchedules: () => rebuildSchedules(),
+    ...(options.tasks !== undefined ? { tasks: options.tasks } : {}),
+  };
 
   const aggregator = new TriggerEventAggregator({
     debounceMs,
@@ -173,6 +194,8 @@ export function createTriggerEngineService(
         ...(state.projectId !== undefined ? { projectId: state.projectId } : {}),
         sessionBindings: state.sessionBindings,
         trigger,
+        // 有效路由策略（2026-11-25 分发器裁决）：直连取条目 routing、组取组条目 routing。
+        routing: resolveRoutingForSessionKey(state.registry, key),
       };
     },
     dispatch: (batch) => options.dispatch.dispatchTriggerEvent(batch),
@@ -181,6 +204,24 @@ export function createTriggerEngineService(
       const state = workspaces.get(target.workspacePath);
       if (state !== undefined) await saveSessionBindings(state);
     },
+    // dispatcher 档批次投递成功 → 事件暂存分发器池（RouteEvents 标记按 evt id 引用）。
+    onDispatcherBatchDelivered: (delivery) => {
+      routeMarkQueue.stashBatch({
+        workspacePath: delivery.workspacePath,
+        ...(delivery.workspaceIdentity !== undefined
+          ? { workspaceIdentity: delivery.workspaceIdentity }
+          : {}),
+        ...(delivery.projectId !== undefined ? { projectId: delivery.projectId } : {}),
+        sessionKey: delivery.sessionKey,
+        triggerId: delivery.trigger.id,
+        triggerName: delivery.trigger.name,
+        subscriberAgentId: delivery.trigger.ownerAgentId,
+        dispatcherTaskId: delivery.taskId,
+        events: delivery.events,
+      });
+    },
+    // 上一轮路由结果摘要（taskId 回显闭环）：随下一批分发正文附录进分发器上下文。
+    routeOutcomeSummary: (sessionKey) => routeMarkQueue.takeRouteOutcomeSummary(sessionKey),
   });
 
   /**
@@ -212,43 +253,8 @@ export function createTriggerEngineService(
   }
 
   // ---------------------------------------------------------------------------
-  // 调度：cron/interval 到点 fire
+  // 调度：cron/interval 到点 fire（到点计算在 trigger-scheduling.ts 纯函数）
   // ---------------------------------------------------------------------------
-
-  function scheduleOf(
-    config: TriggerEntry["config"],
-  ):
-    | { kind: "cron"; schedule: string }
-    | { kind: "interval"; intervalMinutes: number }
-    | undefined {
-    if (config.kind === "cron") return { kind: "cron", schedule: config.schedule };
-    if (config.kind === "interval")
-      return { kind: "interval", intervalMinutes: config.intervalMinutes };
-    // script 型不再进调度（2026-11-21 常驻模型）：ScriptSupervisor 随轮询 reconcile 托管。
-    return undefined;
-  }
-
-  function computeNextFireMs(
-    config: TriggerEntry["config"],
-    state: WorkspaceState,
-    entry: TriggerEntry,
-  ): number | null {
-    const schedule = scheduleOf(config);
-    if (schedule === undefined) return null;
-    const now = Date.now();
-    if (schedule.kind === "interval") {
-      // 锚点推进（同上游 minute scheduleRule 语义）：anchor = lastFireAt ?? createdAt；
-      // 冷恢复不回补——下界取挂载时刻。
-      const anchorIso = entry.lastFireAt ?? entry.createdAt;
-      const anchor = Date.parse(anchorIso);
-      const base = Number.isNaN(anchor) ? state.mountedAt : anchor;
-      const step = schedule.intervalMinutes * 60_000;
-      const elapsed = Math.max(0, now - Math.max(base, state.mountedAt));
-      return now + Math.max(step - (elapsed % step), 1_000);
-    }
-    const from = Math.max(Date.parse(entry.lastFireAt ?? "") || 0, state.mountedAt, now);
-    return computeNextCronRunMs(schedule.schedule, from);
-  }
 
   function clearSchedules(): void {
     for (const handle of schedules.values()) clearTimeout(handle.timer);
@@ -334,7 +340,6 @@ export function createTriggerEngineService(
     }
     log(`scheduled fire ${triggerId} (${trigger.config.kind})`);
 
-    // cron/interval：直接投递调度事件（script 型走 ScriptSupervisor，不进本路径）。
     const firedAt = new Date().toISOString();
     await mutateRegistry(state, (registry) => {
       const entry = registry.triggers.find((candidate) => candidate.id === triggerId);
@@ -344,6 +349,35 @@ export function createTriggerEngineService(
       }
     });
     void appendAudit(workspacePath, triggerId, { action: "fire", kind: trigger.config.kind });
+
+    // script+scheduled（2026-11-25 定时执行模式裁决）：到点 spawn 一趟（采集 → emit →
+    // exit 0），不投递 schedule 事件——脚本运行本身就是这次"触发"的执行体，其 emit 走
+    // 常规 script-result/script-error 管线进订阅者会话。
+    if (trigger.config.kind === "script") {
+      void scriptSupervisor
+        .spawnScheduledRun(
+          {
+            workspacePath,
+            triggers: [trigger],
+            ...(webhookServer.baseUrl !== undefined
+              ? { webhookBaseUrl: webhookServer.baseUrl }
+              : {}),
+          },
+          trigger,
+        )
+        .catch((error: unknown) =>
+          log(
+            `scheduled run spawn failed for ${triggerId}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          ),
+        );
+      rebuildSchedules();
+      return;
+    }
+
+    // cron/interval：直接投递调度事件（resident script 型走 ScriptSupervisor reconcile，
+    // 不进本路径）。
     aggregator.enqueue(sessionKeyForTrigger(trigger), {
       kind: "schedule",
       at: firedAt,
@@ -387,7 +421,8 @@ export function createTriggerEngineService(
       ? {
           resolvePythonRuntime: async (workspacePath: string) => {
             const port = options.pythonRuntime;
-            if (port === undefined) return { ok: false as const, error: "python runtime port missing" };
+            if (port === undefined)
+              return { ok: false as const, error: "python runtime port missing" };
             const venv = await port.ensureVenv(workspacePath);
             return venv.ok
               ? {
@@ -397,6 +432,21 @@ export function createTriggerEngineService(
                 }
               : { ok: false as const, error: venv.error };
           },
+        }
+      : {}),
+    ...(options.resolveScriptQuotas !== undefined
+      ? { resolveScriptQuotas: () => options.resolveScriptQuotas!() }
+      : {}),
+    ...(options.browserHost !== undefined
+      ? {
+          acquireBrowser: async (workspacePath: string, profile: string, headed: boolean) => {
+            const acquisition = await options.browserHost!.acquire(workspacePath, profile, headed);
+            return acquisition.ok
+              ? { ok: true as const, cdpEndpoint: acquisition.handle.cdpEndpoint }
+              : { ok: false as const, error: acquisition.error };
+          },
+          releaseBrowser: (workspacePath: string, profile: string) =>
+            options.browserHost!.release(workspacePath, profile),
         }
       : {}),
   });
@@ -420,27 +470,9 @@ export function createTriggerEngineService(
   // 工作区轮询挂载（5s；注册表内容变化即重建调度）
   // ---------------------------------------------------------------------------
 
-  /**
-   * 把 webhook 服务的 loopback 基址持久化到工作区 `state/webhook.json`（2026-11-19
-   * 验收补充）：端口由 host 进程动态分配，CLI 进程的 ManageTriggers 无法从内存得知，
-   * agent 建触发器时拿不到可回调的完整 URL。工具侧读这份文件拼 URL；引擎重启换端口
-   * 后下次挂载自动覆盖为新值。写失败只记日志（投递不受影响，URL 可后补查询）。
-   */
+  /** webhook 基址落盘（2026-11-19 验收补充；实现挪 local-webhook-server.ts，行数上限）。 */
   async function persistWebhookBaseUrl(workspacePath: string): Promise<void> {
-    const baseUrl = webhookServer.baseUrl;
-    if (baseUrl === undefined) return;
-    try {
-      const target = join(triggersRoot(workspacePath), "state", "webhook.json");
-      await mkdir(dirname(target), { recursive: true });
-      const payload = `${JSON.stringify({ version: 1, baseUrl, updatedAt: new Date().toISOString() }, null, 2)}\n`;
-      const temp = `${target}.tmp.${process.pid}`;
-      await writeFile(temp, payload, "utf8");
-      await rename(temp, target);
-    } catch (error) {
-      log(
-        `failed to persist webhook base url for ${workspacePath}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+    await persistWebhookBaseUrlFile(triggersRoot(workspacePath), webhookServer.baseUrl, log);
   }
 
   async function ensureWorkspace(
@@ -587,6 +619,10 @@ export function createTriggerEngineService(
     // python 脚本 emit 端点（2026-11-22 HTTP emit 协议）：转发给 supervisor（运行注册表
     // 解析 + 与 node IPC 共享的校验/投递路径）；无 token 信任面 = 仅运行中脚本可达。
     onScriptEmit: async (triggerId, event) => scriptSupervisor.handleEmitRequest(triggerId, event),
+    // 脚本暂停上报（2026-11-25 登录闭环）：同款信任面，转发 supervisor 的 login-failed
+    // 收口（error-paused + 唤醒订阅者 + 停脚本）。
+    onScriptPause: async (triggerId, reason) =>
+      scriptSupervisor.handlePauseRequest(triggerId, reason),
     onEvent(resolution, body) {
       void (async () => {
         if (disposed) return;
@@ -657,139 +693,22 @@ export function createTriggerEngineService(
       triggerId: string;
       status: "active" | "deactivated" | "error-paused";
     }): Promise<TriggerEntry> {
-      const state =
-        workspaces.get(params.workspacePath) ??
-        (await ensureWorkspace(params.workspacePath, undefined));
-      let result: TriggerEntry | undefined;
-      await mutateRegistry(state, (registry) => {
-        const entry = registry.triggers.find((candidate) => candidate.id === params.triggerId);
-        if (entry === undefined) {
-          throw new Error(`No trigger with id ${params.triggerId}`);
-        }
-        entry.status = params.status;
-        // 重新启用即修复确认：清零连续异常计数（与 ManageTriggers set_status 同一状态机）。
-        if (params.status === "active") entry.consecutiveFailures = 0;
-        entry.updatedAt = new Date().toISOString();
-        result = entry;
-      });
-      if (result === undefined) {
-        throw new Error(
-          state.corrupt
-            ? "Trigger registry is corrupt; fix it before changing trigger status"
-            : `Failed to update trigger ${params.triggerId}`,
-        );
-      }
-      void appendAudit(params.workspacePath, params.triggerId, {
-        action: "set_status",
-        status: params.status,
-        actor: "ui",
-      });
-      rebuildSchedules();
-      return result;
+      // 逻辑在 trigger-lifecycle.ts（文件行数上限拆分；system-wakeup 同模式）。
+      return setTriggerStatusForEngine(lifecycleDeps, params);
     },
 
     async deleteTrigger(params: {
       workspacePath: string;
       triggerId: string;
     }): Promise<TriggerEntry> {
-      const state =
-        workspaces.get(params.workspacePath) ??
-        (await ensureWorkspace(params.workspacePath, undefined));
-      let result: TriggerEntry | undefined;
-      await mutateRegistry(state, (registry) => {
-        const entry = registry.triggers.find((candidate) => candidate.id === params.triggerId);
-        if (entry === undefined) {
-          throw new Error(`No trigger with id ${params.triggerId}`);
-        }
-        if (entry.deleted === true) {
-          // 幂等：重复删除按首次结果收口。
-          result = entry;
-          return;
-        }
-        // 伪删除（2026-11-21 实测裁决，与会话/智能体一致）：条目保留、消费面全不可见。
-        // 状态一并停用（未感知 deleted 的读者也不会再执行它）；组订阅解除保持
-        // groupId ↔ memberTriggerIds 双向闭合。调度/常驻脚本随本方法触发的
-        // rebuildSchedules 与下一次 pollTick reconcile 收敛。
-        entry.deleted = true;
-        entry.status = "deactivated";
-        if (entry.groupId !== null) {
-          const group = registry.groups.find((candidate) => candidate.id === entry.groupId);
-          if (group !== undefined) {
-            group.memberTriggerIds = group.memberTriggerIds.filter(
-              (candidate) => candidate !== entry.id,
-            );
-            group.updatedAt = new Date().toISOString();
-          }
-          entry.groupId = null;
-        }
-        entry.updatedAt = new Date().toISOString();
-        result = entry;
-      });
-      if (result === undefined) {
-        throw new Error(
-          state.corrupt
-            ? "Trigger registry is corrupt; fix it before deleting triggers"
-            : `Failed to delete trigger ${params.triggerId}`,
-        );
-      }
-      void appendAudit(params.workspacePath, params.triggerId, {
-        action: "delete",
-        actor: "ui",
-      });
-      log(`trigger ${params.triggerId} soft-deleted (registry entry retained)`);
-      rebuildSchedules();
-      return result;
+      return deleteTriggerForEngine(lifecycleDeps, params);
     },
 
     async resetTriggerSession(params: {
       workspacePath: string;
       sessionKey: string;
     }): Promise<{ reset: boolean; taskId?: string }> {
-      const state =
-        workspaces.get(params.workspacePath) ??
-        (await ensureWorkspace(params.workspacePath, undefined));
-      const taskId = state.sessionBindings[params.sessionKey];
-      if (taskId === undefined) {
-        // 无绑定 = 尚未触发过，幂等空转（UI 项也只在有绑定时出现，防御并发竞态）。
-        return { reset: false };
-      }
-      const tasks = options.tasks;
-      if (!tasks) {
-        throw new Error("trigger task port is not wired in this host");
-      }
-      // 清空 = 会话保留、内容归零、身份按当前订阅者重置；绑定不动，下次 fire 在
-      // 同一会话继续。订阅者取注册表当前值（直连 = ownerAgentId；组 = subscriberAgentId），
-      // 注册表条目缺席（极端时序）按 master 收口。
-      const parsed = parseTriggerSessionKey(params.sessionKey);
-      const subscriberAgentId =
-        parsed?.kind === "trigger"
-          ? (state.registry?.triggers.find((candidate) => candidate.id === parsed.triggerId)
-              ?.ownerAgentId ?? "master")
-          : parsed?.kind === "group"
-            ? (state.registry?.groups.find((candidate) => candidate.id === parsed.groupId)
-                ?.subscriberAgentId ?? "master")
-            : "master";
-      await tasks.clearTask({
-        taskId,
-        workspacePath: state.workspacePath,
-        ...(state.workspaceIdentity !== undefined
-          ? { workspaceIdentity: state.workspaceIdentity }
-          : {}),
-        subscriberAgentId,
-      });
-      // 审计只记直连触发器（组 key 无单一触发器目录）；组清空留引擎日志即可。
-      if (parsed?.kind === "trigger") {
-        void appendAudit(params.workspacePath, parsed.triggerId, {
-          action: "reset_session",
-          actor: "ui",
-          taskId,
-          subscriberAgentId,
-        });
-      }
-      log(
-        `reset trigger session ${params.sessionKey} (cleared task ${taskId}, identity → ${subscriberAgentId})`,
-      );
-      return { reset: true, taskId };
+      return resetTriggerSessionForEngine(lifecycleDeps, params);
     },
 
     async installPackages(params: {
@@ -823,11 +742,88 @@ export function createTriggerEngineService(
       }
       log(
         `install_packages ok for ${params.workspacePath}: ${params.packages.join(", ")}` +
-          (restartedTriggerIds.length > 0
-            ? ` (restarting ${restartedTriggerIds.join(", ")})`
-            : ""),
+          (restartedTriggerIds.length > 0 ? ` (restarting ${restartedTriggerIds.join(", ")})` : ""),
       );
       return restartedTriggerIds.length > 0 ? { ...result, restartedTriggerIds } : result;
+    },
+
+    async openTriggerLogin(params: {
+      workspacePath: string;
+      triggerId: string;
+      /** 登录会话落点（http/https URL）；透传给有头窗口作为启动导航页。 */
+      url?: string;
+    }): Promise<{ ok: boolean; profile?: string; error?: string; guidance?: string[] }> {
+      // 实现在 trigger-login.ts（文件行数上限拆分，P3 第二十三批）：条目形状校验 + 浏览器
+      // 端口委托 + open-login 审计；语义见 specs/trigger-browser-hosting.md §3.4。
+      return openTriggerLoginForEngine(
+        {
+          resolveState: async (workspacePath) =>
+            workspaces.get(workspacePath) ?? (await ensureWorkspace(workspacePath, undefined)),
+          ...(options.browserHost !== undefined ? { browserHost: options.browserHost } : {}),
+          log,
+        },
+        params,
+      );
+    },
+    async ensureSystemSubscription(params: {
+      workspacePath: string;
+      subscription: {
+        id: string;
+        name: string;
+        events: string[];
+        /** 每事件唤醒豁免规则（2026-11-24 通用机制；随配置播种，幂等比对含本字段）。 */
+        wakeRules?: Record<string, { exemptRecordedBy: string[] }>;
+        readme: string;
+      };
+    }): Promise<TriggerEntry> {
+      // 实现在 system-subscription.ts（文件行数上限拆分）：幂等播种 + 不可停用/删除的
+      // 平台保证语义见其头注（保护本体在 setTriggerStatus/deleteTrigger 与 ManageTriggers）。
+      return ensureSystemSubscriptionEntry(
+        {
+          resolveState: async (workspacePath) =>
+            workspaces.get(workspacePath) ?? (await ensureWorkspace(workspacePath, undefined)),
+          log,
+        },
+        params,
+      );
+    },
+
+    async dispatchSystemSubscriptionWakeup(params: {
+      workspacePath: string;
+      workspaceIdentity?: string;
+      triggerId: string;
+      prompt: string;
+    }): Promise<{ taskId: string }> {
+      // 实现在 system-wakeup.ts（文件行数上限拆分）：标准触发器会话模型（绑定解析/
+      // 写回/sessions.json 持久化同聚合器投递链），不经聚合器；语义见其头注。
+      return dispatchSystemSubscriptionWakeup(
+        {
+          resolveState: async (workspacePath, workspaceIdentity) =>
+            workspaces.get(workspacePath) ??
+            (await ensureWorkspace(workspacePath, workspaceIdentity)),
+          dispatch: options.dispatch,
+          log,
+        },
+        params,
+      );
+    },
+
+    async routeEvents(params: {
+      workspacePath: string;
+      sessionId: string;
+      routes: Array<{
+        eventIds: string[];
+        target: { kind: "new" } | { kind: "existing"; taskId: string };
+      }>;
+    }): Promise<{ ok: boolean; acceptedEventIds: string[]; unknownEventIds: string[] }> {
+      // 逻辑在 route-marks.ts 的 routeEventsForEngine（key 反查 + routing 门控 + 登记）。
+      const state =
+        workspaces.get(params.workspacePath) ??
+        (await ensureWorkspace(params.workspacePath, undefined));
+      return routeEventsForEngine(routeMarkQueue, state, {
+        sessionId: params.sessionId,
+        routes: params.routes,
+      });
     },
   } as ITriggerEngineService;
 
@@ -857,7 +853,11 @@ export function createTriggerEngineService(
       clearInterval(pollTimer);
       clearSchedules();
       aggregator.dispose();
+      routeMarkQueue.dispose();
       await scriptSupervisor.dispose();
+      // 托管浏览器实例收尾（2026-11-25）：全部 chromium 进程树终止 + storageState 回写，
+      // 无孤儿进程（specs/trigger-browser-hosting.md 验收场景 7）。
+      await options.browserHost?.dispose().catch(() => undefined);
       await webhookServer.stop();
     },
   } as ITriggerEngineService & TriggerEngineHandle;

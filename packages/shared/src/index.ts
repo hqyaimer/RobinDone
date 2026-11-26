@@ -36,6 +36,10 @@ export type {
 } from "./protocol.js";
 export type { WorkspacePurpose } from "./workspacePurpose.js";
 export { DEFAULT_LOCALE } from "./protocol.js";
+export {
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
+} from "./protocol.js";
 export { ROBINRUN_VERSION, ROBINRUN_COMMIT, ROBINRUN_BUILD_TIME } from "./version.js";
 export type { HelloMessage, HelloAckMessage } from "./handshake.js";
 export type { ArmsRumEnv, RobinRunEnv, RobinRunProductFlavor } from "./env.js";
@@ -360,6 +364,10 @@ export * from "./worker-roster/index.js";
 // 触发器系统协议（2026-11-19 设计定稿，docs/trigger-system.md）：注册表 schema、
 // 会话 key 路由协议、存储布局常量。引擎（host）与 ManageTriggers 工具面共用。
 export * from "./trigger-system/index.js";
+
+// 需求/审批/反馈面板协议（2026-11-24 MVP）：条目/状态/事件/编号/作者词表。
+// 服务与工具面共用；唤醒语义收口在 services 层（见 ops-panel/CONTRACT.md）。
+export * from "./ops-panel/index.js";
 
 // 消息来源区块协议（P2.6）：schema/渲染/解析单一收口，CLI 注入端与 UI 共享。
 export * from "./message-origin/index.js";

@@ -494,12 +494,15 @@ modules:
       - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/agent-contact-dispatch-port.ts
       - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/trigger-runtime-port.ts
       - apps/robinrun-cli/packages/contracts/src/tools/manage-triggers.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/route-events.ts
       - apps/robinrun-cli/packages/contracts/src/interfaces/agent-contact.port.ts
       - apps/robinrun-cli/packages/contracts/src/interfaces/trigger-runtime.port.ts
       - apps/robinrun-cli/packages/contracts/src/tools/contact-agent.ts
       - apps/robinrun-cli/packages/contracts/src/tools/wait-reply.ts
       - apps/robinrun-cli/packages/core/src/subagent/agent-contact.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers-support.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/route-events.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/contact-agent.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/wait-reply.ts
       - apps/robinrun-cli/packages/core/tests/manage-triggers-tool.test.ts
@@ -521,10 +524,13 @@ modules:
       - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/trigger-runtime-port.ts
       - apps/robinrun-cli/packages/contracts/src/interfaces/trigger-runtime.port.ts
       - apps/robinrun-cli/packages/contracts/src/tools/manage-triggers.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/route-events.ts
       - apps/robinrun-cli/packages/contracts/src/interfaces/agent-contact.port.ts
       - apps/robinrun-cli/packages/contracts/src/tools/contact-agent.ts
       - apps/robinrun-cli/packages/contracts/src/tools/wait-reply.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-triggers-support.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/route-events.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/contact-agent.ts
       - apps/robinrun-cli/packages/core/src/tool/handlers/wait-reply.ts
     layers:
@@ -561,6 +567,46 @@ modules:
     publicEntrypoints:
       - packages/shared/src/message-origin/index.ts
       - packages/shared/src/message-origin/contract.ts
+    layers:
+      app: .
+    owner: agent
+  # ops-panel：需求/审批/反馈面板（2026-11-24 MVP，RobinRunOps dev/specs 需求说明）。
+  # 跨包单模块：shared 协议词汇（条目/状态机/编号/作者/队列视图）、services 面板服务
+  # （IOpsPanelService：权限矩阵 + worker 可见性过滤 + 串行唤醒队列，落 tasks-index.sqlite
+  # 0008 迁移）、contracts/core 工具面（ManageOpsPanel master/worker 同名双变体 +
+  # OpsPanelRuntimePort 反向端口）、bootstrap 协议端口实现、ui 用户面板主视图。
+  # 唤醒投递端口由 desktop host 装配（node.ts / host index.ts 寻址 master 主会话），
+  # 系统特权订阅经触发器引擎 ensureSystemSubscription 播种（播种/保护语义归 trigger-system）。
+  - id: ops-panel
+    roots:
+      - packages/shared/src/ops-panel
+      - packages/shared/test/opsPanelEntries.test.ts
+      - packages/services/src/ops-panel
+      - packages/services/test/opsPanelService.test.ts
+      - packages/services/test/triggerSystemSubscription.test.ts
+      - packages/ui/src/ops-panel
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-ops-panel.ts
+      - apps/robinrun-cli/packages/contracts/src/interfaces/ops-panel.port.ts
+      - apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/ops-panel-port.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-ops-panel.ts
+      - apps/robinrun-cli/packages/core/tests/manage-ops-panel-tool.test.ts
+    managed: true
+    requires:
+      - shared
+      - services
+      - session
+      - robinrun-cli
+      - ui
+    publicEntrypoints:
+      - packages/shared/src/ops-panel/index.ts
+      - packages/shared/src/ops-panel/contract.ts
+      - packages/services/src/ops-panel/index.ts
+      - packages/services/src/ops-panel/contract.ts
+      - packages/ui/src/ops-panel/index.ts
+      - packages/ui/src/ops-panel/OpsPanelPage.tsx
+      - apps/robinrun-cli/packages/contracts/src/interfaces/ops-panel.port.ts
+      - apps/robinrun-cli/packages/contracts/src/tools/manage-ops-panel.ts
+      - apps/robinrun-cli/packages/core/src/tool/handlers/manage-ops-panel.ts
     layers:
       app: .
     owner: agent
@@ -1429,6 +1475,10 @@ exceptions:
     rule: unmanaged-new-file
     paths: [packages/ui/src/settings/PersonalizationSection.tsx]
     reason: 个性化设置分区组件只编排 ISettingService 的 getUserInstructions/saveUserInstructions 与既有设置页 UI 原语（spec：docs/ui/settings-personalization.md）；读写唯一事实源在服务层，不新增平行状态，接管整个 ui 目录不在本次范围内。
+  - id: settings-triggers-section-new-file
+    rule: unmanaged-new-file
+    paths: [packages/ui/src/settings/TriggersSettingsSection.tsx]
+    reason: 触发器设置分区组件（P3 第二十三批，常驻脚本并发配额可配置）只编排 useSettings 的共享设置读写与既有设置页 UI 原语；值与默认单一来源在 shared/protocol.ts，引擎侧消费在 trigger-engine（配额兜底），本组件不新增平行状态，接管整个 ui 目录不在本次范围内。
   - id: settings-personalization-size-constant-new-file
     rule: unmanaged-new-file
     paths: [packages/shared/src/userInstructions.ts]
@@ -1720,3 +1770,26 @@ exceptions:
       - packages/shared/src/process-diagnostic.ts
       - packages/desktop/src/main/localTtftExporter.ts
     reason: 二十一个存量继承文件（fork 基线带入，位于未登记 managed 模块的目录），本轮工作区改动经逐行 diff 核实全部仅为 oxfmt 格式化换行重排（import 拆行/函数签名换行/链式调用换行），零语义变化；按目录既有惯例不整目录接管，如后续有实质改动再单独登记模块或补例外。
+  - id: trigger-resource-model-batch23-size-methods
+    rule: max-file-lines
+    paths:
+      - packages/services/src/trigger-engine/engine.ts
+      - packages/services/src/trigger-engine/script-supervisor.ts
+      - apps/robinrun-cli/packages/core/tests/manage-triggers-tool.test.ts
+    reason: P3 第二十三批（触发器资源模型重构）在本批已完成的拆分（script-bridges.ts 桥接源码、trigger-login.ts 登录会话服务面）之上仍超行——engine.ts 866 行（调度/聚合/托管浏览器接线多端口装配的内聚闭包）、script-supervisor.ts 1188 行（进程生命周期 + 崩溃熔断 + 定时执行 + 浏览器 acquire/release + 暂停收口共享 RunningScript 状态机，拆面会切断单一状态所有者）、manage-triggers-tool.test.ts 830 行（runMode 交叉约束/门控/README 协议契约测试共享同一 fixture 语境）；下一步按 progress.md 已知待改登记的拆分计划继续（supervisor 拆事件校验与退出收口两块），不在本批机械切分以满足行数。
+  - id: trigger-resource-model-batch23-contract-methods
+    rule: max-public-methods
+    paths: [packages/services/src/trigger-engine/contract.ts]
+    reason: ITriggerEngineService 是触发器引擎的单一服务面（getSnapshot/setTriggerStatus/deleteTrigger/resetTriggerSession/installPackages/openTriggerLogin/ensureSystemSubscription/dispatchSystemSubscriptionWakeup/routeEvents），每个方法对应一个 ManageTriggers action 或宿主端口；拆面会制造平行门面破坏"一个服务面"内聚。第二十三批新增 openTriggerLogin（登录闭环）触发上限，豁免登记；后续新方法落地时再评估面板化收口。
+  - id: ops-panel-progress-ledger-contract-methods
+    rule: max-public-methods
+    paths: [packages/services/src/ops-panel/contract.ts]
+    reason: IOpsPanelService 是面板的单一服务面：工作项状态机 7 方法（getPanelView/getEntry/createEntry/decideApproval/decideRequirement/resolveFeedback/acknowledgeApproval，各对应一个 ManageOpsPanel action 或 UI 动作）+ 进度账本 4 方法（2026-11-25 进度 tab，specs/progress-ledger.md §10：进度按裁决挂现有面板服务，自开第二服务面即平行门面）= 11 ≤ 上限；文件计数超限来自同文件共置的 4 个装配注入窄端口（OpsPanelDispatchPort/OpsPanelNotificationPort/OpsPanelSystemSubscriptionPort/OpsPanelProjectMetaPort，各 1 方法）——端口是 host 装配的依赖倒置接缝，不是服务面。后续新增方法时评估端口外移收口。
+  - id: trigger-resource-model-batch23-supervisor-disable
+    rule: disable-count
+    paths: [packages/services/src/trigger-engine/script-supervisor.ts]
+    reason: 文件头一条 oxlint-disable max-lines 附拆分计划注释（max-file-lines 同文件已另行豁免登记）；disable 是超行豁免的伴生标注而非规避新规则，按登记的拆分计划（supervisor 拆事件校验与退出收口两块）落地后随注释一并移除。
+  - id: agent-contact-existing-size
+    rule: max-file-lines
+    paths: [apps/robinrun-cli/packages/core/src/subagent/agent-contact.ts]
+    reason: P3 1-19 批已提交存量（2026-11-25 architecture:check --changed 首次纳入 changed 集时登记，progress.md 已知待改同步在案）；ContactAgent 的寻址归组/徽章/needReply 分级共享同一分发语境，机械拆分放到下批专门进行。

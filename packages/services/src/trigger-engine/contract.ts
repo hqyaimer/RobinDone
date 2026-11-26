@@ -1,10 +1,11 @@
 import { ServiceChannels } from "@robinrun/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
+import type { PythonPackageInstallResult } from "./python-runtime-contract.js";
 import type {
-  PythonRuntimeSource,
   TriggerEntry,
   TriggerGroupEntry,
   TriggerProfileEntry,
+  TriggerRouting,
   TriggerStatus,
 } from "@robinrun/shared";
 
@@ -23,6 +24,11 @@ import type {
 /** 单条触发器事件（合并投递前的最小单元）。 */
 export interface TriggerEvent {
   kind: "schedule" | "webhook" | "script-result" | "script-error";
+  /**
+   * 事件稳定 id（2026-11-25 分发器裁决：`evt-*`，聚合器 enqueue 时兜底生成）——分发器
+   * 的 RouteEvents 标记按 id 引用事件，事件内容不经分发器的手转述。生产方可不填。
+   */
+  id?: string;
   /** 事件时间（ISO）。 */
   at: string;
   /** schedule/webhook：触发元信息；script-*：执行产物或错误摘要。 */
@@ -53,7 +59,50 @@ export interface TriggerEventBatch {
   subscriberAgentId: string;
   /** 该会话 key 已绑定的 taskId（host 对其 resume + sendPrompt；缺失则 createTask 新建）。 */
   existingTaskId?: string;
+  /**
+   * 有效路由策略（2026-11-25 分发器裁决，shared resolveRoutingForSessionKey）：
+   * direct = 绑定会话就地处理（旧行为）；fixed = 每批次直投创建者新会话（host 跳过
+   * 绑定解析，零 LLM）；dispatcher = 投进分发器会话做话题聚类（host 按分发器变体渲染
+   * 正文，模型以 RouteEvents 标记路由）。host 按本字段分流投递行为。
+   */
+  routing: TriggerRouting;
+  /**
+   * 投递正文覆盖（2026-11-24 系统订阅唤醒）：面板事件的正文由面板服务按条目渲染好，
+   * 经引擎绑定解析后原样带给 host；在场时 dispatchTriggerRun 不做事件聚合渲染
+   * （events 为空数组）。普通触发器投递不携带。
+   */
+  promptOverride?: string;
+  /**
+   * 上一轮路由结果附录（2026-11-25 分发器裁决的 taskId 回显闭环）：dispatcher 档专属——
+   * RouteMarkQueue 兑现完成后记录的 `evt-* → 会话` 映射摘要，host 渲染分发器正文时附在
+   * 尾部。分发器据此获得新建/续用处理会话的真实 id（否则它拿不到 taskId，无法构造
+   * existing 续用标记，只能永远保守新建）。随批次进分发器上下文，即"路由表活在
+   * 上下文"设计的增量行。
+   */
+  routeOutcomeNote?: string;
   events: TriggerEvent[];
+}
+
+/**
+ * 路由投递批次（2026-11-25 分发器裁决）：处理会话的投递单元——分发器标记兑现
+ * （RouteMarkQueue）与 fixed 档直投共用。事件原文由引擎直传（不经分发器转述），
+ * host 按 target 完成创建/续用 + 身份校验与降级。
+ */
+export interface RoutedEventBatch {
+  workspacePath: string;
+  workspaceIdentity?: string;
+  projectId?: string;
+  /** 来源会话 key（触发器/组 key；审计与追踪用）。 */
+  dispatcherSessionKey: string;
+  triggerId: string;
+  triggerName: string;
+  /** 订阅者（创建者）身份：处理会话的归属（机制层路由边界——host 按此校验 target）。 */
+  subscriberAgentId: string;
+  target: { kind: "new" } | { kind: "existing"; taskId: string };
+  /** 事件原文（带 evt id；host 渲染进处理会话正文）。 */
+  events: TriggerEvent[];
+  /** 途经分发器会话 taskId（<system-status>.viaDispatcherSessionId 溯源；fixed 直投无）。 */
+  dispatcherTaskId?: string;
 }
 
 /**
@@ -63,6 +112,13 @@ export interface TriggerEventBatch {
  */
 export interface TriggerDispatchPort {
   dispatchTriggerEvent(batch: TriggerEventBatch): Promise<{ taskId: string }>;
+  /**
+   * 路由投递（2026-11-25 分发器裁决）：处理会话投递——分发器标记兑现与 fixed 档直投
+   * 共用。target=existing 时 host 校验会话存在且归属订阅者（worker 会话 workerId 比对，
+   * 同 dispatchTriggerRun 的陈旧绑定校验），不符即降级新建（degraded=true，引擎据此记
+   * route.degraded 审计）——降级是"话题静默淘汰"语义的运行时另一半，不是错误。
+   */
+  dispatchRoutedEvent(batch: RoutedEventBatch): Promise<{ taskId: string; degraded: boolean }>;
 }
 
 /** 熔断通知端口（host 装配时注入；应用内通知 + UI 徽章，邮件/待办系统落地后接入）。 */
@@ -104,50 +160,16 @@ export interface TriggerRuntimeView {
 }
 
 // ---------------------------------------------------------------------------
-// python 主运行时（2026-11-22 改造；实现收敛在 python-runtime.ts，引擎只依赖本接口）
+// python 主运行时（2026-11-22 改造；实现收敛在 python-runtime.ts，引擎只依赖本接口）。
+// 2026-11-24：契约类型拆到 python-runtime-contract.ts（本文件公开方法数上限 12，
+// 系统订阅唤醒方法入列后本节挪家），此处原样再导出，消费面不变。
 // ---------------------------------------------------------------------------
 
-/** python 供给解析结果：ok 分支带生效解释器（venv 就绪后的解释器绝对路径）。 */
-export type PythonRuntimeResolution =
-  | { ok: true; interpreterPath: string; venvDir: string; replayFailures: string[] }
-  | { ok: false; error: string };
-
-/** install_packages 结果（结构化：成功摘要 / 失败 stderr 尾部诊断）。 */
-export interface PythonPackageInstallResult {
-  ok: boolean;
-  /** 成功时回显已安装的包 spec。 */
-  packages?: string[];
-  error?: string;
-  /** pip 输出尾部（成功摘要/失败诊断，已截取）。 */
-  outputTail?: string;
-  /** venv 重建重放的失败清单（安装本身成功但历史包缺失时在场）。 */
-  replayFailures?: string[];
-  /** 成功后为使新包生效而请求重启的活跃 python 脚本触发器 id。 */
-  restartedTriggerIds?: string[];
-}
-
-/**
- * python 运行时端口（宿主装配注入；缺席 = python 主运行时未接线，引擎退化为旧行为：
- * python 触发器按系统 PATH 探测、install_packages 大声失败）。实现负责：解释器供给
- * （托管下载/系统回退）、可用性状态文件（`state/python-runtime.json`，CLI 门控与提示词
- * 双模式的事实源）、venv 生命周期与 pip 安装。
- */
-export interface TriggerPythonRuntimePort {
-  /** 解析生效解释器并落可用性状态（挂载 fire-and-forget / spawn 与安装前按需）。 */
-  ensureInterpreter(workspacePath: string): Promise<
-    | { ok: true; interpreterPath: string; source: PythonRuntimeSource }
-    | { ok: false; error: string }
-  >;
-  /** venv 就绪（含解释器 ensure；指纹失配自动重建 + 台账重放）。 */
-  ensureVenv(
-    workspacePath: string,
-  ): Promise<
-    | { ok: true; interpreterPath: string; venvDir: string; replayFailures: string[] }
-    | { ok: false; error: string }
-  >;
-  /** pip 安装（含完整 ensure 链；实现内部按工作区串行）。 */
-  installPackages(workspacePath: string, packages: string[]): Promise<PythonPackageInstallResult>;
-}
+export type {
+  PythonPackageInstallResult,
+  PythonRuntimeResolution,
+  TriggerPythonRuntimePort,
+} from "./python-runtime-contract.js";
 
 export interface ITriggerEngineService {
   /** 读取一个项目工作区的触发器投影（UI 触发器文件夹/详情数据源）。 */
@@ -189,6 +211,75 @@ export interface ITriggerEngineService {
     workspacePath: string;
     packages: string[];
   }): Promise<PythonPackageInstallResult>;
+  /**
+   * 有头登录会话（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4；
+   * ManageTriggers open_login 经反向请求抵达）：为声明 profile 的脚本触发器拉起有头
+   * 登录窗口——注入现有档案登录态，用户登录完成关闭窗口即视为登录完成（引擎落档），
+   * 结果返回后 agent 用 set_status 重新启用触发器。要求：条目存在、script 型、profile
+   * 在场、引擎托管浏览器端口在场；任一不满足即结构化失败（含原因与指引）。
+   */
+  openTriggerLogin(params: {
+    workspacePath: string;
+    triggerId: string;
+    /** 登录会话落点（http/https URL）；缺省落空白新标签页由用户自行导航。 */
+    url?: string;
+  }): Promise<{ ok: boolean; profile?: string; error?: string; guidance?: string[] }>;
+  /**
+   * 幂等播种系统特权订阅（2026-11-24 需求/审批/反馈面板引入的平台能力）：把
+   * `system` 型条目写进注册表（缺失/被删/被破坏时重建，已存在且完好时原样返回），
+   * 并写 `<id>/README.md` 说明。系统订阅不可被任何智能体或用户停用/删除/修改
+   * （引擎与 ManageTriggers 双层拒绝）；事件不经调度器，由播种方服务直接驱动投递。
+   * 幂等安全：可重复调用，无副作用时不动注册表。
+   */
+  ensureSystemSubscription(params: {
+    workspacePath: string;
+    subscription: {
+      id: string;
+      name: string;
+      /** 订阅的事件名（播种方定义语义；触发器系统不解释）。 */
+      events: string[];
+      /** 每事件唤醒豁免规则（2026-11-24 通用机制；随配置播种，幂等比对含本字段）。 */
+      wakeRules?: Record<string, { exemptRecordedBy: string[] }>;
+      /** 订阅说明（写 `<id>/README.md`，触发器文件夹详情可读）。 */
+      readme: string;
+    };
+  }): Promise<TriggerEntry>;
+  /**
+   * 系统订阅唤醒投递（2026-11-24 用户裁决：面板 = 数据面，主智能体 = 处理方，订阅是
+   * 两者唯一通道）：面板服务的串行唤醒经此进入标准触发器会话模型——`trigger:<id>`
+   * 一 key 一绑定会话（绑定解析/写回/sessions.json 持久化与聚合器投递链同一套），
+   * 但不经聚合器（无去抖合并；串行与不合并由面板服务的唤醒队列保证）。prompt 是
+   * 面板服务按条目渲染好的投递正文（promptOverride 直通 host）。要求订阅已在注册表
+   * （播种方先 ensureSystemSubscription）；缺失即拒绝，不凭空造会话。
+   */
+  dispatchSystemSubscriptionWakeup(params: {
+    workspacePath: string;
+    workspaceIdentity?: string;
+    triggerId: string;
+    prompt: string;
+  }): Promise<{ taskId: string }>;
+  /**
+   * 分发器路由标记登记（2026-11-25 分发器裁决）：ManageTriggers 会话的 RouteEvents
+   * 工具经反向请求抵达。引擎按 sessionId 反查分发器会话 key（sessionBindings 反向
+   * 索引），校验该会话确为 dispatcher 档的绑定分发器（机制层路由边界——非分发器会话
+   * 调用一律拒绝），登记标记进 RouteMarkQueue（分发器轮次结束后统一兑现拆批投递）。
+   * 事件按 id 从分发器事件池取（池 = 聚合器 dispatcher 档投递成功后暂存的本批事件）；
+   * 池中不存在的事件记入 unknownEventIds 原样返回（可能已按漏标降级直投）。
+   */
+  routeEvents(params: {
+    workspacePath: string;
+    /** 发起方分发器会话 id（协议反向请求的会话锚点）。 */
+    sessionId: string;
+    routes: Array<{
+      eventIds: string[];
+      target: { kind: "new" } | { kind: "existing"; taskId: string };
+    }>;
+  }): Promise<{
+    ok: boolean;
+    acceptedEventIds: string[];
+    unknownEventIds: string[];
+    error?: string;
+  }>;
 }
 
 export const ITriggerEngineService = createServiceDescriptor<ITriggerEngineService>(

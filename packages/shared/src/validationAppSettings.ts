@@ -1,6 +1,10 @@
 /* oxlint-disable eslint(max-lines) -- AppSettings schema 聚合历史迁移、默认值和 patch 校验，拆分会削弱设置迁移的单一入口。 */
 import { z } from "zod";
 import { appToolSearchModeSchema } from "./app-runtime-preferences.js";
+import {
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
+} from "./protocol.js";
 import type { AppSettings } from "./protocol.js";
 import { REMOTE_ASSET_INSTALL_MODES } from "./remoteAssetInstallMode.js";
 import { isKnownRemoteResourcePackageId } from "./remoteResourcePackages.js";
@@ -614,6 +618,19 @@ const appSettingsObjectSchema = z.object({
   robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
   robinrunProjects: z.array(robinrunProjectEntrySchema).default([]),
   globalComposerMode: globalComposerModeSchema.optional(),
+  // 常驻脚本触发器并发配额（2026-11-25 可配置化裁决）：默认值单一来源见 protocol.ts 常量。
+  triggerScriptResidentPerWorkspace: z
+    .number()
+    .int()
+    .min(1)
+    .max(200)
+    .default(DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE),
+  triggerScriptResidentGlobalMax: z
+    .number()
+    .int()
+    .min(1)
+    .max(1000)
+    .default(DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX),
 });
 
 export const appSettingsSchema = z.preprocess(
@@ -728,4 +745,8 @@ export const appSettingsPatchSchema = z.object({
   webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
   robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
   globalComposerMode: globalComposerModeSchema.optional(),
+  // 常驻脚本触发器并发配额：完整 schema 与 patch schema 必须同步声明（见上方 597-599 行
+  // bug 注释——只在 patch 声明的字段会在合并后完整 schema parse 时被剥离，重启即回默认）。
+  triggerScriptResidentPerWorkspace: z.number().int().min(1).max(200).optional(),
+  triggerScriptResidentGlobalMax: z.number().int().min(1).max(1000).optional(),
 });

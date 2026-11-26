@@ -277,6 +277,10 @@ export function createContextBuilderFromSnapshot(
     ...(this.triggerSessionReadme !== undefined
       ? { triggerSessionReadme: this.triggerSessionReadme }
       : {}),
+    // 有效路由策略（2026-11-25 分发器裁决）：trigger session section 按它追加分发职责段。
+    ...(this.triggerSessionRouting !== undefined
+      ? { triggerSessionRouting: this.triggerSessionRouting }
+      : {}),
     // 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：master 会话的 section
     // 输入；worker 会话的对应语义在 worker 注入段内（不重复 section）。
     ...(this.scriptRuntimeHint !== undefined ? { scriptRuntimeHint: this.scriptRuntimeHint } : {}),

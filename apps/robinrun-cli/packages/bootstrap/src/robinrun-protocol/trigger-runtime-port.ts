@@ -1,12 +1,20 @@
 import type {
   TriggerRuntimeInstallRequest,
   TriggerRuntimeInstallResult,
+  TriggerRuntimeOpenLoginRequest,
+  TriggerRuntimeOpenLoginResult,
   TriggerRuntimePort,
+  TriggerRuntimeRouteEventsRequest,
+  TriggerRuntimeRouteEventsResult,
 } from "@robinrun/contracts";
 import {
   robinrunProtocolMethods,
   robinrunTriggerRuntimeInstallParamsSchema,
   robinrunTriggerRuntimeInstallResultSchema,
+  robinrunTriggerRuntimeOpenLoginParamsSchema,
+  robinrunTriggerRuntimeOpenLoginResultSchema,
+  robinrunTriggerRuntimeRouteEventsParamsSchema,
+  robinrunTriggerRuntimeRouteEventsResultSchema,
 } from "@robinrun/shared";
 import {
   protocolTraceFromTraceContext,
@@ -22,6 +30,8 @@ import {
  * ensure + pip + 依赖台账 + 重启活跃 python 脚本）。请求在途直至完成/失败（分钟级 pip，
  * 协议逐请求超时不适用）；独立 CLI（无 Host）时 requestClient 失败 → handler 报错引导
  * （诚实拒绝）。agentContactDispatch 同款机制（server-types 的 requestClient 信封路由）。
+ * 2026-11-25 分发器裁决：routeEvents 同机制——RouteEvents 标记转 triggerRuntime/routeEvents
+ * 反向请求，宿主落到引擎 routeEvents（会话 key 反查 + routing 门控 + RouteMarkQueue 兑现）。
  */
 export function createProtocolTriggerRuntimePort(
   context: RobinRunProtocolAgentServerContext,
@@ -49,6 +59,57 @@ export function createProtocolTriggerRuntimePort(
           packages: request.packages,
         }),
         robinrunTriggerRuntimeInstallResultSchema,
+        buildRequestOptions(request.trace),
+      );
+    },
+    async routeEvents(
+      request: TriggerRuntimeRouteEventsRequest,
+    ): Promise<TriggerRuntimeRouteEventsResult> {
+      const record = requireSession(context, request.sessionId);
+      const workspaceIdentity = record.workspace.workspaceIdentity?.trim() || undefined;
+      const remoteSessionId = record.workspace.remoteSessionId?.trim() || undefined;
+      return await context.requestClient(
+        robinrunProtocolMethods.triggerRuntimeRouteEvents,
+        robinrunTriggerRuntimeRouteEventsParamsSchema.parse({
+          sessionId: request.sessionId,
+          ...(workspaceIdentity || remoteSessionId
+            ? {
+                workspace: {
+                  workspacePath: record.workspace.workspacePath,
+                  ...(workspaceIdentity ? { workspaceIdentity } : {}),
+                  ...(remoteSessionId ? { remoteSessionId } : {}),
+                },
+              }
+            : {}),
+          routes: request.routes,
+        }),
+        robinrunTriggerRuntimeRouteEventsResultSchema,
+        buildRequestOptions(request.trace),
+      );
+    },
+    async openLogin(
+      request: TriggerRuntimeOpenLoginRequest,
+    ): Promise<TriggerRuntimeOpenLoginResult> {
+      const record = requireSession(context, request.sessionId);
+      const workspaceIdentity = record.workspace.workspaceIdentity?.trim() || undefined;
+      const remoteSessionId = record.workspace.remoteSessionId?.trim() || undefined;
+      return await context.requestClient(
+        robinrunProtocolMethods.triggerRuntimeOpenLogin,
+        robinrunTriggerRuntimeOpenLoginParamsSchema.parse({
+          sessionId: request.sessionId,
+          ...(workspaceIdentity || remoteSessionId
+            ? {
+                workspace: {
+                  workspacePath: record.workspace.workspacePath,
+                  ...(workspaceIdentity ? { workspaceIdentity } : {}),
+                  ...(remoteSessionId ? { remoteSessionId } : {}),
+                },
+              }
+            : {}),
+          triggerId: request.triggerId,
+          ...(request.url !== undefined ? { url: request.url } : {}),
+        }),
+        robinrunTriggerRuntimeOpenLoginResultSchema,
         buildRequestOptions(request.trace),
       );
     },

@@ -18,10 +18,11 @@ import { taskKey } from "@/project-sidebar/grouped/ids.js";
 export function buildGroupedTaskView(
   tasks: ProjectTask[],
   structure: TaskGroupStructure,
+  triggerBoundTaskIds?: ReadonlySet<string>,
 ): RobinRunGroupedTaskView {
   const nodes: RobinRunGroupedTaskViewNode[] = [];
   const groups = new Map<string, Extract<RobinRunGroupedTaskViewNode, { type: "group" }>>();
-  for (const row of projectGroupedNodes(tasks, structure, new Set())) {
+  for (const row of projectGroupedNodes(tasks, structure, new Set(), triggerBoundTaskIds)) {
     if (row.type === "group") {
       const node = { type: "group" as const, group: row.group, tasks: [] as ProjectTask[] };
       groups.set(row.group.id, node);

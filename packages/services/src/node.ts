@@ -26,10 +26,25 @@ import { createTaskGroupService, ITaskGroupService, groupTaskKey } from "#src/ta
 // 投递给订阅智能体的会话（host 装配 dispatchCronRun 同款链）。
 import {
   createTriggerEngineService,
+  createTriggerBrowserRuntimePort,
   createTriggerPythonRuntimePort,
   ITriggerEngineService,
+  TriggerBrowserHost,
+  type RoutedEventBatch,
   type TriggerEventBatch,
 } from "#src/trigger-engine/index.js";
+// 档案加密（2026-11-25 引擎托管浏览器）：storageState 整文件加密落盘复用 credential
+// 服务的 cipher provider（OS 级密钥派生；AGENTS.md 凭据条款）。
+import { createCredentialCipherProvider } from "#src/credential/providers/credentialCipherProvider.js";
+// 需求/审批/反馈面板服务（2026-11-24 MVP）：三原语状态机 + 串行唤醒队列；唤醒经
+// dispatchOpsPanelWakeup 端口（host 装配：寻址 master 主会话）投递，系统特权订阅经
+// 触发器引擎 ensureSystemSubscription 播种。
+import {
+  IOpsPanelService,
+  OpsPanelRepo,
+  OpsPanelService,
+  type OpsPanelWakeupRequest,
+} from "#src/ops-panel/index.js";
 import { IGenUiService } from "./gen-ui/contract.js";
 import { createGenUiService } from "./gen-ui/node.js";
 // import { channelReplyHostRequestSchema, channelReplyResultSchema } from "@robinrun/shared";
@@ -54,6 +69,7 @@ import {
   buildLocalMediaPreviewUrl,
   type DynamicWorkflowMode,
   type ProviderProvisioningSourceTrigger,
+  robinrunProtocolMethods,
 } from "@robinrun/shared";
 
 export {
@@ -374,6 +390,8 @@ export {
 import {
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
 } from "@robinrun/shared";
 import { SourceServerWorkspaceAliasRepo } from "./session/sourceServerWorkspaceAliasRepo.js";
 import { SourceServerWorkspaceIdentityMapper } from "./source-server-workspace/sourceServerWorkspaceIdentityChannelServer.js";
@@ -1256,6 +1274,12 @@ export function createLocalServices(options: {
    */
   dispatchTriggerEvent?: (batch: TriggerEventBatch) => Promise<{ taskId: string }>;
   /**
+   * 分发器路由投递端口（2026-11-25 分发器裁决，desktop host 装配）：RouteMarkQueue 兑现
+   * 与 fixed 直投的处理会话投递（target 存在/归属校验与降级在 host 实现）。缺省时引擎
+   * 只调度不投递（测试形态）。
+   */
+  dispatchRoutedEvent?: (batch: RoutedEventBatch) => Promise<{ taskId: string; degraded: boolean }>;
+  /**
    * 触发器绑定会话忙查询（desktop host 装配：task facade 的 active input 簿记）。
    * 裁决 7"忙时排队、空闲后合并投递"的忙感知来源；缺省时聚合器退化为逐批投递。
    */
@@ -1264,6 +1288,11 @@ export function createLocalServices(options: {
     workspacePath: string;
     workspaceIdentity?: string;
   }) => Promise<boolean> | boolean;
+  /**
+   * 需求/审批/反馈面板的唤醒投递端口（desktop host 装配：寻址该 workspace 的 master
+   * 主会话 resume + sendPrompt，一次一条）。缺省时面板可读写但不唤醒（测试形态）。
+   */
+  dispatchOpsPanelWakeup?: (request: OpsPanelWakeupRequest) => Promise<{ taskId: string }>;
   /** 闲时任务翻 schedulable 后请求宿主立即唤醒 scheduler（desktop host 注入 parentPort 转发）。 */
   onOffPeakSchedulerWakeRequested?: () => void;
   // 注入点：默认 resolver 已能覆盖 dev/桌面/SSH 远端三类形态；
@@ -2297,6 +2326,13 @@ export function createLocalServices(options: {
         }
         return options.dispatchTriggerEvent(batch);
       },
+      // 路由投递（2026-11-25 分发器裁决）：分发器标记兑现与 fixed 直投的处理会话投递。
+      dispatchRoutedEvent: async (batch) => {
+        if (!options?.dispatchRoutedEvent) {
+          throw new Error("trigger routed dispatch port is not wired in this host");
+        }
+        return options.dispatchRoutedEvent(batch);
+      },
     },
     // 忙感知放引擎选项顶层（TriggerEngineOptions.isTaskBusy）；此前误放进 dispatch
     // 端口对象里被引擎静默忽略（TS 对 spread 属性不做多余属性检查，typecheck 拦不住），
@@ -2339,6 +2375,82 @@ export function createLocalServices(options: {
         void triggerEngineLogger.info(message);
       },
     }),
+    // 引擎托管浏览器（2026-11-25，specs/trigger-browser-hosting.md）：供给（下载/回退）+
+    // 实例托管（档案级串行 + CDP endpoint 注入 + storageState 加密回写 + 有头登录会话）。
+    // 凭据加密复用 credential 服务的 cipher provider（OS 级密钥）。
+    browserHost: new TriggerBrowserHost({
+      log: (message) => {
+        void triggerEngineLogger.info(message);
+      },
+      browserRuntime: createTriggerBrowserRuntimePort({
+        log: (message) => {
+          void triggerEngineLogger.info(message);
+        },
+      }),
+      cipher: createCredentialCipherProvider(),
+    }),
+    // 常驻脚本并发配额（2026-11-25 可配置化）：每轮 reconcile 起点读 AppSettings，改动
+    // ≤5s 生效；schema 默认已填值，?? 兜底仅为类型层面 optional。settingService 缺席
+    // （测试形态）时端口不接线，supervisor 用内置缺省（同源常量）。
+    ...(options?.settingService
+      ? {
+          resolveScriptQuotas: async () => {
+            const settings = await options.settingService!.get();
+            return {
+              perWorkspace:
+                settings.triggerScriptResidentPerWorkspace ??
+                DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
+              globalMax:
+                settings.triggerScriptResidentGlobalMax ??
+                DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
+            };
+          },
+        }
+      : {}),
+  });
+  // 需求/审批/反馈面板服务（2026-11-24 MVP）：条目与串行唤醒队列落 tasks-index.sqlite
+  // （0008 迁移）；系统特权订阅经触发器引擎幂等播种；唤醒投递端口由 desktop host 装配
+  // （寻址 master 主会话），缺席 = 可读写不唤醒（测试形态）。UI 刷新走 state:ops-panel 广播。
+  const opsPanelRepo = new OpsPanelRepo();
+  const opsPanelLogger = createServiceLogger("ops-panel");
+  const opsPanelService = new OpsPanelService({
+    repo: opsPanelRepo,
+    dispatch: {
+      dispatchOpsPanelWakeup: async (request) => {
+        if (!options?.dispatchOpsPanelWakeup) {
+          throw new Error("ops panel dispatch port is not wired in this host");
+        }
+        return options.dispatchOpsPanelWakeup(request);
+      },
+    },
+    ensureSystemSubscription: {
+      ensureSystemSubscription: (params) => triggerEngineService.ensureSystemSubscription(params),
+    },
+    notify: {
+      panelChanged: (params) => {
+        void broadcastService
+          .send({ channel: "state:ops-panel", payload: { type: "entries-changed", ...params } })
+          .catch(() => undefined);
+      },
+    },
+    // 进度锚条目的 createdAt 取项目真实创建时间（2026-11-25，specs/progress-ledger.md）：
+    // 项目树按工作区 root 解析（与 agentContact 的 resolveProjectId 同源）；解析不到
+    // （非项目根 workspace 等）返回 null，服务层回退首触时间。
+    progressProjectMeta: {
+      resolveProjectCreatedAtMs: async ({ workspacePath }) => {
+        const hostId = options?.projectStorageHostId ?? "local";
+        const tree = await projectService.readTree({ hostId, includeDeleted: false });
+        const project = tree.projects.find(
+          (candidate) =>
+            candidate.deleted !== true &&
+            candidate.roots.some((root) => root.rootPath === workspacePath),
+        );
+        return project?.createdAt ?? null;
+      },
+    },
+    log: (message) => {
+      void opsPanelLogger.info(message);
+    },
   });
   const prepareProjectExecution = async (projectId: string) => ({
     ...(await projectService.prepareSession({ projectId })),
@@ -2422,6 +2534,129 @@ export function createLocalServices(options: {
     // （引擎在 agent service 之前创建，闭包直引；分钟级 pip 在途，协议无逐请求超时）。
     triggerRuntimeInstallPackagesExecutor: async ({ workspacePath, packages }) =>
       triggerEngineService.installPackages({ workspacePath, packages }),
+    // 分发器路由标记（2026-11-25 分发器裁决）：routeEvents 反向请求 → 触发器引擎
+    // （会话 key 反查 + routing 门控 + RouteMarkQueue 兑现拆批投递）。
+    triggerRuntimeRouteEventsExecutor: async ({ workspacePath, sessionId, routes }) =>
+      triggerEngineService.routeEvents({ workspacePath, sessionId, routes }),
+    // 有头登录会话（2026-11-25 登录闭环）：open_login 反向请求 → 触发器引擎
+    // openTriggerLogin（有头窗口 + 档案登录态注入 + url 落点 + 关窗落档；分钟级人工操作在途）。
+    triggerRuntimeOpenLoginExecutor: async ({ workspacePath, triggerId, url }) =>
+      triggerEngineService.openTriggerLogin({
+        workspacePath,
+        triggerId,
+        ...(url !== undefined ? { url } : {}),
+      }),
+    // 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求族 → 面板服务（闭包直引，
+    // 服务在 agent service 之前创建）。权限矩阵 + worker 可见性过滤都在面板服务层；
+    // getEntry 是 list 视图上的服务端单条投影（worker 过滤后不可见的条目按不存在处理）。
+    opsPanelExecutor: async (request) => {
+      const panel = {
+        workspacePath: request.workspacePath,
+        workspaceIdentity: request.workspaceIdentity,
+        actor: request.actor,
+      };
+      // entryId/outcome 在协议 params schema 层已按方法必填（Parse 后必有）；executor
+      // 联合签名无法逐方法收窄，这里显式断言收窄，缺席 = 协议层违约，直接拒绝。
+      const requireEntryId = (): string => {
+        if (request.entryId === undefined) {
+          throw new Error(`Protocol violation: ${request.method} requires entryId`);
+        }
+        return request.entryId;
+      };
+      switch (request.method) {
+        case robinrunProtocolMethods.opsPanelListEntries:
+          return opsPanelService.getPanelView(panel);
+        case robinrunProtocolMethods.opsPanelGetEntry: {
+          const entryId = requireEntryId();
+          const view = await opsPanelService.getPanelView(panel);
+          const entry = view.entries.find((candidate) => candidate.id === entryId);
+          if (entry === undefined) {
+            throw new Error(
+              `No ops panel entry ${entryId} exists for this workspace or is visible to this caller`,
+            );
+          }
+          return { entry };
+        }
+        case robinrunProtocolMethods.opsPanelCreateEntry: {
+          if (
+            request.kind === undefined ||
+            request.title === undefined ||
+            request.body === undefined
+          ) {
+            throw new Error(
+              "Protocol violation: opsPanel/createEntry requires kind, title and body",
+            );
+          }
+          return {
+            entry: await opsPanelService.createEntry({
+              ...panel,
+              kind: request.kind,
+              title: request.title,
+              body: request.body,
+              // master 代录的来源标记（2026-11-24 录入与来源拆分；worker 自录时服务层忽略）。
+              author: request.author,
+            }),
+          };
+        }
+        case robinrunProtocolMethods.opsPanelDecideRequirement: {
+          if (request.outcome === undefined) {
+            throw new Error("Protocol violation: opsPanel/decideRequirement requires outcome");
+          }
+          return {
+            entry: await opsPanelService.decideRequirement({
+              ...panel,
+              entryId: requireEntryId(),
+              outcome: request.outcome,
+              note: request.note,
+            }),
+          };
+        }
+        case robinrunProtocolMethods.opsPanelResolveFeedback:
+          return {
+            entry: await opsPanelService.resolveFeedback({
+              ...panel,
+              entryId: requireEntryId(),
+              note: request.note,
+            }),
+          };
+        case robinrunProtocolMethods.opsPanelAcknowledgeApproval:
+          return {
+            entry: await opsPanelService.acknowledgeApproval({
+              ...panel,
+              entryId: requireEntryId(),
+              note: request.note,
+            }),
+          };
+        // ---- 进度账本（2026-11-25，specs/progress-ledger.md）：master 独占维护 ----
+        case robinrunProtocolMethods.opsPanelGetProgressView:
+          return opsPanelService.getProgressView(panel);
+        case robinrunProtocolMethods.opsPanelAppendProgress: {
+          if (request.title === undefined) {
+            throw new Error("Protocol violation: opsPanel/appendProgress requires title");
+          }
+          return {
+            entry: await opsPanelService.appendProgress({
+              ...panel,
+              title: request.title,
+              body: request.body,
+              links: request.links,
+            }),
+          };
+        }
+        case robinrunProtocolMethods.opsPanelUpdateProgress:
+          return {
+            entry: await opsPanelService.updateProgress({
+              ...panel,
+              entryId: requireEntryId(),
+              title: request.title,
+              body: request.body,
+              links: request.links,
+            }),
+          };
+        case robinrunProtocolMethods.opsPanelDeleteProgress:
+          return opsPanelService.deleteProgress({ ...panel, entryId: requireEntryId() });
+      }
+    },
     // 机器人凭据只归属于授权 Host；远端独立服务不能借用本机配置扩大读取范围。
     // 渠道工具等待插件入口接入，仅停用默认发送接线，保留完整实现。
     // channelReplyExecutor: async (value) => {
@@ -2813,6 +3048,8 @@ export function createLocalServices(options: {
   // 注册链上的懒工厂（如 OffPeak）会各自创建 tasks-index sqlite repo；先收集到本数组，
   // services 集合建好后在 return 前统一登记进 sharedSqliteRepos 侧表
   const sqliteReposToClose: Array<{ close(): void }> = [];
+  // ops-panel 仓库（需求/审批/反馈面板）：进程退出随集合统一关闭。
+  sqliteReposToClose.push(opsPanelRepo);
   const marketingAssets = createMarketingAssetRegistry({
     allowLoopback: ROBINRUN_ENV === "test" || process.env.NODE_ENV === "development",
   });
@@ -2851,6 +3088,7 @@ export function createLocalServices(options: {
     .register(IProjectService, projectService)
     .register(ITaskGroupService, taskGroupService)
     .register(ITriggerEngineService, triggerEngineService)
+    .register(IOpsPanelService, opsPanelService)
     .register(IRemoteProjectService, remoteProjectService)
     .register(ICuaPermissionService, cuaPermissionService)
     .register(ICuaPipSessionService, cuaPipSessionService)
@@ -3373,10 +3611,13 @@ export async function migrateApplicationStorage(
   const automations = new AutomationRepo();
   const offPeak = new OffPeakTaskRepo();
   const tasks = new TaskIndexRepo(settings, hostId);
+  // ops-panel（需求/审批/反馈面板）：同库迁移屏障，开放 RPC 前就绪（2026-11-24 MVP）。
+  const opsPanel = new OpsPanelRepo();
   try {
     await automations.ensureReady();
     await offPeak.ensureReady();
     await tasks.ensureReady();
+    await opsPanel.ensureReady();
     return {
       backupSkipped:
         tasks.migrationBackupSkipped ||
@@ -3387,6 +3628,7 @@ export async function migrateApplicationStorage(
     tasks.close();
     offPeak.close();
     automations.close();
+    opsPanel.close();
   }
 }
 

@@ -43,6 +43,16 @@ import { manageWorkersToolEntry } from "./manage-workers.js";
 // 触发器注册表管理（2026-11-19 设计定稿，docs/trigger-system.md）：任意智能体可创建
 // 触发器（订阅者=创建者），不设 includeAgent 门、不进子 runtime 强制禁用名单。
 import { manageTriggersToolEntry } from "./manage-triggers.js";
+// 分发器路由标记（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：dispatcher
+// 档触发器会话的话题聚类工具——includeRouteEvents 门（引擎端口在场）+ 轮级工具面收窄
+// （非 dispatcher 会话轮次由 buildTurnDisallowedTools 隐藏，见 turn-tool-visibility.ts）。
+import { routeEventsToolEntry } from "./route-events.js";
+// 需求/审批/反馈面板（2026-11-24 MVP）：同名双变体（master 7 动作 / worker 3 动作），
+// 按 opsPanelVariant 二选一（contactAgent 变体门同款）。
+import {
+  manageOpsPanelToolEntry,
+  workerManageOpsPanelToolEntry,
+} from "./manage-ops-panel.js";
 import { skillToolEntry } from "./skill.js";
 import { todoReadToolEntry, todoWriteToolEntry } from "./todo.js";
 import {
@@ -143,6 +153,13 @@ export const builtInTools: ToolEntry[] = [
   // 触发器注册表管理（2026-11-19，docs/trigger-system.md）：任意智能体可创建触发器
   // （订阅者=创建者），worker 会话同样需要；不在 includeAgent 门与强制禁用名单内。
   manageTriggersToolEntry,
+  // 分发器路由标记（2026-11-25 分发器裁决）：includeRouteEvents 门（triggerRuntimePort
+  // 在场 = desktop 有引擎）；越权调用（非分发器会话）由引擎 routeEvents 机制层拒绝。
+  routeEventsToolEntry,
+  // 需求/审批/反馈面板（2026-11-24 MVP）：master/worker 同名双变体，opsPanelVariant
+  // 二选一（见下方注册门）；端口缺席时 handler 诚实报错（ManageTriggers 同款）。
+  manageOpsPanelToolEntry,
+  workerManageOpsPanelToolEntry,
   skillToolEntry,
   jsToolEntry,
   createWorkflowToolEntry,
@@ -222,6 +239,12 @@ interface RegisterBuiltInToolsOptions {
    */
   agentContactVariant?: "master" | "worker";
   /**
+   * ManageOpsPanel 变体选择（2026-11-24 MVP）：master = 7 动作完整变体（读全部/起草/
+   * 处置/分诊/确认执行）；worker = 3 动作受限变体（只读自己提交的 + 提反馈，过滤在
+   * host 服务层）。缺席按 master 处理。判据与 agentContactVariant 同源（workerIdentity）。
+   */
+  opsPanelVariant?: "master" | "worker";
+  /**
    * WaitReply 门（2026-11-23 C1 裁决）：master 会话专属——worker 不允许要求必答后，
    * worker 名下无可等待的在途请求。与 includeAgentContact 同为端口在场，附加 workerIdentity
    * 缺席条件（runtime-tools 计算）。
@@ -239,6 +262,12 @@ interface RegisterBuiltInToolsOptions {
   includeAutomation?: boolean;
   /** worker 会话置 false：编制管理独占于 master 会话（docs/worker-session-model.md §5）。 */
   includeManageWorkers?: boolean;
+  /**
+   * 分发器路由标记门（2026-11-25 分发器裁决）：triggerRuntimePort 在场才注册 RouteEvents
+   * （desktop 有引擎；独立 CLI 无 RouteMarkQueue 语义，诚实缺席）。非分发器会话的越权
+   * 调用由引擎 routeEvents 机制层拒绝；工具面噪音由轮级收窄（turn-tool-visibility）处理。
+   */
+  includeRouteEvents?: boolean;
   /** Off-Peak 会话内创建工具面；由 host 的 offPeakToolEnabled flag（灰度/远程门）驱动。 */
   includeOffPeak?: boolean;
   /**
@@ -320,6 +349,15 @@ export function registerBuiltInTools(
     if (entry === workerContactAgentToolEntry && options.agentContactVariant !== "worker") {
       continue;
     }
+    // 需求/审批/反馈面板（2026-11-24 MVP）：同名双变体按会话身份二选一——master 会话
+    // 注册 7 动作变体；worker 会话注册 3 动作受限变体（权限矩阵的可见面）。两个条目
+    // 对象引用不同、metadata.name 相同，按引用区分（contactAgent 变体门同款）。
+    if (entry === manageOpsPanelToolEntry && options.opsPanelVariant === "worker") {
+      continue;
+    }
+    if (entry === workerManageOpsPanelToolEntry && options.opsPanelVariant !== "worker") {
+      continue;
+    }
     // C1 裁决（2026-11-23）：WaitReply 收敛为 master 专属——worker 不允许要求必答
     // 后，worker 名下永远没有可等待的在途请求，工具面对 worker 隐藏以免误用。
     // 门由 runtime-tools 按 workerIdentity 缺席计算。
@@ -349,6 +387,11 @@ export function registerBuiltInTools(
       (entry.metadata.name === "OffPeakCreate" || entry.metadata.name === "OffPeakList") &&
       options.includeOffPeak !== true
     ) {
+      continue;
+    }
+    // 分发器路由标记（2026-11-25 分发器裁决）：门 = 引擎端口在场（desktop 装配）；独立
+    // CLI 无引擎时诚实缺席（RouteEvents 语义依赖引擎 RouteMarkQueue）。
+    if (entry.metadata.name === "RouteEvents" && options.includeRouteEvents !== true) {
       continue;
     }
     if (

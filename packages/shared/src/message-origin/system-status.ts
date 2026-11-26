@@ -43,6 +43,13 @@ export const systemStatusPayloadSchema = z.object({
   /** 触发器来源 = automationId（sender = "trigger" 专用）。 */
   triggerId: z.string().min(1).max(200).optional(),
   /**
+   * 触发器分发器溯源（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §6.3）：
+   * sender = "trigger" 且经分发器路由投递的处理会话输入携带——事件途经的分发器会话 id。
+   * 仅作处理会话写状态文件时的途经可追溯；不构成回流通路（处理会话不向分发器汇报）。
+   * direct/fixed 直投不携带。
+   */
+  viaDispatcherSessionId: z.string().min(1).max(200).optional(),
+  /**
    * ContactAgent 投递专用（2026-11-21 裸投递裁决，docs/message-origin.md）：true =
    * 本轮最终输出将逐字作为回复回投给请求方（收尾面向请求方，勿再补发 ContactAgent）；
    * false = 仅通知。仅 sender=master/worker 的 Contact 投递携带；trigger/user/system

@@ -4,13 +4,13 @@
 
 五项能力由构建期配置决定是否启用，未配置时一律关闭：
 
-| 能力                 | 配置项                                                     | 关闭时的行为                                                      |
-| -------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| ARMS RUM 上报        | `ROBINRUN_ARMS_RUM_ENDPOINT`                               | 主进程与渲染进程的 ARMS SDK 以 `enable: false` 初始化，不产生上报 |
-| 事件上报（数仓）     | `ROBINRUN_TELEMETRY_REPORT_ENDPOINT`                       | 遥测事件在发送前直接返回                                          |
-| 自动更新             | `ROBINRUN_AUTO_UPDATE`（`1`、`true`、`yes` 为启用）        | 与 Preview 形态相同，不检查、不下载更新                           |
-| 静态更新源           | `ROBINRUN_UPDATE_FEED_BASE`（URL，见 robinrun-release-updates.md） | 更新器保持上游 manifest API 模式（RobinRun 发布构建必须显式设置静态 base，否则指向上游 SaaS） |
-| macOS 自动更新准入   | `ROBINRUN_MAC_AUTO_UPDATE`（`1`、`true`、`yes` 为启用）    | 打包态 darwin 禁用自动更新（Squirrel.Mac 要求 Developer ID 签名；未签名 mac 新版本走手动下载） |
+| 能力               | 配置项                                                             | 关闭时的行为                                                                                   |
+| ------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| ARMS RUM 上报      | `ROBINRUN_ARMS_RUM_ENDPOINT`                                       | 主进程与渲染进程的 ARMS SDK 以 `enable: false` 初始化，不产生上报                              |
+| 事件上报（数仓）   | `ROBINRUN_TELEMETRY_REPORT_ENDPOINT`                               | 遥测事件在发送前直接返回                                                                       |
+| 自动更新           | `ROBINRUN_AUTO_UPDATE`（`1`、`true`、`yes` 为启用）                | 与 Preview 形态相同，不检查、不下载更新                                                        |
+| 静态更新源         | `ROBINRUN_UPDATE_FEED_BASE`（URL，见 robinrun-release-updates.md） | 更新器保持上游 manifest API 模式（RobinRun 发布构建必须显式设置静态 base，否则指向上游 SaaS）  |
+| macOS 自动更新准入 | `ROBINRUN_MAC_AUTO_UPDATE`（`1`、`true`、`yes` 为启用）            | 打包态 darwin 禁用自动更新（Squirrel.Mac 要求 Developer ID 签名；未签名 mac 新版本走手动下载） |
 
 这样同一份源码可以产出"默认不上报、不自动更新"的构建，也可以产出启用这些能力的正式构建，
 不需要在源码里写死上报地址。

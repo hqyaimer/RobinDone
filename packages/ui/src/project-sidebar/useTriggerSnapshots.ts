@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  isSystemTriggerEntry,
   makeTriggerGroupSessionKey,
   makeTriggerSessionKey,
   type TriggerEntry,
   type TriggerGroupEntry,
   type TriggerProfileEntry,
+  type TriggerRouting,
   type TriggerStatus,
 } from "@robinrun/shared";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
@@ -48,8 +50,19 @@ export interface TriggerSidebarEntry {
   /** 直连触发器 id 或组 id（同 trg-/trggrp- 纪律）。 */
   id: string;
   name: string;
+  /**
+   * 系统特权订阅标记（2026-11-24 需求/审批/反馈面板）：true = 平台播种的系统订阅，
+   * 不可停用/删除（引擎与 ManageTriggers 双层拒绝）；UI 据此不渲染启停/删除菜单。
+   */
+  system?: boolean;
   /** 组条目为成员数（副标），直连触发器为 undefined。 */
   memberCount?: number;
+  /**
+   * 路由策略（2026-11-25 分发器裁决）：直连条目取触发器 routing，组条目取组 routing
+   * （成员字段被组覆盖）。dispatcher = 条目显示"分发"徽章（绑定会话是分发器，不是
+   * 处理台账）；undefined/missing 按旧语义渲染（direct 兼容旧快照）。
+   */
+  routing?: TriggerRouting;
   status: TriggerStatus;
   /** 最近触发时间（ISO）；组取成员最大值，从未触发为 undefined。 */
   lastFireAt?: string;
@@ -203,6 +216,8 @@ export function groupTriggerEntriesByOwner(
       kind: "trigger",
       id: trigger.id,
       name: trigger.name,
+      ...(isSystemTriggerEntry(trigger) ? { system: true } : {}),
+      ...(trigger.routing !== undefined ? { routing: trigger.routing } : {}),
       status: trigger.status,
       ...(trigger.lastFireAt !== undefined ? { lastFireAt: trigger.lastFireAt } : {}),
       sessionKey: makeTriggerSessionKey(trigger.id),
@@ -225,6 +240,7 @@ export function groupTriggerEntriesByOwner(
       id: group.id,
       name: group.name,
       memberCount: group.memberTriggerIds.length,
+      ...(group.routing !== undefined ? { routing: group.routing } : {}),
       status: aggregateTriggerStatus(memberStatuses),
       ...(lastFireAt !== undefined ? { lastFireAt } : {}),
       sessionKey: makeTriggerGroupSessionKey(group.id),

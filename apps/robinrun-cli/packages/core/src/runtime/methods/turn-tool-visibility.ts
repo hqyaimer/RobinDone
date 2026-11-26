@@ -1,3 +1,4 @@
+import { TRIGGER_ID_PREFIX } from "@robinrun/shared";
 import type { AgentRuntimeInternal } from "../internal.js";
 import {
   AUTOMATION_MUTATION_TOOL_NAMES,
@@ -8,11 +9,27 @@ import {
   type RegularTurnLoopState,
 } from "./turn-loop-state.js";
 
+/**
+ * 分发器投递轮的工具面白名单（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md
+ * 裁决 9）：分发器无业务职能，触发器投递轮只保留路由标记与只读工具——收窄既是防误用
+ * 也是安全边界。其余轮次（用户插话等）不收窄（用户在场时的自由度优先）。
+ */
+const DISPATCHER_TURN_ALLOWED_TOOLS: ReadonlySet<string> = new Set(["RouteEvents", "Read"]);
+
 export function getTurnTools(runtime: AgentRuntimeInternal, state: RegularTurnLoopState) {
   const disallowed = buildTurnDisallowedTools(state);
   if (state.automationCreateLimitReached) return [];
-  const tools = runtime.getTools(state.model);
-  return disallowed ? tools.filter((tool) => !disallowed.has(tool.name)) : tools;
+  let tools = runtime.getTools(state.model);
+  if (disallowed) tools = tools.filter((tool) => !disallowed.has(tool.name));
+  // dispatcher 投递轮收窄（sticky 判据 triggerSessionRouting 在 ensureTriggerSessionReadme
+  // 读注册表缓存）：白名单外交织的任何业务工具在本轮不可见。
+  if (
+    runtime.triggerSessionRouting === "dispatcher" &&
+    state.automationId?.startsWith(TRIGGER_ID_PREFIX)
+  ) {
+    tools = tools.filter((tool) => DISPATCHER_TURN_ALLOWED_TOOLS.has(tool.name));
+  }
+  return tools;
 }
 
 function buildTurnDisallowedTools(state: RegularTurnLoopState): Set<string> | null {

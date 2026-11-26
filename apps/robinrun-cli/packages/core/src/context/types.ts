@@ -144,6 +144,12 @@ export interface ContextBuilderConfig {
    */
   triggerSessionReadme?: string;
   /**
+   * 触发器会话有效路由策略（2026-11-25 分发器裁决）：runtime sticky 字段的投影，触发器
+   * session section 按它追加分发职责段（dispatcher）或每批次新会话段（fixed）；direct/
+   * undefined 零增文。
+   */
+  triggerSessionRouting?: "dispatcher" | "fixed";
+  /**
    * 脚本触发器的运行时提示（2026-11-22 python 主 + node 备选改造）：引擎可用性状态文件
    * `state/python-runtime.json` 的投影（context 初始化读盘缓存，会话级 sticky）。
    * "python" = python 可用（提示词只暴露 python 协议与 install_packages，不出现 node

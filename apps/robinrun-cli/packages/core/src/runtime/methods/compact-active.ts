@@ -26,6 +26,20 @@ import {
   getUsageTotalTokens,
 } from "../deps.js";
 import type { SessionEvent, TraceContext } from "../deps.js";
+
+/**
+ * 分发器会话的压缩附加指令（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md
+ * 裁决 2/3）：路由状态无文件事实源（压缩即话题淘汰是设计机制），压缩摘要就是活跃话题
+ * 记录的唯一载体——只保留近期未完结话题的 sessionId（逐字保真）+ 一句话话题描述，
+ * 已完结话题记录自然淘汰。
+ */
+const DISPATCHER_COMPACT_INSTRUCTIONS = [
+  "Overrides for THIS dispatcher-session summary:",
+  "- This is a trigger DISPATCHER session; its only state is topic routing. Preserve every still-active topic as: the exact session id (taskId previously routed to) plus a one-line topic description.",
+  "- Copy session ids character-for-character — never paraphrase, reformat, or abbreviate them; a single wrong character breaks routing.",
+  "- Retire finished topics freely: older routing history is EXPECTED to be dropped (recent topics only).",
+  "- Do not spend summary space on event payloads or individual routing calls; one line per active topic is enough.",
+].join("\n");
 import {
   defaultCompactPhaseForTrigger,
   defaultCompactReasonForTrigger,
@@ -285,7 +299,16 @@ async function compactActiveConversationImpl(
           querySource: "compact",
         },
       });
-      const compactPrompt = buildCompactPrompt(customInstructions);
+      // 分发器压缩变体（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md 裁决 3）：
+      // dispatcher 会话的压缩不是损失而是话题淘汰机制——只保留近期未完结话题的记录
+      // （sessionId 逐字保真：抄错一个字符续聊路由即失效），已完结话题的记录自然淘汰；
+      // 过期路由记录的认知本就随后续事件演进而脱节，不值得保留（时间局部性裁决）。
+      // 路由状态无文件事实源（裁决 2），压缩摘要就是活跃话题记录的唯一载体。
+      const compactPrompt = buildCompactPrompt(
+        this.triggerSessionRouting === "dispatcher"
+          ? [customInstructions, DISPATCHER_COMPACT_INSTRUCTIONS].filter(Boolean).join("\n\n")
+          : customInstructions,
+      );
       let result: RuntimeModelTextResult;
       let compactPromptTooLongAttempts = 0;
       let stripMediaForSummary = false;

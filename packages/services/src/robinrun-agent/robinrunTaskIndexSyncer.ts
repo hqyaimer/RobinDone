@@ -1,4 +1,4 @@
-import { isAuxiliarySessionKind } from "@robinrun/shared";
+import { isAuxiliarySessionKind, TRIGGER_ID_PREFIX } from "@robinrun/shared";
 /* eslint-disable max-lines -- task index 的 v4 帧摄入、snapshot upsert 和 workspace 广播必须共享同一份闭包状态。 */
 import { repairSubagentTaskIndex } from "#src/task-facts/repairSubagentTaskIndex.js";
 import {
@@ -663,6 +663,67 @@ export function createRobinRunTaskIndexSyncer(
     }
   }
 
+  /**
+   * 触发器会话准入订阅者组（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md
+   * §7 投影修正）：dispatcher/fixed 档的处理会话按裁决"散布在创建者名下"——master 订阅
+   * 的处理会话此前没有任何组准入（worker 会话有 syncer 准入，master 会话靠 UI 草稿流
+   * placement），叠加侧栏对触发器来源会话的过滤后完全不可达。本函数把非 worker 的触发器
+   * 来源会话（creationOrigin{kind:"trigger"} + trg- 前缀，sticky 权威）准入主智能体组；
+   * 绑定会话（direct/分发器）同样准入——成为组内不可见成员（可见性由 UI 投影按绑定表
+   * 收窄过滤，归属结构保留不可见成员是既有原则）。幂等：确定性组 id + placement
+   * creation_id 一次为准。
+   */
+  async function admitTriggerSubscriberSessionTask(
+    target: RobinRunAgentWorkspaceTarget,
+    summary: SessionSummary,
+  ): Promise<void> {
+    if (summary.worker) return; // worker 会话由 admitWorkerSessionTask 独占承载
+    const origin = summary.creationOrigin;
+    if (origin?.kind !== "trigger" || !origin.ref?.startsWith(TRIGGER_ID_PREFIX)) return;
+    // 本机事实准入；远程工作区行不在本机组投影内（同 admitWorkerSessionTask 门槛）。
+    if (target.workspaceIdentity?.trim()) return;
+    try {
+      await taskIndexRepo.ensureReady();
+      const db = await taskIndexRepo.getOrganizationDatabase();
+      const repository = new TaskGroupRepository(db);
+      const projectRepository = await taskIndexRepo.getProjectRepository();
+      const workspaceKey = resolveWorkspaceKey(target);
+      const taskEntry = projectRepository
+        .readTree({ includeTasks: true })
+        .tasks.find(
+          (task) =>
+            task.taskId === summary.sessionId &&
+            (task.workspaceIdentity?.trim() || task.workspacePath) === workspaceKey,
+        );
+      const projectId = taskEntry?.projectId;
+      if (!projectId) {
+        logger.warn(
+          undefined,
+          `触发器会话缺少项目归属，跳过主智能体组准入 taskId=${summary.sessionId}`,
+        );
+        return;
+      }
+      const group = repository.ensureMainAgentGroup(projectId);
+      const taskFact = {
+        taskId: summary.sessionId,
+        workspacePath: target.workspacePath,
+        hostId: "local",
+        createdAt: summary.createdAt,
+      } as const;
+      repository.admit([taskFact], {
+        task: taskFact,
+        groupId: group.id,
+        creationId: `trigger-session:${summary.sessionId}`,
+      });
+      logger.info(undefined, "触发器会话已准入主智能体组", {
+        groupId: group.id,
+        taskId: summary.sessionId,
+      });
+    } catch (error) {
+      logger.warn(undefined, `触发器会话准入失败 taskId=${summary.sessionId}`, error);
+    }
+  }
+
   /** phase 终态迁移 → sqlite status 收敛 + 广播 + 回源正文索引。 */
   function applyTerminalTransition(
     target: RobinRunAgentSessionTarget,
@@ -771,6 +832,7 @@ export function createRobinRunTaskIndexSyncer(
       void mirrorSummary(target, next)
         .then(async (meta) => {
           if (next.worker) await admitWorkerSessionTask(state.target, next);
+          else await admitTriggerSubscriberSessionTask(state.target, next);
           if (meta) emitWorkspaceTaskListChanged(broadcastTargetFrom(target), meta, "task_created");
         })
         .catch((error) => logger.warn(undefined, "同步新会话事实失败", error));
@@ -807,6 +869,7 @@ export function createRobinRunTaskIndexSyncer(
           await mirrorSummary(state.target, summary);
           // 基线补齐同样覆盖 worker 会话（如 host 重订时 worker 仍在运行），准入幂等。
           if (summary.worker) await admitWorkerSessionTask(state.target, summary);
+          else await admitTriggerSubscriberSessionTask(state.target, summary);
         }),
       );
       for (const result of results) {

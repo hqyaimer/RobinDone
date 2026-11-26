@@ -89,6 +89,7 @@ import { PluginsSection } from "@/settings/PluginsSection.js";
 import { HooksSection } from "@/settings/HooksSection.js";
 import { WorkspaceFileSearchSection } from "@/settings/WorkspaceFileSearchSection.js";
 import { MemorySettingsSection } from "@/settings/MemorySettingsSection.js";
+import { TriggersSettingsSection } from "@/settings/TriggersSettingsSection.js";
 import { PersonalizationSection } from "@/settings/PersonalizationSection.js";
 import { BrowserSettingsSection } from "@/settings/BrowserSettingsSection.js";
 import { ComputerUseSection } from "@/settings/ComputerUseSection.js";
@@ -798,6 +799,9 @@ export function SettingsPage({
     return [...names];
   }, [sharedSettings?.recentProjects, workspaceTabs]);
   const memoryEnabled = sharedSettings?.memoryEnabled === true;
+  // 常驻脚本并发配额（schema 默认 20/60；?? 兜底仅为 sharedSettings 尚未加载时的首帧渲染）。
+  const triggerResidentPerWorkspace = sharedSettings?.triggerScriptResidentPerWorkspace ?? 20;
+  const triggerResidentGlobalMax = sharedSettings?.triggerScriptResidentGlobalMax ?? 60;
   const toolSearchMode = sharedSettings?.toolSearchMode ?? "off";
   const nativeSearchEnhancementsEnabled = sharedSettings?.nativeSearchEnhancementsEnabled !== false;
   const askUserQuestionAutoResolutionEnabled =
@@ -1239,6 +1243,37 @@ export function SettingsPage({
         completed: {
           resultSource: "shared_settings",
           stateAfter: enabled ? "enabled" : "disabled",
+        },
+      });
+    },
+    [updateSharedSettings],
+  );
+  // 常驻脚本并发配额（2026-11-25 可配置化）：走 useSettings 统一写盘；引擎每轮 reconcile
+  // 读取，改动 ≤5s 生效。schema 已限 1..200 / 1..1000，UI 输入组件做了同界校验。
+  // trigger: "keyboard"（数字输入的提交时机是回车/失焦）；stateAfter 不落（值不是开关）。
+  const handleTriggerResidentPerWorkspaceChange = useCallback(
+    async (next: number) => {
+      await runSettingsActionAsync({
+        featureId: "settings.triggers",
+        action: "change_resident_per_workspace",
+        trigger: "keyboard",
+        operation: () => updateSharedSettings({ triggerScriptResidentPerWorkspace: next }),
+        completed: {
+          resultSource: "shared_settings",
+        },
+      });
+    },
+    [updateSharedSettings],
+  );
+  const handleTriggerResidentGlobalMaxChange = useCallback(
+    async (next: number) => {
+      await runSettingsActionAsync({
+        featureId: "settings.triggers",
+        action: "change_resident_global_max",
+        trigger: "keyboard",
+        operation: () => updateSharedSettings({ triggerScriptResidentGlobalMax: next }),
+        completed: {
+          resultSource: "shared_settings",
         },
       });
     },
@@ -2201,7 +2236,7 @@ export function SettingsPage({
                               />
                               <ArchiveManagement />
                             </div>
-                          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区渲染」——上游 Coding Plan
+                          ) : // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区渲染」——上游 Coding Plan
                           // 套餐用量（依赖登录 entitlement），分区已从导航移除且意图回落 general，分支不可达。
                           // 恢复时取消本段注释
                           // ) : activeSection === "usage" ? (
@@ -2213,7 +2248,7 @@ export function SettingsPage({
                           //     workspacePath={activeWorkspacePath ?? undefined}
                           //   />
                           // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-                          ) : activeSection === "subagents" ? (
+                          activeSection === "subagents" ? (
                             <SubagentsSection
                               onManageModels={handleOpenModelProviderSettings}
                               workspacePath={activeWorkspacePath}
@@ -2241,6 +2276,13 @@ export function SettingsPage({
                             <HooksSection
                               workspacePath={activeWorkspacePath}
                               workspaceIdentity={activeWorkspaceIdentity}
+                            />
+                          ) : activeSection === "triggers" ? (
+                            <TriggersSettingsSection
+                              residentPerWorkspace={triggerResidentPerWorkspace}
+                              residentGlobalMax={triggerResidentGlobalMax}
+                              onResidentPerWorkspaceChange={handleTriggerResidentPerWorkspaceChange}
+                              onResidentGlobalMaxChange={handleTriggerResidentGlobalMaxChange}
                             />
                           ) : activeSection === "workspaceFileSearch" ? (
                             <WorkspaceFileSearchSection

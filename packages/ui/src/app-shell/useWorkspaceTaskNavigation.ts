@@ -5,6 +5,7 @@ import {
   canGoBack as navCanGoBack,
   canGoForward as navCanGoForward,
   isAutomationsNavEntry,
+  isOpsPanelNavEntry,
   isPluginStoreNavEntry,
   type AutomationsNavigationTab,
 } from "@/lib/taskNavigationHistory.js";
@@ -42,6 +43,7 @@ export function useWorkspaceTaskNavigation({
   onNavigateToTask,
   onNavigateToAutomations,
   onNavigateToPluginStore,
+  onNavigateToOpsPanel,
 }: {
   intl: { formatMessage: (descriptor: { id: string }) => string };
   workspaceAbsPath: string;
@@ -50,6 +52,7 @@ export function useWorkspaceTaskNavigation({
   onNavigateToTask?: () => void;
   onNavigateToAutomations?: (target: AutomationsNavigationTarget) => void;
   onNavigateToPluginStore?: (target: Omit<AutomationsNavigationTarget, "automationId">) => void;
+  onNavigateToOpsPanel?: (target: Omit<AutomationsNavigationTarget, "automationId">) => void;
 }) {
   // 跨 workspace 选择会先同步切换 tab，但本次 React render 捕获的 ambient
   // services 仍可能属于旧 remote attachment。local 目标必须固定从 window base attachment
@@ -60,6 +63,7 @@ export function useWorkspaceTaskNavigation({
   const taskNavHistory = useRobinRunSessionStore((s) => s.taskNavHistory);
   const taskNavPushAutomations = useRobinRunSessionStore((s) => s.taskNavPushAutomations);
   const taskNavPushPluginStore = useRobinRunSessionStore((s) => s.taskNavPushPluginStore);
+  const taskNavPushOpsPanel = useRobinRunSessionStore((s) => s.taskNavPushOpsPanel);
   const taskNavGoBack = useRobinRunSessionStore((s) => s.taskNavGoBack);
   const taskNavGoForward = useRobinRunSessionStore((s) => s.taskNavGoForward);
   const removeTaskFromNavHistory = useRobinRunSessionStore((s) => s.removeTaskFromNavHistory);
@@ -232,6 +236,12 @@ export function useWorkspaceTaskNavigation({
     onNavigateToPluginStore?.({ workspacePath: workspaceAbsPath, workspaceIdentity });
   }, [onNavigateToPluginStore, taskNavPushPluginStore, workspaceAbsPath, workspaceIdentity]);
 
+  // 需求/审批/反馈面板（2026-11-24 MVP）：与 automations/plugin-store 同款导航入栈。
+  const handleOpenOpsPanel = useCallback(() => {
+    taskNavPushOpsPanel(workspaceAbsPath, workspaceIdentity);
+    onNavigateToOpsPanel?.({ workspacePath: workspaceAbsPath, workspaceIdentity });
+  }, [onNavigateToOpsPanel, taskNavPushOpsPanel, workspaceAbsPath, workspaceIdentity]);
+
   const handleTaskNavBack = useCallback(() => {
     const currentWorkspaceState = useRobinRunSessionStore
       .getState()
@@ -285,6 +295,16 @@ export function useWorkspaceTaskNavigation({
         onNavigateToPluginStore?.(currentEntry);
         return;
       }
+      if (isOpsPanelNavEntry(currentEntry)) {
+        activateTabByPath(
+          currentEntry.workspacePath,
+          currentEntry.workspaceIdentity
+            ? { workspaceIdentity: currentEntry.workspaceIdentity }
+            : undefined,
+        );
+        onNavigateToOpsPanel?.(currentEntry);
+        return;
+      }
       const navWorkspaceState = useRobinRunSessionStore
         .getState()
         .getWorkspaceState(currentEntry.workspacePath, currentEntry.workspaceIdentity);
@@ -314,6 +334,7 @@ export function useWorkspaceTaskNavigation({
     intl,
     onNavigateToAutomations,
     onNavigateToPluginStore,
+    onNavigateToOpsPanel,
     removeTaskFromNavHistory,
     taskNavGoBack,
     workspaceAbsPath,
@@ -371,6 +392,16 @@ export function useWorkspaceTaskNavigation({
         onNavigateToPluginStore?.(currentEntry);
         return;
       }
+      if (isOpsPanelNavEntry(currentEntry)) {
+        activateTabByPath(
+          currentEntry.workspacePath,
+          currentEntry.workspaceIdentity
+            ? { workspaceIdentity: currentEntry.workspaceIdentity }
+            : undefined,
+        );
+        onNavigateToOpsPanel?.(currentEntry);
+        return;
+      }
       const navWorkspaceState = useRobinRunSessionStore
         .getState()
         .getWorkspaceState(currentEntry.workspacePath, currentEntry.workspaceIdentity);
@@ -399,6 +430,7 @@ export function useWorkspaceTaskNavigation({
     intl,
     onNavigateToAutomations,
     onNavigateToPluginStore,
+    onNavigateToOpsPanel,
     removeTaskFromNavHistory,
     taskNavGoForward,
     workspaceAbsPath,
@@ -420,6 +452,7 @@ export function useWorkspaceTaskNavigation({
     handleSelectTask,
     handleOpenAutomations,
     handleOpenPluginStore,
+    handleOpenOpsPanel,
     handleTaskNavBack,
     handleTaskNavForward,
     canGoBack,

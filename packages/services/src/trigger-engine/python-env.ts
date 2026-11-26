@@ -273,14 +273,7 @@ export async function runPipInstall(params: {
   const run = params.runCommand ?? defaultCommandRunner;
   const result = await run({
     command: params.interpreterPath,
-    args: [
-      "-m",
-      "pip",
-      "install",
-      "--upgrade",
-      "--disable-pip-version-check",
-      ...params.packages,
-    ],
+    args: ["-m", "pip", "install", "--upgrade", "--disable-pip-version-check", ...params.packages],
     cwd: params.workspacePath,
     timeoutMs: params.timeoutMs ?? PIP_INSTALL_TIMEOUT_MS,
     ...(Object.keys(env).length > 0 ? { env } : {}),

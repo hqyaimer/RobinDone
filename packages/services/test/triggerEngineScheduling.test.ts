@@ -5,12 +5,14 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as realSleep } from "node:timers/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createTriggerEngineService,
   type TriggerEngineOptions,
 } from "../src/trigger-engine/engine.js";
+import { computeNextFireMs, scheduleOf } from "../src/trigger-engine/trigger-scheduling.js";
 
 const T0 = new Date("2026-11-19T08:00:00.000Z");
 const TRIGGER_ID = "trg-aaa11111";
@@ -375,5 +377,190 @@ describe("trigger engine scheduling", () => {
     expect(batch.events).toHaveLength(2);
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(dispatchTriggerEvent).toHaveBeenCalledTimes(1);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 定时执行模式（2026-11-25 runMode="scheduled" 裁决）
+  // ---------------------------------------------------------------------------
+
+  it("scheduleOf/computeNextFireMs：scheduled 脚本进调度（resident 不进），锚点语义与 cron/interval 一致", () => {
+    const state = { mountedAt: Date.now() };
+    const base = {
+      id: TRIGGER_ID,
+      name: "sched",
+      ownerAgentId: "master",
+      groupId: null,
+      status: "active" as const,
+      consecutiveFailures: 0,
+      createdAt: T0.toISOString(),
+      updatedAt: T0.toISOString(),
+    };
+    const scheduledInterval = {
+      ...base,
+      config: {
+        kind: "script" as const,
+        runMode: "scheduled" as const,
+        schedule: { kind: "interval" as const, intervalMinutes: 30 },
+        runtime: "node" as const,
+        entry: "index.mjs",
+      },
+    };
+    const scheduledCron = {
+      ...base,
+      config: {
+        kind: "script" as const,
+        runMode: "scheduled" as const,
+        schedule: { kind: "cron" as const, schedule: "0 9 * * *" },
+        runtime: "node" as const,
+        entry: "index.mjs",
+      },
+    };
+    const resident = {
+      ...base,
+      config: {
+        kind: "script" as const,
+        runtime: "node" as const,
+        entry: "index.mjs",
+      },
+    };
+
+    expect(scheduleOf(scheduledInterval.config)).toEqual({ kind: "interval", intervalMinutes: 30 });
+    expect(scheduleOf(scheduledCron.config)).toEqual({ kind: "cron", schedule: "0 9 * * *" });
+    expect(scheduleOf(resident.config)).toBeUndefined();
+
+    // interval 锚点：base = max(lastFireAt, mountedAt)（冷恢复不回补的既有语义）。
+    // mountedAt=20 分钟前、lastFireAt=10 分钟前、周期 30 分钟 → elapsed=10min →
+    // 下一次 = now + 20min。
+    const now = Date.now();
+    const mountedAt = now - 20 * 60_000;
+    const nextFromOldFire = computeNextFireMs(
+      scheduledInterval.config,
+      { mountedAt },
+      { ...scheduledInterval, lastFireAt: new Date(now - 10 * 60_000).toISOString() },
+    );
+    expect(nextFromOldFire).not.toBeNull();
+    expect(nextFromOldFire! - now).toBeGreaterThan(19 * 60_000);
+    expect(nextFromOldFire! - now).toBeLessThanOrEqual(20 * 60_000);
+
+    // lastFireAt 早于挂载时刻时不回补：base 下界取 mountedAt → elapsed 从挂载起算。
+    // mountedAt=20 分钟前 → 已进行 20 分钟（20%30）→ 下一边界 = now + 10min。
+    const nextNoBackfill = computeNextFireMs(
+      scheduledInterval.config,
+      { mountedAt },
+      { ...scheduledInterval, lastFireAt: new Date(mountedAt - 60 * 60_000).toISOString() },
+    );
+    expect(nextNoBackfill! - now).toBeGreaterThan(9 * 60_000);
+    expect(nextNoBackfill! - now).toBeLessThanOrEqual(10 * 60_000);
+  });
+
+  it("scheduled 脚本到点引擎拉起：emit → exit 0 → 状态保持 active，事件照常进订阅者会话", async () => {
+    // 伪定时器（同本文件首个用例手法）：Date 回到 T0、lastFireAt=T0-59s + interval 1min
+    // → 挂载后 ~1s 到点。脚本子进程 spawn/IPC emit 是真实操作，靠 pump 泵真实事件循环。
+    vi.useFakeTimers({
+      now: T0.getTime(),
+      toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"],
+    });
+    const triggersRoot = join(workspace, ".robinrun", "triggers");
+    const scriptDir = join(triggersRoot, TRIGGER_ID, "script");
+    await mkdir(scriptDir, { recursive: true });
+    await writeFile(
+      join(scriptDir, "index.mjs"),
+      `const seen = await globalThis.robinrun.emit({ summary: "one pass", data: { pass: true } });
+       process.exit(0);`,
+      "utf8",
+    );
+    const registryPath = join(triggersRoot, "triggers.json");
+    await writeFile(
+      registryPath,
+      `${JSON.stringify(
+        {
+          version: 1,
+          triggers: [
+            {
+              id: TRIGGER_ID,
+              name: "scheduled-script",
+              ownerAgentId: "master",
+              groupId: null,
+              config: {
+                kind: "script",
+                runMode: "scheduled",
+                schedule: { kind: "interval", intervalMinutes: 1 },
+                runtime: "node",
+                entry: "index.mjs",
+              },
+              status: "active",
+              consecutiveFailures: 0,
+              lastFireAt: new Date(T0.getTime() - 59_000).toISOString(),
+              createdAt: T0.toISOString(),
+              updatedAt: T0.toISOString(),
+            },
+          ],
+          groups: [],
+          profiles: [],
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+
+    const dispatchTriggerEvent = vi.fn(async () => ({ taskId: "sess-sched" }));
+    const logs: string[] = [];
+    engine = createTriggerEngineService({
+      listWorkspaces: async () => [{ workspacePath: workspace }],
+      dispatch: { dispatchTriggerEvent },
+      pollIntervalMs: 15_000,
+      debounceMs: 50,
+      log: (message) => logs.push(message),
+    });
+    await until(
+      () => logs.some((message) => message.includes("mounted workspace")),
+      "engine should mount the workspace on the initial poll",
+    );
+    await pump(50);
+
+    onRejection = (reason: unknown): void => {
+      logs.push(`UNHANDLED REJECTION: ${String(reason)}`);
+    };
+    process.on("unhandledRejection", onRejection);
+
+    // 虚实双轴等待：真实壁钟节拍（node:timers/promises 不受伪定时器劫持）给子进程
+    // spawn/IPC/退出的真实运行时间，虚拟时钟推进（+1s/轮）越过 interval 到点边界
+    // （挂载锚点 + 整周期 60s，冷恢复不回补 → lastFireAt 回拨无效）与聚合器去抖计时器。
+    const waitBoth = async (
+      cond: () => boolean | Promise<boolean>,
+      label: string,
+    ): Promise<void> => {
+      for (let i = 0; i < 500; i++) {
+        if (await cond()) return;
+        await realSleep(15);
+        await vi.advanceTimersByTimeAsync(1_000);
+      }
+      console.error(`[engine logs ALL] ${label}\n${logs.join("\n")}`);
+      expect(await cond(), label).toBe(true);
+    };
+
+    // 到点 fire → spawnScheduledRun → 脚本真实跑完（emit → exit 0）→ 事件进订阅者会话。
+    await waitBoth(
+      () => dispatchTriggerEvent.mock.calls.length >= 1,
+      "scheduled run should fire, spawn, emit and deliver",
+    );
+    const batch = dispatchTriggerEvent.mock.calls[0]?.[0] as {
+      events: Array<{ kind: string; summary: string }>;
+    };
+    expect(batch.events[0]?.kind).toBe("script-result");
+    expect(batch.events[0]?.summary).toContain("one pass");
+
+    // exit 0 不置 completed：状态保持 active 等下一次到点。
+    await waitBoth(async () => {
+      const raw = JSON.parse(await readFile(registryPath, "utf8")) as {
+        triggers: Array<{ status: string; lastResult?: string }>;
+      };
+      return raw.triggers[0]?.lastResult === "ok";
+    }, "run outcome should be persisted as ok");
+    const raw = JSON.parse(await readFile(registryPath, "utf8")) as {
+      triggers: Array<{ status: string }>;
+    };
+    expect(raw.triggers[0]?.status).toBe("active");
   });
 });

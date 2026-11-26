@@ -171,7 +171,8 @@ export async function checkArchitecture({
     }
     if (
       path.basename(file) === "contract.ts" &&
-      countPublicMethods(source) > policy.global.maxPublicMethods
+      countPublicMethods(source) > policy.global.maxPublicMethods &&
+      !isException(policy, "max-public-methods", file, cwd)
     ) {
       violations.push(
         violation({

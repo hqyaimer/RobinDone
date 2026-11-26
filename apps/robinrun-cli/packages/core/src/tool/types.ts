@@ -42,6 +42,7 @@ import type {
   SkillTelemetryMetadata,
   SubagentPort,
   SubagentRunOptions,
+  OpsPanelRuntimePort,
   TriggerRuntimePort,
   ToolArtifactStorePort,
   ToolCancellationPolicy,
@@ -180,6 +181,8 @@ export interface ToolExecutionContext {
   agentContactPort?: AgentContactPort;
   /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
   triggerRuntimePort?: TriggerRuntimePort;
+  /** 需求/审批/反馈面板端口（2026-11-24 MVP）：opsPanel/* 反向请求；缺席报错引导。 */
+  opsPanelRuntimePort?: OpsPanelRuntimePort;
   /** 工作流 actor 提交终态结果并等待引擎裁决的端口；仅在 workflow actor 会话注入。 */
   workflowSubmitPort?: WorkflowSubmitPort;
   /** 工作流 actor 升级阻塞问题并等待主代理作答的端口；仅在 workflow actor 会话注入。 */

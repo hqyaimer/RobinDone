@@ -23,10 +23,39 @@ export const ManageTriggersActionSchema = z.enum([
   "update_group",
   "create_profile",
   "install_packages",
+  "open_login",
 ]);
 export type ManageTriggersAction = z.infer<typeof ManageTriggersActionSchema>;
 
 export const TRIGGER_STATUS_VALUES = ["active", "deactivated", "error-paused"] as const;
+
+/**
+ * script 型 scheduled 模式的执行计划（2026-11-25 定时执行模式裁决）：与 cron/interval
+ * 触发器的计划形状同构（contracts 不组合 shared 的 zod 实例，见文件头同款裁决）。
+ */
+const triggerScheduleInputSchema = z.union([
+  z
+    .object({
+      kind: z.literal("cron"),
+      schedule: z
+        .string()
+        .min(1)
+        .max(128)
+        .describe('5-field cron expression in the user\'s local timezone, e.g. "0 9 * * *".'),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("interval"),
+      intervalMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .max(525600)
+        .describe("Interval in whole minutes (minimum 1)."),
+    })
+    .strict(),
+]);
 
 /**
  * 触发器配置的输入镜像（与 @robinrun/shared triggerConfigSchema 同构；contracts 不组合
@@ -35,6 +64,8 @@ export const TRIGGER_STATUS_VALUES = ["active", "deactivated", "error-paused"] a
  * 2026-11-21 常驻模型：script 型不再接受 schedule/timeoutMs（引擎托管生命周期、脚本
  * 自实现定时）；遗留注册表条目里的 schedule/timeoutMs 由 normalizeConfig 在下次
  * update 时自然清除（引擎本就忽略）。
+ * 2026-11-25 定时执行模式：schedule 随 runMode="scheduled" 转正（superRefine 强约束：
+ * scheduled 必带 schedule、resident 禁带）；timeoutMs 维持遗留清除。
  */
 const triggerConfigInputSchema = z.discriminatedUnion("kind", [
   z
@@ -82,7 +113,18 @@ const triggerConfigInputSchema = z.discriminatedUnion("kind", [
       kind: z
         .literal("script")
         .describe(
-          "Resident event-source process managed by the engine: it starts automatically whenever the trigger is active (including at app launch), is restarted with backoff when it crashes, and completes when it exits 0. Implement any timing or subscription inside the script itself (timers, websockets, self-hosted webhooks) - it is the most general trigger type. The script runtime is decided by python availability in this environment and enforced by the tool - follow the runtime guidance in the create/update result and the README scaffold (protocol details live there). stdout/stderr are logs (audit only, never delivered). A one-shot script = report its final event then exit 0: the trigger turns completed (rerun via re-enable).",
+          "Script trigger managed by the engine. Two run modes: resident (default) = a resident event-source process that starts automatically whenever the trigger is active (including at app launch), is restarted with backoff when it crashes, and completes when it exits 0 - implement any timing or subscription inside the script itself (timers, websockets, self-hosted webhooks); scheduled = the engine runs the script once per scheduled fire (fetch -> emit -> exit 0) and the trigger stays active for the next fire - use this for periodic checks that do not need a persistent subscription, it does not keep a resident process alive. Size resident scripts by responsibility boundary: one responsibility domain (e.g. one platform's comments + traffic + operations data) = ONE script emitting its several event types (declare routing \"dispatcher\" so the bound session routes them into per-topic sessions); do not merge unrelated domains into one script and do not split one domain into several resident scripts. The script runtime is decided by python availability in this environment and enforced by the tool - follow the runtime guidance in the create/update result and the README scaffold (protocol details live there). stdout/stderr are logs (audit only, never delivered).",
+        ),
+      runMode: z
+        .enum(["resident", "scheduled"])
+        .default("resident")
+        .describe(
+          "resident (default): the script is a long-lived event-source process. scheduled: the engine spawns the script once per schedule fire; each run does one pass (collect data, emit events, exit 0) and must not loop or sleep - scheduled runs do not count against the resident concurrency quota.",
+        ),
+      schedule: triggerScheduleInputSchema
+        .optional()
+        .describe(
+          "Required for runMode \"scheduled\" (must be omitted otherwise): when to run each pass, same shapes as cron/interval triggers (5-field cron string, or intervalMinutes >= 1).",
         ),
       runtime: z
         .enum(["node", "python"])
@@ -130,10 +172,19 @@ export type TriggerContractInput = z.infer<typeof triggerContractInputSchema>;
 
 const triggerStatusInputSchema = z.enum(TRIGGER_STATUS_VALUES);
 
+/**
+ * 路由策略（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：direct = 绑定
+ * 会话就地处理（旧行为）；fixed = 每事件批次直投创建者新会话（零 LLM）；dispatcher =
+ * 绑定会话升格为分发器（话题聚类 + RouteEvents 标记路由）。create 缺省 dispatcher
+ * （新建的目的形态）；存量条目注册表缺省 direct（零迁移），update 显式切换。
+ */
+export const TRIGGER_ROUTING_VALUES = ["direct", "fixed", "dispatcher"] as const;
+const triggerRoutingInputSchema = z.enum(TRIGGER_ROUTING_VALUES);
+
 export const ManageTriggersInputSchema = z
   .object({
     action: ManageTriggersActionSchema.describe(
-      "create: register a trigger (requires name, config, readme). update: change name, config, or contract of an existing trigger (requires id). set_status: enable / disable / re-enable after a circuit-break or from completed (requires id and status; re-enabling clears the failure count and restarts a resident script). delete: soft-delete a trigger (requires id) - the entry is kept in the registry for audit but becomes invisible everywhere: no scheduling, no resident process, no delivery, no webhook route, gone from lists and the sidebar. Soft-deleted triggers cannot be restored; create a new one if needed. create_group: bundle triggers into one subscription group so their events share a single session (requires name). update_group: rename a group or move triggers in/out of it (requires groupId). create_profile: register a login-state profile for script triggers (requires name). install_packages: pip-install third-party packages into the project's python venv for script triggers (requires packages; requires the desktop engine and the python runtime). Boundary: only create and manage triggers that are yours or that you were explicitly instructed to handle - never touch or report on unrelated triggers.",
+      "create: register a trigger (requires name, config, readme). update: change name, config, or contract of an existing trigger (requires id). set_status: enable / disable / re-enable after a circuit-break or from completed (requires id and status; re-enabling clears the failure count and restarts a resident script). delete: soft-delete a trigger (requires id) - the entry is kept in the registry for audit but becomes invisible everywhere: no scheduling, no resident process, no delivery, no webhook route, gone from lists and the sidebar. Soft-deleted triggers cannot be restored; create a new one if needed. create_group: bundle triggers into one subscription group so their events share a single session (requires name). update_group: rename a group or move triggers in/out of it (requires groupId). create_profile: register a login-state profile for script triggers (requires name). install_packages: pip-install third-party packages into the project's python venv for script triggers (requires packages; requires the desktop engine and the python runtime). open_login: open a headed login window for a script trigger's login profile (requires the trigger id and the desktop engine; pass loginUrl so the window lands on the site's login page; the user logs in and closes the window to save the refreshed login state - then set_status back to active). Boundary: only create and manage triggers that are yours or that you were explicitly instructed to handle - never touch or report on unrelated triggers.",
     ),
     /** 触发器/组 id（trg-… / trggrp-…）。create 禁传（工具生成）。 */
     id: z
@@ -166,6 +217,11 @@ export const ManageTriggersInputSchema = z
       .optional()
       .describe(
         "create/update of triggers: when and how the trigger fires. Full replacement on update — pass the complete config every time.",
+      ),
+    routing: triggerRoutingInputSchema
+      .optional()
+      .describe(
+        "create/update (also create_group/update_group): how events are delivered. dispatcher (default for new triggers and groups): the dedicated session is a DISPATCHER - it only classifies events into topics and routes them via RouteEvents to per-topic sessions it creates/continues (best for multi-topic or mixed event streams). direct: all events are handled in the one dedicated session itself (legacy behavior; fine for single-topic triggers). fixed: every delivery starts a NEW session directly with zero LLM routing (notification-style triggers without topic continuity). update omits this field to keep the current routing. Group subscriptions take the GROUP's routing; member routing is ignored.",
       ),
     contract: triggerContractInputSchema
       .optional()
@@ -224,6 +280,16 @@ export const ManageTriggersInputSchema = z
       .describe(
         'install_packages only: pip package specs to install into the project\'s python venv, e.g. ["requests", "playwright==1.49.0"]. Project-level (shared by all python script triggers of this project); active python scripts restart automatically on success.',
       ),
+    loginUrl: z
+      .string()
+      .max(2048)
+      .refine((value) => /^https?:\/\//i.test(value), {
+        message: "loginUrl must be an http(s) URL",
+      })
+      .optional()
+      .describe(
+        "open_login only: URL the headed login window lands on (the site's login page, e.g. https://passport.bilibili.com). Always pass it - without it the window opens on a blank new tab.",
+      ),
   })
   .strict()
   .superRefine((input, ctx) => {
@@ -233,6 +299,26 @@ export const ManageTriggersInputSchema = z
         ctx.addIssue({ code: "custom", message, path: [field] });
       }
     };
+    // script 型 runMode/schedule 交叉约束（2026-11-25 定时执行模式）：scheduled 必带
+    // schedule；resident 禁带（schedule 随 runMode 转正，resident 传它一律拒绝，避免
+    // "写了却不生效"的歧义——此前常驻模型下该字段被静默剥离）。
+    if (input.config?.kind === "script") {
+      if (input.config.runMode === "scheduled" && input.config.schedule === undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: 'runMode "scheduled" requires a schedule (cron or interval)',
+          path: ["config"],
+        });
+      }
+      if (input.config.runMode !== "scheduled" && input.config.schedule !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            'schedule is only valid with runMode "scheduled"; resident scripts implement any timing internally',
+          path: ["config"],
+        });
+      }
+    }
     if (input.action === "create") {
       if (input.id !== undefined)
         ctx.addIssue({
@@ -271,10 +357,15 @@ export const ManageTriggersInputSchema = z
           message: "use the set_status action to change status",
           path: ["status"],
         });
-      if (input.name === undefined && input.config === undefined && input.contract === undefined)
+      if (
+        input.name === undefined &&
+        input.config === undefined &&
+        input.contract === undefined &&
+        input.routing === undefined
+      )
         ctx.addIssue({
           code: "custom",
-          message: "update requires at least one of name, config, contract",
+          message: "update requires at least one of name, config, contract, routing",
           path: ["name"],
         });
       return;
@@ -322,17 +413,19 @@ export const ManageTriggersInputSchema = z
       if (
         input.name === undefined &&
         input.addMemberIds === undefined &&
-        input.removeMemberIds === undefined
+        input.removeMemberIds === undefined &&
+        input.routing === undefined
       )
         ctx.addIssue({
           code: "custom",
-          message: "update_group requires at least one of name, addMemberIds, removeMemberIds",
+          message:
+            "update_group requires at least one of name, addMemberIds, removeMemberIds, routing",
           path: ["name"],
         });
       if (input.config !== undefined || input.readme !== undefined || input.status !== undefined)
         ctx.addIssue({
           code: "custom",
-          message: "update_group changes group name/members only",
+          message: "update_group changes group name/members/routing only",
           path: ["name"],
         });
       return;
@@ -359,27 +452,46 @@ export const ManageTriggersInputSchema = z
       return;
     }
     // create_profile
-    if (input.id !== undefined)
-      ctx.addIssue({
-        code: "custom",
-        message: "create_profile generates nothing to pass; do not pass id",
-        path: ["id"],
-      });
-    if (!input.profileName)
-      ctx.addIssue({
-        code: "custom",
-        message: "create_profile requires profileName",
-        path: ["profileName"],
-      });
-    if (input.config !== undefined || input.readme !== undefined || input.status !== undefined)
-      ctx.addIssue({
-        code: "custom",
-        message: "create_profile takes profileName/profileNote/profileSites only",
-        path: ["profileName"],
-      });
+    if (input.action === "create_profile") {
+      if (input.id !== undefined)
+        ctx.addIssue({
+          code: "custom",
+          message: "create_profile generates nothing to pass; do not pass id",
+          path: ["id"],
+        });
+      if (!input.profileName)
+        ctx.addIssue({
+          code: "custom",
+          message: "create_profile requires profileName",
+          path: ["profileName"],
+        });
+      if (input.config !== undefined || input.readme !== undefined || input.status !== undefined)
+        ctx.addIssue({
+          code: "custom",
+          message: "create_profile takes profileName/profileNote/profileSites only",
+          path: ["profileName"],
+        });
+      return;
+    }
+    // open_login（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4）：取触发器
+    // id + 可选 loginUrl（窗口落点，强烈建议传）；其余字段一律拒绝（与 set_status 同风格）。
+    if (input.action === "open_login") {
+      require("id", "open_login requires the trigger id");
+      if (
+        input.name !== undefined ||
+        input.config !== undefined ||
+        input.status !== undefined ||
+        input.readme !== undefined ||
+        input.packages !== undefined
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "open_login takes the trigger id and optional loginUrl only",
+          path: ["id"],
+        });
+      return;
+    }
   });
-
-export type ManageTriggersInput = z.infer<typeof ManageTriggersInputSchema>;
 
 /**
  * script 型输出 config 的遗留兼容变体（2026-11-21 常驻模型弃用 schedule/timeoutMs 后，
@@ -398,6 +510,18 @@ const legacyScriptOutputConfigSchema = z
   })
   .strict();
 
+/**
+ * system 型输出 config（2026-11-24 系统特权订阅）：平台播种的订阅条目（如运营面板），
+ * 输出可见（列表/详情可读）但不可经本工具创建或修改——输入镜像刻意不含此形状，
+ * set_status/delete/update 在 handler 层对 system 条目拒绝。
+ */
+const systemConfigOutputSchema = z
+  .object({
+    kind: z.literal("system"),
+    events: z.array(z.string()),
+  })
+  .strict();
+
 /** 注册表条目的输出镜像（strict，形状对齐 @robinrun/shared triggerEntrySchema）。 */
 const triggerEntryOutputSchema = z
   .object({
@@ -405,12 +529,21 @@ const triggerEntryOutputSchema = z
     name: z.string(),
     ownerAgentId: z.string(),
     groupId: z.string().nullable(),
-    config: z.union([triggerConfigInputSchema, legacyScriptOutputConfigSchema]),
+    // 路由策略（2026-11-25 分发器裁决）：输出可见；system 条目恒 direct（平台订阅不经
+    // 分发器），输出镜像用宽松枚举兼容旧注册表（缺字段 = direct）。
+    routing: z.enum([...TRIGGER_ROUTING_VALUES]).optional(),
+    config: z.union([
+      triggerConfigInputSchema,
+      legacyScriptOutputConfigSchema,
+      systemConfigOutputSchema,
+    ]),
     contract: triggerContractInputSchema.optional(),
     // completed = 引擎写入的常驻脚本终态（exit 0），输出可见但不开放给 set_status。
     status: z.enum([...TRIGGER_STATUS_VALUES, "completed"]),
     // 伪删除标记（2026-11-21）：delete 输出原样透出（列表输出会排除已删条目）。
     deleted: z.boolean().optional(),
+    // 系统特权订阅标记（2026-11-24）：输出可见；任何修改动作被 handler/引擎拒绝。
+    system: z.boolean().optional(),
     lastFireAt: z.string().optional(),
     lastResult: z.enum(["ok", "error"]).optional(),
     consecutiveFailures: z.number().int().nonnegative(),
@@ -425,6 +558,8 @@ const triggerGroupOutputSchema = z
     name: z.string(),
     memberTriggerIds: z.array(z.string()),
     subscriberAgentId: z.string(),
+    // 组路由策略（2026-11-25 分发器裁决）输出可见；optional 兼容旧注册表（缺字段 = direct）。
+    routing: z.enum([...TRIGGER_ROUTING_VALUES]).optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -460,6 +595,15 @@ export const ManageTriggersOutputSchema = z
       ),
     triggerCount: z.number().int().nonnegative(),
     groupCount: z.number().int().nonnegative(),
+    /** open_login only：登录会话结果（结构化；关窗落档成功 / 失败原因 + 指引）。 */
+    loginResult: z
+      .object({
+        ok: z.boolean(),
+        profile: z.string().optional(),
+        error: z.string().optional(),
+        guidance: z.array(z.string()).optional(),
+      })
+      .optional(),
     warnings: z.array(z.string()).optional(),
     /** install_packages only：安装结果（结构化；失败诊断在 error/outputTail）。 */
     installResult: z
@@ -476,6 +620,14 @@ export const ManageTriggersOutputSchema = z
   })
   .strict();
 export type ManageTriggersOutput = z.infer<typeof ManageTriggersOutputSchema>;
+
+/**
+ * 输入类型别名（2026-11-25 补导出）：handler 消费 parse 结果需要它；此前缺失，core 侧
+ * 曾用本地 `z.infer` 推导——但 contracts 的 zod（^3.24 私有 hoisted 3.25）与 core 解析
+ * 到的根 zod（4.6.5）是两个类体系，跨包 `z.infer` 推断失败成 unknown。类型别名是纯
+ * 结构展开（.d.ts 里不再引用 zod 命名空间），跨版本安全。
+ */
+export type ManageTriggersInput = z.infer<typeof ManageTriggersInputSchema>;
 
 export const ManageTriggersInputJsonSchema = toToolJsonSchema(ManageTriggersInputSchema);
 export const ManageTriggersOutputJsonSchema = toToolJsonSchema(ManageTriggersOutputSchema);

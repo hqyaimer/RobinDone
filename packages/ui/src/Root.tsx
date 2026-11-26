@@ -1695,77 +1695,77 @@ function RootInner({
       > */}
       {/* 新引导属于应用级偏好；无项目时也要挂载，才能响应设置页的手动打开请求。 */}
       {!workspaceShellPath ? (
-          isSettingsTabActive ? (
-            <ScopedErrorBoundary
-              scope="settings-page"
-              resetKeys={["settings-root"]}
-              variant="panel"
-              className="h-full"
-            >
-              <SettingsPage {...settingsLayerProps} />
-            </ScopedErrorBoundary>
-          ) : null
-        ) : (
-          <RemoteWorkspaceControllerProvider controller={remoteWorkspaceController}>
-            <RemoteProjectPresentationProvider
-              reconnectingKeys={reconnectingRemoteWorkspaceKeys}
-              errors={remoteWorkspaceErrorByWorkspaceKey}
-              recovery={remoteWorkspaceRecoveryByWorkspaceKey}
-              onReconnect={
-                webRemoteControlWorkspaceSwitcher?.reconnectWorkspace ??
-                handleReconnectRemoteWorkspace
+        isSettingsTabActive ? (
+          <ScopedErrorBoundary
+            scope="settings-page"
+            resetKeys={["settings-root"]}
+            variant="panel"
+            className="h-full"
+          >
+            <SettingsPage {...settingsLayerProps} />
+          </ScopedErrorBoundary>
+        ) : null
+      ) : (
+        <RemoteWorkspaceControllerProvider controller={remoteWorkspaceController}>
+          <RemoteProjectPresentationProvider
+            reconnectingKeys={reconnectingRemoteWorkspaceKeys}
+            errors={remoteWorkspaceErrorByWorkspaceKey}
+            recovery={remoteWorkspaceRecoveryByWorkspaceKey}
+            onReconnect={
+              webRemoteControlWorkspaceSwitcher?.reconnectWorkspace ??
+              handleReconnectRemoteWorkspace
+            }
+          >
+            <RootWorkspaceContent
+              workspaceScopedServices={workspaceScopedServices}
+              baseFeedbackService={services.feedbackService}
+              workspaceShellPath={workspaceShellPath}
+              workspaceIdentity={workspaceShellIdentity}
+              workspaceRemoteSessionId={workspaceShellRemoteSessionId}
+              activeWorkspacePath={activeWorkspacePath}
+              isSettingsTabActive={isSettingsTabActive}
+              handleConnectRemote={handleConnectRemote}
+              handleSelectRemoteProject={handleSelectRemoteProject}
+              handleCancelRemoteProject={handleCancelRemoteProject}
+              handleReconnectRemoteWorkspace={handleReconnectRemoteWorkspace}
+              handleCreateTask={handleCreateTask}
+              handleCreateConversationTask={handleCreateConversationTask}
+              handleResolveConversationWorkspace={handleResolveConversationWorkspaceForShell}
+              handleOpenWorkspace={handleOpenWorkspace}
+              handleOpenFolderFromWorkspaceMenu={handleOpenFolderFromWorkspaceMenu}
+              handleOpenProject={handleSelectProject}
+              handleOpenRemoteWorkspace={
+                allowRemoteWorkspace ? handleOpenRemoteConnection : undefined
               }
-            >
-              <RootWorkspaceContent
-                workspaceScopedServices={workspaceScopedServices}
-                baseFeedbackService={services.feedbackService}
-                workspaceShellPath={workspaceShellPath}
-                workspaceIdentity={workspaceShellIdentity}
-                workspaceRemoteSessionId={workspaceShellRemoteSessionId}
-                activeWorkspacePath={activeWorkspacePath}
-                isSettingsTabActive={isSettingsTabActive}
-                handleConnectRemote={handleConnectRemote}
-                handleSelectRemoteProject={handleSelectRemoteProject}
-                handleCancelRemoteProject={handleCancelRemoteProject}
-                handleReconnectRemoteWorkspace={handleReconnectRemoteWorkspace}
-                handleCreateTask={handleCreateTask}
-                handleCreateConversationTask={handleCreateConversationTask}
-                handleResolveConversationWorkspace={handleResolveConversationWorkspaceForShell}
-                handleOpenWorkspace={handleOpenWorkspace}
-                handleOpenFolderFromWorkspaceMenu={handleOpenFolderFromWorkspaceMenu}
-                handleOpenProject={handleSelectProject}
-                handleOpenRemoteWorkspace={
-                  allowRemoteWorkspace ? handleOpenRemoteConnection : undefined
-                }
-                remoteConnectionInProgress={remoteConnectionInProgress}
-                remoteWorkspaceSessions={remoteWorkspaceSessions}
-                allowRemoteWorkspace={allowRemoteWorkspace}
-                handleBackFromSettings={handleBackFromSettings}
-                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「工作区登录/登出入口」——恢复时取消本段注释
-                // handleLogout={user ? handleLogout : undefined}
-                // onLogin={!user ? handleOpenLoginEntry : undefined}
-                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-                user={user}
-                reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
-                remoteWorkspaceRecoveryByWorkspaceKey={remoteWorkspaceRecoveryByWorkspaceKey}
-                remoteWorkspaceErrorByWorkspaceKey={remoteWorkspaceErrorByWorkspaceKey}
-                remoteConnectionLogs={remoteConnectionLogs}
-                allowOpenWorkspace={allowOpenWorkspace}
-                webRemoteControlWorkspaceSwitcher={webRemoteControlWorkspaceSwitcher}
-                initialSidebarFileTreeOpen={initialSidebarFileTreeOpen}
-                initialWebRemoteControlMobileNavigationIntent={
-                  initialWebRemoteControlMobileNavigationIntent
-                }
-                webRemoteControlTerminalTransportState={webRemoteControlTerminalTransportState}
-                isDesktop={isDesktop}
-                isMacDesktop={isMacDesktop}
-                isWindowsDesktop={isWindowsDesktop}
-                supportsEmbeddedBrowser={supportsEmbeddedBrowser}
-              />
-            </RemoteProjectPresentationProvider>
-          </RemoteWorkspaceControllerProvider>
-        )}
-        {onboardingDialog}
+              remoteConnectionInProgress={remoteConnectionInProgress}
+              remoteWorkspaceSessions={remoteWorkspaceSessions}
+              allowRemoteWorkspace={allowRemoteWorkspace}
+              handleBackFromSettings={handleBackFromSettings}
+              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「工作区登录/登出入口」——恢复时取消本段注释
+              // handleLogout={user ? handleLogout : undefined}
+              // onLogin={!user ? handleOpenLoginEntry : undefined}
+              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+              user={user}
+              reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
+              remoteWorkspaceRecoveryByWorkspaceKey={remoteWorkspaceRecoveryByWorkspaceKey}
+              remoteWorkspaceErrorByWorkspaceKey={remoteWorkspaceErrorByWorkspaceKey}
+              remoteConnectionLogs={remoteConnectionLogs}
+              allowOpenWorkspace={allowOpenWorkspace}
+              webRemoteControlWorkspaceSwitcher={webRemoteControlWorkspaceSwitcher}
+              initialSidebarFileTreeOpen={initialSidebarFileTreeOpen}
+              initialWebRemoteControlMobileNavigationIntent={
+                initialWebRemoteControlMobileNavigationIntent
+              }
+              webRemoteControlTerminalTransportState={webRemoteControlTerminalTransportState}
+              isDesktop={isDesktop}
+              isMacDesktop={isMacDesktop}
+              isWindowsDesktop={isWindowsDesktop}
+              supportsEmbeddedBrowser={supportsEmbeddedBrowser}
+            />
+          </RemoteProjectPresentationProvider>
+        </RemoteWorkspaceControllerProvider>
+      )}
+      {onboardingDialog}
       {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束（OccupationOnboarding 闭标签） */}
       {/* </OccupationOnboarding> */}
     </RootShell>

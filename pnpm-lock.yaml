@@ -56,15 +56,15 @@ importers:
       '@release-it/conventional-changelog':
         specifier: ^10.0.6
         version: 10.0.6(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)(release-it@19.2.4(@types/node@25.6.0)(magicast@0.5.5))
+      '@robinrun/robinrun-cua':
+        specifier: workspace:*
+        version: link:packages/robinrun-cua
       '@tanstack/react-virtual':
         specifier: ^3.13.23
         version: 3.13.23(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/node':
         specifier: ^25.5.0
         version: 25.6.0
-      '@robinrun/robinrun-cua':
-        specifier: workspace:*
-        version: link:packages/robinrun-cua
       concurrently:
         specifier: ^9.1.2
         version: 9.2.1
@@ -235,12 +235,12 @@ importers:
       '@robinrun/provider':
         specifier: workspace:*
         version: link:../../../../packages/provider
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../../../../packages/shared
       '@robinrun/robinrun-cua':
         specifier: workspace:*
         version: link:../../../../packages/robinrun-cua
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../../../../packages/shared
       ai:
         specifier: 6.0.193
         version: 6.0.193(zod@4.6.5)
@@ -349,15 +349,15 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
+      '@robinrun/formal-proof':
+        specifier: workspace:*
+        version: link:../../../../packages/formal-proof
       '@types/node':
         specifier: ^24.0.0
         version: 24.12.2
       '@types/yazl':
         specifier: ^3.3.1
         version: 3.3.1
-      '@robinrun/formal-proof':
-        specifier: workspace:*
-        version: link:../../../../packages/formal-proof
       yazl:
         specifier: ^3.3.1
         version: 3.3.1
@@ -386,15 +386,15 @@ importers:
       '@modelcontextprotocol/client':
         specifier: 2.0.0
         version: 2.0.0
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.12.2
       '@robinrun/adapters':
         specifier: workspace:*
         version: link:../adapters
       '@robinrun/bootstrap':
         specifier: workspace:*
         version: link:../bootstrap
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
@@ -474,15 +474,15 @@ importers:
       '@robinrun/dynamic-workflow':
         specifier: workspace:*
         version: link:../dynamic-workflow
+      '@robinrun/robinrun-cua':
+        specifier: workspace:*
+        version: link:../../../../packages/robinrun-cua
       '@robinrun/shared':
         specifier: workspace:*
         version: link:../../../../packages/shared
       '@robinrun/shared-types':
         specifier: workspace:*
         version: link:../shared-types
-      '@robinrun/robinrun-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/robinrun-cua
       cheerio:
         specifier: ^1.0.0
         version: 1.2.0
@@ -641,12 +641,12 @@ importers:
       '@robinrun/core':
         specifier: workspace:*
         version: link:../core
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../../../../packages/shared
       '@robinrun/robinrun-cua':
         specifier: workspace:*
         version: link:../../../../packages/robinrun-cua
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../../../../packages/shared
       zod:
         specifier: ^4.4.3
         version: 4.6.5
@@ -749,6 +749,69 @@ importers:
 
   apps/robinrun-cli/packages/restore-legacy-sessions-plugin: {}
 
+  apps/robinrun-cli/packages/robinrun-cua-plugin:
+    dependencies:
+      '@robinrun/robinrun-cua':
+        specifier: workspace:*
+        version: link:../../../../packages/robinrun-cua
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  apps/robinrun-cli/packages/robinrun-guide-plugin: {}
+
+  apps/robinrun-cli/packages/robinrun-site-plugin:
+    devDependencies:
+      '@modelcontextprotocol/client':
+        specifier: 2.0.0
+        version: 2.0.0
+      '@modelcontextprotocol/core':
+        specifier: 2.0.0
+        version: 2.0.0
+      '@modelcontextprotocol/ext-apps':
+        specifier: 2.0.0
+        version: 2.0.0(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/core@2.0.0)(@modelcontextprotocol/server@2.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.5)
+      '@modelcontextprotocol/sdk':
+        specifier: 1.29.0
+        version: 1.29.0(zod@4.6.5)
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../../../../packages/shared
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.12.2
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
+      react:
+        specifier: 19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: 19.2.7
+        version: 19.2.7(react@19.2.7)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.7(patch_hash=11fdb66aa985e1d77e68752deeb7c1130ae33c9a4e2968f23aae8adaf8bc9ba0)(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.3(@types/node@24.12.2)(typescript@6.0.2))(vite@8.0.8(@types/node@24.12.2)(esbuild@0.25.12)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0))
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
   apps/robinrun-cli/packages/shared-types:
     devDependencies:
       '@types/node':
@@ -849,69 +912,6 @@ importers:
         version: 4.21.0
 
   apps/robinrun-cli/packages/visualize-plugin: {}
-
-  apps/robinrun-cli/packages/robinrun-cua-plugin:
-    dependencies:
-      '@robinrun/robinrun-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/robinrun-cua
-    devDependencies:
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.12.2
-      typescript:
-        specifier: ^5.9.0
-        version: 5.9.3
-
-  apps/robinrun-cli/packages/robinrun-guide-plugin: {}
-
-  apps/robinrun-cli/packages/robinrun-site-plugin:
-    devDependencies:
-      '@modelcontextprotocol/client':
-        specifier: 2.0.0
-        version: 2.0.0
-      '@modelcontextprotocol/core':
-        specifier: 2.0.0
-        version: 2.0.0
-      '@modelcontextprotocol/ext-apps':
-        specifier: 2.0.0
-        version: 2.0.0(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/core@2.0.0)(@modelcontextprotocol/server@2.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(zod@4.6.5)
-      '@modelcontextprotocol/sdk':
-        specifier: 1.29.0
-        version: 1.29.0(zod@4.6.5)
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.12.2
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../../../../packages/shared
-      esbuild:
-        specifier: ^0.25.0
-        version: 0.25.12
-      lucide-react:
-        specifier: ^1.17.0
-        version: 1.17.0(react@19.2.7)
-      react:
-        specifier: 19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: 19.2.7
-        version: 19.2.7(react@19.2.7)
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.7(patch_hash=11fdb66aa985e1d77e68752deeb7c1130ae33c9a4e2968f23aae8adaf8bc9ba0)(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/coverage-v8@4.1.7)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.3(@types/node@24.12.2)(typescript@6.0.2))(vite@8.0.8(@types/node@24.12.2)(esbuild@0.25.12)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0))
-      zod:
-        specifier: 4.6.5
-        version: 4.6.5
 
   apps/robinrun-cli/tools/prompt-trajectory:
     devDependencies:
@@ -1030,6 +1030,9 @@ importers:
       '@opentelemetry/sdk-trace-base':
         specifier: 2.6.1
         version: 2.6.1(@opentelemetry/api@1.9.1)
+      '@puppeteer/browsers':
+        specifier: 2.13.0
+        version: 2.13.0
       '@robinrun/client':
         specifier: workspace:*
         version: link:../client
@@ -1042,6 +1045,9 @@ importers:
       '@robinrun/provider-node':
         specifier: workspace:*
         version: link:../provider-node
+      '@robinrun/robinrun-cua':
+        specifier: workspace:*
+        version: link:../robinrun-cua
       '@robinrun/rpc':
         specifier: workspace:*
         version: link:../rpc
@@ -1057,9 +1063,6 @@ importers:
       '@robinrun/ui':
         specifier: workspace:*
         version: link:../ui
-      '@robinrun/robinrun-cua':
-        specifier: workspace:*
-        version: link:../robinrun-cua
       electron-updater:
         specifier: 6.8.10
         version: 6.8.10
@@ -1109,9 +1112,6 @@ importers:
       '@electron/rebuild':
         specifier: ^4.0.3
         version: 4.0.3
-      '@puppeteer/browsers':
-        specifier: 2.13.0
-        version: 2.13.0
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.2.2(vite@8.0.8(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0))
@@ -1293,12 +1293,67 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.6.0
       '@robinrun/model-option-map':
         specifier: workspace:*
         version: link:../model-option-map
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  packages/robinrun-cua:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.27.1
+        version: 1.29.0(zod@4.6.5)
+
+  packages/robinrun-server-cli:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.19.11
+        version: 1.19.14(hono@4.12.12)
+      '@hono/node-ws':
+        specifier: ^1.3.0
+        version: 1.3.0(@hono/node-server@1.19.14(hono@4.12.12))(hono@4.12.12)
+      '@robinrun/rpc':
+        specifier: workspace:*
+        version: link:../rpc
+      '@robinrun/services':
+        specifier: workspace:*
+        version: link:../services
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../shared
+      hono:
+        specifier: ^4.12.9
+        version: 4.12.12
+      ws:
+        specifier: ^8.20.0
+        version: 8.20.0
+      yauzl:
+        specifier: ^3.3.0
+        version: 3.3.0
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.6.0
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      '@types/yauzl':
+        specifier: ^2.10.3
+        version: 2.10.3
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.9.0)
+      tsx:
+        specifier: ^4.19.4
+        version: 4.21.0
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1423,15 +1478,15 @@ importers:
       '@robinrun/provider-node':
         specifier: workspace:*
         version: link:../provider-node
+      '@robinrun/robinrun-cua':
+        specifier: workspace:*
+        version: link:../robinrun-cua
       '@robinrun/rpc':
         specifier: workspace:*
         version: link:../rpc
       '@robinrun/shared':
         specifier: workspace:*
         version: link:../shared
-      '@robinrun/robinrun-cua':
-        specifier: workspace:*
-        version: link:../robinrun-cua
       chokidar:
         specifier: 4.0.3
         version: 4.0.3
@@ -1478,6 +1533,9 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
+      playwright-core:
+        specifier: 1.59.1
+        version: 1.59.1
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1526,6 +1584,9 @@ importers:
       '@rive-app/react-webgl2':
         specifier: ^4.27.3
         version: 4.28.0(react@19.2.7)
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@streamdown/cjk':
         specifier: ^1.0.3
         version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.7)(unified@11.0.5)
@@ -1556,9 +1617,6 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.2(@types/react@19.2.14)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../shared
       ai:
         specifier: ^6.0.138
         version: 6.0.159(zod@4.6.5)
@@ -1790,6 +1848,18 @@ importers:
       '@rive-app/react-webgl2':
         specifier: ^4.27.3
         version: 4.28.0(react@19.2.7)
+      '@robinrun/provider':
+        specifier: workspace:*
+        version: link:../provider
+      '@robinrun/rpc':
+        specifier: workspace:*
+        version: link:../rpc
+      '@robinrun/services':
+        specifier: workspace:*
+        version: link:../services
+      '@robinrun/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@streamdown/cjk':
         specifier: ^1.0.3
         version: 1.0.3(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.7)(unified@11.0.5)
@@ -1820,18 +1890,6 @@ importers:
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.2(@types/react@19.2.14)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@robinrun/provider':
-        specifier: workspace:*
-        version: link:../provider
-      '@robinrun/rpc':
-        specifier: workspace:*
-        version: link:../rpc
-      '@robinrun/services':
-        specifier: workspace:*
-        version: link:../services
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../shared
       ai:
         specifier: ^6.0.138
         version: 6.0.159(zod@4.6.5)
@@ -2054,61 +2112,6 @@ importers:
       vite:
         specifier: ^8.0.2
         version: 8.0.8(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.9.0)
-
-  packages/robinrun-cua:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.27.1
-        version: 1.29.0(zod@4.6.5)
-
-  packages/robinrun-server-cli:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.19.11
-        version: 1.19.14(hono@4.12.12)
-      '@hono/node-ws':
-        specifier: ^1.3.0
-        version: 1.3.0(@hono/node-server@1.19.14(hono@4.12.12))(hono@4.12.12)
-      '@robinrun/rpc':
-        specifier: workspace:*
-        version: link:../rpc
-      '@robinrun/services':
-        specifier: workspace:*
-        version: link:../services
-      '@robinrun/shared':
-        specifier: workspace:*
-        version: link:../shared
-      hono:
-        specifier: ^4.12.9
-        version: 4.12.12
-      ws:
-        specifier: ^8.20.0
-        version: 8.20.0
-      yauzl:
-        specifier: ^3.3.0
-        version: 3.3.0
-      zod:
-        specifier: 4.6.5
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.6.0
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      '@types/yauzl':
-        specifier: ^2.10.3
-        version: 2.10.3
-      tsup:
-        specifier: ^8.4.0
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.9.0)
-      tsx:
-        specifier: ^4.19.4
-        version: 4.21.0
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
 
 packages:
 
@@ -10791,8 +10794,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  oxlint-plugin-react-doctor@0.9.18:
-    resolution: {integrity: sha512-1mfeb/jzXnduWOZJxrvdJjvKT0pFNKrNFYcPO4ncpFAnfW41M0mLz/23lAFzHb0knNLYayEgIQ5DjI4ZfFe+DQ==}
+  oxlint-plugin-react-doctor@0.9.23:
+    resolution: {integrity: sha512-AWC9/Jiki6s7e8b8xqTs0T/Hph8ISEDmoMUDwPkEzTrE0996ZWjwg7Ifaz5vPJQnefnOI9SDQQ/EvwvaZt4Tvg==}
     engines: {node: ^20.19.0 || >=22.13.0}
 
   oxlint@1.60.0:
@@ -11347,8 +11350,8 @@ packages:
   react-devtools-core@7.0.1:
     resolution: {integrity: sha512-C3yNvRHaizlpiASzy7b9vbnBGLrhvdhl1CbdU6EnZgxPNbai60szdLtl+VL76UNOt5bOoVTOz5rNWZxgGt+Gsw==}
 
-  react-doctor@0.9.18:
-    resolution: {integrity: sha512-4Ach00KtfnfjTBGgr2PyPgHua85vT/UfPY5sR0bHgRAc/QSu0JInA0GHCL6a7WFGMeGUrxtGnI8oqZinG44BOA==}
+  react-doctor@0.9.23:
+    resolution: {integrity: sha512-mKFbd0fYaiR8CS5PHyydJ//Bcs+TmdYhLVoiArdIvGNsUsG576GstUP69c7KFNMJheheZz7z2ww0byrmkizQLA==}
     engines: {node: ^20.19.0 || >=22.13.0}
     hasBin: true
 
@@ -23025,7 +23028,7 @@ snapshots:
       '@oxfmt/binding-win32-ia32-msvc': 0.47.0
       '@oxfmt/binding-win32-x64-msvc': 0.47.0
 
-  oxlint-plugin-react-doctor@0.9.18:
+  oxlint-plugin-react-doctor@0.9.23:
     dependencies:
       '@shaderfrog/glsl-parser': 7.0.1
       '@typescript-eslint/types': 8.72.0
@@ -23673,7 +23676,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  react-doctor@0.9.18(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.13.0(jiti@2.7.0))(react@19.2.7):
+  react-doctor@0.9.23(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.13.0(jiti@2.7.0))(react@19.2.7):
     dependencies:
       '@astrojs/compiler': 4.0.0
       '@sentry/node': 10.76.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))
@@ -23688,7 +23691,7 @@ snapshots:
       oxc-parser: 0.148.0
       oxc-resolver: 11.24.2
       oxlint: 1.81.0
-      oxlint-plugin-react-doctor: 0.9.18
+      oxlint-plugin-react-doctor: 0.9.23
       playwright-core: 1.64.1
       prompts: 2.4.2
       typescript: 5.9.3
@@ -23800,7 +23803,7 @@ snapshots:
       preact: 10.29.8
       prompts: 2.4.2
       react: 19.2.7
-      react-doctor: 0.9.18(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.13.0(jiti@2.7.0))(react@19.2.7)
+      react-doctor: 0.9.23(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(eslint@10.13.0(jiti@2.7.0))(react@19.2.7)
       react-dom: 19.2.7(react@19.2.7)
       react-grab: 0.2.0(react@19.2.7)
     optionalDependencies:

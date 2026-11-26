@@ -28,13 +28,13 @@ RobinRun 的方案：**静态 manifest（latest\*.yml）+ GitHub Release 附件*
 
 ## 客户端改动（2026-11-23 落地）
 
-| 文件 | 改动 |
-|---|---|
-| `scripts/build-time-config.mjs` | 新增 `ROBINRUN_UPDATE_FEED_BASE`（静态 feed base）与 `ROBINRUN_MAC_AUTO_UPDATE`（mac 自动更新准入）两个构建期配置 → define |
-| `packages/shared/src/env.ts` | 新增 `ROBINRUN_UPDATE_FEED_BASE`、`ROBINRUN_MAC_AUTO_UPDATE_READY` 常量（define 缺省时空/false，历史流程不受影响） |
+| 文件                                                  | 改动                                                                                                                                                                                                                          |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/build-time-config.mjs`                       | 新增 `ROBINRUN_UPDATE_FEED_BASE`（静态 feed base）与 `ROBINRUN_MAC_AUTO_UPDATE`（mac 自动更新准入）两个构建期配置 → define                                                                                                    |
+| `packages/shared/src/env.ts`                          | 新增 `ROBINRUN_UPDATE_FEED_BASE`、`ROBINRUN_MAC_AUTO_UPDATE_READY` 常量（define 缺省时空/false，历史流程不受影响）                                                                                                            |
 | `packages/desktop/src/main/manifestUpdateProvider.ts` | 新增 `staticManifestBase` 选项：`buildElectronManifestUrl` 静态模式返回 `{base}/{releasePlatform}/latest.yml`（不带查询参数；`resolveStaticManifestBase` 保留路径段，不用会剥 pathname 的 `normalizeRobinRunEndpointOrigin`） |
-| `packages/desktop/src/main/autoUpdater.ts` | `applyManifestUpdateProvider` 打包态读构建期 base 传入 `staticManifestBase`。origin 锁定守卫**原样保留**——静态模式根本不走 endpointOrigin，无需旁路；调试态 `--update-feed-url` 仍只在非打包态生效 |
-| `packages/desktop/src/main/index.ts` | 启动门控追加：`!app.isPackaged \|\| darwin 之外 \|\| ROBINRUN_MAC_AUTO_UPDATE_READY`——未签名 mac 打包整体禁用自动更新（Squirrel.Mac 强制要求 Developer ID 签名，不关则用户点击安装必然失败）；开发态调试链路不受影响 |
+| `packages/desktop/src/main/autoUpdater.ts`            | `applyManifestUpdateProvider` 打包态读构建期 base 传入 `staticManifestBase`。origin 锁定守卫**原样保留**——静态模式根本不走 endpointOrigin，无需旁路；调试态 `--update-feed-url` 仍只在非打包态生效                            |
+| `packages/desktop/src/main/index.ts`                  | 启动门控追加：`!app.isPackaged \|\| darwin 之外 \|\| ROBINRUN_MAC_AUTO_UPDATE_READY`——未签名 mac 打包整体禁用自动更新（Squirrel.Mac 强制要求 Developer ID 签名，不关则用户点击安装必然失败）；开发态调试链路不受影响          |
 
 信任模型：静态 base 与 `ROBINRUN_AUTO_UPDATE` 一样是**构建期钉死**的 define，随安装包发布，
 运行期不可被启动参数/环境变量接管（`resolveUpdateFeedSourceFromStartupConfig` 在打包态照旧剥离
@@ -60,12 +60,12 @@ RobinRun 的方案：**静态 manifest（latest\*.yml）+ GitHub Release 附件*
 
 ### 自动更新启用矩阵（构建期 env）
 
-| env | 作用 | 首版默认 |
-|---|---|---|
-| `ROBINRUN_AUTO_UPDATE=1` | 打开自动更新（不设 = fail-closed） | 设 |
-| `ROBINRUN_UPDATE_FEED_BASE=<url>` | 静态 feed base（不设 = 上游 manifest API 模式，RobinRun 禁用） | 设 |
-| `ROBINRUN_MAC_AUTO_UPDATE=1` | mac 自动更新准入（Squirrel.Mac 需 Developer ID 签名） | **不设**（未签名 mac 禁自动更新） |
-| `ROBINRUN_ENABLE_MAC_SIGN=1` + `APPLE_SIGNING_IDENTITY`/`CSC_NAME` | mac 签名（公证走独立阶段） | 不设 |
+| env                                                                | 作用                                                           | 首版默认                          |
+| ------------------------------------------------------------------ | -------------------------------------------------------------- | --------------------------------- |
+| `ROBINRUN_AUTO_UPDATE=1`                                           | 打开自动更新（不设 = fail-closed）                             | 设                                |
+| `ROBINRUN_UPDATE_FEED_BASE=<url>`                                  | 静态 feed base（不设 = 上游 manifest API 模式，RobinRun 禁用） | 设                                |
+| `ROBINRUN_MAC_AUTO_UPDATE=1`                                       | mac 自动更新准入（Squirrel.Mac 需 Developer ID 签名）          | **不设**（未签名 mac 禁自动更新） |
+| `ROBINRUN_ENABLE_MAC_SIGN=1` + `APPLE_SIGNING_IDENTITY`/`CSC_NAME` | mac 签名（公证走独立阶段）                                     | 不设                              |
 
 首版签名状态与用户感知：mac 未签名 = Gatekeeper 需右键打开 + 新版本走"提示 + 手动下载"；
 Windows 未签名 = SmartScreen"更多信息 → 仍要运行"，自动更新可用；Linux AppImage 自动更新可用，

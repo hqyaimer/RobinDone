@@ -60,12 +60,14 @@ import {
   IRobinRunAgentService,
   IRobinRunTaskService,
   IRobinRunSessionService,
+  ITriggerEngineService,
   ICuaPipSessionService,
   createRobinRunAgentConnectionScope,
   type RobinRunAgentV4ClientMode,
   collectServiceMemoryDiagnostics,
   createWebRemoteProjectTreeActivityBridge,
   type TriggerEventBatch,
+  type RoutedEventBatch,
   isStaleWorkerTriggerBinding,
 } from "@robinrun/services";
 import {
@@ -130,6 +132,7 @@ import {
   type RobinRunAutomationRun,
   type RobinRunAutomationRunOutcome,
   type ModelSelection,
+  type OpsPanelWakeupRequest,
 } from "@robinrun/shared";
 import {
   parseHostIncomingMessageEvent,
@@ -1012,19 +1015,15 @@ function trackCronRunOutcome(params: {
 }
 
 /**
- * 触发器事件投递提示词（2026-11-19 触发器系统，docs/trigger-system.md）：
- * 首行注入 system-status 来源区块（sender=trigger），合并事件逐条列出；
- * 首次投递附带触发器说明（README），让新会话快速理解上下文（裁决 8）。
+ * 触发器事件行渲染（2026-11-25 分发器裁决：行首带稳定事件 id `[evt-*]`——分发器的
+ * RouteEvents 标记按它引用事件；处理会话正文同样携带便于追溯）。
  */
-function renderTriggerEventPrompt(batch: TriggerEventBatch): string {
-  // 来源区块不再内嵌正文（2026-11-19 验收）：host 经 sendPrompt.systemStatus 携带结构化
-  // 身份，runtime 动态注入 <system-status>（动态渲染不落存储，P2.6 原则）；内嵌文本曾
-  // 让消息以用户气泡展示原始 JSON（UI 投影按 content 原文渲染）。
-  const lines: string[] = [
-    `Trigger "${batch.triggerName}" (${batch.triggerId}) delivered ${batch.events.length} event(s) (coalesced delivery):`,
-  ];
-  batch.events.forEach((event, index) => {
-    lines.push(`${index + 1}. [${event.kind}] ${event.summary}`);
+function renderTriggerEventLines(
+  events: Array<{ id?: string; kind: string; summary: string; data?: unknown; error?: string }>,
+): string[] {
+  const lines: string[] = [];
+  events.forEach((event, index) => {
+    lines.push(`${index + 1}. ${event.id ? `[${event.id}] ` : ""}[${event.kind}] ${event.summary}`);
     if (event.data !== undefined) {
       try {
         lines.push(`   data: ${JSON.stringify(event.data)}`);
@@ -1036,11 +1035,86 @@ function renderTriggerEventPrompt(batch: TriggerEventBatch): string {
       lines.push(`   error: ${event.error}`);
     }
   });
+  return lines;
+}
+
+/**
+ * 触发器事件投递提示词（2026-11-19 触发器系统，docs/trigger-system.md）：
+ * 首行注入 system-status 来源区块（sender=trigger），合并事件逐条列出；
+ * 首次投递附带触发器说明（README），让新会话快速理解上下文（裁决 8）。
+ * direct / fixed 档共用（两者都是"就地处理"语义，fixed 仅会话生命周期不同：每批次新会话）。
+ */
+function renderTriggerEventPrompt(batch: TriggerEventBatch): string {
+  // 来源区块不再内嵌正文（2026-11-19 验收）：host 经 sendPrompt.systemStatus 携带结构化
+  // 身份，runtime 动态注入 <system-status>（动态渲染不落存储，P2.6 原则）；内嵌文本曾
+  // 让消息以用户气泡展示原始 JSON（UI 投影按 content 原文渲染）。
+  const lines: string[] = [
+    `Trigger "${batch.triggerName}" (${batch.triggerId}) delivered ${batch.events.length} event(s) (coalesced delivery):`,
+  ];
+  lines.push(...renderTriggerEventLines(batch.events));
   lines.push(
     "",
     "Handle these events autonomously (automated trigger delivery; the user is not necessarily watching). If a script failed, diagnose and repair it, then re-enable the trigger via ManageTriggers.",
   );
   return lines.join("\n");
+}
+
+/**
+ * 分发器轮次投递正文（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §5.2）。
+ * **只承载数据**（事件列表 + 上一轮路由结果附录），不带任何指令——分发职责/标记粒度/
+ * 预期管理等全部指令由系统提示词的分发职责段承载（dynamic-sections 按路由策略注入，
+ * sticky、压缩后仍在）。此前指令随每批正文重复（~1400 字符/轮）是 token 冗余
+ * （2026-11-25 实测用户指正）；正文重复的只有数据行。
+ */
+function renderDispatcherEventPrompt(batch: TriggerEventBatch): string {
+  const lines: string[] = [
+    `Trigger "${batch.triggerName}" (${batch.triggerId}) delivered ${batch.events.length} event(s):`,
+  ];
+  lines.push(...renderTriggerEventLines(batch.events));
+  // 上一轮路由结果附录（taskId 回显闭环）：分发器据此获得新建/续用处理会话的真实
+  // id，构造 existing 续用标记——结果行由引擎兑现后随下一批正文回显，即路由表的
+  // 增量行（压缩按未完结话题淘汰，与设计咬合）。
+  if (batch.routeOutcomeNote !== undefined) {
+    lines.push("", "Routing outcome since your last delivery:", batch.routeOutcomeNote);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * 路由投递（处理会话）提示词（2026-11-25 分发器裁决 §6.3）：事件原文由机制层直传
+ * （不经分发器转述），处理会话语义与 direct 档一致——就地处理事件。
+ */
+function renderRoutedEventPrompt(batch: RoutedEventBatch): string {
+  const lines: string[] = [
+    `Trigger "${batch.triggerName}" (${batch.triggerId}) routed ${batch.events.length} event(s) to this session (dispatcher-routed delivery):`,
+  ];
+  lines.push(...renderTriggerEventLines(batch.events));
+  lines.push(
+    "",
+    "Handle these events autonomously (automated trigger delivery; the user is not necessarily watching). If a script failed, diagnose and repair it, then re-enable the trigger via ManageTriggers.",
+  );
+  return lines.join("\n");
+}
+
+/**
+ * 触发器会话标题重试（2026-11-25 实测：createTask 返回后立即 rename 会撞"Session not
+ * found after write"——CLI 侧会话物化（sessions-index 落盘）有延迟，v4 rename 命令写
+ * 前存在性校验落空。延迟递增重试消化物化窗口；重试耗尽仍失败由调用方留痕）。
+ */
+async function renameTaskWithRetry(
+  robinrunTaskService: IRobinRunTaskService,
+  params: Parameters<IRobinRunTaskService["renameTask"]>[0],
+  attempts = 4,
+): Promise<void> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await robinrunTaskService.renameTask(params);
+      return;
+    } catch (error) {
+      if (attempt === attempts - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 1_000 * (attempt + 1)));
+    }
+  }
 }
 
 /**
@@ -1076,7 +1150,10 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
   // agentIdentity，行上缺失或不符 = 旧 master/legacy 会话 → 视为陈旧绑定，按新建处理
   // （新会话由聚合器写回绑定表，旧会话保留为历史）；meta 读取失败不能证明陈旧，
   // fail-open 续用，避免存储抖动导致每事件新建会话。
-  let boundTaskId = batch.existingTaskId;
+  // fixed 档（2026-11-25 分发器裁决）无绑定会话语义：每批次直投创建者新会话（零 LLM
+  // 分发），direct 切 fixed 的残留绑定在此忽略；dispatcher 档的绑定 = 分发器会话，
+  // 绑定解析与陈旧校验同 direct。
+  let boundTaskId = batch.routing === "fixed" ? undefined : batch.existingTaskId;
   if (boundTaskId && subscriberWorkerId) {
     try {
       const boundMeta = await robinrunTaskService.getTaskMeta({
@@ -1119,18 +1196,29 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
     taskId = task.taskId;
     // 触发器会话标题 = 触发器名（2026-11-19 验收：automation 管线关标题生成，fallback
     // 曾把 prompt 首行 <system-status> JSON 截成标题；仅新建会话钉一次，绑定会话不动
-    // 用户改过的标题）。
+    // 用户改过的标题）。fixed 档（2026-11-25）每批次新会话，标题追加首事件摘要区分
+    // 同触发器的多个批次会话。
+    const fixedTitle =
+      batch.routing === "fixed"
+        ? `${batch.triggerName}: ${batch.events[0]?.summary ?? "event"}`.slice(0, 80)
+        : batch.triggerName;
     try {
-      await robinrunTaskService.renameTask({
+      await renameTaskWithRetry(robinrunTaskService, {
         taskId,
         workspacePath: batch.workspacePath,
         ...(batch.workspaceIdentity !== undefined
           ? { workspaceIdentity: batch.workspaceIdentity }
           : {}),
-        title: batch.triggerName,
+        title: fixedTitle,
       });
-    } catch {
-      // 标题是展示细节；失败不阻断投递（fallback 已能给出可读前缀）。
+    } catch (error) {
+      // 标题是展示细节；失败不阻断投递（fallback 已能给出可读前缀），但要有痕
+      //（2026-11-25 实测：静默失败时侧栏落正文 fallback 无日志可查）。
+      logger.warn(
+        `trigger session rename failed for ${taskId} (trigger ${batch.triggerId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
     reportHostSessionCreate(parentPort, {
       sessionId: taskId,
@@ -1142,7 +1230,14 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
   await robinrunTaskService.sendPrompt({
     taskId,
     traceId: promptTraceId,
-    content: renderTriggerEventPrompt(batch),
+    // 系统订阅唤醒自带渲染好的正文（promptOverride，2026-11-24 面板裁决）；dispatcher
+    // 档渲染分发器轮次正文（纯数据：事件 + 上一轮路由结果附录，2026-11-25 分发器裁决）；
+    // 其余（direct/fixed）按事件聚合渲染处理正文。
+    content:
+      batch.promptOverride ??
+      (batch.routing === "dispatcher"
+        ? renderDispatcherEventPrompt(batch)
+        : renderTriggerEventPrompt(batch)),
     clientMode: "desktop-continuous",
     automationId: batch.triggerId,
     // P3 触发器投递（2026-11-19 验收）：结构化来源身份替代正文内嵌区块——投影层据此归
@@ -1154,6 +1249,184 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
     },
   });
   return { taskId };
+}
+
+/**
+ * 分发器路由投递（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §6.3）：
+ * RouteMarkQueue 兑现与 fixed 档直投共用的处理会话投递链。target=existing 时做两级
+ * 机制层校验（裁决 1"路由目标恒为创建者本人"的执行点，模型给的地址不可信任）：
+ * ① 归属——worker 订阅者按 meta.workerId 比对（isStaleWorkerTriggerBinding 同款）；
+ * ② 链路——creationOrigin 必须是本触发器（kind=trigger 且 ref=triggerId），防把事件
+ * 标进任意普通会话。任一不符或 meta 不可读 → 降级新建（degraded=true，引擎记
+ * route.degraded 审计）。降级不是错误：残址/越权的运行时收口（压缩事前淘汰、
+ * 降级事后兜残址，spec 6.4）。
+ */
+async function dispatchRoutedEventRun(
+  batch: RoutedEventBatch,
+): Promise<{ taskId: string; degraded: boolean }> {
+  const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
+  if (!robinrunTaskService) {
+    throw new Error("RobinRun task service is not initialized.");
+  }
+  const promptTraceId = `trigger:${batch.triggerId}:${randomUUID()}` as TraceId;
+  const subscriberWorkerId = batch.subscriberAgentId.startsWith("wkr-")
+    ? batch.subscriberAgentId
+    : undefined;
+  // 既有目标校验（保守：模型给的地址任何存疑都降级新建——混流/越权的代价大于多开）。
+  let degraded = false;
+  let targetTaskId: string | undefined;
+  if (batch.target.kind === "existing") {
+    try {
+      const meta = await robinrunTaskService.getTaskMeta({
+        taskId: batch.target.taskId,
+        workspacePath: batch.workspacePath,
+        ...(batch.workspaceIdentity !== undefined
+          ? { workspaceIdentity: batch.workspaceIdentity }
+          : {}),
+      });
+      const ownershipStale = isStaleWorkerTriggerBinding(subscriberWorkerId, meta?.workerId);
+      const originStale =
+        meta?.creationOrigin?.kind !== "trigger" || meta.creationOrigin?.ref !== batch.triggerId;
+      if (meta !== null && !ownershipStale && !originStale) {
+        targetTaskId = batch.target.taskId;
+      } else {
+        degraded = true;
+        logger.warn(
+          `routed delivery target ${batch.target.taskId} rejected (trigger ${batch.triggerId}): ` +
+            `${meta === null ? "missing" : ownershipStale ? `workerId mismatch (${meta.workerId ?? "none"} vs ${subscriberWorkerId})` : `origin mismatch (${meta.creationOrigin?.kind ?? "none"}:${meta.creationOrigin?.ref ?? "none"})`}; degrading to a new session`,
+        );
+      }
+    } catch (error) {
+      degraded = true;
+      logger.warn(
+        `routed delivery target ${batch.target.taskId} unreadable (trigger ${batch.triggerId}), degrading to a new session: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+  let taskId: string;
+  if (targetTaskId !== undefined) {
+    await robinrunTaskService.resumeTask({
+      taskId: targetTaskId,
+      workspacePath: batch.workspacePath,
+      workspaceIdentity: batch.workspaceIdentity,
+      automationId: batch.triggerId,
+    });
+    taskId = targetTaskId;
+  } else {
+    const task = await robinrunTaskService.createTask({
+      ...(batch.projectId !== undefined ? { projectId: batch.projectId } : {}),
+      workspacePath: batch.workspacePath,
+      workspaceIdentity: batch.workspaceIdentity,
+      automationId: batch.triggerId,
+      ...(subscriberWorkerId
+        ? { agentIdentity: { kind: "worker" as const, workerId: subscriberWorkerId } }
+        : {}),
+    });
+    taskId = task.taskId;
+    // 处理会话标题 = 触发器名 + 首事件摘要（同触发器的多个话题会话在侧栏可区分）。
+    try {
+      await renameTaskWithRetry(robinrunTaskService, {
+        taskId,
+        workspacePath: batch.workspacePath,
+        ...(batch.workspaceIdentity !== undefined
+          ? { workspaceIdentity: batch.workspaceIdentity }
+          : {}),
+        title: `${batch.triggerName}: ${batch.events[0]?.summary ?? "event"}`.slice(0, 80),
+      });
+    } catch (error) {
+      // 标题是展示细节；失败不阻断投递，但要有痕（实测 rename 静默失败时侧栏落正文
+      // fallback，无日志可查）。
+      logger.warn(
+        `routed session rename failed for ${taskId} (trigger ${batch.triggerId}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    reportHostSessionCreate(parentPort, {
+      sessionId: taskId,
+      messageId: promptTraceId,
+      source: "automation_scheduled",
+      workspaceIdentity: batch.workspaceIdentity,
+    });
+  }
+  await robinrunTaskService.sendPrompt({
+    taskId,
+    traceId: promptTraceId,
+    content: renderRoutedEventPrompt(batch),
+    clientMode: "desktop-continuous",
+    automationId: batch.triggerId,
+    // 结构化来源身份（同 direct 档）；经分发器路由的处理会话输入额外携带
+    // viaDispatcherSessionId（事件途经可追溯，写状态文件时可用；不构成回流通路）。
+    systemStatus: {
+      sender: "trigger",
+      triggerId: batch.triggerId,
+      senderName: batch.triggerName,
+      ...(batch.dispatcherTaskId !== undefined
+        ? { viaDispatcherSessionId: batch.dispatcherTaskId }
+        : {}),
+    },
+  });
+  return { taskId, degraded };
+}
+
+/**
+ * 需求/审批/反馈面板的串行唤醒投递正文（2026-11-24 MVP；同日用户裁决修订寻址）：
+ * 面板 = 数据面，主智能体 = 处理方，系统订阅是两者唯一通道——投递目标是系统订阅的
+ * 绑定触发器会话（`trigger:trg-ops-panel`，与其他触发器同一会话模型），投递链与绑定
+ * 状态归引擎（dispatchSystemSubscriptionWakeup），本函数只负责按条目渲染正文。
+ * 一次投递恰好携带一条在途条目（串行队列已在服务层保证，不合并）。
+ */
+function renderOpsPanelWakeupPrompt(request: OpsPanelWakeupRequest): string {
+  const entry = request.entry;
+  const kindLabel =
+    entry.kind === "requirement" ? "需求" : entry.kind === "approval" ? "审批" : "反馈";
+  const lines: string[] = [
+    `Ops panel wakeup (${request.eventName}): ${kindLabel} ${entry.id} is awaiting your decision.`,
+    "",
+    `id: ${entry.id}`,
+    `kind: ${entry.kind}`,
+    `title: ${entry.title}`,
+    `author: ${entry.author}`,
+    `created: ${entry.createdAt}`,
+    "",
+    "body:",
+    entry.body,
+    "",
+    entry.kind === "requirement"
+      ? "Dispose of this requirement now via ManageOpsPanel decide_requirement (accepted / rejected / suspended / converted_to_approval, with a note). Disposal means your status decision - accepted items then enter normal development planning, which does NOT occupy this wakeup queue."
+      : entry.kind === "approval"
+        ? `The user has ${entry.status === "approved" ? "approved" : "rejected"} this approval. Execute the decision now, then acknowledge execution via ManageOpsPanel acknowledge_approval to release the wakeup queue.`
+        : "Triage this feedback now via ManageOpsPanel resolve_feedback (mark processed, optionally with a note).",
+    "",
+    "This is an automated panel delivery; the user may be watching this session. One item per wakeup - after disposal the next queued item wakes you.",
+  ];
+  if (entry.note !== undefined) lines.push("", `note: ${entry.note}`);
+  if (entry.decidedAt !== undefined) lines.push(`decidedAt: ${entry.decidedAt}`);
+  return lines.join("\n");
+}
+
+async function dispatchOpsPanelWakeupRun(
+  request: OpsPanelWakeupRequest,
+): Promise<{ taskId: string }> {
+  // 2026-11-24 用户裁决（推翻原 D1"寻址 master 主会话"）：面板 = 数据面，主智能体 =
+  // 处理方，系统订阅是两者唯一通道。唤醒按标准触发器会话模型投递——`trigger:trg-ops-panel`
+  // 一 key 一绑定会话（绑定解析/写回/sessions.json 持久化在引擎；触发器文件夹即面板
+  // 事件的处理台账，master 主会话不被运营事件冲刷）。串行/不合并仍由面板服务的唤醒
+  // 队列保证（验收 #2），引擎侧不经聚合器；投递正文由本侧按条目渲染（promptOverride）。
+  const triggerEngine = activeServices?.getOptional(ITriggerEngineService);
+  if (!triggerEngine) {
+    throw new Error("Trigger engine service is not initialized.");
+  }
+  return triggerEngine.dispatchSystemSubscriptionWakeup({
+    workspacePath: request.workspacePath,
+    ...(request.workspaceIdentity !== undefined
+      ? { workspaceIdentity: request.workspaceIdentity }
+      : {}),
+    triggerId: request.triggerId,
+    prompt: renderOpsPanelWakeupPrompt(request),
+  });
 }
 
 /**
@@ -4253,6 +4526,11 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
               onAutomationManualRunRequested: dispatchManualAutomationRun,
               // 触发器引擎的事件投递端口（2026-11-19 触发器系统）：引擎聚合后回调这里。
               dispatchTriggerEvent: (batch) => dispatchTriggerRun(batch),
+              // 分发器路由投递端口（2026-11-25 分发器裁决）：RouteMarkQueue 兑现与 fixed
+              // 直投的处理会话投递（target 校验与降级在 dispatchRoutedEventRun）。
+              dispatchRoutedEvent: (batch) => dispatchRoutedEventRun(batch),
+              // 需求/审批/反馈面板的串行唤醒投递端口（2026-11-24 MVP）：寻址 master 主会话。
+              dispatchOpsPanelWakeup: (request) => dispatchOpsPanelWakeupRun(request),
               // 会话忙查询（2026-11-22 忙时合并投递修复）：聚合器据此把忙会话的事件留桶
               // 累积，空闲后合并为一条投递（裁决 7；服务缺席 fail-open 走旧逐批行为）。
               isTriggerTaskBusy: async (task) => {

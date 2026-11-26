@@ -73,6 +73,15 @@ export * from "./manage-workers.js";
 // docs/trigger-system.md）。任意智能体（master/worker）可创建，订阅者=创建者。
 export * from "./manage-triggers.js";
 
+// 分发器路由标记（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：
+// dispatcher 档触发器会话的话题聚类工具——引用式标记，事件原文机制层直传。
+export * from "./route-events.js";
+
+// 需求/审批/反馈面板（2026-11-24 MVP，RobinRunOps dev/specs）：智能体操作面板的
+// 唯一工具面。同名双变体（master/worker）按会话身份二选一，权限矩阵在 host 服务层
+// 强制；worker 只见自己提交的条目（数据/接口层过滤）。
+export * from "./manage-ops-panel.js";
+
 // Shared types (only once to avoid duplicates)
 export type { DiffHunk, GitDiff } from "./write.js";
 export * from "./tool-search.js";

@@ -533,6 +533,8 @@ async function executeToolCallImpl(
         agentContactPort: deps.agentContactPort,
         // 触发器 python 运行时端口（2026-11-22）：install_packages 依赖，漏转发同上。
         triggerRuntimePort: deps.triggerRuntimePort,
+        // 需求/审批/反馈面板端口（2026-11-24 MVP）：ManageOpsPanel 依赖，漏转发同上。
+        opsPanelRuntimePort: deps.opsPanelRuntimePort,
         workflowSubmitPort: deps.workflowSubmitPort,
         workflowEscalatePort: deps.workflowEscalatePort,
         artifactStore: deps.artifactStore,

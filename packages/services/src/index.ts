@@ -414,6 +414,7 @@ export type {
 // `#src/trigger-engine/index.js`。
 export { ITriggerEngineService } from "#src/trigger-engine/contract.js";
 export type {
+  RoutedEventBatch,
   TriggerDispatchPort,
   TriggerEvent,
   TriggerEventBatch,
@@ -422,3 +423,6 @@ export type {
 } from "#src/trigger-engine/contract.js";
 // 绑定身份校验是纯函数（无 node 依赖），renderer 可达安全；运行时消费者也可走深路径。
 export { isStaleWorkerTriggerBinding } from "#src/trigger-engine/binding-validation.js";
+// 需求/审批/反馈面板（2026-11-24 MVP）：服务描述符（contract.ts 只依赖 shared +
+// descriptors，renderer 可达安全；repo/service/migration 是 node 侧，经深路径消费）。
+export { IOpsPanelService } from "#src/ops-panel/contract.js";

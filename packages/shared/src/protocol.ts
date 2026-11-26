@@ -287,11 +287,27 @@ export interface RobinRunProjectEntry {
  */
 export type RobinRunGlobalComposerMode = "build" | "edit" | "guarded" | "yolo";
 
+/**
+ * 常驻脚本触发器并发配额缺省（2026-11-25 可配置化裁决，docs/trigger-system.md「资源与
+ * 重入控制」）：AppSettings schema 默认值与引擎回调回退共用此单一来源；定时执行模式
+ * （runMode="scheduled"）的运行不占配额。
+ */
+export const DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE = 20;
+export const DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX = 60;
+
 export interface AppSettings {
   /** 当前 App/Host 不再显示提交前体验套餐推荐；不改变任何入口的模型选择。 */
   startPlanRecommendationDismissed?: boolean;
   /** 全局权限模式缺省；缺席时 UI 草稿走既有解析链、宿主自动会话落 CLI 缺省 build。 */
   globalComposerMode?: RobinRunGlobalComposerMode;
+  /**
+   * 常驻脚本触发器并发配额（单项目，2026-11-25 可配置化裁决）：引擎每轮 reconcile 起点读取，
+   * 改动 ≤5s 生效，无需重启。定时执行模式（runMode="scheduled"）的运行不占此配额。
+   * 默认 20（2026-11-25 用户裁决：接近不设限，先看实际情况；原硬编码为 2）。
+   */
+  triggerScriptResidentPerWorkspace?: number;
+  /** 常驻脚本触发器并发配额（全局兜底）；默认 60（原硬编码 4）。只约束 resident 常驻进程。 */
+  triggerScriptResidentGlobalMax?: number;
   recentProjects: string[]; // 最近项目列表，最多保留 10 个
   locale: Locale; // 界面语言
   /**

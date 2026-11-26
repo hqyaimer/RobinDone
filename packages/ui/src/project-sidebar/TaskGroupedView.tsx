@@ -195,9 +195,21 @@ export function TaskGroupedView({
         task.projectId === enteredProject.id || (!task.projectId && roots.has(task.workspacePath)),
     );
   }, [tasks, enteredProject]);
+  // 触发器运行时快照（2026-11-19 UI 裁决）：整页共享一份（广播 + 30s 轮询刷新），
+  // 按订阅者归组后投影到各智能体节点的"触发器"文件夹。引擎服务缺席时为空快照，
+  // 所有文件夹自动隐藏（后端装配里程碑接通后点亮）。提前声明（2026-11-25 分发器
+  // 裁决的绑定会话值集在上方 authoritativeView 投影里消费）。
+  const triggers = useTriggerSnapshots(workspacePath);
+  // 触发器绑定会话值集（2026-11-25 分发器裁决）：侧栏过滤收窄的依据——只有绑定会话
+  // 由触发器文件夹独占承载（隐藏），dispatcher/fixed 的处理会话不写绑定表，回归
+  // 订阅者名下的会话列表（快照 30s 轮询，绑定表落后时按旧全量隐藏 fail-safe）。
+  const triggerBoundTaskIds = useMemo(
+    () => new Set(Object.values(triggers.snapshot.sessionBindings)),
+    [triggers.snapshot.sessionBindings],
+  );
   const authoritativeView = useMemo(
-    () => buildGroupedTaskView(scopedTasks, organization.structure),
-    [scopedTasks, organization.structure],
+    () => buildGroupedTaskView(scopedTasks, organization.structure, triggerBoundTaskIds),
+    [scopedTasks, organization.structure, triggerBoundTaskIds],
   );
   const report = (error: unknown, messageId = "taskGroup.updateFailed") => {
     logger.error("[task-groups] 分组操作失败", error);
@@ -257,10 +269,6 @@ export function TaskGroupedView({
     const activeWorkerGroupIds = new Set(workers.map((worker) => workerGroupId(worker.id)));
     return buildAgentTreeLayout(drag.view, projects, enteredProject, { activeWorkerGroupIds });
   }, [drag.view, projects, enteredProject, workers]);
-  // 触发器运行时快照（2026-11-19 UI 裁决）：整页共享一份（广播 + 30s 轮询刷新），
-  // 按订阅者归组后投影到各智能体节点的"触发器"文件夹。引擎服务缺席时为空快照，
-  // 所有文件夹自动隐藏（后端装配里程碑接通后点亮）。
-  const triggers = useTriggerSnapshots(workspacePath);
   const triggerEntriesByOwner = useMemo(
     () => groupTriggerEntriesByOwner(triggers.snapshot),
     [triggers.snapshot],

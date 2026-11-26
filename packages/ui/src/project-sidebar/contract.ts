@@ -146,8 +146,11 @@ export interface ProjectSidebarProps {
   repoWikiActive?: boolean;
   onOpenAutomations?: () => void;
   onOpenPluginStore?: () => void;
+  /** 需求/审批/反馈面板主视图（2026-11-24 MVP）；缺席不渲染入口。 */
+  onOpenOpsPanel?: () => void;
   automationsActive?: boolean;
   pluginStoreActive?: boolean;
+  opsPanelActive?: boolean;
   onFileTreeOpenChange?: (open: boolean) => void;
   onWebRemoteTaskOpen?: (options: { crossWorkspace: boolean }) => void;
   onWebRemoteTaskSwitchingChange?: (switching: boolean) => void;

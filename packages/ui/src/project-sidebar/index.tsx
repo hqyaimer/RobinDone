@@ -292,7 +292,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
               data-project-sidebar-panel="navigation"
               className="absolute inset-0 flex min-h-0 flex-col"
             >
-              <ProjectSidebarNavigation props={props} />
+              <ProjectSidebarNavigation props={props} agentPageMode={agentPageMode} />
               <div
                 data-testid="sidebar-task-list-region"
                 className="flex min-h-0 flex-1 flex-col border-t border-border/50 pt-3 [anchor-name:--sidebar-task-list-divider]"

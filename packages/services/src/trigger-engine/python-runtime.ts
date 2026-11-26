@@ -326,11 +326,7 @@ export async function ensureManagedPythonRuntime(params: {
       // 原子落位：rename 同卷瞬时；残缺旧目录（有目录无标记）先清再落。
       await rm(finalDir, { recursive: true, force: true });
       await rename(sourceDir, finalDir);
-      await writeFile(
-        join(finalDir, COMPLETE_MARKER_FILE),
-        `${PYTHON_RUNTIME_ID}\n`,
-        "utf8",
-      );
+      await writeFile(join(finalDir, COMPLETE_MARKER_FILE), `${PYTHON_RUNTIME_ID}\n`, "utf8");
       params.log(`managed python runtime ready: ${interpreterPath}`);
       return { interpreterPath, cacheDir: finalDir };
     } finally {
@@ -386,7 +382,10 @@ async function writePythonRuntimeState(
   state: Omit<PythonRuntimeStateFile, "version">,
 ): Promise<PythonRuntimeStateFile> {
   const file = pythonRuntimeStatePath(workspacePath);
-  const payload: PythonRuntimeStateFile = { version: TRIGGER_PYTHON_RUNTIME_STATE_VERSION, ...state };
+  const payload: PythonRuntimeStateFile = {
+    version: TRIGGER_PYTHON_RUNTIME_STATE_VERSION,
+    ...state,
+  };
   await mkdir(dirname(file), { recursive: true });
   const temp = `${file}.tmp.${process.pid}`;
   await writeFile(temp, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
@@ -418,9 +417,7 @@ export interface PythonVenvResolution {
   replayFailures: string[];
 }
 
-export type PythonRuntimeResolution =
-  | PythonInterpreterResolution
-  | { ok: false; error: string };
+export type PythonRuntimeResolution = PythonInterpreterResolution | { ok: false; error: string };
 
 export interface PythonPackageInstallResult {
   ok: boolean;
@@ -490,7 +487,8 @@ export function createTriggerPythonRuntimePort(
       });
       return result;
     } catch (managedError) {
-      const managedMessage = managedError instanceof Error ? managedError.message : String(managedError);
+      const managedMessage =
+        managedError instanceof Error ? managedError.message : String(managedError);
       if (process.env[PYTHON_FALLBACK_SYSTEM_ENV] === "1") {
         const system = await probeSystemPython();
         if (system !== undefined) {

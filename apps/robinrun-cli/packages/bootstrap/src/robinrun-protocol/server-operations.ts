@@ -140,6 +140,7 @@ import { runSessionModelConfigMutation } from "../robinrun-protocol-v4/model-con
 import { resolveDynamicWorkflowRuntimeGate } from "./dynamic-workflow-policy.js";
 import { agentContactState } from "./agent-contact-dispatch-port.js";
 import { triggerRuntimeState } from "./trigger-runtime-port.js";
+import { opsPanelState } from "./ops-panel-port.js";
 import {
   createSessionResidentPoolHost,
   deactivateSessionRecord,
@@ -3774,6 +3775,9 @@ async function createRecord(
     // 触发器 python 运行时端口（2026-11-22）：install_packages 经反向请求到宿主引擎；
     // 按 context 单例（同款 context 级共享模式）。
     triggerRuntimePort: triggerRuntimeState(context).port,
+    // 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求按 context 单例端口注入
+    // （ManageOpsPanel 全动作共用一条 CLI→Host 反向通道）。
+    opsPanelRuntimePort: opsPanelState(context).port,
     // 只接入 Host 已开放的工具面；缺省不注入。复用现行异步工厂，
     // 不恢复旧 deferred ModelAdapter/Registry overlay，也不改变 Session Selection。
     ...(("offPeakToolEnabled" in params && params.offPeakToolEnabled === true) ||

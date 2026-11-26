@@ -92,6 +92,7 @@ export const SETTINGS_USER_ACTION_FEATURES = {
     "clear_cache",
     "clear_all_data",
   ],
+  "settings.triggers": ["change_resident_per_workspace", "change_resident_global_max"],
 } as const;
 
 export type CoreUserActionFeatureId = keyof typeof CORE_USER_ACTION_FEATURES;

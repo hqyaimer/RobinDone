@@ -244,6 +244,13 @@ export class AgentRuntime {
    */
   triggerSessionReadme?: string;
   triggerSessionReadmeLoaded = false;
+  /**
+   * 触发器会话有效路由策略（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：
+   * 首个触发器投递轮读注册表解析（直连取条目、组取组条目），会话级 sticky——分发职责
+   * 段注入、分发器压缩提示词变体、轮级工具面收窄共用判据。undefined = direct（旧路径，
+   * 零行为漂移）。
+   */
+  triggerSessionRouting?: "dispatcher" | "fixed";
   /** 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：context 初始化读盘缓存。 */
   scriptRuntimeHint?: "python" | "node";
   private readonly getAgentDefinitions: GetAgentDefinitions;

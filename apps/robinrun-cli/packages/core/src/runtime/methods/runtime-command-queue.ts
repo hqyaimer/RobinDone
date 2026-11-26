@@ -1,6 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { TRIGGER_ID_PREFIX, uuidv7 } from "@robinrun/shared";
+import {
+  resolveRoutingForSessionKey,
+  sessionKeyForTrigger,
+  triggerRegistrySchema,
+  TRIGGER_ID_PREFIX,
+  uuidv7,
+  type TriggerRouting,
+} from "@robinrun/shared";
 import {
   backgroundBatchTelemetryAttributes,
   telemetryInputOrigin,
@@ -261,7 +268,12 @@ async function runRuntimeCommand(
       // 触发器专属会话（2026-11-19 验收裁决）：触发器投递轮（automationId=trg-*）首次
       // 到达时读盘缓存触发器 README——之后每轮系统提示词都携带（压缩后仍在），投递
       // 消息正文只承载事件内容。读取失败只标记已加载（防重复 IO），不阻断投递。
-      await ensureTriggerSessionReadme.call(this, command.options?.automationId);
+      // viaDispatcherSessionId 区分分发器会话与它的处理会话（2026-11-25 实测修正）。
+      await ensureTriggerSessionReadme.call(
+        this,
+        command.options?.automationId,
+        command.options?.systemStatus?.viaDispatcherSessionId,
+      );
       try {
         const result = await this.executeTurnCommand(
           command.input,
@@ -555,10 +567,25 @@ export function getActiveForegroundExecutionId(this: AgentRuntimeInternal): stri
  * automation-<uuid> 互斥）且尚未加载时，读工作区 `.robinrun/triggers/<id>/README.md`
  * 缓存到 runtime 级状态。README 缺失/读失败同样标记已加载——系统提示词 section 缺席
  * 即可，不能反复 IO，更不能阻断投递轮。
+ *
+ * 2026-11-25 分发器裁决：同一读盘时机顺带读注册表解析本会话 key 的有效路由策略，
+ * 缓存 `triggerSessionRouting`（sticky，压缩后重建与后续轮共用）——分发职责段注入、
+ * 分发器压缩提示词变体、轮级工具面收窄共用这一个判据。注册表缺失/损坏/条目缺席按
+ * direct 收口（fail-safe 旧行为；伪删除条目的 active 过滤在引擎，此处只读策略）。
+ *
+ * **分发器会话 vs 处理会话的区分（2026-11-25 实测修正）**：dispatcher 触发器的处理
+ * 会话与分发器会话同为 `trg-*` automationId，仅凭 automationId 无法区分——实测处理
+ * 会话被误注入分发职责段并收窄工具面，模型自以为是分发器去调 RouteEvents（被引擎
+ * 门控拒绝，"not a trigger-bound session"）。判据用投递来源区块：处理会话的
+ * `<system-status>` 带 `viaDispatcherSessionId`（分发器路由投递专属，机制层溯源字段，
+ * 分发器自己的投递不带）——带它 = 处理会话，**不设** dispatcher 语义（README 照常
+ * 注入供背景理解，routing 保持 undefined 走普通处理路径）。fixed 档投递不带该字段，
+ * fixed 说明段照常。
  */
 async function ensureTriggerSessionReadme(
   this: AgentRuntimeInternal,
   automationId: string | undefined,
+  viaDispatcherSessionId: string | undefined,
 ): Promise<void> {
   if (this.triggerSessionReadmeLoaded) return;
   if (automationId === undefined || !automationId.startsWith(TRIGGER_ID_PREFIX)) return;
@@ -571,6 +598,30 @@ async function ensureTriggerSessionReadme(
     if (readme.trim().length > 0) this.triggerSessionReadme = readme;
   } catch {
     // README 缺失（创建时未写/被删）：无说明也可运行，事件自带 summary 语义。
+  }
+  // 处理会话（经分发器路由投递，`<system-status>` 带 viaDispatcherSessionId）：
+  // routing 保持 undefined——它是订阅者的普通处理会话，分发职责段/压缩变体/工具面
+  // 收窄全部不适用（README 已注入供背景理解）。
+  if (viaDispatcherSessionId !== undefined) return;
+  // 有效路由策略（sticky）：直连 key 取条目 routing，组 key 取组 routing。解析失败按
+  // direct 收口——所有 dispatcher 行为（注入段/压缩变体/工具面收窄）都以该值为准，
+  // direct/undefined 完全走旧路径，零行为漂移。
+  try {
+    const registryRaw = await readFile(
+      join(this.workspaceRoot, ".robinrun", "triggers", "triggers.json"),
+      "utf8",
+    );
+    const registry = triggerRegistrySchema.safeParse(JSON.parse(registryRaw));
+    if (registry.success) {
+      const entry = registry.data.triggers.find((trigger) => trigger.id === automationId);
+      const routing: TriggerRouting = resolveRoutingForSessionKey(
+        registry.data,
+        sessionKeyForTrigger({ id: automationId, groupId: entry?.groupId ?? null }),
+      );
+      if (routing !== "direct") this.triggerSessionRouting = routing;
+    }
+  } catch {
+    // 注册表缺失/损坏/校验失败：按 direct 收口（旧行为）。
   }
 }
 

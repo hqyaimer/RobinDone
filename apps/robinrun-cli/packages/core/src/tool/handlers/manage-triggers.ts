@@ -12,7 +12,6 @@
 // 不可用/probing/缺失 → node 备选），README 模板与结果文本按 runtime 双变体；install_packages
 // 经 TriggerRuntimePort 反向请求到引擎执行。
 
-import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import {
   MANAGE_TRIGGERS_TOOL_NAME,
@@ -20,397 +19,65 @@ import {
   ManageTriggersInputSchema,
   ManageTriggersOutputJsonSchema,
   ManageTriggersOutputSchema,
-  type TriggerConfigInput,
   CoreErrorType,
   createCoreError,
-  isFileSystemPortError,
-  type FileSystemPort,
   type ManageTriggersInput,
   type ManageTriggersOutput,
-  type TraceContext,
 } from "@robinrun/contracts";
 import {
-  pythonRuntimeStateSchema,
-  sessionKeyForTrigger,
+  isSystemTriggerEntry,
   triggerAuditFileName,
   triggerDirectoryConvention,
   triggerProfilesDirectoryName,
-  triggerPythonRuntimeStateFileName,
   triggerReadmeFileName,
   triggerRegistryFileName,
-  triggerRegistrySchema,
   TRIGGER_GROUP_ID_PREFIX,
   TRIGGER_GROUP_SESSION_KEY_PREFIX,
   TRIGGER_ID_PREFIX,
-  TRIGGER_REGISTRY_VERSION,
   type TriggerEntry,
   type TriggerGroupEntry,
   type TriggerProfileEntry,
-  type PythonRuntimeStateFile,
-  type TriggerRegistry,
 } from "@robinrun/shared";
-import type { ToolEntry, ToolExecutionContext, ToolHandler } from "../types.js";
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-/** create 时写入 README.md 的固定脚手架：模型只补说明正文，系统参考段由程序钉住。 */
-function buildReadmeContent(input: {
-  name: string;
-  ownerAgentId: string;
-  readme: string;
-  entry: TriggerEntry;
-  scriptDirPath: string;
-}): string {
-  const { name, ownerAgentId, readme, entry, scriptDirPath } = input;
-  const lines = [
-    `# Trigger: ${name}`,
-    "",
-    readme.trim(),
-    "",
-    "## System reference (maintained by the system; do not edit this section)",
-    "",
-    `- id: ${entry.id}`,
-    `- type: ${entry.config.kind}`,
-    `- owner/subscriber: ${ownerAgentId}`,
-    `- session: all events of this trigger are delivered into ONE dedicated session (key: ${sessionKeyForTrigger(entry)}); different triggers/groups get different sessions.`,
-  ];
-  if (entry.config.kind === "script") {
-    // 双变体（2026-11-22 python 主 + node 备选）：README 脚手架按触发器自己的 runtime
-    // 钉协议——python 可用时的触发器只暴露 python 协议，node 字样不出现；node 备选
-    // 触发器则钉 IPC 桥接协议并注明降级原因与迁移路径。
-    const isPython = entry.config.runtime === "python";
-    lines.push(
-      `- script dir: ${scriptDirPath} (entry: ${entry.config.entry}, runtime: ${entry.config.runtime})`,
-      // 常驻模型（2026-11-21）：脚本引擎托管生命周期，事件协议必须钉进脚手架
-      // （v1 批处理模型的"stdout 最后一行 JSON"契约已退役，写错协议脚本会永不投递）。
-      "- resident event-source process: the engine starts it automatically whenever the trigger is active (including at app launch), restarts it with backoff when it crashes, and stops it on disable. Implement any timing or subscription inside the script itself (timers, websockets, self-hosted webhooks).",
-      isPython
-        ? '- event protocol (engine-enforced): the engine injects a helper module — `import robinrun` then call `robinrun.emit("short summary", data)` for each event (data optional; must satisfy the registry `contract` assertions against `data`). The call blocks until the engine validates and accepts the event and raises RuntimeError on contract violation (a failing assertion counts as a script failure). NEVER print events to stdout — stdout/stderr go to audit logs only, so subprocess and library output cannot corrupt your events. Third-party packages: request ManageTriggers install_packages — do not assume anything beyond the standard library. Shutdown: the engine stops the process tree after a grace window; on POSIX a SIGTERM arrives first (catch signal.SIGTERM / signal.SIGINT for cleanup — closing browsers, flushing state), on Windows the tree is killed outright, so keep state flushed continuously rather than only at exit.'
-        : "- event protocol (engine-enforced): report events with the injected global robinrun.emit({ summary, data }) — AWAIT it (it resolves when the engine accepts the event; the payload must satisfy the registry `contract` assertions against `data`), and register robinrun.onShutdown(fn) for graceful cleanup (closing browsers etc.). This is the node fallback runtime (python is unavailable in this environment): standard library only, no third-party packages. When python becomes available, migrate via ManageTriggers update with runtime \"python\".",
-      "- lifecycle: exit code 0 = done (the trigger turns completed; rerun via re-enable). exit non-zero = crash (auto-restart with backoff; after 3 consecutive crashes it circuit-breaks to error-paused and the user is notified — fix the script and re-enable). stdout/stderr are logs (audit only, never delivered).",
-    );
-  }
-  if (entry.config.kind === "webhook") {
-    lines.push(
-      `- webhook path: ${entry.config.path} (POST events to the engine's local loopback URL with this path; the full URL with port and token is returned by ManageTriggers create/update — the port is engine-assigned and may change after the desktop app restarts).`,
-    );
-  }
-  return lines.join("\n");
-}
-
-function generateId(
-  prefix: string,
-  existing: ReadonlySet<string>,
-): string {
-  // 8 位随机 id，冲突时重试；id 是路径锚点，生成后永不复用。
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const id = `${prefix}${randomUUID().replace(/-/g, "").slice(0, 8)}`;
-    if (!existing.has(id)) return id;
-  }
-  throw createCoreError(
-    CoreErrorType.ToolExecutionFailed,
-    "Failed to generate a unique trigger id",
-    { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME }, recoverable: true },
-  );
-}
-
-function formatErrorDetail(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function safeJsonParse(content: string): unknown {
-  try {
-    return JSON.parse(content) as unknown;
-  } catch {
-    return undefined;
-  }
-}
-
-function createTrace(context: ToolExecutionContext): TraceContext {
-  return {
-    traceId: context.traceId,
-    spanId: context.spanId,
-    parentSpanId: context.parentSpanId,
-    sessionId: context.sessionId,
-    turnId: context.turnId,
-  } as unknown as TraceContext;
-}
-
-function createRegistryInvalidError(registryPath: string, error: unknown): never {
-  // 注册表损坏时拒绝一切写入：按空表覆盖会把既有触发器清掉，这不是可自动恢复的故障。
-  throw createCoreError(
-    CoreErrorType.ToolExecutionFailed,
-    `Trigger registry at ${registryPath} is invalid; fix it manually before trigger changes (refusing to overwrite). Detail: ${formatErrorDetail(error)}`,
-    {
-      context: { toolName: MANAGE_TRIGGERS_TOOL_NAME, path: registryPath },
-      recoverable: false,
-    },
-  );
-}
-
-/** 读注册表原文；缺失返回 undefined（首个 create 前的合法状态）。 */
-async function readRegistryRaw(
-  fileSystemPort: FileSystemPort,
-  registryPath: string,
-  context: ToolExecutionContext,
-): Promise<string | undefined> {
-  try {
-    const read = await fileSystemPort.readTextFile(
-      { path: registryPath, trace: createTrace(context) },
-      { signal: context.abortSignal },
-    );
-    return read.content;
-  } catch (error) {
-    // 注册表缺失 = 空注册表（首个 create 前的合法状态）。
-    if (isFileSystemPortError(error) && error.code === "not_found") {
-      return undefined;
-    }
-    throw error;
-  }
-}
-
-function parseRegistryContent(
-  content: string | undefined,
-  registryPath: string,
-): TriggerRegistry {
-  if (content === undefined) {
-    return { version: TRIGGER_REGISTRY_VERSION, triggers: [], groups: [], profiles: [] };
-  }
-  const parsed = triggerRegistrySchema.safeParse(safeJsonParse(content));
-  if (!parsed.success) {
-    createRegistryInvalidError(registryPath, parsed.error);
-  }
-  return parsed.data;
-}
+import type { ToolEntry, ToolHandler } from "../types.js";
+// 纯辅助（注册表 IO / config 归一 / 门控 / README 脚手架）在 manage-triggers-support.ts
+//（2026-11-25 拆分，架构检查 max-file-lines；分发器 routing 的写点仍在 handler 主流程）。
+import {
+  assertScriptRuntimeAllowed,
+  buildReadmeContent,
+  createTrace,
+  ensureRegistryUnchanged,
+  generateId,
+  normalizeConfig,
+  nowIso,
+  parseRegistryContent,
+  readRegistryRaw,
+  readWebhookBaseUrl,
+  resolveOwnerAgentId,
+  resolveScriptRuntimeGate,
+  writeRegistry,
+} from "./manage-triggers-support.js";
 
 /**
- * 写前冲突检测（2026-11-23，用户裁决 B5）：handler 全程持动作开始时的注册表快照、结尾
- * 回写。install_packages 经反向请求到引擎跑 pip（分钟级窗口），窗口内引擎会写入
- * lastFireAt/熔断计数/伪删除标记——陈旧快照回写会把它们整体回滚（伪删除的触发器复活、
- * 熔断状态丢失）。与 ManageWorkers 的脏检查同思路：写前重读比对，不一致即拒绝写入，
- * 让模型基于新状态重试；install_packages 未改动注册表则整段跳过回写。
+ * 系统特权订阅保护（2026-11-24 平台级保证，需求/审批/反馈面板）：system 条目不可经
+ * 本工具修改（update/set_status/delete 一律拒绝）。这是保护的工具侧一半——引擎侧
+ * （setTriggerStatus/deleteTrigger）与 UI 同样拒绝；create 侧由输入 schema 刻意不收
+ * system config 形状兜底（模型无法伪造 system 条目）。
  */
-async function ensureRegistryUnchanged(
-  fileSystemPort: FileSystemPort,
-  registryPath: string,
-  context: ToolExecutionContext,
-  baselineRaw: string | undefined,
-): Promise<void> {
-  const currentRaw = await readRegistryRaw(fileSystemPort, registryPath, context);
-  if (currentRaw !== baselineRaw) {
-    throw createCoreError(
-      CoreErrorType.ToolExecutionFailed,
-      `Trigger registry changed concurrently since this action started (the engine recorded fires/crashes, or another session modified triggers.json). Nothing was written; review the current state and repeat this action against the fresh registry.`,
-      {
-        context: { toolName: MANAGE_TRIGGERS_TOOL_NAME, path: registryPath },
-        recoverable: true,
-      },
-    );
-  }
-}
-
-async function writeRegistry(
-  fileSystemPort: FileSystemPort,
-  registryPath: string,
-  registry: TriggerRegistry,
-  context: ToolExecutionContext,
-): Promise<void> {
-  // 写前整表校验：订阅互斥等交叉不变量在这里兜底（单条目构造出的中间态必须满足全局一致）。
-  const validated = triggerRegistrySchema.safeParse(registry);
-  if (!validated.success) {
-    throw createCoreError(
-      CoreErrorType.ToolExecutionFailed,
-      `Resulting trigger registry would be invalid; change rejected. Detail: ${formatErrorDetail(validated.error)}`,
-      { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME }, recoverable: true },
-    );
-  }
-  await fileSystemPort.writeTextFile(
-    {
-      path: registryPath,
-      content: `${JSON.stringify(validated.data, null, 2)}\n`,
-      atomic: true,
-      createParents: true,
-      trace: createTrace(context),
-    },
-    { signal: context.abortSignal },
+function assertNotSystemTrigger(entry: TriggerEntry, action: string): void {
+  if (!isSystemTriggerEntry(entry)) return;
+  throw createCoreError(
+    CoreErrorType.ToolExecutionFailed,
+    `Trigger ${entry.id} is a system subscription (owner: the platform itself). It cannot be ${action} by any agent or user; the platform guarantees this subscription for the ops panel loop.`,
+    { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME, id: entry.id, action }, recoverable: true },
   );
 }
+
+
 
 function formatModelWarnings(warnings: readonly string[]): { warnings: string[] } | undefined {
   return warnings.length > 0 ? { warnings: [...warnings] } : undefined;
 }
 
-/**
- * 订阅者=创建者（docs/trigger-system.md 裁决）的机制层钉死（2026-11-22 实测修复）：
- * 归属一律按**调用会话身份**派生（context.workerIdentity 在场 = worker 会话 → 该 worker
- * 的 wkr-id；缺席 = master 会话 → "master"），模型传入的 ownerAgentId 一律忽略。
- *
- * 根因：worker 会话的模型不知道自己的 wkr-id（名册投影只进 master 会话），此前"worker
- * 应传自己的 wkr-id"的契约必然失真——实测 worker 创建的触发器全部落 master 名下（事件
- * 唤醒 master 而非 worker，侧栏也挂错组）。下游投递链/会话物化/侧栏归组本就支持 worker
- * 订阅者，只断在创建入口。返回派生值与是否发生了忽略（供输出 warnings）。
- */
-function resolveOwnerAgentId(
-  context: ToolExecutionContext,
-  parsedOwnerAgentId: string | undefined,
-): { ownerAgentId: string; ignoredSupplied: boolean } {
-  const derived = (context.workerIdentity?.workerId ?? "").trim() || "master";
-  const supplied = parsedOwnerAgentId?.trim();
-  return { ownerAgentId: derived, ignoredSupplied: supplied !== undefined && supplied !== derived };
-}
-
-/**
- * 读引擎持久化的 webhook 服务基址（`state/webhook.json`，desktop host 引擎挂载
- * 工作区时写入）。CLI 进程无法从内存得知动态端口，只能经这份文件得知引擎是否在
- * 运行及其基址。缺失 = 引擎未运行/未分配端口，webhookUrl 输出缺席并在文案里指引。
- */
-async function readWebhookBaseUrl(
-  fileSystemPort: FileSystemPort,
-  triggersRoot: string,
-  context: ToolExecutionContext,
-): Promise<string | undefined> {
-  let content: string;
-  try {
-    const read = await fileSystemPort.readTextFile(
-      { path: join(triggersRoot, "state", "webhook.json"), trace: createTrace(context) },
-      { signal: context.abortSignal },
-    );
-    content = read.content;
-  } catch {
-    // 文件缺失/不可读 = 引擎未运行（CLI headless、桌面端未启动）→ URL 不可用。
-    return undefined;
-  }
-  try {
-    const parsed = safeJsonParse(content) as { baseUrl?: unknown } | null;
-    if (parsed && typeof parsed.baseUrl === "string" && parsed.baseUrl.length > 0) {
-      return parsed.baseUrl;
-    }
-  } catch {
-    // 损坏文件视为不可用，不影响工具主流程。
-  }
-  return undefined;
-}
-
-/**
- * 读引擎持久化的 python 运行时可用性状态（`state/python-runtime.json`，2026-11-22
- * python 主运行时改造：引擎挂载/安装时写，本 handler 只读）。缺失/损坏 = 引擎未运行
- * 或尚未探测，门控按「python 不可用」处理（node 备选），与 readWebhookBaseUrl 同款
- * 文件耦合语义。
- */
-async function readPythonRuntimeState(
-  fileSystemPort: FileSystemPort,
-  triggersRoot: string,
-  context: ToolExecutionContext,
-): Promise<PythonRuntimeStateFile | undefined> {
-  let content: string;
-  try {
-    const read = await fileSystemPort.readTextFile(
-      {
-        path: join(triggersRoot, "state", triggerPythonRuntimeStateFileName),
-        trace: createTrace(context),
-      },
-      { signal: context.abortSignal },
-    );
-    content = read.content;
-  } catch {
-    return undefined;
-  }
-  const parsed = pythonRuntimeStateSchema.safeParse(safeJsonParse(content));
-  return parsed.success ? parsed.data : undefined;
-}
-
-/**
- * script config 的运行时门控（2026-11-22 裁决）：python 运行时可用 → 必须 python
- * （三方包经 install_packages）；不可用/probing/状态缺失 → node 备选（仅标准库）。
- * 门控只约束**新建与修改**：存量条目不迁移、照常运行（迁移 = update 切 runtime）。
- */
-type ScriptRuntimeGate = { pythonAvailable: true } | { pythonAvailable: false; note: string };
-
-async function resolveScriptRuntimeGate(
-  fileSystemPort: FileSystemPort,
-  triggersRoot: string,
-  context: ToolExecutionContext,
-): Promise<ScriptRuntimeGate> {
-  const state = await readPythonRuntimeState(fileSystemPort, triggersRoot, context);
-  if (state === undefined) {
-    return {
-      pythonAvailable: false,
-      note:
-        "no python runtime state yet — the desktop engine has not probed this project; python may become available shortly",
-    };
-  }
-  if (state.state === "available") return { pythonAvailable: true };
-  if (state.state === "probing") {
-    return {
-      pythonAvailable: false,
-      note: "the python runtime is still being provisioned (interpreter download/probe in progress) — retry shortly",
-    };
-  }
-  return {
-    pythonAvailable: false,
-    note: `python runtime is unavailable: ${state.error ?? "unknown reason"}`,
-  };
-}
-
-function assertScriptRuntimeAllowed(gate: ScriptRuntimeGate, runtime: "node" | "python"): void {
-  if (runtime === "python" && !gate.pythonAvailable) {
-    throw createCoreError(
-      CoreErrorType.ToolExecutionFailed,
-      `python is not available right now (${gate.note}). Create this script trigger with runtime "node" instead (standard library only, no third-party packages), or retry later — the engine re-probes python at app start and on install_packages.`,
-      { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME }, recoverable: true },
-    );
-  }
-  if (runtime === "node" && gate.pythonAvailable) {
-    throw createCoreError(
-      CoreErrorType.ToolExecutionFailed,
-      'python is available, so script triggers must use the python runtime (managed interpreter; third-party packages via install_packages). Existing node triggers keep running; to migrate one, use the update action with runtime "python".',
-      { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME }, recoverable: true },
-    );
-  }
-}
-
-/**
- * 归一化输入 config 为注册表 config：
- * - webhook：path 缺省 `hooks/<id>`、token 缺省随机 32hex；同类型 update 缺省沿用旧值（不换 token）。
- * - script：常驻模型（2026-11-21）不接受 schedule/timeoutMs；update 遇遗留条目自然清除
- *   旧字段（引擎本就忽略）。
- */
-function normalizeConfig(
-  input: TriggerConfigInput,
-  triggerId: string,
-  existing: TriggerEntry | undefined,
-): TriggerEntry["config"] {
-  if (input.kind === "cron" || input.kind === "interval") return input;
-  const sameKindExisting =
-    existing && existing.config.kind === input.kind ? existing.config : undefined;
-  if (input.kind === "webhook") {
-    // TS 无法把 input.kind 与 existing.config.kind 的关联跨变量收窄，分支内再收一次。
-    const previous = sameKindExisting?.kind === "webhook" ? sameKindExisting : undefined;
-    return {
-      kind: "webhook",
-      path: input.path ?? previous?.path ?? `hooks/${triggerId}`,
-      token: input.token ?? previous?.token ?? randomUUID().replace(/-/g, ""),
-    };
-  }
-  const previous = sameKindExisting?.kind === "script" ? sameKindExisting : undefined;
-  return {
-    kind: "script",
-    runtime: input.runtime,
-    entry: input.entry,
-    ...(input.profile !== undefined
-      ? { profile: input.profile }
-      : previous?.profile !== undefined
-        ? { profile: previous.profile }
-        : {}),
-    ...(input.headed !== undefined
-      ? { headed: input.headed }
-      : previous?.headed !== undefined
-        ? { headed: previous.headed }
-        : {}),
-  };
-}
 
 export const manageTriggersHandler: ToolHandler = async (input, context) => {
   const parsed = ManageTriggersInputSchema.parse(input) as ManageTriggersInput;
@@ -445,6 +112,7 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
   let scriptDirPath: string | undefined;
   let webhookPath: string | undefined;
   let installResult: ManageTriggersOutput["installResult"];
+  let loginResult: ManageTriggersOutput["loginResult"];
   const timestamp = nowIso();
 
   const findTrigger = (id: string): TriggerEntry => {
@@ -486,6 +154,10 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
       }
       const id = generateId(TRIGGER_ID_PREFIX, new Set(triggers.map((item) => item.id)));
       const config = normalizeConfig(parsed.config!, id, undefined);
+      // 路由策略（2026-11-25 分发器裁决）：新建缺省 dispatcher（目的形态——绑定会话
+      // 升格为分发器，话题聚类 + RouteEvents 路由）；存量条目不受影响（注册表 schema
+      // 缺省 direct = 零迁移）。要旧行为的触发器由模型显式传 routing="direct"。
+      const routing = parsed.routing ?? "dispatcher";
       if (config.kind === "script") {
         // 运行时门控（2026-11-22）：python 可用必须 python、不可用才允许 node 备选。
         const gate = await resolveScriptRuntimeGate(fileSystemPort, triggersRoot, context);
@@ -504,6 +176,7 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
         name,
         ownerAgentId,
         groupId: null,
+        routing,
         config,
         ...(parsed.contract !== undefined ? { contract: parsed.contract } : {}),
         status: "active",
@@ -544,7 +217,23 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
     }
     case "update": {
       const existing = findTrigger(parsed.id!.trim());
+      assertNotSystemTrigger(existing, "updated");
       if (parsed.name !== undefined) existing.name = parsed.name.trim();
+      // 路由策略切换（2026-11-25 分发器裁决）：显式传入才改（缺省不动）。切到
+      // dispatcher/fixed 后下一次投递即按新策略分流（引擎轮询拾取注册表变更）；
+      // direct → dispatcher 的既有绑定会话自然升格为分发器（绑定表不变）。
+      if (parsed.routing !== undefined && existing.routing !== parsed.routing) {
+        existing.routing = parsed.routing;
+        warnings.push(
+          `routing switched to "${parsed.routing}": ${
+            parsed.routing === "dispatcher"
+              ? "the bound session becomes a dispatcher (events are classified and routed via RouteEvents instead of handled in place)"
+              : parsed.routing === "fixed"
+                ? "each delivery starts a new session directly (the previous bound session is kept as history)"
+                : "events are handled in the bound session again (legacy behavior)"
+          }`,
+        );
+      }
       if (parsed.config !== undefined) {
         existing.config = normalizeConfig(parsed.config, existing.id, existing);
         if (existing.config.kind === "script") {
@@ -574,6 +263,7 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
     }
     case "set_status": {
       const existing = findTrigger(parsed.id!.trim());
+      assertNotSystemTrigger(existing, "disabled or re-enabled");
       existing.status = parsed.status!;
       // 重新启用（含从 error-paused 恢复）即修复确认：清零连续异常计数（裁决 5）。
       if (existing.status === "active") existing.consecutiveFailures = 0;
@@ -584,6 +274,7 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
     }
     case "delete": {
       const existing = findTrigger(parsed.id!.trim());
+      assertNotSystemTrigger(existing, "deleted");
       if (existing.deleted === true) {
         throw createCoreError(
           CoreErrorType.ToolExecutionFailed,
@@ -632,6 +323,9 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
         name,
         memberTriggerIds: [...memberIds],
         subscriberAgentId,
+        // 组路由策略（2026-11-25 分发器裁决）：新建缺省 dispatcher（与触发器 create 同
+        // 款目的形态——组是多源混批拆流的主场景）；成员条目 routing 被组值覆盖（忽略）。
+        routing: parsed.routing ?? "dispatcher",
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -649,6 +343,11 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
         );
       }
       if (parsed.name !== undefined) existingGroup.name = parsed.name.trim();
+      // 组路由策略切换（2026-11-25 分发器裁决）：显式传入才改；下次投递按新策略分流。
+      if (parsed.routing !== undefined && existingGroup.routing !== parsed.routing) {
+        existingGroup.routing = parsed.routing;
+        warnings.push(`group routing switched to "${parsed.routing}".`);
+      }
       for (const memberId of parsed.addMemberIds ?? []) {
         const member = findTrigger(memberId);
         // 归属校验（2026-11-23，用户裁决 B6）：组不许混别的智能体的触发器——一个触发器
@@ -739,6 +438,47 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
       installResult = install;
       break;
     }
+    case "open_login": {
+      // 反向请求到宿主引擎执行（2026-11-25 登录闭环，specs/trigger-browser-hosting.md
+      // §3.4）：引擎持有浏览器实例与登录会话生命周期，CLI 只转发。端口缺席 = 诚实拒绝。
+      const 条目 = findTrigger(parsed.id!);
+      assertNotSystemTrigger(条目, "opened for login");
+      if (条目.config.kind !== "script") {
+        throw createCoreError(
+          CoreErrorType.ToolExecutionFailed,
+          "open_login applies to script triggers only",
+          { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME, id: 条目.id }, recoverable: true },
+        );
+      }
+      if (条目.config.profile === undefined) {
+        throw createCoreError(
+          CoreErrorType.ToolExecutionFailed,
+          'this script trigger declares no login profile (config.profile is unset) — declare a profile to use engine-hosted browsers',
+          { context: { toolName: MANAGE_TRIGGERS_TOOL_NAME, id: 条目.id }, recoverable: true },
+        );
+      }
+      const triggerRuntimePort = context.triggerRuntimePort;
+      if (triggerRuntimePort === undefined) {
+        throw createCoreError(
+          CoreErrorType.ConfigurationError,
+          "open_login requires the desktop trigger engine (TriggerRuntimePort is not wired in this host) — start the desktop app and retry",
+          {
+            context: { toolCallId: context.toolCallId, toolName: MANAGE_TRIGGERS_TOOL_NAME },
+            recoverable: false,
+          },
+        );
+      }
+      const result = await triggerRuntimePort.openLogin({
+        workspacePath: context.workspaceRoot,
+        sessionId: context.sessionId,
+        triggerId: 条目.id,
+        ...(parsed.loginUrl !== undefined ? { url: parsed.loginUrl } : {}),
+        trace: createTrace(context),
+      });
+      loginResult = result;
+      trigger = 条目;
+      break;
+    }
   }
 
   // webhook 触发器（create/update/set_status 命中时）：读引擎基址拼完整回调 URL。
@@ -765,13 +505,14 @@ export const manageTriggersHandler: ToolHandler = async (input, context) => {
     ...(webhookPath !== undefined ? { webhookPath } : {}),
     ...(webhookUrl !== undefined ? { webhookUrl } : {}),
     ...(installResult !== undefined ? { installResult } : {}),
+    ...(loginResult !== undefined ? { loginResult } : {}),
     triggerCount: triggers.length,
     groupCount: groups.length,
     ...formatModelWarnings(warnings),
   } satisfies ManageTriggersOutput);
-  // install_packages 只跑 pip、不改注册表（引擎侧写计数/状态），跳过回写——否则分钟级
-  // pip 窗口内引擎的写入会被本动作的陈旧快照整体回滚（见 ensureRegistryUnchanged 注释）。
-  if (parsed.action !== "install_packages") {
+  // install_packages / open_login 不改注册表（引擎侧写状态/落档案），跳过回写——否则
+  // 分钟级窗口内引擎的写入会被本动作的陈旧快照整体回滚（见 ensureRegistryUnchanged 注释）。
+  if (parsed.action !== "install_packages" && parsed.action !== "open_login") {
     await ensureRegistryUnchanged(fileSystemPort, registryPath, context, baselineRaw);
     await writeRegistry(fileSystemPort, registryPath, { ...registry, triggers, groups, profiles }, context);
   }
@@ -813,6 +554,14 @@ function formatManageTriggersModelContent(output: unknown): string {
         lines.push(
           `Write the script to ${data.scriptDirPath} (entry path as configured) with Write/Edit.`,
         );
+        // 运行模式差异在工具输出钉死（2026-11-25 定时执行模式）：scheduled 趟 = 一趟采集
+        // 即退，写循环/睡眠的脚本会在下一趟重入跳过。"runMode" in 守卫：输出镜像的 config
+        // 联合里还有无 runMode 的遗留 script 变体（旧注册表）。
+        if ("runMode" in data.trigger.config && data.trigger.config.runMode === "scheduled") {
+          lines.push(
+            'Run mode: scheduled — the engine runs the script ONCE per schedule fire; each run does one pass (collect data, emit event(s) via robinrun.emit, exit 0). Do NOT loop, sleep, or wait inside the script. exit 0 does NOT complete the trigger — it stays active for the next fire.',
+          );
+        }
         // 出口契约在工具输出同样钉死（与 README 脚手架双保险，2026-11-19 验收 bug），
         // 文案按 runtime 双变体（2026-11-22 python 主 + node 备选；旧版"stdout 最后
         // 一行 JSON"批处理契约文案已随常驻模型退役）。
@@ -860,6 +609,19 @@ function formatManageTriggersModelContent(output: unknown): string {
         `Login-state profile "${data.profile?.name}" registered. The storageState file is created on the script's first logged-in run.`,
       );
       break;
+    case "open_login": {
+      const login = data.loginResult;
+      if (login === undefined) break;
+      if (login.ok) {
+        lines.push(
+          `Login session completed for profile "${login.profile ?? data.trigger?.id}" — the storage state was saved. Re-enable the trigger with ManageTriggers set_status (status "active"); the next run resumes headless with the refreshed login state.`,
+        );
+      } else {
+        lines.push(`open_login failed: ${login.error ?? "unknown error"}`);
+        for (const line of login.guidance ?? []) lines.push(line);
+      }
+      break;
+    }
     case "install_packages": {
       const install = data.installResult;
       if (install === undefined) break;
@@ -910,7 +672,7 @@ export const manageTriggersToolEntry: ToolEntry = {
   metadata: {
     name: MANAGE_TRIGGERS_TOOL_NAME,
     description: [
-      "Manage this project's trigger registry — scheduled checks (cron/interval), local webhooks, and resident script processes that wake agents with events. Any agent (main or worker) can create triggers; ownership always follows the creator and is derived by the system from the calling session (a worker session owns the trigger with its wkr-id; a main session owns it as master) — you cannot create a trigger or group for another agent, and an ownerAgentId input is ignored. A trigger's events are delivered into ONE dedicated session keyed by the trigger (or its group). Boundary: only create and manage triggers that are yours or that you were explicitly instructed to handle — never touch or report on unrelated triggers.",
+      "Manage this project's trigger registry — scheduled checks (cron/interval), local webhooks, and script triggers that wake agents with events. Any agent (main or worker) can create triggers; ownership always follows the creator and is derived by the system from the calling session (a worker session owns the trigger with its wkr-id; a main session owns it as master) — you cannot create a trigger or group for another agent, and an ownerAgentId input is ignored. A trigger's events are delivered into ONE dedicated session keyed by the trigger (or its group). Boundary: only create and manage triggers that are yours or that you were explicitly instructed to handle — never touch or report on unrelated triggers.",
       "",
       "Actions:",
       "- create: register a trigger. Requires name, config (cron | interval | webhook | script), and readme (purpose, data source, output contract, failure handling) — every trigger MUST have a description. For script triggers, write the script into the returned script/ directory afterwards with Write/Edit.",
@@ -919,8 +681,9 @@ export const manageTriggersToolEntry: ToolEntry = {
       "- create_group / update_group: bundle triggers into a subscription group so their events share one session (dedup context by design). A trigger belongs to at most one group.",
       "- create_profile: register a login-state profile name that script configs can reference (storageState is captured on first logged-in run).",
       "- install_packages: pip-install third-party packages into this project's python venv for python script triggers (requires the desktop engine; active python scripts restart automatically on success).",
+      "- open_login: open a HEADED login window for a script trigger's login profile (requires the desktop engine). Always pass loginUrl (the site's login page) so the window lands on it instead of a blank tab. The user logs in and closes the window — closing it saves the refreshed storage state; then re-enable the trigger with set_status. Use it when a script reported a login failure (the trigger is error-paused and the subscriber was woken with diagnostics).",
       "",
-      "Rules: never edit triggers.json directly; descriptions and scripts are edited via Write/Edit on README.md / script files, not through this tool. Script runtimes are gated by the engine: python is the primary script runtime (third-party packages via install_packages), and the node fallback (standard library only) is accepted only while python is unavailable — create/update enforce this, and the create result plus the README scaffold tell you which event protocol to write. Script triggers are resident event-source processes that run unattended — keep them read-only where possible and declare sanity assertions in the contract so failures are detected instead of silently returning wrong data.",
+      "Rules: never edit triggers.json directly; descriptions and scripts are edited via Write/Edit on README.md / script files, not through this tool. Script runtimes are gated by the engine: python is the primary script runtime (third-party packages via install_packages), and the node fallback (standard library only) is accepted only while python is unavailable — create/update enforce this, and the create result plus the README scaffold tell you which event protocol to write. Script triggers run unattended — keep them read-only where possible and declare sanity assertions in the contract so failures are detected instead of silently returning wrong data. Sizing by responsibility boundary, never one-script-per-topic: one responsibility domain (e.g. a platform's comments + traffic + operations data) = ONE script emitting its several event types with routing \"dispatcher\"; unrelated domains stay in separate scripts; periodic checks without a persistent subscription use runMode \"scheduled\" (one pass per fire, no resident process).",
     ].join("\n"),
     readOnly: false,
     destructive: false,

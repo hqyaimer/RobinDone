@@ -89,6 +89,40 @@ CREATE TABLE off_peak_tasks (
         updated_at         INTEGER NOT NULL
       , project_id TEXT, host_id TEXT, additional_directories TEXT);
 
+CREATE TABLE ops_panel_entries (
+  workspace_key TEXT NOT NULL,
+  id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('requirement','approval','feedback')),
+  seq INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  author TEXT NOT NULL,
+  status TEXT NOT NULL,
+  outcome TEXT,
+  note TEXT,
+  wakeup_state TEXT NOT NULL DEFAULT 'none' CHECK (wakeup_state IN ('none','pending','in_flight','released')),
+  links TEXT,
+  acknowledged_at INTEGER,
+  decided_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL, recorded_by TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (workspace_key, id)
+);
+
+CREATE TABLE progress_entries (
+  workspace_key TEXT NOT NULL,
+  id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  links TEXT,
+  created_by TEXT NOT NULL CHECK (created_by IN ('master','system')),
+  deleted INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (workspace_key, id)
+);
+
 CREATE TABLE project_roots (
  project_id TEXT NOT NULL REFERENCES projects(project_id) ON DELETE CASCADE,
  root_path TEXT NOT NULL, position INTEGER NOT NULL, is_primary INTEGER NOT NULL DEFAULT 0,
@@ -209,6 +243,12 @@ CREATE INDEX idx_off_peak_pick
 
 CREATE INDEX idx_off_peak_ws
       ON off_peak_tasks (workspace_key, status);
+
+CREATE INDEX idx_ops_panel_entries_listing
+  ON ops_panel_entries (workspace_key, kind, created_at ASC);
+
+CREATE INDEX idx_progress_entries_listing
+  ON progress_entries (workspace_key, deleted, created_at ASC);
 
 CREATE UNIQUE INDEX idx_projects_host_name ON projects(host_id,name) WHERE deleted=0;
 

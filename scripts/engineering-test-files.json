@@ -161,7 +161,10 @@
   "packages/services/test/triggerBindingValidation.test.ts",
   "packages/services/test/triggerEventAggregator.test.ts",
   "packages/services/test/autoSessionDefaultMode.test.ts",
+  "packages/services/test/opsPanelService.test.ts",
+  "packages/services/test/progressLedger.test.ts",
   "packages/ui/test/agentTreeLayout.test.ts",
+  "packages/ui/test/askUserQuestion.test.ts",
   "packages/web/test/viteConfigLoad.test.ts",
   "packages/robinrun-server-cli/test/packaging.test.ts",
   "packages/robinrun-server-cli/test/stageRemoteAssetsCli.test.ts",
@@ -169,7 +172,10 @@
   "packages/robinrun-server-cli/test/verifyRemoteSshTarget.test.ts",
   "packages/services/test/triggerPythonRuntime.test.ts",
   "packages/services/test/triggerScriptSupervisorPython.test.ts",
+  "packages/services/test/triggerSystemSubscription.test.ts",
+  "packages/services/test/triggerBrowserHost.test.ts",
   "packages/shared/test/messageOrigin.test.ts",
+  "packages/shared/test/opsPanelEntries.test.ts",
   "packages/shared/test/triggerRegistry.test.ts",
   "packages/shared/test/workerRegistry.test.ts"
 ]

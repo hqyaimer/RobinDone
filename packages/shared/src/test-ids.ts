@@ -817,3 +817,10 @@ export const TID_START_PLAN_RECOMMENDATION_DIALOG = "start-plan-recommendation-d
 
 /** 用户反馈的诊断日志授权开关 */
 export const TID_FEEDBACK_LOGS_OPT_IN = "feedback-logs-opt-in";
+
+/** 需求/审批/反馈面板（2026-11-24 MVP）：侧栏入口与面板主体的挂点。 */
+export const TID_OPS_PANEL_OPEN = "ops-panel-open";
+export const TID_OPS_PANEL_ROOT = "ops-panel-root";
+export const TID_OPS_PANEL_QUEUE = "ops-panel-queue";
+export const TID_OPS_PANEL_LIST = "ops-panel-list";
+export const TID_OPS_PANEL_DETAIL = "ops-panel-detail";

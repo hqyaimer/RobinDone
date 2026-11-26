@@ -200,6 +200,8 @@ export const ServiceChannels = {
   HighspeedCard: "highspeed-card",
   /** Onboarding 完成记录服务（本地持久化，后续上传服务器） */
   OnboardingRecord: "onboarding-record",
+  /** 需求/审批/反馈面板服务（2026-11-24 MVP：三原语状态机 + 串行唤醒队列） */
+  OpsPanel: "ops-panel",
 } as const;
 
 export type ServiceChannelName = (typeof ServiceChannels)[keyof typeof ServiceChannels];

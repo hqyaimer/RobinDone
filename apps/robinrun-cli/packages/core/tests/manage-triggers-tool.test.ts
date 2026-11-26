@@ -167,6 +167,54 @@ describe("ManageTriggers tool", () => {
     expect(registry.triggers[0]?.config).toMatchObject({ kind: "script" });
     expect("schedule" in registry.triggers[0]!.config).toBe(false);
     expect(registry.triggers[0]?.contract).toEqual(VALID_CREATE_SCRIPT.contract);
+
+    // 2026-11-25 定时执行模式：resident 缺省落库 runMode="resident"（零迁移）。
+    expect(registry.triggers[0]?.config).toMatchObject({ runMode: "resident" });
+  });
+
+  // 2026-11-25 定时执行模式（runMode/schedule 交叉约束）：scheduled 必带 schedule，
+  // resident 禁带（schedule 随 runMode 转正，杜绝"写了却不生效"的歧义）。
+  it("runMode=scheduled 缺 schedule 拒绝；resident 带 schedule 拒绝；scheduled 落库携带计划", async () => {
+    const fs = createMemoryFileSystem();
+
+    expect(() =>
+      ManageTriggersInputSchema.parse({
+        ...VALID_CREATE_SCRIPT,
+        config: { ...VALID_CREATE_SCRIPT.config, runMode: "scheduled" },
+      }),
+    ).toThrow(/scheduled.*requires a schedule/i);
+
+    expect(() =>
+      ManageTriggersInputSchema.parse({
+        ...VALID_CREATE_SCRIPT,
+        config: {
+          ...VALID_CREATE_SCRIPT.config,
+          schedule: { kind: "interval", intervalMinutes: 5 },
+        },
+      }),
+    ).toThrow(/schedule is only valid with runMode/i);
+
+    const output = (await manageTriggersHandler(
+      ManageTriggersInputSchema.parse({
+        ...VALID_CREATE_SCRIPT,
+        name: "periodic-check",
+        config: {
+          ...VALID_CREATE_SCRIPT.config,
+          runMode: "scheduled",
+          schedule: { kind: "interval", intervalMinutes: 30 },
+        },
+      }),
+      contextWith(fs),
+    )) as { trigger: { config: { runMode: string; schedule?: unknown } }; readmePath: string };
+
+    expect(output.trigger.config).toMatchObject({
+      runMode: "scheduled",
+      schedule: { kind: "interval", intervalMinutes: 30 },
+    });
+    // README 脚手架钉 scheduled 生命周期语义（一趟采集即退、exit 0 不结束触发器）。
+    const readme = fs.files.get(output.readmePath)!;
+    expect(readme).toContain("scheduled execution mode");
+    expect(readme).toContain("Do NOT loop, sleep, or wait");
   });
 
   it("generates webhook path and token when omitted", async () => {
@@ -708,6 +756,74 @@ describe("ManageTriggers tool", () => {
         contextWith(noPort),
       ),
     ).rejects.toThrow(/requires the desktop trigger engine/);
+  });
+
+  // 系统特权订阅保护（2026-11-24 需求/审批/反馈面板，验收 #7 的工具侧一半）：
+  // master/worker 经 ManageTriggers 停用/删除/修改 system 条目必须被拒绝，注册表不动；
+  // create 侧由输入 schema 刻意不收 system config 形状兜底（模型无法伪造）。
+  it("system 条目拒绝 set_status/delete/update，注册表保持原样", async () => {
+    const systemEntry = {
+      id: "trg-ops-panel",
+      name: "运营面板订阅",
+      ownerAgentId: "master",
+      groupId: null,
+      config: {
+        kind: "system",
+        events: ["requirement.created", "approval.decided", "feedback.created"],
+      },
+      status: "active",
+      consecutiveFailures: 0,
+      system: true,
+      createdAt: "2026-11-24T00:00:00.000Z",
+      updatedAt: "2026-11-24T00:00:00.000Z",
+    };
+    const fs = createMemoryFileSystem({
+      [registryPath()]: `${JSON.stringify({
+        version: TRIGGER_REGISTRY_VERSION,
+        triggers: [systemEntry],
+        groups: [],
+        profiles: [],
+      })}\n`,
+    });
+
+    await expect(
+      manageTriggersHandler(
+        ManageTriggersInputSchema.parse({
+          action: "set_status",
+          id: systemEntry.id,
+          status: "deactivated",
+        }),
+        contextWith(fs, { workerId: "wkr-aaaaaaaa" }),
+      ),
+    ).rejects.toThrow(/system subscription/);
+    await expect(
+      manageTriggersHandler(
+        ManageTriggersInputSchema.parse({ action: "delete", id: systemEntry.id }),
+        contextWith(fs, undefined),
+      ),
+    ).rejects.toThrow(/system subscription/);
+    await expect(
+      manageTriggersHandler(
+        ManageTriggersInputSchema.parse({ action: "update", id: systemEntry.id, name: "renamed" }),
+        contextWith(fs, undefined),
+      ),
+    ).rejects.toThrow(/system subscription/);
+
+    const registry = readRegistry(fs);
+    expect(registry.triggers).toHaveLength(1);
+    expect(registry.triggers[0]?.status).toBe("active");
+    expect(registry.triggers[0]?.deleted).toBeUndefined();
+    expect(registry.triggers[0]?.name).toBe("运营面板订阅");
+  });
+
+  it("create 输入无法伪造 system config（schema 刻意不收该形状）", () => {
+    const forged = ManageTriggersInputSchema.safeParse({
+      action: "create",
+      name: "fake-subscription",
+      config: { kind: "system", events: ["requirement.created"] },
+      readme: "forge",
+    });
+    expect(forged.success).toBe(false);
   });
 
 });

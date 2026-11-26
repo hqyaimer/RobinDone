@@ -34,7 +34,16 @@ export interface PluginStoreNavEntry extends WorkspaceNavEntryBase {
   kind: "plugin-store";
 }
 
-export type WorkspaceNavEntry = TaskNavEntry | AutomationsNavEntry | PluginStoreNavEntry;
+// 需求/审批/反馈面板（2026-11-24 MVP）：整页主视图，与 automations/plugin-store 同款入栈。
+export interface OpsPanelNavEntry extends WorkspaceNavEntryBase {
+  kind: "ops-panel";
+}
+
+export type WorkspaceNavEntry =
+  | TaskNavEntry
+  | AutomationsNavEntry
+  | PluginStoreNavEntry
+  | OpsPanelNavEntry;
 
 export interface TaskNavigationHistory {
   entries: WorkspaceNavEntry[];
@@ -58,6 +67,10 @@ export function isAutomationsNavEntry(entry: WorkspaceNavEntry): entry is Automa
 
 export function isPluginStoreNavEntry(entry: WorkspaceNavEntry): entry is PluginStoreNavEntry {
   return entry.kind === "plugin-store";
+}
+
+export function isOpsPanelNavEntry(entry: WorkspaceNavEntry): entry is OpsPanelNavEntry {
+  return entry.kind === "ops-panel";
 }
 
 function isSameNavEntry(left: WorkspaceNavEntry, right: WorkspaceNavEntry): boolean {
@@ -145,6 +158,19 @@ export function pushPluginStoreNavEntry(
 ): TaskNavigationHistory {
   return pushEntry(history, {
     kind: "plugin-store",
+    workspacePath,
+    ...(workspaceIdentity ? { workspaceIdentity } : {}),
+  });
+}
+
+/** 用户主动打开需求/审批/反馈面板主视图时调用（2026-11-24 MVP）。 */
+export function pushOpsPanelNavEntry(
+  history: TaskNavigationHistory,
+  workspacePath: string,
+  workspaceIdentity?: string,
+): TaskNavigationHistory {
+  return pushEntry(history, {
+    kind: "ops-panel",
     workspacePath,
     ...(workspaceIdentity ? { workspaceIdentity } : {}),
   });

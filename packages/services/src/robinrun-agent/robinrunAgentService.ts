@@ -1,4 +1,12 @@
 import { sessionLifecycleSnapshotSchema, type SessionLifecycleSnapshot } from "@robinrun/shared";
+// 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求族的 actor/条目/视图词汇。
+import type {
+  OpsPanelActor,
+  OpsPanelEntry,
+  OpsPanelView,
+  ProgressEntry,
+  ProgressView,
+} from "@robinrun/shared";
 import {
   getNetworkErrorCodes,
   isNetworkFailure,
@@ -74,6 +82,10 @@ import {
   robinrunAgentContactDispatchParamsSchema,
   robinrunTriggerRuntimeInstallParamsSchema,
   robinrunTriggerRuntimeInstallResultSchema,
+  robinrunTriggerRuntimeRouteEventsParamsSchema,
+  robinrunTriggerRuntimeRouteEventsResultSchema,
+  robinrunTriggerRuntimeOpenLoginParamsSchema,
+  robinrunTriggerRuntimeOpenLoginResultSchema,
   robinrunSubagentsReadRuntimeConfigParamsSchema,
   type SubagentRuntimeConfig,
   ROBINRUN_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS,
@@ -147,6 +159,21 @@ import {
   robinrunProtocolEmptyResultSchema,
   robinrunProtocolMethods,
   robinrunProtocolNotifications,
+  robinrunOpsPanelListEntriesParamsSchema,
+  robinrunOpsPanelGetEntryParamsSchema,
+  robinrunOpsPanelCreateEntryParamsSchema,
+  robinrunOpsPanelDecideRequirementParamsSchema,
+  robinrunOpsPanelResolveFeedbackParamsSchema,
+  robinrunOpsPanelAcknowledgeApprovalParamsSchema,
+  robinrunOpsPanelAppendProgressParamsSchema,
+  robinrunOpsPanelUpdateProgressParamsSchema,
+  robinrunOpsPanelDeleteProgressParamsSchema,
+  robinrunOpsPanelGetProgressViewParamsSchema,
+  robinrunOpsPanelViewResultSchema,
+  robinrunOpsPanelEntryResultSchema,
+  robinrunOpsPanelProgressViewResultSchema,
+  robinrunOpsPanelProgressEntryResultSchema,
+  robinrunOpsPanelProgressDeleteResultSchema,
   robinrunMcpTelemetryEventSchema,
   robinrunMcpResourceSamplesSchema,
   robinrunToolExecResourceSchema,
@@ -208,6 +235,7 @@ import {
 import { ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE } from "./robinrunAgent.js";
 import type {
   RobinRunProtocolRequestId,
+  RobinRunProtocolRequest,
   ModelSelection,
   RobinRunProviderRuntimeHeadersRequestParams,
   RobinRunProviderRuntimeHeadersCancelled,
@@ -572,6 +600,98 @@ function buildWorkspaceRef(params: RobinRunAgentWorkspaceTarget): RobinRunWorksp
     remoteSessionId: params.remoteSessionId,
     workspaceKey: resolveWorkspaceKey(params),
   };
+}
+
+// opsPanel/* 反向请求族（2026-11-24 需求/审批/反馈面板 MVP；2026-11-25 起含进度账本
+// 四方法，specs/progress-ledger.md）：十个方法共用一条分发路径（parse params →
+// executor → result schema 校验 → respond）。触发器 install_packages 的单分支形态在
+// 方法族扩大后重复过甚，这里收敛为表驱动的一个 helper（与上面逐方法分支并存，
+// 不动既有路径）。
+const robinrunOpsPanelParamsSchemas: Record<string, { parse(input: unknown): unknown }> = {
+  [robinrunProtocolMethods.opsPanelListEntries]: robinrunOpsPanelListEntriesParamsSchema,
+  [robinrunProtocolMethods.opsPanelGetEntry]: robinrunOpsPanelGetEntryParamsSchema,
+  [robinrunProtocolMethods.opsPanelCreateEntry]: robinrunOpsPanelCreateEntryParamsSchema,
+  [robinrunProtocolMethods.opsPanelDecideRequirement]:
+    robinrunOpsPanelDecideRequirementParamsSchema,
+  [robinrunProtocolMethods.opsPanelResolveFeedback]: robinrunOpsPanelResolveFeedbackParamsSchema,
+  [robinrunProtocolMethods.opsPanelAcknowledgeApproval]:
+    robinrunOpsPanelAcknowledgeApprovalParamsSchema,
+  [robinrunProtocolMethods.opsPanelGetProgressView]: robinrunOpsPanelGetProgressViewParamsSchema,
+  [robinrunProtocolMethods.opsPanelAppendProgress]: robinrunOpsPanelAppendProgressParamsSchema,
+  [robinrunProtocolMethods.opsPanelUpdateProgress]: robinrunOpsPanelUpdateProgressParamsSchema,
+  [robinrunProtocolMethods.opsPanelDeleteProgress]: robinrunOpsPanelDeleteProgressParamsSchema,
+};
+
+type RobinRunAgentOpsPanelExecutor = NonNullable<
+  CreateRobinRunAgentServiceOptions["opsPanelExecutor"]
+>;
+
+function dispatchOpsPanelRequest(
+  request: RobinRunProtocolRequest,
+  client: Pick<RobinRunProtocolClient, "respond" | "respondError">,
+  workspace: RobinRunAgentWorkspaceTarget,
+  options: CreateRobinRunAgentServiceOptions | undefined,
+): void {
+  void (async () => {
+    // 先查找再守卫（局部变量收窄）；hasOwn 而非 !== undefined：request.method 是线上
+    // 字符串，裸键查找会命中 Object.prototype 的 constructor/toString 等成员，把任意
+    // 方法名误判成面板请求。
+    const schema: { parse(input: unknown): unknown } | undefined =
+      robinrunOpsPanelParamsSchemas[request.method];
+    if (schema === undefined) {
+      throw new Error(`Unexpected ops panel method ${request.method}`);
+    }
+    const params = schema.parse(request.params) as {
+      actor: OpsPanelActor;
+      entryId?: string;
+      author?: "user" | "master";
+      kind?: "requirement" | "approval" | "feedback";
+      title?: string;
+      body?: string;
+      links?: string[];
+      outcome?: "accepted" | "rejected" | "suspended" | "converted_to_approval";
+      note?: string;
+    };
+    const executor: RobinRunAgentOpsPanelExecutor | undefined = options?.opsPanelExecutor;
+    if (!executor) throw new Error("Ops panel is unavailable on this Host");
+    const result = await executor({
+      method: request.method as Parameters<RobinRunAgentOpsPanelExecutor>[0]["method"],
+      workspacePath: workspace.workspacePath,
+      workspaceIdentity: workspace.workspaceIdentity,
+      actor: params.actor,
+      ...(params.entryId !== undefined ? { entryId: params.entryId } : {}),
+      ...(params.kind !== undefined ? { kind: params.kind } : {}),
+      ...(params.title !== undefined ? { title: params.title } : {}),
+      ...(params.body !== undefined ? { body: params.body } : {}),
+      ...(params.links !== undefined ? { links: params.links } : {}),
+      // master 代录的来源标记（2026-11-24 录入与来源拆分）。
+      ...(params.author !== undefined ? { author: params.author } : {}),
+      ...(params.outcome !== undefined ? { outcome: params.outcome } : {}),
+      ...(params.note !== undefined ? { note: params.note } : {}),
+      ...(request.trace !== undefined ? { trace: request.trace } : {}),
+    });
+    // 返回形状按数据判别，不按方法名硬编码：面板视图（list）/面板条目（get/写动作）/
+    // 进度视图（list_progress）/进度条目（append/update_progress）/删除确认（delete_progress）。
+    const viewParsed = robinrunOpsPanelViewResultSchema.safeParse(result);
+    const entryParsed = robinrunOpsPanelEntryResultSchema.safeParse(result);
+    const progressViewParsed = robinrunOpsPanelProgressViewResultSchema.safeParse(result);
+    const progressEntryParsed = robinrunOpsPanelProgressEntryResultSchema.safeParse(result);
+    const validated = viewParsed.success
+      ? viewParsed.data
+      : entryParsed.success
+        ? entryParsed.data
+        : progressViewParsed.success
+          ? progressViewParsed.data
+          : progressEntryParsed.success
+            ? progressEntryParsed.data
+            : robinrunOpsPanelProgressDeleteResultSchema.parse(result);
+    await client.respond(request.id, validated);
+  })().catch((error: unknown) =>
+    client.respondError(request.id, {
+      code: -32603,
+      message: error instanceof Error ? error.message : "Ops panel request failed",
+    }),
+  );
 }
 
 // 已保存工作流的 target 是否带 workspace：项目档、以及
@@ -1220,6 +1340,77 @@ interface CreateRobinRunAgentServiceBaseOptions extends Omit<
     replayFailures?: string[];
     restartedTriggerIds?: string[];
   }>;
+  /**
+   * 分发器路由标记登记（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md §6.2）：
+   * RouteEvents 工具经反向请求落到触发器引擎 routeEvents（会话 key 反查 + routing 门控 +
+   * RouteMarkQueue 兑现）。desktop host 装配时注入；缺省（纯 CLI）报错引导。
+   */
+  triggerRuntimeRouteEventsExecutor?: (request: {
+    workspacePath: string;
+    sessionId: string;
+    routes: Array<{
+      eventIds: string[];
+      target: { kind: "new" } | { kind: "existing"; taskId: string };
+    }>;
+  }) => Promise<{
+    ok: boolean;
+    acceptedEventIds: string[];
+    unknownEventIds: string[];
+    error?: string;
+  }>;
+  /**
+   * 有头登录会话（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4）：
+   * ManageTriggers open_login 经反向请求落到触发器引擎 openTriggerLogin——引擎拉起有头
+   * 登录窗口（注入档案登录态），用户登录完成关闭窗口即落档。分钟级人工操作，请求在途
+   * 直至关窗/超时/失败（协议逐请求超时，本路径不设）。desktop host 装配时注入；
+   * 缺省（纯 CLI）报错引导。
+   */
+  triggerRuntimeOpenLoginExecutor?: (request: {
+    workspacePath: string;
+    triggerId: string;
+    /** 登录会话落点（http/https URL）；缺省落空白新标签页。 */
+    url?: string;
+  }) => Promise<{
+    ok: boolean;
+    profile?: string;
+    error?: string;
+    guidance?: string[];
+  }>;
+  /**
+   * 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求族 → host 面板服务
+   * （IOpsPanelService，权限矩阵 + worker 可见性在服务层强制）。actor 由 CLI 机制层
+   * 随请求携带（服务层按 actor 复验权限）。desktop host 装配时注入；缺省（纯 CLI）
+   * 报错引导，不静默失败。
+   */
+  opsPanelExecutor?: (request: {
+    method:
+      | typeof robinrunProtocolMethods.opsPanelListEntries
+      | typeof robinrunProtocolMethods.opsPanelGetEntry
+      | typeof robinrunProtocolMethods.opsPanelCreateEntry
+      | typeof robinrunProtocolMethods.opsPanelDecideRequirement
+      | typeof robinrunProtocolMethods.opsPanelResolveFeedback
+      | typeof robinrunProtocolMethods.opsPanelAcknowledgeApproval
+      | typeof robinrunProtocolMethods.opsPanelGetProgressView
+      | typeof robinrunProtocolMethods.opsPanelAppendProgress
+      | typeof robinrunProtocolMethods.opsPanelUpdateProgress
+      | typeof robinrunProtocolMethods.opsPanelDeleteProgress;
+    workspacePath: string;
+    workspaceIdentity?: string;
+    actor: OpsPanelActor;
+    entryId?: string;
+    kind?: "requirement" | "approval" | "feedback";
+    title?: string;
+    body?: string;
+    /** 关联文件路径（进度动作，2026-11-25）：≤8 条，空数组 = 清空链接。 */
+    links?: string[];
+    /** 来源标记（2026-11-24 录入与来源拆分）：master 代录需求/反馈时的 author。 */
+    author?: "user" | "master";
+    outcome?: "accepted" | "rejected" | "suspended" | "converted_to_approval";
+    note?: string;
+    trace?: RobinRunProtocolTrace;
+  }) => Promise<
+    OpsPanelView | ProgressView | { entry: OpsPanelEntry | ProgressEntry } | { id: string }
+  >;
   topicResourceExecutor?: (
     request: RobinRunTopicResourceReadParams &
       RobinRunAgentWorkspaceTarget & { trace?: RobinRunProtocolTrace },
@@ -2921,6 +3112,59 @@ export function createRobinRunAgentService(
               message: error instanceof Error ? error.message : "Trigger runtime install failed",
             }),
           );
+          return;
+        }
+        if (request.method === robinrunProtocolMethods.triggerRuntimeRouteEvents) {
+          // 分发器路由标记（2026-11-25 分发器裁决）：RouteEvents → 触发器引擎 routeEvents
+          // （会话 key 反查 + routing 门控 + RouteMarkQueue 兑现拆批投递）。
+          void (async () => {
+            const params = robinrunTriggerRuntimeRouteEventsParamsSchema.parse(request.params);
+            if (!options?.triggerRuntimeRouteEventsExecutor)
+              throw new Error("Trigger runtime route events is unavailable on this Host");
+            const result = robinrunTriggerRuntimeRouteEventsResultSchema.parse(
+              await options.triggerRuntimeRouteEventsExecutor({
+                workspacePath: workspace.workspacePath,
+                sessionId: params.sessionId,
+                routes: params.routes,
+              }),
+            );
+            await client.respond(request.id, result);
+          })().catch((error: unknown) =>
+            client.respondError(request.id, {
+              code: -32603,
+              message:
+                error instanceof Error ? error.message : "Trigger runtime route events failed",
+            }),
+          );
+          return;
+        }
+        if (request.method === robinrunProtocolMethods.triggerRuntimeOpenLogin) {
+          // 有头登录会话（2026-11-25 登录闭环）：open_login → 触发器引擎 openTriggerLogin
+          // （有头窗口 + 档案登录态注入 + 关窗落档）。分钟级人工操作，无逐请求超时。
+          void (async () => {
+            const params = robinrunTriggerRuntimeOpenLoginParamsSchema.parse(request.params);
+            if (!options?.triggerRuntimeOpenLoginExecutor)
+              throw new Error("Trigger runtime open login is unavailable on this Host");
+            const result = robinrunTriggerRuntimeOpenLoginResultSchema.parse(
+              await options.triggerRuntimeOpenLoginExecutor({
+                workspacePath: workspace.workspacePath,
+                triggerId: params.triggerId,
+                ...(params.url !== undefined ? { url: params.url } : {}),
+              }),
+            );
+            await client.respond(request.id, result);
+          })().catch((error: unknown) =>
+            client.respondError(request.id, {
+              code: -32603,
+              message: error instanceof Error ? error.message : "Trigger runtime open login failed",
+            }),
+          );
+          return;
+        }
+        if (Object.hasOwn(robinrunOpsPanelParamsSchemas, request.method)) {
+          // 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 方法族统一分发（表驱动，
+          // parse → 面板服务 executor → result 校验）。新增方法只需扩 params schema 表。
+          dispatchOpsPanelRequest(request, client, workspace, options);
           return;
         }
         if (request.method === robinrunProtocolMethods.channelReply) {

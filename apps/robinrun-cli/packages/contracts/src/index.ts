@@ -22,6 +22,7 @@ export * from "./interfaces/subagent.port.js";
 export * from "./interfaces/coordinator-response.port.js";
 export * from "./interfaces/agent-contact.port.js";
 export * from "./interfaces/trigger-runtime.port.js";
+export * from "./interfaces/ops-panel.port.js";
 export * from "./interfaces/workflow.port.js";
 export * from "./interfaces/workflow-submit.port.js";
 export * from "./interfaces/workflow-escalate.port.js";

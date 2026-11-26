@@ -1,11 +1,22 @@
+/* oxlint-disable eslint(max-lines) -- 常驻脚本监督器共享单一 RunningScript 状态机（生命周期/
+ * 崩溃熔断/定时执行/托管浏览器/暂停收口五条路径读写同一状态），机械拆分会切断状态所有者；
+ * 拆分计划已登记 progress.md 已知待改（P3 第二十三批：拆事件校验与退出收口两块），拆完移除本条。 */
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { delimiter, join } from "node:path";
-import { triggerDirectoryConvention, type TriggerEntry } from "@robinrun/shared";
+import {
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
+  DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
+  triggerDirectoryConvention,
+  type TriggerEntry,
+} from "@robinrun/shared";
 import type { TriggerEvent } from "./contract.js";
 import type { ScriptEmitResult } from "./local-webhook-server.js";
 import { TRIGGER_EMIT_ROUTE_PREFIX } from "./local-webhook-server.js";
 import { assertContract, clipScriptOutput, resolveRuntimeCommand } from "./script-runner.js";
+import { TRIGGER_PAUSE_ROUTE_PREFIX } from "./local-webhook-server.js";
+// 桥接模块源码（P3 第二十三批拆出，文件行数上限；纯常量零依赖）。
+import { BRIDGE_SOURCE, PYTHON_BRIDGE_SOURCE } from "./script-bridges.js";
 
 /**
  * 常驻脚本触发器的进程托管（ScriptSupervisor，2026-11-21 常驻模型裁决，
@@ -29,7 +40,8 @@ import { assertContract, clipScriptOutput, resolveRuntimeCommand } from "./scrip
  *   覆盖 playwright 子进程。
  *
  * 重启不设独立定时器：崩溃时记 `backoffUntil`，reconcile（引擎 5s 轮询驱动）到点自动
- * 拉起——单一驱动源，无 timer 泄漏面。并发配额沿用（每项目 2 / 全局 4）。
+ * 拉起——单一驱动源，无 timer 泄漏面。并发配额可配置（2026-11-25：AppSettings
+ * triggerScriptResidentPerWorkspace / triggerScriptResidentGlobalMax，默认 20/60）。
  */
 
 /** 每进程日志环形上限（退出时一次性进审计）。 */
@@ -39,9 +51,15 @@ const MAX_LOG_LINE_CHARS = 4_000;
 const RESTART_BACKOFF_MS = [5_000, 15_000, 60_000];
 /** 优雅停止宽限（shutdown 消息后等脚本自行退出）。 */
 const SHUTDOWN_GRACE_MS = 10_000;
-/** 常驻脚本并发配额（资源兜底；超限本轮跳过，下轮 poll 重试）。 */
-const SCRIPTS_PER_WORKSPACE = 2;
-const SCRIPTS_GLOBAL_MAX = 4;
+/**
+ * 常驻脚本并发配额缺省值（2026-11-25 可配置化裁决，docs/trigger-system.md「资源与重入控制」）：
+ * 实际值经 resolveScriptQuotas 回调从 AppSettings 读取（triggerScriptResidentPerWorkspace /
+ * triggerScriptResidentGlobalMax，默认 20/60——接近不设限先看实际情况），每轮 reconcile 起点
+ * 读取一次，设置改动 ≤5s 生效无需重启。定时执行模式（runMode="scheduled"）的运行不占此配额。
+ * 超限本轮跳过，下轮 poll 重试；回调缺席/失败/非法值回退这里的缺省。
+ */
+const SCRIPTS_PER_WORKSPACE = DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE;
+const SCRIPTS_GLOBAL_MAX = DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX;
 /** 熔断阈值（与引擎 CIRCUIT_BREAK_THRESHOLD 一致；supervisor 侧独立计数落注册表）。 */
 export const SCRIPT_CIRCUIT_BREAK_THRESHOLD = 3;
 
@@ -70,9 +88,26 @@ export interface ScriptSupervisorCallbacks {
    * 项目 venv ensure）。缺席 = 旧行为（系统 PATH 探测 python/python3）；解析失败返回
    * {ok:false, error}，supervisor 按崩溃收口（信息进注册表 lastResult 与审计）。
    */
-  resolvePythonRuntime?(workspacePath: string): Promise<
-    { ok: true; interpreterPath: string; venvDir: string } | { ok: false; error: string }
-  >;
+  resolvePythonRuntime?(
+    workspacePath: string,
+  ): Promise<{ ok: true; interpreterPath: string; venvDir: string } | { ok: false; error: string }>;
+  /**
+   * 常驻脚本并发配额解析（2026-11-25 可配置化；引擎注入：读 AppSettings
+   * triggerScriptResidentPerWorkspace / triggerScriptResidentGlobalMax）。每轮 reconcile
+   * 起点调用一次；缺席/抛错/非法值回退内置缺省（20/60），配额兜底不因设置读取失败停摆。
+   */
+  resolveScriptQuotas?(): Promise<{ perWorkspace: number; globalMax: number }>;
+  /**
+   * 引擎托管浏览器实例（2026-11-25，specs/trigger-browser-hosting.md）：声明 profile 的
+   * 脚本在 spawn 前 acquire（CDP endpoint 注入 env）、退出后 release（storageState 回写
+   * 档案）。缺席 = 旧行为（脚本自管 playwright；测试形态）。
+   */
+  acquireBrowser?(
+    workspacePath: string,
+    profile: string,
+    headed: boolean,
+  ): Promise<{ ok: true; cdpEndpoint: string } | { ok: false; error: string }>;
+  releaseBrowser?(workspacePath: string, profile: string): Promise<void>;
 }
 
 export interface ScriptWorkspaceSnapshot {
@@ -83,6 +118,14 @@ export interface ScriptWorkspaceSnapshot {
   webhookBaseUrl?: string;
 }
 
+/**
+ * 脚本运行模式（2026-11-25 定时执行模式裁决）：resident=常驻事件源进程（active 即拉起，
+ * exit 0 → completed 终态）；oneshot=定时执行的一趟（引擎调度器到点 spawn，采集 → emit →
+ * exit 0 后状态保持 active 等 next fire，exit 0 不置 completed）。运行中的 oneshot 不占
+ * 常驻并发配额（用户裁决），配置/脚本内容变更不打断在途趟。
+ */
+export type ScriptRunMode = "resident" | "oneshot";
+
 interface RunningScript {
   workspacePath: string;
   triggerId: string;
@@ -90,6 +133,8 @@ interface RunningScript {
   sessionKey: string;
   /** 脚本运行时（停止分层按它选软信号：node=IPC shutdown；python=POSIX SIGTERM）。 */
   runtime: "node" | "python";
+  /** 运行模式（见 ScriptRunMode；决定 exit 0 语义与配额计入）。 */
+  mode: ScriptRunMode;
   child: ChildProcess;
   /**
    * 启动时的注册表条目引用（emit 端点的契约校验与事件投递需要 config/contract；config
@@ -116,10 +161,25 @@ interface RunningScript {
    * 才生效。只监控主 entry 文件，import 的本地模块变更不触发（重启即全量重读，边界可接受）。
    */
   contentStamp: string;
+  /**
+   * 引擎托管浏览器档案（2026-11-25）：声明 profile 且 acquire 成功时在场。停止/退出路径
+   * 据此 release（storageState 回写档案）；幂等 release，重复调用安全。
+   */
+  browserProfile?: string;
+  /**
+   * 退出收口已执行标志（2026-11-25 幽灵计数防御）：handleExit 开头置位。exit 事件在真实
+   * 环境下存在丢失/未达的可能（Windows 进程收割/杀软竞态），丢失时条目以"child 已死仍在
+   * map"的僵尸态占住常驻配额（2026-11-25 RobinRunOps 真机缺陷：配额 1/1 下 scheduled 趟
+   * 后 A+B 永久 deferred）——reconcile 的 sweepZombieEntries 按本标志幂等补收口。
+   */
+  exitedHandled?: boolean;
 }
 
 /** 脚本主文件内容戳：mtimeMs:size；文件不存在/不可 stat 返回 "missing"（不抛）。 */
-async function contentStampOf(snapshot: ScriptWorkspaceSnapshot, entry: TriggerEntry): Promise<string> {
+async function contentStampOf(
+  snapshot: ScriptWorkspaceSnapshot,
+  entry: TriggerEntry,
+): Promise<string> {
   if (entry.config.kind !== "script") return "";
   const scriptPath = join(
     snapshot.workspacePath,
@@ -195,102 +255,6 @@ export interface ResolvedSpawnPlan {
   ipc: boolean;
 }
 
-/**
- * 引擎生成的桥接模块源码（纯 Node 内置、零 npm 依赖）：`--require` 预加载后向脚本注入
- * `globalThis.robinrun = { emit(event) → Promise(ack), onShutdown(fn) }`。ack 语义见
- * 「事件上报协议」：emit 在引擎接受事件后 resolve（契约违例 reject），一次性脚本
- * `await emit()` 后退出即无投递竞态。
- */
-const BRIDGE_SOURCE = `/* RobinRun trigger bridge (generated by the engine; do not edit). */
-"use strict";
-(function () {
-  if (typeof process.send !== "function") return;
-  var seq = 0;
-  var pending = new Map();
-  var shutdownHandlers = [];
-  process.on("message", function (msg) {
-    if (!msg || typeof msg !== "object") return;
-    if (msg.type === "robinrun-ack") {
-      var waiter = pending.get(msg.id);
-      if (!waiter) return;
-      pending.delete(msg.id);
-      if (msg.ok) waiter.resolve();
-      else waiter.reject(new Error(msg.error || "event rejected by the engine"));
-      return;
-    }
-    if (msg.type === "robinrun-shutdown") {
-      var handlers = shutdownHandlers.splice(0);
-      for (var i = 0; i < handlers.length; i++) {
-        try { handlers[i](); } catch (error) { /* 收尾钩子互不影响 */ }
-      }
-    }
-  });
-  Object.defineProperty(globalThis, "robinrun", {
-    value: {
-      emit: function (event) {
-        return new Promise(function (resolve, reject) {
-          seq += 1;
-          var id = seq;
-          pending.set(id, { resolve: resolve, reject: reject });
-          process.send({ type: "robinrun-event", id: id, event: event });
-        });
-      },
-      onShutdown: function (handler) {
-        if (typeof handler === "function") shutdownHandlers.push(handler);
-      },
-    },
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
-})();
-`;
-
-/**
- * python 桥接模块源码（2026-11-22 HTTP emit 协议，对齐 node 的 `robinrun.emit` 注入模式）：
- * 引擎 spawn python 前写进 `state/robinrun.py`，经 `PYTHONPATH` 注入——脚本 `import robinrun`
- * 即得 `emit(summary, data=None)`。stdlib-only（urllib）；HTTP/URL/JSON 全部封装在库内，
- * agent 不构建请求；引擎契约校验同步完成后才响应，违例 raise（同 node IPC 的 reject 语义）。
- * stdout 专职日志（事件协议已退役），print 不会污染事件通道。
- */
-const PYTHON_BRIDGE_SOURCE = `"""RobinRun trigger bridge (generated by the engine; do not edit)."""
-import json
-import os
-import urllib.error
-import urllib.request
-
-def emit(summary, data=None):
-    """Report one event to the engine and wait for its acknowledgement.
-
-    Raises RuntimeError when the engine rejects the event (contract violation)
-    or the endpoint is unreachable; returns the engine's response dict on
-    success. Events must satisfy the trigger's registry \`contract\` assertions
-    against \`data\`.
-    """
-    url = os.environ.get("ROBINRUN_EMIT_URL")
-    if not url:
-        raise RuntimeError(
-            "ROBINRUN_EMIT_URL is not set; this script must be started by the RobinRun engine"
-        )
-    body = json.dumps({"summary": summary, "data": data}).encode("utf-8")
-    request = urllib.request.Request(
-        url, data=body, headers={"Content-Type": "application/json"}, method="POST"
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            result = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        try:
-            result = json.loads(error.read().decode("utf-8"))
-        except Exception:
-            raise RuntimeError("robinrun.emit failed: HTTP %d" % error.code) from error
-    except OSError as error:
-        raise RuntimeError("robinrun.emit failed: %s" % error) from error
-    if not result.get("ok"):
-        raise RuntimeError(result.get("error") or "event rejected by the engine")
-    return result
-`;
-
 export class TriggerScriptSupervisor {
   private readonly processes = new Map<string, RunningScript>();
   /** 崩溃退避：key → 最早允许重启时刻（re-enable 清零计数后忽略）。 */
@@ -307,17 +271,97 @@ export class TriggerScriptSupervisor {
     return this.overrides?.backoffScheduleMs ?? RESTART_BACKOFF_MS;
   }
 
-  /** 注册表中处于运行中的进程数（含 stopping 中的，防超卖）。 */
+  /** 常驻模式运行中的进程数（含 stopping 中的，防超卖）。oneshot 定时执行趟不占配额（2026-11-25 用户裁决）。 */
   private get runningCount(): number {
-    return this.processes.size;
+    let count = 0;
+    for (const running of this.processes.values()) {
+      if (running.mode === "resident") count += 1;
+    }
+    return count;
   }
 
   private runningCountFor(workspacePath: string): number {
     let count = 0;
     for (const running of this.processes.values()) {
-      if (running.workspacePath === workspacePath) count += 1;
+      if (running.workspacePath === workspacePath && running.mode === "resident") count += 1;
     }
     return count;
+  }
+
+  /**
+   * 解析当前生效的常驻并发配额（2026-11-25 可配置化）：回调缺席/抛错/返回非法值一律回退
+   * 内置缺省。配额是资源兜底而非业务主链路，宿主设置读取失败不能导致脚本永不拉起。
+   */
+  private async resolveQuotas(): Promise<{ perWorkspace: number; globalMax: number }> {
+    const fallback = (): { perWorkspace: number; globalMax: number } => ({
+      perWorkspace: SCRIPTS_PER_WORKSPACE,
+      globalMax: SCRIPTS_GLOBAL_MAX,
+    });
+    if (this.callbacks.resolveScriptQuotas === undefined) return fallback();
+    try {
+      const resolved = await this.callbacks.resolveScriptQuotas();
+      const sanitize = (value: number, fallbackValue: number): number =>
+        Number.isFinite(value) && value >= 1 ? Math.floor(value) : fallbackValue;
+      return {
+        perWorkspace: sanitize(resolved.perWorkspace, SCRIPTS_PER_WORKSPACE),
+        globalMax: sanitize(resolved.globalMax, SCRIPTS_GLOBAL_MAX),
+      };
+    } catch (error) {
+      this.callbacks.log(
+        `script quota resolution failed, falling back to defaults: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return fallback();
+    }
+  }
+
+  /**
+   * 僵尸条目清扫（2026-11-25 幽灵计数防御，RobinRunOps 真机缺陷回归）：不变量 =
+   * processes map 里的条目必须是活进程（child.exitCode/signalCode === null）。真实环境
+   * （杀软/Windows 进程收割/python）下 exit 事件存在丢失/未达的可能，丢失时条目以
+   * "child 已死仍在 map"的僵尸态**占住常驻配额**——真机形态即配额 1/1 下 scheduled 趟后
+   * 全部常驻永久 deferred（handleExit/registerCrash 两条正常删除路径都带日志+审计，而
+   * 现场两者皆无，即此形态）。每轮 reconcile 开头按 exitedHandled 幂等补收口：
+   * 补收口 = 删条目 + 浏览器档案释放 + 审计 zombie-swept（**不写** completed/崩溃——
+   * 真实退出码已不可考，不污染触发器状态机；resident 随下一轮 reconcile 按期望状态
+   * 正常拉起）。exit 事件正常到达时 handleExit 先置 exitedHandled，清扫跳过（不双跑）。
+   */
+  private sweepZombieEntries(): void {
+    for (const [key, running] of this.processes) {
+      if (running.exitedHandled === true) continue;
+      if (running.child.exitCode === null && running.child.signalCode === null) continue;
+      this.callbacks.log(
+        `zombie entry swept: ${running.triggerId} (mode ${running.mode}, exit code ${
+          running.child.exitCode ?? "null"
+        }, key ${key}) — exit event was lost`,
+      );
+      this.processes.delete(key);
+      if (running.browserProfile !== undefined) {
+        void this.callbacks
+          .releaseBrowser?.(running.workspacePath, running.browserProfile)
+          .catch(() => undefined);
+      }
+      void this.callbacks
+        .audit(running.workspacePath, running.triggerId, {
+          action: "zombie-swept",
+          mode: running.mode,
+          exitCode: running.child.exitCode,
+        })
+        .catch(() => undefined);
+    }
+  }
+
+  /** 常驻条目概要（deferred 日志附带，幽灵占位的现场可观测形态）。 */
+  private describeResidentEntries(): string {
+    const parts: string[] = [];
+    for (const [key, running] of this.processes) {
+      if (running.mode !== "resident") continue;
+      parts.push(
+        `${key}(pid=${running.child.pid ?? "?"},alive=${running.child.exitCode === null})`,
+      );
+    }
+    return parts.length > 0 ? parts.join(", ") : "none";
   }
 
   /**
@@ -326,6 +370,9 @@ export class TriggerScriptSupervisor {
    */
   async reconcile(snapshots: ScriptWorkspaceSnapshot[]): Promise<void> {
     if (this.disposed) return;
+    // 配额每轮 reconcile 起点读取一次（2026-11-25 可配置化）：设置改动 ≤5s 生效，无需重启。
+    const quotas = await this.resolveQuotas();
+    this.sweepZombieEntries();
     const desired = new Map<string, { snapshot: ScriptWorkspaceSnapshot; entry: TriggerEntry }>();
     for (const snapshot of snapshots) {
       for (const trigger of snapshot.triggers) {
@@ -335,12 +382,16 @@ export class TriggerScriptSupervisor {
     }
 
     // 1. 期望停止 / 条目消失 / 签名或脚本内容变更 → 停止（变更标记 restart，停止后下轮拉起）。
-    for (const [key, running] of [...this.processes]) {
+    //    oneshot 在跑趟例外（2026-11-25 定时执行模式）：配置/内容变更不打断在途运行——本趟
+    //    按 spawn 时代码跑完即退，下次到点自然用新值；只有期望停止/条目消失才终止。
+    // Map 迭代中删除当前项是安全的（JS 规范保证，oxlint iteral 规则）：await 让出期间
+    // exit 事件删除的条目不再被访问——已死进程本就无需 initiateStop。
+    for (const [key, running] of this.processes) {
       const want = desired.get(key);
       const stillActive =
         want !== undefined && want.entry.status === "active" && want.entry.config.kind === "script";
       let changeReason: "config-changed" | "script-changed" | undefined;
-      if (stillActive && want !== undefined) {
+      if (stillActive && want !== undefined && running.mode === "resident") {
         if (running.signature !== signatureOf(want.entry)) {
           changeReason = "config-changed";
         } else {
@@ -354,10 +405,13 @@ export class TriggerScriptSupervisor {
       }
     }
 
-    // 2. 期望运行且无进程 → 拉起（配额内；退避窗口内跳过）。
+    // 2. 期望运行且无进程 → 拉起（配额内；退避窗口内跳过）。scheduled 模式不在此拉起——
+    //    到点由引擎调度器驱动 spawnScheduledRun（2026-11-25 定时执行模式）。
     for (const [key, want] of desired) {
       if (this.processes.has(key)) continue;
       if (want.entry.status !== "active") continue;
+      if (want.entry.config.kind === "script" && want.entry.config.runMode === "scheduled")
+        continue;
       const backoff = this.backoffUntil.get(key);
       if (backoff !== undefined) {
         if (want.entry.consecutiveFailures === 0) {
@@ -369,13 +423,18 @@ export class TriggerScriptSupervisor {
           this.backoffUntil.delete(key);
         }
       }
-      if (this.runningCount >= SCRIPTS_GLOBAL_MAX) {
-        this.callbacks.log(`script start deferred (global quota ${SCRIPTS_GLOBAL_MAX}): ${key}`);
+      if (this.runningCount >= quotas.globalMax) {
+        // deferred 附带当前占用数 + 常驻条目概要（2026-11-25 真机复核：quota 后附占用数，
+        // 防止上限值被误读为"卡死的计数"——全局配额跨项目共享，占用者常在别的项目工作区，
+        // 只看本项目侧栏会得出"没人占位却 defer"的错误结论）。
+        this.callbacks.log(
+          `script start deferred (global quota ${quotas.globalMax}, resident running ${this.runningCount}): ${key} — resident in map: ${this.describeResidentEntries()}`,
+        );
         continue;
       }
-      if (this.runningCountFor(want.snapshot.workspacePath) >= SCRIPTS_PER_WORKSPACE) {
+      if (this.runningCountFor(want.snapshot.workspacePath) >= quotas.perWorkspace) {
         this.callbacks.log(
-          `script start deferred (workspace quota ${SCRIPTS_PER_WORKSPACE}): ${key}`,
+          `script start deferred (workspace quota ${quotas.perWorkspace}, resident running ${this.runningCountFor(want.snapshot.workspacePath)}): ${key} — resident in map: ${this.describeResidentEntries()}`,
         );
         continue;
       }
@@ -383,11 +442,57 @@ export class TriggerScriptSupervisor {
     }
   }
 
+  /**
+   * 定时执行模式到点拉起（2026-11-25；engine.onScheduleFire 驱动）：spawn 一趟 oneshot
+   * 运行（采集 → emit → exit 0）。与 resident 的差异：
+   * - 不占常驻并发配额（用户裁决——定时趟是短命瞬发进程，重入跳过已防堆积）；
+   * - 重入默认跳过记审计（对齐 docs/trigger-system.md「重入控制：同一触发器上一次执行
+   *   未结束时，定时到点默认跳过并记审计」）；
+   * - 崩溃退避/熔断与 resident 共用同一状态机（backoffUntil / consecutiveFailures 落注册表），
+   *   熔断后触发器 error-paused 离开调度，re-enable 清零即恢复。
+   */
+  async spawnScheduledRun(snapshot: ScriptWorkspaceSnapshot, entry: TriggerEntry): Promise<void> {
+    if (this.disposed) return;
+    if (entry.config.kind !== "script") return;
+    const key = keyOf(snapshot.workspacePath, entry.id);
+    // 重入：上一趟未结束 → 跳过记审计（不延后，下个周期自然再跑）。
+    if (this.processes.has(key)) {
+      this.callbacks.log(`scheduled run skipped (previous run still active): ${key}`);
+      void this.callbacks
+        .audit(snapshot.workspacePath, entry.id, {
+          action: "scheduled-run-skipped",
+          reason: "overlap",
+        })
+        .catch(() => undefined);
+      return;
+    }
+    // 崩溃退避窗口内跳过（与 resident 同一状态机；re-enable 清零计数即作废退避）。
+    const backoff = this.backoffUntil.get(key);
+    if (backoff !== undefined) {
+      if (entry.consecutiveFailures === 0) {
+        this.backoffUntil.delete(key);
+      } else if (Date.now() < backoff) {
+        this.callbacks.log(`scheduled run skipped (crash backoff): ${key}`);
+        void this.callbacks
+          .audit(snapshot.workspacePath, entry.id, {
+            action: "scheduled-run-skipped",
+            reason: "backoff",
+          })
+          .catch(() => undefined);
+        return;
+      } else {
+        this.backoffUntil.delete(key);
+      }
+    }
+    await this.startProcess(snapshot, entry, "oneshot");
+  }
+
   /** 应用退出：全部停止并等待退出（宽限兜底后强杀）。 */
   async dispose(): Promise<void> {
     this.disposed = true;
     const stops: Promise<void>[] = [];
-    for (const [key, running] of [...this.processes]) {
+    // Map 迭代中删除当前项是安全的（JS 规范保证），无需快照数组（oxlint iteral 检查）。
+    for (const [key, running] of this.processes) {
       stops.push(this.waitForStop(key, running));
       this.initiateStop(key, running, "dispose");
     }
@@ -413,6 +518,7 @@ export class TriggerScriptSupervisor {
   private async startProcess(
     snapshot: ScriptWorkspaceSnapshot,
     entry: TriggerEntry,
+    mode: ScriptRunMode = "resident",
   ): Promise<void> {
     if (entry.config.kind !== "script") return;
     const key = keyOf(snapshot.workspacePath, entry.id);
@@ -471,7 +577,44 @@ export class TriggerScriptSupervisor {
       return;
     }
 
-    this.callbacks.log(`starting resident script ${entry.id} (${entry.config.runtime})`);
+    // 启动日志按 mode 分变体（2026-11-25 真机反馈：scheduled 走本路径时打"resident"
+    // 误导排查——报告疑点 1 即由此起）。
+    this.callbacks.log(
+      mode === "oneshot"
+        ? `starting scheduled run ${entry.id} (${entry.config.runtime})`
+        : `starting resident script ${entry.id} (${entry.config.runtime})`,
+    );
+    // 引擎托管浏览器（2026-11-25）：声明 profile 且端口在场 → spawn 前 acquire（同档案
+    // 串行；失败按一次崩溃收口，退避重试）。CDP endpoint 注入 env（buildSpawnPlan 之后
+    // 补写 plan.env——profile 相关 env 不属于通用 spawn 计划）。
+    let browserProfile: string | undefined;
+    const wantsBrowser =
+      mode === "resident" || mode === "oneshot"
+        ? entry.config.profile !== undefined && this.callbacks.acquireBrowser !== undefined
+        : false;
+    if (wantsBrowser && entry.config.profile !== undefined) {
+      const acquisition = await this.callbacks.acquireBrowser!(
+        snapshot.workspacePath,
+        entry.config.profile,
+        entry.config.headed === true,
+      );
+      if (!acquisition.ok) {
+        await this.registerCrash(
+          snapshot,
+          entry,
+          `browser acquire failed for profile ${entry.config.profile}: ${acquisition.error}`,
+          undefined,
+        );
+        return;
+      }
+      browserProfile = entry.config.profile;
+      plan.env.ROBINRUN_CDP_ENDPOINT = acquisition.cdpEndpoint;
+      plan.env.ROBINRUN_TRIGGER_PROFILE = entry.config.profile;
+    }
+    // 内容戳在 spawn 前取（2026-11-25 修复）：spawn 与 error/exit 处理器挂载之间不允许有
+    // await——spawn 失败（如 cwd 已被外部删除 → ENOENT）的 'error' 事件在下一 tick 即到，
+    // 若中间让出事件循环，处理器未挂载即成 uncaught exception 崩掉 host 常驻服务。
+    const stamp = await contentStampOf(snapshot, entry);
     let child: ChildProcess;
     try {
       child = spawn(plan.command, plan.args, {
@@ -488,6 +631,9 @@ export class TriggerScriptSupervisor {
         stdio: plan.ipc ? ["ignore", "pipe", "pipe", "ipc"] : ["ignore", "pipe", "pipe"],
       });
     } catch (error) {
+      if (browserProfile !== undefined) {
+        await this.callbacks.releaseBrowser?.(snapshot.workspacePath, browserProfile);
+      }
       await this.registerCrash(
         snapshot,
         entry,
@@ -503,15 +649,17 @@ export class TriggerScriptSupervisor {
       triggerName: entry.name,
       sessionKey: entry.groupId === null ? `trigger:${entry.id}` : `trigger-group:${entry.groupId}`,
       runtime: entry.config.runtime,
+      mode,
       entry,
       child,
       signature: signatureOf(entry),
-      contentStamp: await contentStampOf(snapshot, entry),
+      contentStamp: stamp,
       stdoutTail: [],
       stderrTail: [],
       stdoutLineBuffer: new LineBuffer(),
       stderrLineBuffer: new LineBuffer(),
       stopping: false,
+      ...(browserProfile !== undefined ? { browserProfile } : {}),
     };
     this.processes.set(key, running);
     // 修复（2026-11-23）：以下 fire-and-forget 回调统一补 .catch——handleIpcMessage/
@@ -521,6 +669,7 @@ export class TriggerScriptSupervisor {
       .audit(snapshot.workspacePath, entry.id, {
         action: "start",
         runtime: entry.config.runtime,
+        mode,
         ...(pythonRuntime !== undefined ? { venv: pythonRuntime.venvDir } : {}),
         entry: entry.config.entry,
       })
@@ -594,6 +743,10 @@ export class TriggerScriptSupervisor {
     if (entry.config.runtime === "node") {
       // 桥接模块每次拉起都重写（内容常量，幂等且保证最新契约）。
       const bridgePath = await this.ensureBridgeFile(snapshot.workspacePath);
+      if (snapshot.webhookBaseUrl !== undefined) {
+        // 登录闭环暂停端点（2026-11-25）：node 桥接的 loginFailed 同走 HTTP。
+        env.ROBINRUN_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
+      }
       return {
         command: runtimeCommand,
         args: [...runtimeArgs, "--require", bridgePath, entry.config.entry],
@@ -616,6 +769,8 @@ export class TriggerScriptSupervisor {
     env.PYTHONPATH = env.PYTHONPATH ? `${stateDir}${delimiter}${env.PYTHONPATH}` : stateDir;
     if (snapshot.webhookBaseUrl !== undefined) {
       env.ROBINRUN_EMIT_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_EMIT_ROUTE_PREFIX}${entry.id}`;
+      // 登录闭环暂停端点（2026-11-25）：与 emit 同基址同信任面。
+      env.ROBINRUN_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
     }
     return {
       command: runtimeCommand,
@@ -656,7 +811,12 @@ export class TriggerScriptSupervisor {
     const id = typeof message.id === "number" ? message.id : -1;
     const result = await this.validateAndDeliver(snapshot, entry, message.event);
     try {
-      running.child.send?.({ type: "robinrun-ack", id, ok: result.ok, ...(result.error ? { error: result.error } : {}) });
+      running.child.send?.({
+        type: "robinrun-ack",
+        id,
+        ok: result.ok,
+        ...(result.error ? { error: result.error } : {}),
+      });
     } catch {
       // 通道已断（脚本退出中）：ack 失败不影响投递。
     }
@@ -680,6 +840,59 @@ export class TriggerScriptSupervisor {
         triggers: [running.entry],
       };
       return await this.validateAndDeliver(snapshot, running.entry, event);
+    }
+    return undefined;
+  }
+
+  /**
+   * 脚本暂停上报处理（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4；
+   * LocalWebhookServer `__robinrun/pause/<trg-id>` 注入此处）：脚本自含的登录检测失败时
+   * 调用。语义：这不是崩溃（consecutiveFailures 不动），是登录态过期——audit 记
+   * login-failed → 投 script-error 事件（带诊断，唤醒订阅者修复）→ 触发器置 error-paused
+   * （异常且停用，用户裁决）→ 复用熔断通知通道（reason=login-failed）→ 停脚本。
+   * 返回与 emit 同构的 {ok}（脚本侧 raise 与否不敏感——脚本随后即被停止）。
+   */
+  async handlePauseRequest(
+    triggerId: string,
+    reason: string,
+  ): Promise<ScriptEmitResult | undefined> {
+    for (const running of this.processes.values()) {
+      if (running.triggerId !== triggerId) continue;
+      const snapshot: ScriptWorkspaceSnapshot = {
+        workspacePath: running.workspacePath,
+        triggers: [running.entry],
+      };
+      const entry = running.entry;
+      const clipped = clipScriptOutput(reason || "login check failed", 500);
+      await this.callbacks.audit(snapshot.workspacePath, entry.id, {
+        action: "login-failed",
+        reason: clipped,
+      });
+      this.callbacks.onEvent(sessionKeyOf(entry), {
+        kind: "script-error",
+        at: new Date().toISOString(),
+        summary: `${entry.name} login check failed: ${clipScriptOutput(clipped, 200)} — trigger paused; run ManageTriggers open_login to refresh the login profile, then set_status back to active`,
+        error: clipped,
+      });
+      await this.callbacks.updateRuntimeState({
+        workspacePath: snapshot.workspacePath,
+        triggerId: entry.id,
+        apply: (target) => {
+          target.lastResult = "error";
+          target.updatedAt = new Date().toISOString();
+          if (target.status === "active") target.status = "error-paused";
+        },
+      });
+      this.callbacks.notifyCircuitBreak({
+        workspacePath: snapshot.workspacePath,
+        triggerId: entry.id,
+        triggerName: entry.name,
+        consecutiveFailures: entry.consecutiveFailures,
+        lastError: `login-failed: ${clipped}`,
+      });
+      // 停脚本（登录态已失效，继续跑没有意义；不算崩溃）。
+      this.initiateStop(keyOf(snapshot.workspacePath, entry.id), running, "login-failed");
+      return { ok: true };
     }
     return undefined;
   }
@@ -750,11 +963,14 @@ export class TriggerScriptSupervisor {
     data: unknown,
   ): Promise<void> {
     const at = new Date().toISOString();
+    // scheduled 模式（2026-11-25）：lastFireAt 保持为调度器 fire 时刻（onScheduleFire 写入）
+    // ——emit 时不再前推，否则 interval 锚点会随每趟运行时长漂移（周期越跑越晚）。
+    const isScheduledRun = entry.config.kind === "script" && entry.config.runMode === "scheduled";
     await this.callbacks.updateRuntimeState({
       workspacePath: snapshot.workspacePath,
       triggerId: entry.id,
       apply: (target) => {
-        target.lastFireAt = at;
+        if (!isScheduledRun) target.lastFireAt = at;
         target.lastResult = "ok";
         target.consecutiveFailures = 0;
         target.updatedAt = at;
@@ -803,12 +1019,43 @@ export class TriggerScriptSupervisor {
     code: number | null,
     signal: NodeJS.Signals | null,
   ): Promise<void> {
+    // 幂等标志先置位（2026-11-25 幽灵计数防御）：sweepZombieEntries 按它识别"exit 事件
+    // 已正常处理"——本函数与清扫二选一收口，绝不双跑（completed/stop 审计不能重复写）。
+    running.exitedHandled = true;
     const key = keyOf(running.workspacePath, entry.id);
     this.processes.delete(key);
     this.drainPartialLines(running);
+    // 托管浏览器释放（2026-11-25）：storageState 回写档案 → 关浏览器（幂等；尽力而为，
+    // 失败不改变退出语义）。
+    if (running.browserProfile !== undefined) {
+      await this.callbacks
+        .releaseBrowser?.(snapshot.workspacePath, running.browserProfile)
+        .catch(() => undefined);
+    }
     await this.flushLogs(snapshot, entry, running, code, signal);
     if (code === 0 && !running.stopping) {
-      // 干净退出 = 完成（一次性脚本的自然终点）：completed 终态。
+      // 定时执行趟干净退出（2026-11-25）：exit 0 = 本趟成功，状态保持 active 等下一次到点
+      // ——completed 终态语义只属于 resident 模式的一次性脚本。
+      if (running.mode === "oneshot") {
+        const at = new Date().toISOString();
+        await this.callbacks.updateRuntimeState({
+          workspacePath: snapshot.workspacePath,
+          triggerId: entry.id,
+          apply: (target) => {
+            target.lastResult = "ok";
+            target.consecutiveFailures = 0;
+            target.updatedAt = at;
+          },
+        });
+        void this.callbacks.audit(snapshot.workspacePath, entry.id, {
+          action: "exit",
+          code: 0,
+          mode: "oneshot",
+        });
+        this.callbacks.log(`scheduled run ${entry.id} finished cleanly`);
+        return;
+      }
+      // 干净退出 = 完成（resident 一次性脚本的自然终点）：completed 终态。
       const at = new Date().toISOString();
       await this.callbacks.updateRuntimeState({
         workspacePath: snapshot.workspacePath,
@@ -853,6 +1100,12 @@ export class TriggerScriptSupervisor {
       running.crashCounted = true;
       const key = keyOf(running.workspacePath, entry.id);
       this.processes.delete(key);
+      // 托管浏览器释放（同 handleExit 语义；崩溃路径也不能漏——否则同档案队列悬挂）。
+      if (running.browserProfile !== undefined) {
+        await this.callbacks
+          .releaseBrowser?.(snapshot.workspacePath, running.browserProfile)
+          .catch(() => undefined);
+      }
       await this.flushLogs(snapshot, entry, running, null, null);
     }
     let circuitBroke = false;

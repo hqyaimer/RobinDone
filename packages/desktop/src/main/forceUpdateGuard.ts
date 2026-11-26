@@ -254,7 +254,9 @@ export async function maybeBlockStartupForForceUpdate(
   if (action === "manual") {
     if (!requirement.downloadUrl) {
       // 静态强更配置未下发下载页地址时手动升级不可用；守卫语义不变（阻止进入主界面）。
-      options.logger.warn("[force-update] 用户选择手动升级，但强更配置未提供 downloadUrl，跳过跳转");
+      options.logger.warn(
+        "[force-update] 用户选择手动升级，但强更配置未提供 downloadUrl，跳过跳转",
+      );
     } else {
       options.logger.info(`[force-update] 用户选择手动升级：${requirement.downloadUrl}`);
       await shell.openExternal(requirement.downloadUrl);

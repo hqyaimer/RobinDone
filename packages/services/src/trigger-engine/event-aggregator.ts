@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { parseTriggerSessionKey } from "@robinrun/shared";
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry, TriggerRouting } from "@robinrun/shared";
 import type { TriggerEvent, TriggerEventBatch } from "./contract.js";
 
 /**
@@ -7,6 +8,10 @@ import type { TriggerEvent, TriggerEventBatch } from "./contract.js";
  *
  * 从 engine.ts 抽出（2026-11-21，文件行数上限拆分）：对引擎状态的全部访问经 deps
  * 回调（resolveDeliveryTarget / persistBindings），聚合/去抖/合并逻辑自足可测。
+ * 2026-11-25 分发器裁决（specs/trigger-dispatcher-routing.md）：事件 enqueue 时兜底
+ * 生成稳定 evt id（RouteEvents 按它引用，内容不经分发器的手）；flush 按 key 的有效
+ * routing 分流——direct/dispatcher 走绑定会话投递（dispatcher 的绑定 = 分发器会话，
+ * host 按模式渲染分发轮次正文），fixed 跳过忙检查与绑定写回（每批次直投新会话）。
  */
 
 /** 单批投递上限，超出部分补一条合并说明（多事件合并不丢）。 */
@@ -29,6 +34,8 @@ export interface TriggerDeliveryTarget {
   sessionBindings: Record<string, string>;
   /** 本批溯源触发器（直连 key = 触发器本身；组 key = 组内任一 active 成员）。 */
   trigger: TriggerEntry;
+  /** 会话 key 的有效路由策略（2026-11-25 分发器裁决；直连取条目、组取组条目）。 */
+  routing: TriggerRouting;
 }
 
 export interface TriggerEventAggregatorDeps {
@@ -49,6 +56,32 @@ export interface TriggerEventAggregatorDeps {
     workspacePath: string;
     workspaceIdentity?: string;
   }): Promise<boolean> | boolean;
+  /**
+   * dispatcher 档批次投递成功后的引擎钩子（2026-11-25 分发器裁决）：把本批事件暂存
+   * 分发器事件池（key 维度），供 RouteEvents 标记按 evt id 引用；兑现/降级后由引擎清除。
+   */
+  onDispatcherBatchDelivered?(delivery: {
+    workspacePath: string;
+    workspaceIdentity?: string;
+    projectId?: string;
+    sessionKey: string;
+    sessionBindings: Record<string, string>;
+    trigger: TriggerEntry;
+    routing: TriggerRouting;
+    taskId: string;
+    events: TriggerEvent[];
+  }): void;
+  /**
+   * 上一轮路由结果摘要（2026-11-25 taskId 回显闭环）：dispatcher 档批次构造时取走
+   * （增量），随正文附录进分发器上下文——分发器据此获得处理会话真实 id 以构造
+   * existing 续用标记。
+   */
+  routeOutcomeSummary?(sessionKey: string): string | undefined;
+}
+
+/** 事件稳定 id（`evt-<8hex>`；聚合桶内唯一即可，不要求全局持久）。 */
+export function makeTriggerEventId(): string {
+  return `evt-${randomUUID().replace(/-/g, "").slice(0, 8)}`;
 }
 
 export class TriggerEventAggregator {
@@ -66,6 +99,9 @@ export class TriggerEventAggregator {
   constructor(private readonly deps: TriggerEventAggregatorDeps) {}
 
   enqueue(key: string, event: TriggerEvent): void {
+    // 事件稳定 id（2026-11-25 分发器裁决）：enqueue 统一兜底生成（生产方不感知），
+    // RouteEvents 标记按 id 引用事件——id 只要求聚合桶内唯一，不要求全局持久。
+    if (event.id === undefined) event.id = makeTriggerEventId();
     let bucket = this.pending.get(key);
     if (bucket === undefined) {
       bucket = {
@@ -109,7 +145,10 @@ export class TriggerEventAggregator {
       // 忙感知（2026-11-22 实测修复）：绑定会话正在跑轮次时，此前每 3s 就 flush 一批，
       // 忙会话把每批各自排队 → 一事件一轮 LLM（贵且慢）。正确语义是事件留在桶内累积，
       // 空闲后合并为一条投递；hold 期间的日志只报一次（每 3s 刷屏无意义）。
-      const boundTaskId = target.sessionBindings[key];
+      // dispatcher 档（2026-11-25）的绑定会话 = 分发器会话，忙检查语义不变（分发器
+      // 轮次期间事件留桶，空闲合并投进分发器）。fixed 档无绑定会话语义（每批次直投
+      // 新会话），跳过忙检查与既有绑定——direct 切 fixed 的残留绑定被忽略。
+      const boundTaskId = target.routing === "fixed" ? undefined : target.sessionBindings[key];
       if (boundTaskId !== undefined && this.deps.isTaskBusy !== undefined) {
         let busy: boolean;
         try {
@@ -140,6 +179,9 @@ export class TriggerEventAggregator {
         bucket.holdLogged = false;
       }
       this.deps.log(`flush ${key}: delivering ${bucket.events.length} event(s)`);
+      // dispatcher 档取走上一轮路由结果（taskId 回显闭环；增量、无新结果为 undefined）。
+      const routeOutcomeNote =
+        target.routing === "dispatcher" ? this.deps.routeOutcomeSummary?.(key) : undefined;
       const events = bucket.events.slice(0, MAX_EVENTS_PER_BATCH);
       const dropped = bucket.events.length - events.length;
       bucket.events = [];
@@ -153,7 +195,9 @@ export class TriggerEventAggregator {
         triggerId: target.trigger.id,
         triggerName: target.trigger.name,
         subscriberAgentId: target.trigger.ownerAgentId,
+        routing: target.routing,
         ...(boundTaskId !== undefined ? { existingTaskId: boundTaskId } : {}),
+        ...(routeOutcomeNote !== undefined ? { routeOutcomeNote } : {}),
         events: [
           ...events,
           ...(dropped > 0
@@ -170,9 +214,21 @@ export class TriggerEventAggregator {
       const { taskId } = await this.deps.dispatch(batch);
       bucket.deliveryFailures = 0;
       this.deps.log(`flush ${key}: dispatched to ${taskId}`);
-      if (target.sessionBindings[key] !== taskId) {
+      // fixed 档不写绑定（每批次新会话，无"同 key 续用"概念；direct 切 fixed 的残留
+      // 绑定也不复用）。direct/dispatcher 写回同旧行为（dispatcher 的绑定 = 分发器会话）。
+      if (target.routing !== "fixed" && target.sessionBindings[key] !== taskId) {
         target.sessionBindings[key] = taskId;
         await this.deps.persistBindings(target);
+      }
+      // dispatcher 档投递成功 → 事件暂存分发器事件池（2026-11-25 分发器裁决）：
+      // RouteEvents 标记按 evt id 从池取事件原文，兑现后清除。由引擎提供钩子。
+      if (target.routing === "dispatcher") {
+        this.deps.onDispatcherBatchDelivered?.({
+          ...target,
+          sessionKey: key,
+          taskId,
+          events: batch.events,
+        });
       }
     } catch (error) {
       // 修复（2026-11-23，用户裁决 B4）：dispatch 失败不再静默丢批——把本批事件放回
@@ -234,9 +290,7 @@ export function resolveBatchTriggerFromRegistry(
     // 对齐组分支：停用的触发器事件整批丢弃（用户已明确喊停，投递会越过用户的决定）。
     return registry.triggers.find(
       (trigger) =>
-        trigger.id === parsed.triggerId &&
-        trigger.status === "active" &&
-        trigger.deleted !== true,
+        trigger.id === parsed.triggerId && trigger.status === "active" && trigger.deleted !== true,
     );
   }
   const group = registry.groups.find((candidate) => candidate.id === parsed.groupId);

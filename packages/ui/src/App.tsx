@@ -893,6 +893,10 @@ export function App({
     preserveNextSettingsExit();
     setWorkspaceMainView("plugin-store");
   }, [preserveNextSettingsExit]);
+  // 需求/审批/反馈面板（2026-11-24 MVP）：与 automations/plugin-store 同款主视图导航。
+  const handleNavigateToOpsPanelMain = useCallback(() => {
+    setWorkspaceMainView("ops-panel");
+  }, []);
   const handleOpenAutomationConsumed = useCallback(() => {
     setOpenAutomationId(null);
     setOpenAutomationTab(null);
@@ -904,6 +908,7 @@ export function App({
     handleSelectTask,
     handleOpenAutomations,
     handleOpenPluginStore,
+    handleOpenOpsPanel,
     handleTaskNavBack,
     handleTaskNavForward,
     canGoBack,
@@ -918,6 +923,7 @@ export function App({
     onNavigateToTask: handleNavigateToTaskMain,
     onNavigateToAutomations: handleNavigateToAutomationsMain,
     onNavigateToPluginStore: handleNavigateToPluginStoreMain,
+    onNavigateToOpsPanel: handleNavigateToOpsPanelMain,
   });
   // 完成卡「已保存」芯片的落点（docs/dynamic-workflow/transcript-and-notifications.md「Saving the
   // run, and running it again」）：走「自动化」入口的同一条导航（进历史、切主视图），落在「工作流」
@@ -1203,6 +1209,7 @@ export function App({
           onOpenAutomationConsumed={handleOpenAutomationConsumed}
           handleOpenAutomations={handleOpenAutomations}
           handleOpenPluginStore={handleOpenPluginStoreForScope}
+          handleOpenOpsPanel={handleOpenOpsPanel}
           onConnectRemote={onConnectRemote}
           onSelectRemoteProject={onSelectRemoteProject}
           onCancelRemoteProject={onCancelRemoteProject}

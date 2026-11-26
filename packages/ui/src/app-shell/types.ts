@@ -210,7 +210,7 @@ export interface GitChangeSummary {
   removed: number;
 }
 
-export type WorkspaceMainView = "chat" | "automations" | "plugin-store";
+export type WorkspaceMainView = "chat" | "automations" | "plugin-store" | "ops-panel";
 
 export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackService"> {
   workspaceReadOnlyReason?: string;
@@ -230,6 +230,8 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
   onOpenAutomationConsumed: () => void;
   handleOpenAutomations: OpenAutomationsMain;
   handleOpenPluginStore: () => void;
+  /** 需求/审批/反馈面板主视图（2026-11-24 MVP）；缺席（测试 double/旧装配）不注入入口。 */
+  handleOpenOpsPanel?: () => void;
   workspaceShellRobinRunState: WorkspaceShellRobinRunState;
   theme: Theme;
   isMacFullscreen: boolean;

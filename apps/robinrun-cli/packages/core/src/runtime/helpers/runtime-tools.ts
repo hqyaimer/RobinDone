@@ -64,6 +64,9 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     // C1 裁决（2026-11-23）：ContactAgent 同名双变体按会话身份二选一（master 带必答
     // 参数 / worker 纯 notification-only）；判据与 includeManageWorkers 同款。
     agentContactVariant: runtime.config.workerIdentity === undefined ? "master" : "worker",
+    // 需求/审批/反馈面板（2026-11-24 MVP）：ManageOpsPanel 同名双变体按会话身份二选一
+    // （master 7 动作 / worker 3 动作受限面，权限矩阵的服务层过滤不变）；判据同款。
+    opsPanelVariant: runtime.config.workerIdentity === undefined ? "master" : "worker",
     // C1 裁决（2026-11-23）：WaitReply 收敛为 master 专属——worker 不允许要求必答
     // 后，worker 名下无可等待的在途请求；判据同款。
     includeWaitReply:
@@ -79,6 +82,10 @@ function registerRuntimeBuiltInTools(runtime: AgentRuntimeInternal, deps: AgentR
     includeEscalate: Boolean(deps.workflowEscalatePort),
     includeWorkflow: Boolean(deps.workflowPort),
     includeAutomation: Boolean(deps.automationPort) && runtime.config.taskType !== "subagent_child",
+    // 分发器路由标记（2026-11-25 分发器裁决）：门 = triggerRuntimePort 在场（desktop 有
+    // 引擎）。工具面噪音由轮级收窄处理——非 dispatcher 会话轮次 RouteEvents 进
+    // disallow 名单（turn-tool-visibility.ts），分发器会话轮次只保留 RouteEvents 等白名单。
+    includeRouteEvents: deps.triggerRuntimePort !== undefined,
     // offPeakPort 只在 host 下发 offPeakToolEnabled 时注入（灰度/远程门在 host 端），
     // 端口存在即代表曝光允许；subagent 子会话与 automation 同规则不暴露。
     includeOffPeak: Boolean(deps.offPeakPort) && runtime.config.taskType !== "subagent_child",
@@ -202,6 +209,9 @@ function createRuntimeToolExecutor(
     // 触发器 python 运行时端口（2026-11-22）：install_packages 依赖（bootstrap 注入
     // AgentRuntimeDeps；独立 CLI 缺席 → handler 报错引导）。
     triggerRuntimePort: deps.triggerRuntimePort,
+    // 需求/审批/反馈面板端口（2026-11-24 MVP）：ManageOpsPanel 依赖（bootstrap 注入
+    // AgentRuntimeDeps；独立 CLI 缺席 → handler 报错引导）。
+    opsPanelRuntimePort: deps.opsPanelRuntimePort,
     workflowSubmitPort: deps.workflowSubmitPort,
     workflowEscalatePort: deps.workflowEscalatePort,
     artifactStore: deps.artifactStore,

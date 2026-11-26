@@ -155,6 +155,12 @@ export interface AgentRuntimeInternal
   triggerSessionReadme?: string;
   triggerSessionReadmeLoaded: boolean;
   /**
+   * 触发器会话有效路由策略（2026-11-25 分发器裁决）：首个触发器投递轮读注册表解析，
+   * 会话级 sticky；分发职责段注入/分发器压缩变体/轮级工具面收窄共用判据。undefined =
+   * direct（旧路径，零行为漂移）。
+   */
+  triggerSessionRouting?: "dispatcher" | "fixed";
+  /**
    * 脚本触发器运行时提示（2026-11-22 python 主 + node 备选）：context 初始化读引擎
    * 状态文件 `state/python-runtime.json` 的投影，会话级 sticky（压缩后仍在）。master
    * 走 builder 的 Script trigger runtime section，worker 走 worker 注入段 bullet。

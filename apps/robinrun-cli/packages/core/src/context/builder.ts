@@ -204,8 +204,15 @@ export class ContextBuilder {
         }
         // 触发器专属会话说明（2026-11-19 验收裁决）：README 进系统提示词（压缩后仍在），
         // 投递消息只承载事件；runtime 在首个触发器投递轮读盘缓存后，后续轮次持续在场。
+        // 2026-11-25 分发器裁决：按 sticky 的有效路由策略追加分发职责段（dispatcher）
+        // 或每批次新会话语义段（fixed）；direct/undefined 零增文。
         if (this.config.triggerSessionReadme !== undefined) {
-          sections.push(buildTriggerSessionSection(this.config.triggerSessionReadme));
+          sections.push(
+            buildTriggerSessionSection(
+              this.config.triggerSessionReadme,
+              this.config.triggerSessionRouting,
+            ),
+          );
         }
       }
 

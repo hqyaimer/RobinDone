@@ -122,6 +122,7 @@ import type { AgentProfile } from "../subagent/profile.js";
 import type {
   AgentContactPort,
   AgentSessionDispatchPort,
+  OpsPanelRuntimePort,
   TriggerRuntimePort,
   WorkerSessionIdentity,
 } from "@robinrun/contracts";
@@ -423,6 +424,11 @@ export interface AgentRuntimeDeps {
    * bootstrap 注入；独立 CLI 缺席时 install_packages 报错引导（诚实拒绝）。
    */
   triggerRuntimePort?: TriggerRuntimePort;
+  /**
+   * 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求到宿主面板服务。
+   * bootstrap 注入；独立 CLI 缺席时 ManageOpsPanel 报错引导（诚实拒绝）。
+   */
+  opsPanelRuntimePort?: OpsPanelRuntimePort;
   /** 工作流 actor 提交终态结果的端口；存在即作为 submit_result 工具的注册门。 */
   workflowSubmitPort?: WorkflowSubmitPort;
   /**

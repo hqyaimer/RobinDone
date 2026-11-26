@@ -1,5 +1,6 @@
 export {
   type PythonPackageInstallResult,
+  type RoutedEventBatch,
   type TriggerDispatchPort,
   type TriggerEvent,
   type TriggerEventBatch,
@@ -15,6 +16,23 @@ export {
   type TriggerEngineOptions,
 } from "./engine.js";
 export { LocalWebhookServer } from "./local-webhook-server.js";
+export {
+  createTriggerBrowserRuntimePort,
+  readBrowserRuntimeState,
+  BROWSER_BUILD_ID,
+  BROWSER_DOWNLOAD_BASEURL_ENV,
+  type BrowserRuntimePortOptions,
+} from "./browser-runtime.js";
+export {
+  TriggerBrowserHost,
+  type BrowserHostCipher,
+  type LoginSessionResult,
+} from "./browser-host.js";
+export {
+  createPlaywrightCdpDataPlane,
+  type StorageStateJson,
+  type TriggerCdpDataPlane,
+} from "./browser-cdp.js";
 export {
   createTriggerPythonRuntimePort,
   ensureManagedPythonRuntime,
@@ -32,7 +50,12 @@ export {
   runPipInstall,
   venvInterpreterPath,
 } from "./python-env.js";
-export { assertContract, clipScriptOutput, probeCommand, resolveRuntimeCommand } from "./script-runner.js";
+export {
+  assertContract,
+  clipScriptOutput,
+  probeCommand,
+  resolveRuntimeCommand,
+} from "./script-runner.js";
 export {
   LineBuffer,
   SCRIPT_CIRCUIT_BREAK_THRESHOLD,

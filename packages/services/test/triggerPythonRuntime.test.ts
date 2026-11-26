@@ -76,7 +76,8 @@ function createFixtureServer() {
 /** 现场 tar 一个 install_only 布局的 fixture：顶层 python/ + 平台解释器占位文件。 */
 async function buildPythonFixture(sourceDir: string): Promise<{ archive: string; sha256: string }> {
   const pyRoot = join(sourceDir, "python");
-  const interpreterRel = process.platform === "win32" ? join("python", "python.exe") : join("python", "bin", "python3");
+  const interpreterRel =
+    process.platform === "win32" ? join("python", "python.exe") : join("python", "bin", "python3");
   const interpreterPath = join(sourceDir, interpreterRel);
   await mkdir(join(interpreterPath, ".."), { recursive: true });
   await writeFile(interpreterPath, "#!/bin/sh\nexit 0\n", "utf8");
@@ -84,9 +85,16 @@ async function buildPythonFixture(sourceDir: string): Promise<{ archive: string;
   await writeFile(join(pyRoot, "VERSION"), "3.12.16-test\n", "utf8");
   const archive = join(sourceDir, "install_only.tar.gz");
   await new Promise<void>((resolve, reject) => {
-    const child = spawn("tar", ["-czf", archive, "python"], { cwd: sourceDir, stdio: "ignore", shell: false, windowsHide: true });
+    const child = spawn("tar", ["-czf", archive, "python"], {
+      cwd: sourceDir,
+      stdio: "ignore",
+      shell: false,
+      windowsHide: true,
+    });
     child.on("error", reject);
-    child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`tar -czf failed: ${code}`))));
+    child.on("close", (code) =>
+      code === 0 ? resolve() : reject(new Error(`tar -czf failed: ${code}`)),
+    );
   });
   const bytes = await readFile(archive);
   return { archive, sha256: createHash("sha256").update(bytes).digest("hex") };
@@ -186,13 +194,18 @@ describe("trigger python runtime port", () => {
     const port = await mirrorServer.listen();
     process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
 
-    const runtime = createTriggerPythonRuntimePort(portOptions(join(tmpRoot, "cache-unavailable"), asset));
+    const runtime = createTriggerPythonRuntimePort(
+      portOptions(join(tmpRoot, "cache-unavailable"), asset),
+    );
     const resolution = await runtime.ensureInterpreter(workspace);
     expect(resolution.ok).toBe(false);
     expect(resolution.error).toMatch(/sha256 mismatch/);
 
     const stateFile = join(workspace, ".robinrun", "triggers", "state", "python-runtime.json");
-    const state = JSON.parse(await readFile(stateFile, "utf8")) as { state: string; error?: string };
+    const state = JSON.parse(await readFile(stateFile, "utf8")) as {
+      state: string;
+      error?: string;
+    };
     expect(state.state).toBe("unavailable");
     expect(state.error).toContain("sha256 mismatch");
 
@@ -225,7 +238,9 @@ describe("trigger python runtime port", () => {
     const install = await runtime.installPackages(workspace, ["requests"]);
     expect(install.ok).toBe(true);
     const ledgerPath = join(workspace, ".robinrun", "triggers", "state", "python-packages.json");
-    const ledger = JSON.parse(await readFile(ledgerPath, "utf8")) as { packages: { spec: string }[] };
+    const ledger = JSON.parse(await readFile(ledgerPath, "utf8")) as {
+      packages: { spec: string }[];
+    };
     expect(ledger.packages.map((entry) => entry.spec)).toContain("requests");
 
     // 第二次 ensureVenv：指纹一致 → 复用（不重建），台账已在场。
@@ -245,7 +260,10 @@ describe("trigger python runtime port", () => {
 
     // 慢速 pip fake：第一个安装挂在途，第二个请求必须被拒。
     let releaseFirst: (() => void) | undefined;
-    const slowRunner = async (params: { command: string; args: string[] }): Promise<{ code: number | null; stdoutTail: string; stderrTail: string }> => {
+    const slowRunner = async (params: {
+      command: string;
+      args: string[];
+    }): Promise<{ code: number | null; stdoutTail: string; stderrTail: string }> => {
       if (params.args[1] === "pip") {
         if (releaseFirst === undefined) {
           await new Promise<void>((resolve) => {
@@ -301,7 +319,11 @@ async function fakePythonCommandRunner(params: {
   if (params.args[0] === "-m" && params.args[1] === "pip") {
     return { code: 0, stdoutTail: "Successfully installed", stderrTail: "" };
   }
-  return { code: 1, stdoutTail: "", stderrTail: `unsupported fake command: ${params.args.join(" ")}` };
+  return {
+    code: 1,
+    stdoutTail: "",
+    stderrTail: `unsupported fake command: ${params.args.join(" ")}`,
+  };
 }
 
 async function exists(path: string): Promise<boolean> {

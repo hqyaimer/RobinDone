@@ -31,6 +31,7 @@ import type {
   SubagentPort,
   SubagentRunOptions,
   ToolArtifactStorePort,
+  OpsPanelRuntimePort,
   TriggerRuntimePort,
   WorkerSessionIdentity,
   TraceContext,
@@ -111,6 +112,8 @@ export interface ToolExecutorOptions {
   agentContactPort?: AgentContactPort;
   /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
   triggerRuntimePort?: TriggerRuntimePort;
+  /** 需求/审批/反馈面板端口（2026-11-24 MVP）：opsPanel/* 反向请求；缺席报错引导。 */
+  opsPanelRuntimePort?: OpsPanelRuntimePort;
   workflowSubmitPort?: WorkflowSubmitPort;
   /** actor 的升级端口；存在即为该会话注册 escalate。 */
   workflowEscalatePort?: WorkflowEscalatePort;
@@ -244,6 +247,8 @@ export interface ToolExecutorDeps {
   agentContactPort?: AgentContactPort;
   /** 触发器 python 运行时端口（2026-11-22）：install_packages 反向请求到宿主引擎；缺席报错引导。 */
   triggerRuntimePort?: TriggerRuntimePort;
+  /** 需求/审批/反馈面板端口（2026-11-24 MVP）：opsPanel/* 反向请求；缺席报错引导。 */
+  opsPanelRuntimePort?: OpsPanelRuntimePort;
   workflowSubmitPort?: WorkflowSubmitPort;
   /** actor 的升级端口；存在即为该会话注册 escalate。 */
   workflowEscalatePort?: WorkflowEscalatePort;

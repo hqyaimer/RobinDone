@@ -1,6 +1,7 @@
 import type { IRemoteProjectService } from "#src/remote-projects/contract.js";
 import type { ITaskGroupService } from "#src/task-groups/contract.js";
 import type { ITriggerEngineService } from "#src/trigger-engine/contract.js";
+import type { IOpsPanelService } from "#src/ops-panel/contract.js";
 import type { WindowProjectDirectoryServices } from "#src/window-project-directory/contract.js";
 import type { IProjectService } from "#src/project/contract.js";
 import type { IGenUiService } from "./gen-ui/contract.js";
@@ -62,6 +63,8 @@ export interface IServiceAccessor {
   readonly taskGroupService?: ITaskGroupService;
   /** 触发器引擎（desktop host 常驻服务）；远端/旧 wire 可不提供，UI 据此隐藏触发器文件夹。 */
   readonly triggerEngineService?: ITriggerEngineService;
+  /** 需求/审批/反馈面板服务（2026-11-24 MVP）；旧 wire/测试 double 可不提供，UI 据此隐藏面板入口。 */
+  readonly opsPanelService?: IOpsPanelService;
   readonly projectService?: IProjectService;
   readonly remoteProjectService?: IRemoteProjectService;
   readonly windowProjectDirectory?: WindowProjectDirectoryServices;

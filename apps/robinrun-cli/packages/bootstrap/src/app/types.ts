@@ -59,6 +59,7 @@ import type {
   ToolArtifactReadResult,
   ToolArtifactStorePort,
   AgentSessionDispatchPort,
+  OpsPanelRuntimePort,
   TriggerRuntimePort,
   TraceContext,
   TurnId,
@@ -237,6 +238,11 @@ export interface RobinRunAppOptions {
    * 协议宿主按 context 注入；缺席（独立 CLI）时 ManageTriggers install_packages 报错引导。
    */
   triggerRuntimePort?: TriggerRuntimePort;
+  /**
+   * 需求/审批/反馈面板（2026-11-24 MVP）：opsPanel/* 反向请求到宿主面板服务；
+   * 协议宿主按 context 注入；缺席（独立 CLI）时 ManageOpsPanel 报错引导。
+   */
+  opsPanelRuntimePort?: OpsPanelRuntimePort;
   /** 首次真实用户执行或 cold-resume fallback 时解析一次，之后由 app 生命周期缓存。 */
   resolveInitialBashShellSelection?: () => Promise<ExecutionShellSelection | undefined>;
   /** Trusted embedder policy; workspace/project files cannot populate this field. */

@@ -11,6 +11,7 @@ import {
   goForward as navGoForward,
   pushAutomationsNavEntry,
   pushPluginStoreNavEntry,
+  pushOpsPanelNavEntry,
   removeTaskFromHistory,
   type AutomationsNavigationTab,
   type WorkspaceNavEntry,
@@ -63,6 +64,17 @@ export function createNavigationSlice(set: SetFn, get: GetFn) {
     taskNavPushPluginStore: (workspacePath: string, workspaceIdentity?: string) => {
       set((state) => ({
         taskNavHistory: pushPluginStoreNavEntry(
+          state.taskNavHistory,
+          workspacePath,
+          workspaceIdentity,
+        ),
+      }));
+    },
+
+    // 需求/审批/反馈面板（2026-11-24 MVP）：与 automations/plugin-store 同款入栈。
+    taskNavPushOpsPanel: (workspacePath: string, workspaceIdentity?: string) => {
+      set((state) => ({
+        taskNavHistory: pushOpsPanelNavEntry(
           state.taskNavHistory,
           workspacePath,
           workspaceIdentity,

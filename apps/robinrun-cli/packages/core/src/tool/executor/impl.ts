@@ -62,6 +62,12 @@ export class ToolExecutorImpl implements ToolExecutor {
       // runtime deps 判端口在场，handler context 的转发漏了就会出现「工具注册了却永远
       // ConfigurationError」的 P2.5 同款回归。
       agentContactPort: options.agentContactPort,
+      // 反向请求端口（trigger 2026-11-22 / ops-panel 2026-11-24）：本清单是逐字段抄写，
+      // 漏抄 = 工具注册了却永远 ConfigurationError（上方 agentContactPort 注释的 P2.5
+      // 同款回归）。2026-11-24 实测 ManageOpsPanel 两次唤醒失败即漏抄本清单所致——
+      // create-app 注入与探针均为 true，端口死在本抄写清单。
+      triggerRuntimePort: options.triggerRuntimePort,
+      opsPanelRuntimePort: options.opsPanelRuntimePort,
       workflowSubmitPort: options.workflowSubmitPort,
       workflowEscalatePort: options.workflowEscalatePort,
       artifactStore: options.artifactStore,

@@ -32,6 +32,16 @@ export { conversationQuoteSchema, conversationQuotesSchema } from "../conversati
 // 上述旧协议 client/server 组删除时，本文件整体删除。
 // 注：外部零消费 schema 多为存活 schema 联合的内部依赖，随宿主文件一起处理，勿单删。
 import { z } from "zod";
+// ops-panel 协议词汇（2026-11-24 需求/审批/反馈面板）：opsPanel/* 反向请求族直接组合
+// ops-panel 的条目/视图/actor schema（同包单一收口）。
+import {
+  opsPanelActorSchema,
+  opsPanelEntrySchema,
+  opsPanelViewSchema,
+  progressEntrySchema,
+  progressViewSchema,
+  requirementOutcomeSchema,
+} from "../ops-panel/index.js";
 import { accountProviderUnavailableReasonSchema } from "../account-provider-state.js";
 import { bashOutputDisplaySchema } from "../bash-output-display.js";
 import { robinrunAutomationBotDeliveryTargetSchema } from "../bots.js";
@@ -2281,6 +2291,211 @@ export type RobinRunTriggerRuntimeInstallResult = z.infer<
   typeof robinrunTriggerRuntimeInstallResultSchema
 >;
 
+// triggerRuntime/routeEvents（2026-11-25 分发器裁决，specs/trigger-dispatcher-routing.md）：
+// CLI→Host 反向请求——分发器会话的 RouteEvents 引用式标记。事件按 id 引用（内容不经
+// 分发器的手）；unknown 事件原样回显（已降级直投或非本分发器批次），不阻塞已接受标记。
+export const robinrunTriggerRuntimeRouteEventsParamsSchema = z
+  .object({
+    sessionId: nonEmptyString,
+    workspace: robinrunWorkspaceRefSchema.optional(),
+    routes: z
+      .array(
+        z
+          .object({
+            eventIds: z.array(nonEmptyString).min(1).max(64),
+            target: z.union([
+              z.object({ kind: z.literal("new") }).strict(),
+              z.object({ kind: z.literal("existing"), taskId: nonEmptyString }).strict(),
+            ]),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(16),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeRouteEventsParams = z.infer<
+  typeof robinrunTriggerRuntimeRouteEventsParamsSchema
+>;
+
+export const robinrunTriggerRuntimeRouteEventsResultSchema = z
+  .object({
+    ok: z.boolean(),
+    acceptedEventIds: z.array(nonEmptyString),
+    unknownEventIds: z.array(nonEmptyString),
+    error: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeRouteEventsResult = z.infer<
+  typeof robinrunTriggerRuntimeRouteEventsResultSchema
+>;
+
+// triggerRuntime/openLogin（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4）：
+// CLI→Host 反向请求——ManageTriggers open_login。引擎拉起有头登录窗口（注入档案登录态，
+// url 直接落在登录页而非空白新标签页），用户登录完成关闭窗口即落档；结果指引 agent 用
+// set_status 重新启用触发器。分钟级人工操作——宿主侧无超时约束（请求在途直至关窗/超时/失败）。
+export const robinrunTriggerRuntimeOpenLoginParamsSchema = z
+  .object({
+    sessionId: nonEmptyString,
+    workspace: robinrunWorkspaceRefSchema.optional(),
+    triggerId: nonEmptyString,
+    /** 登录会话落点（http/https URL）；缺省落空白新标签页，由用户自行导航。 */
+    url: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeOpenLoginParams = z.infer<
+  typeof robinrunTriggerRuntimeOpenLoginParamsSchema
+>;
+
+export const robinrunTriggerRuntimeOpenLoginResultSchema = z
+  .object({
+    ok: z.boolean(),
+    profile: nonEmptyString.optional(),
+    error: nonEmptyString.optional(),
+    guidance: z.array(nonEmptyString).optional(),
+  })
+  .strict();
+export type RobinRunTriggerRuntimeOpenLoginResult = z.infer<
+  typeof robinrunTriggerRuntimeOpenLoginResultSchema
+>;
+
+// opsPanel/*（2026-11-24 需求/审批/反馈面板 MVP）：CLI→Host 反向请求族。ManageOpsPanel
+// 工具 → 面板服务（IOpsPanelService，权限矩阵 + worker 可见性在服务层强制）。actor 由
+// CLI 机制层（会话身份）派生随请求携带；条目/视图形状直接组合 ops-panel 协议 schema
+// （同包单一收口，与 contracts 的输出镜像由契约测试守一致）。
+const robinrunOpsPanelActorField = opsPanelActorSchema;
+const robinrunOpsPanelBaseShape = {
+  sessionId: nonEmptyString,
+  workspace: robinrunWorkspaceRefSchema.optional(),
+  actor: robinrunOpsPanelActorField,
+} as const;
+
+export const robinrunOpsPanelListEntriesParamsSchema = z.object(robinrunOpsPanelBaseShape).strict();
+export type RobinRunOpsPanelListEntriesParams = z.infer<
+  typeof robinrunOpsPanelListEntriesParamsSchema
+>;
+
+export const robinrunOpsPanelGetEntryParamsSchema = z
+  .object({ ...robinrunOpsPanelBaseShape, entryId: nonEmptyString })
+  .strict();
+export type RobinRunOpsPanelGetEntryParams = z.infer<typeof robinrunOpsPanelGetEntryParamsSchema>;
+
+export const robinrunOpsPanelCreateEntryParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    kind: z.enum(["requirement", "approval", "feedback"]),
+    title: nonEmptyString,
+    body: nonEmptyString,
+    /**
+     * 来源标记（2026-11-24 录入与来源拆分）：master 代录时必传——requirement 恒 "user"
+     * （用户对话转述）、feedback "user"|"master"；worker 自录不传（机制层派生赢）。
+     */
+    author: z.enum(["user", "master"]).optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelCreateEntryParams = z.infer<
+  typeof robinrunOpsPanelCreateEntryParamsSchema
+>;
+
+export const robinrunOpsPanelDecideRequirementParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    entryId: nonEmptyString,
+    outcome: requirementOutcomeSchema,
+    note: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelDecideRequirementParams = z.infer<
+  typeof robinrunOpsPanelDecideRequirementParamsSchema
+>;
+
+export const robinrunOpsPanelResolveFeedbackParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    entryId: nonEmptyString,
+    note: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelResolveFeedbackParams = z.infer<
+  typeof robinrunOpsPanelResolveFeedbackParamsSchema
+>;
+
+export const robinrunOpsPanelAcknowledgeApprovalParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    entryId: nonEmptyString,
+    note: nonEmptyString.optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelAcknowledgeApprovalParams = z.infer<
+  typeof robinrunOpsPanelAcknowledgeApprovalParamsSchema
+>;
+
+export const robinrunOpsPanelViewResultSchema = opsPanelViewSchema;
+export type RobinRunOpsPanelViewResult = z.infer<typeof robinrunOpsPanelViewResultSchema>;
+
+export const robinrunOpsPanelEntryResultSchema = z.object({ entry: opsPanelEntrySchema }).strict();
+export type RobinRunOpsPanelEntryResult = z.infer<typeof robinrunOpsPanelEntryResultSchema>;
+
+// opsPanel/* 进度族（2026-11-25 项目进度账本，specs/progress-ledger.md）：同一反向
+// 请求族的进度分支——master 独占维护（服务层 assert），user 只读，worker 拒绝。
+// update 的 body 允许空串（清空详情）；links 传空数组 = 清空链接。
+export const robinrunOpsPanelAppendProgressParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    title: nonEmptyString,
+    body: nonEmptyString.optional(),
+    links: z.array(z.string().min(1).max(512)).max(8).optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelAppendProgressParams = z.infer<
+  typeof robinrunOpsPanelAppendProgressParamsSchema
+>;
+
+export const robinrunOpsPanelUpdateProgressParamsSchema = z
+  .object({
+    ...robinrunOpsPanelBaseShape,
+    entryId: nonEmptyString,
+    title: nonEmptyString.optional(),
+    body: z.string().max(20_000).optional(),
+    links: z.array(z.string().min(1).max(512)).max(8).optional(),
+  })
+  .strict();
+export type RobinRunOpsPanelUpdateProgressParams = z.infer<
+  typeof robinrunOpsPanelUpdateProgressParamsSchema
+>;
+
+export const robinrunOpsPanelDeleteProgressParamsSchema = z
+  .object({ ...robinrunOpsPanelBaseShape, entryId: nonEmptyString })
+  .strict();
+export type RobinRunOpsPanelDeleteProgressParams = z.infer<
+  typeof robinrunOpsPanelDeleteProgressParamsSchema
+>;
+
+export const robinrunOpsPanelGetProgressViewParamsSchema = z
+  .object(robinrunOpsPanelBaseShape)
+  .strict();
+export type RobinRunOpsPanelGetProgressViewParams = z.infer<
+  typeof robinrunOpsPanelGetProgressViewParamsSchema
+>;
+
+export const robinrunOpsPanelProgressViewResultSchema = progressViewSchema;
+export type RobinRunOpsPanelProgressViewResult = z.infer<
+  typeof robinrunOpsPanelProgressViewResultSchema
+>;
+
+export const robinrunOpsPanelProgressEntryResultSchema = z
+  .object({ entry: progressEntrySchema })
+  .strict();
+export type RobinRunOpsPanelProgressEntryResult = z.infer<
+  typeof robinrunOpsPanelProgressEntryResultSchema
+>;
+
+export const robinrunOpsPanelProgressDeleteResultSchema = z.object({ id: nonEmptyString }).strict();
+export type RobinRunOpsPanelProgressDeleteResult = z.infer<
+  typeof robinrunOpsPanelProgressDeleteResultSchema
+>;
+
 export const ROBINRUN_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS = 15_000;
 
 export const robinrunSessionRequestRuntimePreferencesParamsSchema = z
@@ -4476,6 +4691,26 @@ export const robinrunProtocolMethods = {
   agentContactDispatch: "agentContact/dispatch",
   // triggerRuntime/installPackages（2026-11-22 python 主运行时改造）：CLI→Host 反向请求。
   triggerRuntimeInstallPackages: "triggerRuntime/installPackages",
+  // triggerRuntime/routeEvents（2026-11-25 分发器裁决）：CLI→Host 反向请求——分发器会话
+  // 的 RouteEvents 标记落到引擎 RouteMarkQueue（会话 key 反查 + routing 门控 + 兑现）。
+  triggerRuntimeRouteEvents: "triggerRuntime/routeEvents",
+  // triggerRuntime/openLogin（2026-11-25 登录闭环）：CLI→Host 反向请求——ManageTriggers
+  // open_login 落到引擎 openTriggerLogin（有头登录窗口，关窗即落档）。
+  triggerRuntimeOpenLogin: "triggerRuntime/openLogin",
+  // opsPanel/*（2026-11-24 需求/审批/反馈面板 MVP）：CLI→Host 反向请求族——ManageOpsPanel
+  // 工具经此落到 host 面板服务（权限矩阵 + worker 可见性在服务层强制）。
+  opsPanelListEntries: "opsPanel/listEntries",
+  opsPanelGetEntry: "opsPanel/getEntry",
+  opsPanelCreateEntry: "opsPanel/createEntry",
+  opsPanelDecideRequirement: "opsPanel/decideRequirement",
+  opsPanelResolveFeedback: "opsPanel/resolveFeedback",
+  opsPanelAcknowledgeApproval: "opsPanel/acknowledgeApproval",
+  // opsPanel/* 进度族（2026-11-25 项目进度账本，specs/progress-ledger.md）：CLI→Host
+  // 反向请求——ManageOpsPanel 进度动作落到面板服务（master 独占，服务层 assert）。
+  opsPanelAppendProgress: "opsPanel/appendProgress",
+  opsPanelUpdateProgress: "opsPanel/updateProgress",
+  opsPanelDeleteProgress: "opsPanel/deleteProgress",
+  opsPanelGetProgressView: "opsPanel/getProgressView",
   sessionRead: "session/read",
   sessionMessages: "session/messages",
   sessionEvents: "session/events",
