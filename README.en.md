@@ -101,7 +101,7 @@ Sessions carry the process only — **files are the single source of truth acros
 
 ## Installation
 
-Download the installer for your platform from [GitHub Releases](https://github.com/yuwei369/RobinRun/releases) (the latest version is whatever the Releases page shows). The builds are not code-signed yet, so each platform needs a one-time allow step described below.
+Download the installer for your platform from [GitHub Releases](https://github.com/hqyaimer/RobinRun/releases) (the latest version is whatever the Releases page shows). The builds are not code-signed yet, so each platform needs a one-time allow step described below.
 
 ### Windows 11 (win-x64)
 

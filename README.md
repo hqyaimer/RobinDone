@@ -101,7 +101,7 @@
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/yuwei369/RobinRun/releases) 下载对应平台的安装包（最新版本以 Releases 页为准）。当前安装包均未做代码签名，首次安装需要按各平台说明放行一次。
+从 [GitHub Releases](https://github.com/hqyaimer/RobinRun/releases) 下载对应平台的安装包（最新版本以 Releases 页为准）。当前安装包均未做代码签名，首次安装需要按各平台说明放行一次。
 
 ### Windows 11（win-x64）
 
