@@ -50,7 +50,11 @@ let activeAutoUpdateCheckChannel: ElectronReleaseChannel | null = null;
 let settlingAutoUpdateCheckId: number | null = null;
 let availableUpdateReleaseNotes: PostUpdateReleaseNotesPayload | null = null;
 let availableUpdateChannel: ElectronReleaseChannel = "stable";
+// manifest（latest.yml）里安装包的完整大小。差分下载时 electron-updater 的
+// download-progress.total 只是增量块大小，UI 需要完整包大小来纠正展示口径。
+let availableUpdateFullSizeBytes: number | null = null;
 let downloadingUpdateVersion: string | null = null;
+let downloadingUpdateFullSizeBytes: number | null = null;
 let downloadingUpdateReleaseNotes: PostUpdateReleaseNotesPayload | null = null;
 let downloadingUpdateChannel: ElectronReleaseChannel | null = null;
 let downloadCancellationToken: CancellationToken | null = null;
@@ -76,7 +80,7 @@ type ReleaseNoteInfoLike = {
 type UpdateDownloadedInfoLike = {
   version: string;
   path?: string | null;
-  files?: Array<{ url?: string | null } | null> | null;
+  files?: Array<{ url?: string | null; size?: number } | null> | null;
   packages?: Record<string, { path?: string | null } | null> | null;
   robinrunReleaseChannel?: ElectronReleaseChannel | null;
   releaseName?: string | null;
@@ -97,6 +101,13 @@ type UpdateDownloadedInfoLike = {
 };
 
 type RuntimeUpdateFeedSource = { url: string };
+
+// ManifestUpdateProvider 的 getLatestVersion 直接透传 YAML 解析结果，
+// files[0].size（完整安装包字节数）在运行时可用但 electron-updater 的 TS 类型未声明。
+function readUpdateInfoFullSizeBytes(info: UpdateDownloadedInfoLike): number | null {
+  const size = info.files?.[0]?.size;
+  return typeof size === "number" && Number.isFinite(size) && size > 0 ? size : null;
+}
 
 type AutoUpdaterMenuState = UpdateStatePayload;
 let menuState: AutoUpdaterMenuState = { kind: "idle", enabled: true };
@@ -428,7 +439,7 @@ function logForceAutoUpdateProgress(progress: string | undefined) {
 
 function buildDownloadProgressState(
   progress: string,
-  byteProgress?: { transferredBytes: number; totalBytes: number },
+  byteProgress?: { transferredBytes: number; totalBytes: number; fullSizeBytes?: number },
 ): AutoUpdaterMenuState {
   return {
     kind: "download-progress",
@@ -439,6 +450,35 @@ function buildDownloadProgressState(
     ...(downloadingUpdateChannel ? { channel: downloadingUpdateChannel } : {}),
     ...(downloadingUpdateReleaseNotes ? { releaseNotes: downloadingUpdateReleaseNotes } : {}),
   };
+}
+
+// electron-updater 的 configOnDisk 是公开 lazy 字段（AppUpdater 构造时赋值），
+// TS 类型未导出，与上面 installerPath 一样走结构化 cast 读取。
+// 读取失败与 NsisUpdater 下载期校验同策略：视为无 publisherName，跳过签名门。
+async function readUpdateConfigPublisherName(): Promise<string | string[] | null> {
+  try {
+    const config = await (
+      autoUpdater as unknown as {
+        readonly configOnDisk: {
+          value: Promise<{ publisherName?: string | string[] | null } | null>;
+        };
+      }
+    ).configOnDisk.value;
+    const publisherName = config?.publisherName;
+    if (typeof publisherName === "string" && publisherName.trim()) {
+      return publisherName;
+    }
+    if (
+      Array.isArray(publisherName) &&
+      publisherName.some((name) => typeof name === "string" && name.trim())
+    ) {
+      return publisherName;
+    }
+    return null;
+  } catch (error) {
+    logger.warn("[auto-update] read update config publisherName failed:", error);
+    return null;
+  }
 }
 
 async function quitAndInstallUpdate(rejectUnavailable = false) {
@@ -494,8 +534,22 @@ async function quitAndInstallUpdate(rejectUnavailable = false) {
       const installerPath = (autoUpdater as unknown as { readonly installerPath: string | null })
         .installerPath;
       if (!installerPath) throw new Error("Windows update installer is missing");
-      const failure = await verifyWindowsAuthenticodeSignature(installerPath);
-      if (failure) throw new Error(failure);
+      // 修复依据（v0.0.1→v0.0.2 实测）：CI 发布的 Windows 包未签名，这里无条件
+      // Authenticode 校验必然失败，表现为"重启以更新"点击后 ready 被清、弹窗静默
+      // 关闭、安装器从未启动，且缓存命中让重试无限复现。electron-updater 自身的
+      // 下载期签名校验（NsisUpdater.verifyUpdateIntegrity）只在 app-update.yml 配置了
+      // publisherName 时才启用，未配置则直接跳过——这里对齐同一准入标准：
+      // 配置了 publisherName 才做签名门，未签名的发布包以 HTTPS 更新源 +
+      // manifest sha512（下载器在 update-downloaded 前已强制校验）为完整性锚。
+      const publisherName = await readUpdateConfigPublisherName();
+      if (publisherName != null) {
+        const failure = await verifyWindowsAuthenticodeSignature(installerPath);
+        if (failure) throw new Error(failure);
+      } else {
+        logger.info(
+          "[auto-update] skip Windows Authenticode gate: update config has no publisherName (unsigned release)",
+        );
+      }
     } catch (error) {
       quitAndInstallState = "idle";
       handleAutoUpdateFailure(error, "Windows update signature verification failed");
@@ -1027,12 +1081,14 @@ function sendManualCheckResult(payload: UpdateCheckResultPayload) {
 
 function clearAvailableUpdateState() {
   availableUpdateReleaseNotes = null;
+  availableUpdateFullSizeBytes = null;
 }
 
 function clearDownloadingUpdateState() {
   downloadingUpdateVersion = null;
   downloadingUpdateReleaseNotes = null;
   downloadingUpdateChannel = null;
+  downloadingUpdateFullSizeBytes = null;
 }
 
 function clearReadyUpdateState() {
@@ -1387,6 +1443,7 @@ export function downloadAvailableUpdate(reason = "renderer") {
   downloadingUpdateVersion = menuState.version;
   downloadingUpdateReleaseNotes = menuState.releaseNotes ?? availableUpdateReleaseNotes;
   downloadingUpdateChannel = menuState.channel ?? availableUpdateChannel;
+  downloadingUpdateFullSizeBytes = availableUpdateFullSizeBytes;
   // electron-updater 如果命中本地已下载缓存，会在 downloadUpdate() 内直接触发
   // update-downloaded。这里不能先广播 0% 下载态，否则用户会先看到“下载中”，
   // 再跳到“已下载”；真实下载态改由第一条 download-progress 事件驱动。
@@ -1799,6 +1856,7 @@ export async function initAutoUpdater(options: InitAutoUpdaterOptions = {}): Pro
       }
 
       availableUpdateReleaseNotes = toPostUpdateReleaseNotesPayload(info);
+      availableUpdateFullSizeBytes = readUpdateInfoFullSizeBytes(info);
       if (readyUpdateRestoredFromPendingReleaseNotes) {
         // pendingPostUpdateReleaseNotes 只能证明“曾经下载完成并持久化了版本说明”，
         // 不能恢复当前进程里的 electron-updater downloadedUpdateHelper、Squirrel.Mac proxy server
@@ -1894,6 +1952,9 @@ export async function initAutoUpdater(options: InitAutoUpdaterOptions = {}): Pro
       buildDownloadProgressState(normalizedProgress, {
         transferredBytes: progress.transferred,
         totalBytes: progress.total,
+        ...(downloadingUpdateFullSizeBytes != null
+          ? { fullSizeBytes: downloadingUpdateFullSizeBytes }
+          : {}),
       }),
     );
     logForceAutoUpdateProgress(normalizedProgress);

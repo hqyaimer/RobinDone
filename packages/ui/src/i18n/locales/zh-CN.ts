@@ -2196,6 +2196,8 @@ const zhCN: Record<string, string> = {
   "updateDialog.autoDownloadAndInstall": "以后自动下载并安装更新",
   "updateDialog.downloadingAction": "下载中",
   "updateDialog.downloadProgress": "下载进度",
+  "updateDialog.downloadDeltaHint": "增量下载中，完整安装包 {size}",
+  "updateDialog.installFailed": "启动更新安装失败：{error}",
   "updateDialog.restartToUpdate": "重启以更新",
   "updateDialog.skipVersion": "跳过此版本",
   "updateDialog.later": "稍后",
@@ -5283,6 +5285,16 @@ const zhCN: Record<string, string> = {
   "settings.triggers.residentGlobalMax": "全局常驻脚本上限",
   "settings.triggers.residentGlobalMaxDescription":
     "所有项目合计的常驻脚本进程数兜底上限，防止多项目叠加耗尽资源。",
+  "settings.triggers.pythonRuntime.label": "Python 运行时",
+  "settings.triggers.pythonRuntime.description":
+    "脚本触发器的 Python 解释器供给状态。安装包已内置，仅在包内缺失时才联网下载（支持镜像加速）。",
+  "settings.triggers.pythonRuntime.unknown": "待检测（触发器功能就绪后自动检测）",
+  "settings.triggers.pythonRuntime.probing": "检测中…",
+  "settings.triggers.pythonRuntime.downloading": "下载中 {downloaded} / {total}",
+  "settings.triggers.pythonRuntime.downloadingNoTotal": "下载中 {downloaded}",
+  "settings.triggers.pythonRuntime.available": "可用",
+  "settings.triggers.pythonRuntime.availableSystem": "可用（系统 Python 回退）",
+  "settings.triggers.pythonRuntime.unavailable": "不可用：{error}",
   "settings.workspaceFileSearch.title": "工作区搜索范围",
   "settings.workspaceFileSearch.description":
     "编辑 .robinrunignore 忽略规则（语法与 .gitignore 一致），控制工作区文件搜索的范围。保存后下次搜索生效。",

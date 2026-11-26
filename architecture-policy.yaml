@@ -1479,6 +1479,10 @@ exceptions:
     rule: unmanaged-new-file
     paths: [packages/ui/src/settings/TriggersSettingsSection.tsx]
     reason: 触发器设置分区组件（P3 第二十三批，常驻脚本并发配额可配置）只编排 useSettings 的共享设置读写与既有设置页 UI 原语；值与默认单一来源在 shared/protocol.ts，引擎侧消费在 trigger-engine（配额兜底），本组件不新增平行状态，接管整个 ui 目录不在本次范围内。
+  - id: settings-trigger-python-runtime-status-hook-new-file
+    rule: unmanaged-new-file
+    paths: [packages/ui/src/settings/useTriggerPythonRuntimeStatus.ts]
+    reason: python 运行时供给状态 hook（2026-11-26 打包内置改造）只订阅 broadcastService 的 state:trigger-python-runtime 频道并归一化 payload（本地结构镜像 services 的 PythonRuntimeProgressEvent，UI 不 import services 实现包）；唯一事实源在 trigger-engine，本 hook 不新增平行状态，接管整个 ui 目录不在本次范围内。
   - id: settings-personalization-size-constant-new-file
     rule: unmanaged-new-file
     paths: [packages/shared/src/userInstructions.ts]

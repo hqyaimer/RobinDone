@@ -170,7 +170,10 @@
         align-items: center;
         justify-content: center;
         border-radius: 24px;
-        background: linear-gradient(180deg, #000000 0%, #151718 100%);
+        /* 2026-11-26 品牌替换：黑底白 Z 字标改为白底圆角瓦片 + 知更鸟特写，
+         * 与 React 接管后的 RobinRunStartupLogoBadge 同款视觉。 */
+        background: #ffffff;
+        overflow: hidden;
         box-shadow:
           0 20px 25px -5px rgb(0 0 0 / 0.2),
           0 8px 10px -6px rgb(0 0 0 / 0.2);
@@ -181,15 +184,16 @@
         inset: 0;
         pointer-events: none;
         content: "";
-        /* 修复原因：启动 logo 壳是固定深色底，边框不能跟随浅色主题 token，否则首屏边框过重。 */
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        /* 修复原因：启动 logo 壳是固定浅色底，边框不能跟随深色主题 token，否则深色界面首屏边框过重。 */
+        border: 1px solid rgba(0, 0, 0, 0.1);
         border-radius: inherit;
       }
 
       .robinrun-boot-loading__logo {
-        width: 56px;
-        height: auto;
-        color: #ffffff;
+        width: 100%;
+        height: 100%;
+        user-select: none;
+        -webkit-user-drag: none;
       }
     </style>
   </head>
@@ -204,47 +208,15 @@
         aria-label="Loading..."
       >
         <div class="robinrun-boot-loading__logo-shell">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="118px"
-            height="100px"
-            fill="none"
-            viewBox="0 0 256 218"
+          <!-- 2026-11-26 品牌替换：内联 ZCode Z 字标（改名遗漏）换成知更鸟特写资产
+               （SMIL 呼吸动画随 SVG 自带，与桌面端启动壳同一素材）。 -->
+          <img
+            src="../ui/src/assets/brand/robin-closeup-animated.svg"
             class="robinrun-boot-loading__logo"
+            alt=""
             aria-hidden="true"
-          >
-            <path
-              fill="currentColor"
-              d="M134.4 0.130152L116.48 25.6022C113.665 29.5699 109.054 32.0019 104.064 32.0019H6.3999V0C6.3999 0.130149 134.4 0.130152 134.4 0.130152Z"
-            >
-              <animate
-                attributeName="opacity"
-                dur="1.5s"
-                repeatCount="indefinite"
-                values="1;0.3;1"
-              />
-            </path>
-            <path fill="currentColor" d="M256 0.130127L102.401 217.732H0L153.599 0.130127H256Z">
-              <animate
-                attributeName="opacity"
-                begin="0.75s"
-                dur="1.5s"
-                repeatCount="indefinite"
-                values="1;0.3;1"
-              />
-            </path>
-            <path
-              fill="currentColor"
-              d="M121.601 217.732L139.65 192.134C142.465 188.166 147.076 185.734 152.067 185.734H249.604V217.736H121.601V217.732Z"
-            >
-              <animate
-                attributeName="opacity"
-                dur="1.5s"
-                repeatCount="indefinite"
-                values="1;0.3;1"
-              />
-            </path>
-          </svg>
+            draggable="false"
+          />
         </div>
       </div>
     </div>

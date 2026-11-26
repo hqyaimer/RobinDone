@@ -45,6 +45,9 @@ export type UpdateStatePayload =
       progress: string;
       transferredBytes?: number;
       totalBytes?: number;
+      // manifest 里安装包的完整大小。差分（blockmap 增量）下载时 totalBytes 只是
+      // 增量块大小，UI 用 fullSizeBytes 纠正展示口径，避免用户误以为下载被截断。
+      fullSizeBytes?: number;
       version?: string;
       channel?: ElectronReleaseChannel;
       releaseNotes?: PostUpdateReleaseNotesPayload;

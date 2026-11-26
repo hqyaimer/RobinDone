@@ -2374,6 +2374,8 @@ const enUS: Record<string, string> = {
   "updateDialog.autoDownloadAndInstall": "Automatically download and install updates next time",
   "updateDialog.downloadingAction": "Downloading",
   "updateDialog.downloadProgress": "Download progress",
+  "updateDialog.downloadDeltaHint": "Delta download in progress, full installer {size}",
+  "updateDialog.installFailed": "Failed to start update installation: {error}",
   "updateDialog.restartToUpdate": "Restart to update",
   "updateDialog.skipVersion": "Skip this version",
   "updateDialog.later": "Later",
@@ -5659,6 +5661,16 @@ const enUS: Record<string, string> = {
   "settings.triggers.residentGlobalMax": "Global resident script limit",
   "settings.triggers.residentGlobalMaxDescription":
     "Backstop cap on total resident script processes across all projects.",
+  "settings.triggers.pythonRuntime.label": "Python runtime",
+  "settings.triggers.pythonRuntime.description":
+    "Python interpreter provisioning status for script triggers. The installer ships a bundled runtime; network download (with mirror support) is only used when it is missing.",
+  "settings.triggers.pythonRuntime.unknown": "Pending detection (runs once trigger features initialize)",
+  "settings.triggers.pythonRuntime.probing": "Detecting…",
+  "settings.triggers.pythonRuntime.downloading": "Downloading {downloaded} / {total}",
+  "settings.triggers.pythonRuntime.downloadingNoTotal": "Downloading {downloaded}",
+  "settings.triggers.pythonRuntime.available": "Available",
+  "settings.triggers.pythonRuntime.availableSystem": "Available (system Python fallback)",
+  "settings.triggers.pythonRuntime.unavailable": "Unavailable: {error}",
   "settings.workspaceFileSearch.title": "Workspace Search Scope",
   "settings.workspaceFileSearch.description":
     "Edit .robinrunignore rules (gitignore syntax) that scope workspace file search. Takes effect on the next search after saving.",

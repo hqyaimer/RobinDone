@@ -1,6 +1,7 @@
 import { isWebRemoteControlThemeSeed, type WebRemoteControlThemeSeed } from "@robinrun/shared";
 
-export const WEB_REMOTE_CONTROL_DEFAULT_THEME: WebRemoteControlThemeSeed = "zai-dark";
+// 2026-11-26 用户裁决：系统默认主题浅色，web 远控/分享页与桌面端默认保持一致。
+export const WEB_REMOTE_CONTROL_DEFAULT_THEME: WebRemoteControlThemeSeed = "zai-light";
 
 function normalizeWebRemoteControlThemeSeed(
   theme: WebRemoteControlThemeSeed,

@@ -45,7 +45,13 @@ RobinRun 的方案：**静态 manifest（latest\*.yml）+ GitHub Release 附件*
 前置：仓库为公开（raw 与 Release 附件匿名可读）。
 
 1. 确认 `packages/desktop/package.json` / 根 version 或以 tag 为准的构建元数据版本正确。
-2. `git tag v0.x.y && git push origin v0.x.y` → 触发 `.github/workflows/release.yml`：
+2. **填写更新说明（2026-11-26 起）**：新建 `docs/release-notes/<tag>.md`（如
+   `docs/release-notes/v0.0.3.md`，中文；可选同名 `.en-US.md` 提供英文版）。这份文件是
+   **唯一事实源**，发布流水线把它用在两处：①注入各平台 latest.yml 的 `releaseNotes`
+   （及 `releaseNotesByLocale`）字段，随应用内更新弹窗展示；②作为 GitHub Release 页正文
+   （缺失时 Release 页退回 `--generate-notes` 的 changelog 链接形态，弹窗无说明区块——
+   都不是故障）。说明用 markdown，首个 `# ` 标题会成为弹窗说明区的标题。
+3. `git tag v0.x.y && git push origin v0.x.y` → 触发 `.github/workflows/release.yml`：
    - **build 矩阵**：`windows-latest`(win-x64)、`macos-latest`(mac-arm64)、`macos-15-intel`(mac-x64)、
      `ubuntu-latest`(linux-x64)；各跑 `pnpm bundle:desktop -- --os <os> --arch <arch>`。
      构建期 env：`ROBINRUN_AUTO_UPDATE=1`、`ROBINRUN_UPDATE_FEED_BASE=https://raw.githubusercontent.com/<repo>/updates`。
@@ -70,6 +76,35 @@ RobinRun 的方案：**静态 manifest（latest\*.yml）+ GitHub Release 附件*
 首版签名状态与用户感知：mac 未签名 = Gatekeeper 需右键打开 + 新版本走"提示 + 手动下载"；
 Windows 未签名 = SmartScreen"更多信息 → 仍要运行"，自动更新可用；Linux AppImage 自动更新可用，
 deb/rpm 以手动下载为主（系统包更新需提权）。
+
+### Windows 安装门与签名准入（2026-11-26 修订，v0.0.2 实测勘误）
+
+上文"Windows 未签名 = 自动更新可用"在 v0.0.2 实测中被推翻：`quitAndInstallUpdate`
+（autoUpdater.ts）在 Windows 安装前对下载好的安装包做**无条件 Authenticode 强校验**，
+未签名包必然失败——表现为"重启以更新"点击后 ready 被清、弹窗静默关闭、安装器从未启动，
+且下载缓存命中让重试无限复现。与 electron-updater 自身下载期校验（app-update.yml 有
+`publisherName` 才校验，未配置则跳过）不一致，就是缺口所在。
+
+修订后的准入标准与 electron-updater 对齐：
+
+- app-update.yml 配置了 `publisherName`（即正式签名发布）→ 安装前做 Authenticode 校验
+  （`verifyWindowsAuthenticodeSignature`），失败拒绝安装；
+- 未配置 `publisherName`（未签名发布，当前 CI 形态）→ 跳过签名门，以 HTTPS 更新源 +
+  manifest sha512（下载器在 update-downloaded 前已强制校验，差分重组同样过校验）为完整性锚。
+- renderer 对安装失败的 IPC reject 弹 toast（`updateDialog.installFailed`），不再静默吞错。
+
+配套 UX 修正：差分（blockmap 增量）下载时 electron-updater 的进度 `total` 只是增量块大小
+（v0.0.1→v0.0.2 实测 65MB vs 完整包 189.7MB），UI 现按 manifest 完整包大小补
+"增量下载中，完整安装包 XXMB"提示（`updateDialog.downloadDeltaHint`）。
+
+**存量用户注意**：本修订只进新版本代码。v0.0.1/v0.0.2 的安装门仍是旧强校验，点"重启以更新"
+依然无反应——需走强更通道（`min-version.json` 设 `minimalVersion`，客户端弹"手动升级"按钮）
+或官方公告引导浏览器下载安装。正式解法是为 Windows 出包配代码签名证书（未来批次）。
+
+**发布卫生（2026-11-26 顺带修复）**：updates 分支首次播种用 `rm -rf -- *` 不匹配 dotfile，
+把 `.env.development`、`.agents/` 等仓库文件带进了 updates 分支（内容经核对无泄密）。
+release.yml 已改为 `find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +` 全清；存量 updates
+分支需一次性手工清理。
 
 ### 测试闭环（不等 CI）
 

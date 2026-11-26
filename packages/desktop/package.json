@@ -21,6 +21,7 @@
     "prepare:agent-bundle": "node scripts/prepare-agent-node-bundle.mjs",
     "prepare:windows-cua-helper": "node scripts/prepare-windows-cua-helper.mjs",
     "prepare:native-search": "node ../../scripts/prepare-native-search-tools.mjs",
+    "prepare:python-runtime": "node scripts/prepare-python-runtime.mjs",
     "prepare:browser-import-helper": "node scripts/build-windows-browser-import-helper.mjs",
     "prepare:macos-window-bounds": "node scripts/build-macos-window-bounds.mjs",
     "build:no-runtime-assets": "pnpm prepare:build-meta && node scripts/run-production-build.mjs",

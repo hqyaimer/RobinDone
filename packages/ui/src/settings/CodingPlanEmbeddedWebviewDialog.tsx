@@ -87,7 +87,8 @@ export function CodingPlanEmbeddedWebviewDialog({
 }: CodingPlanEmbeddedWebviewDialogProps) {
   const { intl, locale } = useRobinRunIntl();
   const platform = usePlatform();
-  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-dark");
+  // 兜底值与全局默认主题保持一致（useTheme/store 均默认 zai-light，2026-11-26 用户裁决）。
+  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-light");
   const userId = useRobinRunStoreWithDefault((state) => state.user?.id ?? null, null);
   const webviewRef = useRef<ElectronWebviewTag | null>(null);
   const onOpenResultRef = useRef(onOpenResult);

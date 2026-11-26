@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createTriggerPythonRuntimePort,
   ensureManagedPythonRuntime,
+  PYTHON_RUNTIME_ID,
   type HostAsset,
   type TriggerPythonRuntimePortOptions,
 } from "../src/trigger-engine/python-runtime.js";
@@ -39,15 +40,26 @@ afterEach(async () => {
   await rm(tmpRoot, { recursive: true, force: true });
 });
 
-/** 本地"镜像"HTTP server：任意 GET 都回当前 fixture 字节。 */
+/** 本地"镜像"HTTP server：任意 GET 都回当前 fixture 字节；支持单次失败注入（重试覆盖）。 */
 function createFixtureServer() {
   let payload = Buffer.alloc(0);
   let requestCount = 0;
   let lastUrl = "";
+  let failNextOnceError: Error | undefined;
   const server: Server = createServer((req: IncomingMessage, res: ServerResponse) => {
     requestCount += 1;
     lastUrl = req.url ?? "";
-    res.writeHead(200, { "content-type": "application/octet-stream" });
+    if (failNextOnceError !== undefined) {
+      const error = failNextOnceError;
+      failNextOnceError = undefined;
+      res.writeHead(500, { "content-type": "text/plain" });
+      res.end(error.message);
+      return;
+    }
+    res.writeHead(200, {
+      "content-type": "application/octet-stream",
+      "content-length": String(payload.length),
+    });
     res.end(payload);
   });
   return {
@@ -63,6 +75,10 @@ function createFixtureServer() {
     },
     setPayload(next: Buffer): void {
       payload = next;
+    },
+    /** 注入一次 HTTP 500（下一请求失败一次后自动恢复），驱动单 URL 重试路径。 */
+    setFailNextOnce(error: Error): void {
+      failNextOnceError = error;
     },
     get requestCountValue(): number {
       return requestCount;
@@ -168,6 +184,90 @@ describe("ensureManagedPythonRuntime", () => {
         assetOverride: asset,
       }),
     ).rejects.toThrow(/sha256 mismatch/);
+  });
+
+  it("reuses a complete bundled dir without any download, and skips it when incomplete", async () => {
+    const fixtureDir = join(tmpRoot, "fixture-bundled");
+    await mkdir(fixtureDir, { recursive: true });
+    const asset = await assetOverrideFor(fixtureDir);
+    const bytes = await readFile(join(fixtureDir, asset.archive));
+    const mirror = await startMirrorWith(asset, bytes);
+    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = mirror;
+
+    // bundled staging：解压布局 + 完成标记（prepare:python-runtime 的产出形态）。
+    const bundledDir = join(tmpRoot, "bundled", PYTHON_RUNTIME_ID);
+    const interpreterRel =
+      process.platform === "win32" ? join("python.exe") : join("bin", "python3");
+    const interpreterPath = join(bundledDir, interpreterRel);
+    await mkdir(join(interpreterPath, ".."), { recursive: true });
+    await writeFile(interpreterPath, "#!/bin/sh\nexit 0\n", "utf8");
+    if (process.platform !== "win32") await chmod(interpreterPath, 0o755);
+    await writeFile(join(bundledDir, ".robinrun-complete"), `${PYTHON_RUNTIME_ID}\n`, "utf8");
+
+    const logs: string[] = [];
+    const bundled = await ensureManagedPythonRuntime({
+      cacheRoot: join(tmpRoot, "cache-bundled"),
+      log: (m) => logs.push(m),
+      assetOverride: asset,
+      bundledDir,
+    });
+    expect(bundled.interpreterPath).toBe(interpreterPath);
+    expect(bundled.cacheDir).toBe(bundledDir);
+    expect(logs.some((m) => m.includes("using bundled python runtime"))).toBe(true);
+    // bundled 命中：零下载（mirror 请求计数不变）、缓存目录不落盘。
+    expect(mirrorServer!.requestCountValue).toBe(0);
+    await expect(stat(join(tmpRoot, "cache-bundled"))).rejects.toThrow();
+
+    // bundled 缺解释器（只有标记）→ 不可用，回退缓存/下载路径正常供给。
+    const brokenBundledDir = join(tmpRoot, "bundled-broken", PYTHON_RUNTIME_ID);
+    await mkdir(brokenBundledDir, { recursive: true });
+    await writeFile(join(brokenBundledDir, ".robinrun-complete"), `${PYTHON_RUNTIME_ID}\n`, "utf8");
+    const fallback = await ensureManagedPythonRuntime({
+      cacheRoot: join(tmpRoot, "cache-bundled-fallback"),
+      log: () => undefined,
+      assetOverride: asset,
+      bundledDir: brokenBundledDir,
+    });
+    expect(await exists(fallback.interpreterPath)).toBe(true);
+    expect(fallback.interpreterPath).not.toContain("bundled-broken");
+    expect(fallback.interpreterPath).toContain("cache-bundled-fallback");
+  });
+
+  it("emits byte-level download progress and retries a failed mirror before official fallback", async () => {
+    const fixtureDir = join(tmpRoot, "fixture-progress");
+    await mkdir(fixtureDir, { recursive: true });
+    const asset = await assetOverrideFor(fixtureDir);
+    const bytes = await readFile(join(fixtureDir, asset.archive));
+    mirrorServer = createFixtureServer();
+    // 首次请求返回半截数据（模拟断连）→ 第二次成功：单 URL 重试生效。
+    mirrorServer.setFailNextOnce(new Error("connection reset"));
+    mirrorServer.setPayload(bytes);
+    const port = await mirrorServer.listen();
+    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
+
+    const progress: { downloadedBytes: number; totalBytes: number | null }[] = [];
+    const logs: string[] = [];
+    const info = await ensureManagedPythonRuntime({
+      cacheRoot: join(tmpRoot, "cache-progress"),
+      log: (m) => logs.push(m),
+      assetOverride: asset,
+      onDownloadProgress: (event) => {
+        progress.push({ downloadedBytes: event.downloadedBytes, totalBytes: event.totalBytes });
+      },
+    });
+    expect(await exists(info.interpreterPath)).toBe(true);
+    // 字节进度：至少一帧、帧值单调不降、终帧 = archive 实际字节数（无 content-length 时 totalBytes 为 null）。
+    expect(progress.length).toBeGreaterThan(0);
+    for (let index = 1; index < progress.length; index += 1) {
+      expect(progress[index]!.downloadedBytes).toBeGreaterThanOrEqual(
+        progress[index - 1]!.downloadedBytes,
+      );
+    }
+    expect(progress[progress.length - 1]!.downloadedBytes).toBe(bytes.length);
+    expect(progress[progress.length - 1]!.totalBytes).toBe(bytes.length);
+    // 重试：首帧失败日志在场，且成功供给（异常不被静默吞掉）。
+    expect(logs.some((m) => m.includes("download failed from"))).toBe(true);
+    expect(logs.some((m) => m.includes("managed python runtime ready"))).toBe(true);
   });
 });
 

@@ -153,25 +153,52 @@ jobs:
           # 幂等重跑（v0.0.1 首跑实测教训）：release job 在清单改写环节失败时，Release 与
           # 资产已经存在；重跑必须复用而非 create（existing 报 422）。上传用 --clobber
           # 覆盖同名资产；删 tag 重打会把已发布 Release 退回草稿，最后统一转正。
-          gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          # Release 正文（2026-11-26）：docs/release-notes/<tag>.md 在场时用它做正文
+          # （与更新弹窗同源；rerun 经 edit 同步覆盖，说明文件即唯一事实源），缺失时
+          # 退回 --generate-notes 的 commit changelog 链接形态。
+          NOTES_FILE="docs/release-notes/${GITHUB_REF_NAME}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            gh release view "$TAG" >/dev/null 2>&1 || \
+              gh release create "$TAG" --title "$TAG" --notes-file "$NOTES_FILE" --verify-tag
+            gh release edit "$TAG" --notes-file "$NOTES_FILE" --draft=false
+          else
+            echo "::notice::No release notes file at ${NOTES_FILE}; GitHub Release body falls back to generated changelog."
+            gh release view "$TAG" >/dev/null 2>&1 || \
+              gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+            gh release edit "$TAG" --draft=false
+          fi
           gh release upload "$TAG" release-files/* --clobber
-          gh release edit "$TAG" --draft=false
 
       - name: Rewrite update manifests for static feed
         run: |
+          # 更新说明（2026-11-26）：发版前在 docs/release-notes/<tag>.md（可选 .en-US.md
+          # 英文版）填写本次更新说明，自动注入各平台 latest.yml 的 releaseNotes 字段，
+          # 随更新弹窗展示给用户；文件缺失 = 不注入（弹窗无说明区块，非故障）。
+          NOTES_ARGS=()
+          if [ -f "docs/release-notes/${GITHUB_REF_NAME}.md" ]; then
+            NOTES_ARGS+=(--release-notes "docs/release-notes/${GITHUB_REF_NAME}.md")
+          else
+            echo "::notice::No release notes file at docs/release-notes/${GITHUB_REF_NAME}.md; update dialog will show no notes."
+          fi
+          if [ -f "docs/release-notes/${GITHUB_REF_NAME}.en-US.md" ]; then
+            NOTES_ARGS+=(--release-notes-en "docs/release-notes/${GITHUB_REF_NAME}.en-US.md")
+          fi
           node scripts/release/rewrite-update-manifests.mjs \
             --manifest artifacts/dist-win-x64/latest.yml \
-            --platform windows-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+            --platform windows-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging \
+            "${NOTES_ARGS[@]}"
           node scripts/release/rewrite-update-manifests.mjs \
             --manifest artifacts/dist-mac-arm64/latest-mac.yml \
-            --platform darwin-aarch64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+            --platform darwin-aarch64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging \
+            "${NOTES_ARGS[@]}"
           node scripts/release/rewrite-update-manifests.mjs \
             --manifest artifacts/dist-mac-x64/latest-mac.yml \
-            --platform darwin-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+            --platform darwin-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging \
+            "${NOTES_ARGS[@]}"
           node scripts/release/rewrite-update-manifests.mjs \
             --manifest artifacts/dist-linux-x64/latest-linux.yml \
-            --platform linux-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging
+            --platform linux-x86_64 --base "$RELEASE_ASSET_BASE" --out-root updates-staging \
+            "${NOTES_ARGS[@]}"
           find updates-staging -type f
 
       - name: Publish update manifests to updates branch
@@ -189,7 +216,10 @@ jobs:
           else
             git checkout --orphan updates
             git rm -rf --cached . >/dev/null
-            rm -rf -- * .github 2>/dev/null || true
+            # 修复依据（v0.0.2 发布体检）：`*` 不匹配 dotfile，导致 .env.development、
+            # .agents/ 等仓库文件全部泄漏进首次播种的 updates 分支。这里用 find 兜底
+            # 清掉包括隐藏文件在内的全部残留，再只放进清单产物。
+            find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
           fi
           cp -r "${GITHUB_WORKSPACE}/updates-staging"/. .
           # 强更策略文件（forceUpdateGuard 读取）：只在不存在时播种 downloadUrl；

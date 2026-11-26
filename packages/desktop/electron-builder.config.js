@@ -25,6 +25,10 @@ import {
 import { createWindowsPowerShellSecurityArgs } from "./scripts/powershell-command.mjs";
 import { writeWindowsUpdatePublisher } from "./scripts/windows-update-publisher.mjs";
 import {
+  PYTHON_RUNTIME_ID,
+  resolvePythonHostTriple,
+} from "../services/src/trigger-engine/python-runtime-assets.mjs";
+import {
   isSharpRequiredByComputerUse,
   verifyStagedSharp,
 } from "./scripts/sharp-package-assets.mjs";
@@ -67,6 +71,27 @@ const shouldEnableMacSigning =
   process.env.ROBINRUN_ENABLE_MAC_SIGN === "1" && Boolean(macSigningIdentity);
 const workspaceRoot = resolve(import.meta.dirname, "../..");
 const desktopPackageRoot = import.meta.dirname;
+// python 主运行时随包内置（2026-11-26 打包内置改造，docs/trigger-python-runtime.md §3.1）：
+// prepare:python-runtime 产出 bundled-tools/<key>/python/<PYTHON_RUNTIME_ID>/（已 sha256
+// 校验 + 解压 + 完成标记），整树打进 resources/runtimes/python/<PYTHON_RUNTIME_ID>/。
+// 运行时按同名目录优先解析（缺失才走网络下载兜底）。支持平台上 staging 缺席 = prepare
+// 没跑或失败，直接抛错终止打包——静默出无 python 的包等于把开箱即用退化回联网下载。
+const pythonRuntimeStagingDir = resolve(
+  desktopPackageRoot,
+  "bundled-tools",
+  targetPlatform.key,
+  "python",
+  PYTHON_RUNTIME_ID,
+);
+const hasPythonRuntimeStaging = existsSync(join(pythonRuntimeStagingDir, ".robinrun-complete"));
+const pythonRuntimeAssetSupported =
+  resolvePythonHostTriple(targetPlatform.os, targetPlatform.arch) !== undefined;
+if (pythonRuntimeAssetSupported && !hasPythonRuntimeStaging) {
+  throw new Error(
+    `Bundled python runtime staging is missing: ${pythonRuntimeStagingDir}. ` +
+      "Run `pnpm prepare:runtime-assets` (or `pnpm prepare:python-runtime`) before packaging.",
+  );
+}
 // Computer Use Helper（macOS .app、Windows runtime）只随真实 producer 打包；开源占位包下跳过随包资源与校验。
 const shouldPackageComputerUseHelper = isRealComputerUseProducerInstalled({ desktopPackageRoot });
 const HELPER_FILENAME = "robinrun-browser-import-helper.exe";
@@ -854,6 +879,21 @@ export default {
       to: `tools/${toolId}`,
       filter: ["**/*"],
     })),
+    ...(hasPythonRuntimeStaging
+      ? [
+          {
+            // python 主运行时随包内置（开箱即用，免首启联网下载）：目录布局与运行时
+            // 缓存目录完全同构（<PYTHON_RUNTIME_ID>/python.exe 或 bin/python3 +
+            // .robinrun-complete 标记），运行时按 process.resourcesPath/runtimes/python/<id>
+            // 优先复用，缺失才走网络下载兜底。
+            // macOS 注意：目录含大量可执行文件/动态库，未来开启 mac 签名时需确认
+            // extraResources 的签名遍历策略（见上方 Bugfix 注释）。
+            from: `bundled-tools/${targetPlatform.key}/python/${PYTHON_RUNTIME_ID}`,
+            to: `runtimes/python/${PYTHON_RUNTIME_ID}`,
+            filter: ["**/*"],
+          },
+        ]
+      : []),
   ],
   // pnpm 依赖图不完整时禁止仅记录警告并继续生成安装包；afterPack 只能补齐可解析依赖，
   // collector 已确认缺失的生产依赖必须在打包阶段停止。

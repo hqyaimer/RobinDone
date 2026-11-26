@@ -12,6 +12,10 @@ export type UpdateStatusViewModel = {
   dialogPhase: UpdateStatusDialogPhase;
   displayVersion: string | null;
   progressLabel: string | null;
+  // 差分（blockmap 增量）下载时 progressLabel 统计的是增量块，这里附带 manifest
+  // 完整包大小（已格式化），供弹窗层用 i18n 渲染"完整包 XXMB"提示，避免用户
+  // 把增量大小误读成完整安装包大小（v0.0.1→v0.0.2 实测 65MB vs 189.7MB）。
+  progressFullSizeLabel: string | null;
   progressValue: number;
   releaseNotesPayload: PostUpdateReleaseNotesPayload | undefined;
   skippableVersion: string | null;
@@ -45,6 +49,7 @@ export function deriveUpdateStatusViewModel({
         : "before-download",
     displayVersion,
     progressLabel: getUpdateDownloadProgressLabel(updateState),
+    progressFullSizeLabel: getUpdateDownloadProgressFullSizeLabel(updateState),
     progressValue: getUpdateDownloadProgressValue(updateState),
     releaseNotesPayload: getUpdateReleaseNotesPayload(updateState),
     skippableVersion:
@@ -96,6 +101,28 @@ export function getUpdateDownloadProgressLabel(updateState: UpdateStatePayload |
 
   // 下载进度文案已经改为展示已下载/总大小。只有百分比时继续显示
   // “0% / 42%” 会和新的大小口径冲突，且启动下载的临时态会残留一个 0%。
+  return null;
+}
+
+// 差分下载时 electron-updater 的 progress.total 只是差异块大小；只要 manifest
+// 完整大小在场且明显大于 total（5% 容差防抖），就返回完整包大小提示给弹窗层本地化渲染。
+export function getUpdateDownloadProgressFullSizeLabel(updateState: UpdateStatePayload | null) {
+  if (updateState?.kind !== "download-progress") {
+    return null;
+  }
+
+  const { totalBytes, fullSizeBytes } = updateState;
+  if (
+    typeof fullSizeBytes === "number" &&
+    Number.isFinite(fullSizeBytes) &&
+    fullSizeBytes > 0 &&
+    typeof totalBytes === "number" &&
+    Number.isFinite(totalBytes) &&
+    totalBytes > 0 &&
+    fullSizeBytes > totalBytes * 1.05
+  ) {
+    return formatMegabytes(fullSizeBytes);
+  }
   return null;
 }
 

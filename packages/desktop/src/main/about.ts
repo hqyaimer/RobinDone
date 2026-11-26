@@ -231,6 +231,19 @@ function resolveAboutIconPath(isPackaged: boolean): string {
     : join(import.meta.dirname, "../../build/icon.png");
 }
 
+/** 读取知更鸟 app 图标转 data URL（关于窗 CSP img-src 只放行 data:）。缺失/读取失败返回空串（渲染空瓦片）。 */
+function readAboutIconDataUrl(isPackaged: boolean): string {
+  const iconPath = resolveAboutIconPath(isPackaged);
+  if (!existsSync(iconPath)) {
+    return "";
+  }
+  try {
+    return `data:image/png;base64,${readFileSync(iconPath).toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+
 export async function showAboutDialog(
   parentWindow?: BrowserWindow,
   locale: Locale = DEFAULT_LOCALE,
@@ -278,6 +291,7 @@ export async function showAboutDialog(
         optimizationLine: formatAboutOptimizationLine(snapshot, locale),
         versionLabel: aboutMessages.versionLabel,
         okButtonLabel: aboutMessages.okButtonLabel,
+        appIconDataUrl: readAboutIconDataUrl(app.isPackaged),
       }),
     )}`,
   );

@@ -2,6 +2,7 @@ import type { IPlatformService, UpdateStatePayload } from "@robinrun/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
+import { toast } from "@/components/ui/toast.js";
 import { UpdateStatusDialog } from "@/UpdateStatusDialog.js";
 import { formatUpdateReleaseDate, getLocalizedUpdateReleaseNotes } from "@/updateReleaseNotes.js";
 import {
@@ -59,6 +60,7 @@ export function UpdateStatusDialogController({
     dialogPhase,
     displayVersion,
     progressLabel,
+    progressFullSizeLabel,
     progressValue,
     releaseNotesPayload: updateReleaseNotesPayload,
     skippableVersion,
@@ -231,6 +233,16 @@ export function UpdateStatusDialogController({
       await platform.quitAndInstallUpdate();
     } catch (error) {
       setUpdateActionInFlight(null);
+      // 修复依据（v0.0.1→v0.0.2 实测）：main 侧安装失败（签名校验/退出准备失败等）
+      // 后只广播 idle，弹窗随之关闭，用户感知为"点了没反应"。这里把 IPC reject
+      // 的失败原因以 toast 呈现，避免静默吞错。
+      toast(
+        intl.formatMessage(
+          { id: "updateDialog.installFailed" },
+          { error: error instanceof Error ? error.message : String(error) },
+        ),
+        { variant: "warning" },
+      );
       throw error;
     }
   }, [displayVersion, intl, platform, requestConfirmation, setUpdateActionInFlight]);
@@ -298,6 +310,7 @@ export function UpdateStatusDialogController({
       open={open}
       phase={dialogPhase}
       progressLabel={progressLabel}
+      progressFullSizeLabel={progressFullSizeLabel}
       progressValue={progressValue}
       releaseDateLabel={releaseDateLabel}
       showOverlay={showOverlay}

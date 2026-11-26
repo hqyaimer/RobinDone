@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
+import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { get as httpGet, type IncomingMessage } from "node:http";
 import { get as httpsGet } from "node:https";
 import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -14,6 +14,13 @@ import {
 import { getRobinRunDataRootDir } from "#src/paths.js";
 import { probeCommand } from "./script-runner.js";
 import {
+  PYTHON_RELEASE_BASE_URL,
+  PYTHON_RELEASE_TAG,
+  PYTHON_RUNTIME_ASSETS,
+  PYTHON_RUNTIME_ID,
+  resolvePythonHostTriple,
+} from "./python-runtime-assets.mjs";
+import {
   appendPythonPackages,
   defaultCommandRunner,
   ensureProjectVenv,
@@ -26,60 +33,35 @@ import {
  * python 主运行时供给（2026-11-22 python 主 + node 备选改造，docs/trigger-python-runtime.md
  * §3.1/§4a）。
  *
- * - 解释器**自动下载**（python-build-standalone install_only，零预装）：版本与六平台
- *   下载 URL + sha256 **钉死在代码**（确定性、可审计；不从运行时拉 SHA256SUMS）。
+ * - 解释器供给三级优先（2026-11-26 打包内置改造）：
+ *   1) **随包内置**（打包桌面端 `resources/runtimes/python/<版本标识>/`，构建期由
+ *      prepare:python-runtime 按 sha256 预置；开发态对应 bundled-tools staging 目录）；
+ *   2) **缓存复用/自动下载**（python-build-standalone install_only，零预装）：版本与
+ *      六平台下载 URL + sha256 **钉死在代码**（python-runtime-assets.mjs 单一来源；
+ *      确定性、可审计；不从运行时拉 SHA256SUMS）。
  * - 缓存 `~/.robinrun/runtimes/python/<版本标识>/`（全局共享跨项目）；下载 → 校验 →
  *   解压（系统 tar，Windows 走 System32 bsdtar 绝对路径）→ 原子 rename → 完成标记，
  *   标记在场即复用（不重复下载）。
  * - 镜像：`ROBINRUN_PYTHON_RUNTIME_MIRROR`（URL 模板，`{asset}` 占位符或基址前缀），
- *   配置时镜像优先、官方 GitHub 兜底。下载失败按「python 不可用」收口（node 备选），
- *   由引擎写 `state/python-runtime.json` 供 CLI 门控与提示词双模式。
+ *   配置时镜像优先、官方 GitHub 兜底；每源重试 `DOWNLOAD_ATTEMPTS_PER_URL` 次。
+ *   下载失败按「python 不可用」收口（node 备选），由引擎写 `state/python-runtime.json`
+ *   供 CLI 门控与提示词双模式。下载字节进度经 onDownloadProgress 回调上抛
+ *   （desktop host 接 broadcastService 推 UI）。
  * - 系统回退：`ROBINRUN_PYTHON_FALLBACK_SYSTEM=1` 时托管获取失败可回退系统 PATH
  *   python3/python（服务离线自救；venv 模块缺失的报错带指引，见 python-env.ts）。
  * - 不支持 HTTPS_PROXY 代理隧道（镜像是有意提供的过墙通道；需要代理时用镜像 env）。
  */
 
 // ---------------------------------------------------------------------------
-// 版本与资产（单一来源；升版 = 换常量，缓存目录随版本标识切换，旧目录不自动删）
+// 版本与资产（单一来源 = python-runtime-assets.mjs；升版 = 换常量，缓存目录随版本标识切换，旧目录不自动删）
 // ---------------------------------------------------------------------------
 
-const PYTHON_RELEASE_TAG = "20261110";
-const PYTHON_VERSION = "3.12.16";
-/** 版本标识 = 缓存目录名；升版即换目录。 */
-export const PYTHON_RUNTIME_ID = `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}` as const;
-const PYTHON_RELEASE_BASE_URL = `https://github.com/astral-sh/python-build-standalone/releases/download/${PYTHON_RELEASE_TAG}`;
-/** 环境变量：镜像 URL 模板（`{asset}` 占位符替换资产文件名；无占位符则按 `<base>/<tag>/<asset>` 拼接）。 */
+/** 版本标识 = 缓存目录名；升版即换目录（单一来源见 python-runtime-assets.mjs）。 */
+export { PYTHON_RUNTIME_ID };
+/** 环境变量：镜像 URL 模板（`{asset}` 占位符替换资产文件名；无占位符则按 `<base>/<tag>/<archive>` 拼接）。 */
 export const PYTHON_RUNTIME_MIRROR_ENV = "ROBINRUN_PYTHON_RUNTIME_MIRROR";
 /** 环境变量：托管获取失败时回退系统 PATH python（默认关闭，确定性优先）。 */
 export const PYTHON_FALLBACK_SYSTEM_ENV = "ROBINRUN_PYTHON_FALLBACK_SYSTEM";
-
-/** 六平台 install_only 资产与 sha256（release 20261110 的 SHA256SUMS 逐字预置）。 */
-const PYTHON_RUNTIME_ASSETS = {
-  "x86_64-pc-windows-msvc": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-x86_64-pc-windows-msvc-install_only.tar.gz`,
-    sha256: "e23fe5b16926de1d81661b1a97352e89fb167549c55a6825796ccd0f32ec7f1b",
-  },
-  "aarch64-pc-windows-msvc": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-aarch64-pc-windows-msvc-install_only.tar.gz`,
-    sha256: "7122bf62a0cf601527ba62e19ca715d64db86b269765da23937e9ac7f968f39c",
-  },
-  "x86_64-unknown-linux-gnu": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-x86_64-unknown-linux-gnu-install_only.tar.gz`,
-    sha256: "c2f87d4b4e8db3abddb0f116c6ccfc503d0cbdbb9ee8faacddad1b679ec12e99",
-  },
-  "aarch64-unknown-linux-gnu": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-aarch64-unknown-linux-gnu-install_only.tar.gz`,
-    sha256: "4792f81750282597fb2a3389fe18b945ed2ba6aad5e45ad406d122c58cb33081",
-  },
-  "x86_64-apple-darwin": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-x86_64-apple-darwin-install_only.tar.gz`,
-    sha256: "83f2922437e6d546d0fcdb8c11f150a8e52787e8d9ea8651b1974e20908eb1bc",
-  },
-  "aarch64-apple-darwin": {
-    archive: `cpython-${PYTHON_VERSION}+${PYTHON_RELEASE_TAG}-aarch64-apple-darwin-install_only.tar.gz`,
-    sha256: "e956e60bc9465d577ef8062059aa05cd3a2665b4b8678a2ed24e432368330b8f",
-  },
-} as const;
 
 type HostTriple = keyof typeof PYTHON_RUNTIME_ASSETS;
 
@@ -90,29 +72,7 @@ export interface HostAsset {
 }
 
 function resolveHostAsset(): HostAsset | undefined {
-  let triple: HostTriple | undefined;
-  if (process.platform === "win32") {
-    triple =
-      process.arch === "x64"
-        ? "x86_64-pc-windows-msvc"
-        : process.arch === "arm64"
-          ? "aarch64-pc-windows-msvc"
-          : undefined;
-  } else if (process.platform === "linux") {
-    triple =
-      process.arch === "x64"
-        ? "x86_64-unknown-linux-gnu"
-        : process.arch === "arm64"
-          ? "aarch64-unknown-linux-gnu"
-          : undefined;
-  } else if (process.platform === "darwin") {
-    triple =
-      process.arch === "x64"
-        ? "x86_64-apple-darwin"
-        : process.arch === "arm64"
-          ? "aarch64-apple-darwin"
-          : undefined;
-  }
+  const triple = resolvePythonHostTriple(process.platform, process.arch);
   if (triple === undefined) return undefined;
   const asset = PYTHON_RUNTIME_ASSETS[triple];
   return { triple, archive: asset.archive, sha256: asset.sha256 };
@@ -129,8 +89,17 @@ export function pythonRuntimeCacheRoot(): string {
 
 const DOWNLOAD_TIMEOUT_MS = 15 * 60_000;
 const DOWNLOAD_MAX_REDIRECTS = 5;
+/** 每个下载源的尝试次数（2026-11-26 补：弱网断连从「整包失败」降为「换源/重试前先重试」）。 */
+const DOWNLOAD_ATTEMPTS_PER_URL = 2;
 const EXTRACT_TIMEOUT_MS = 10 * 60_000;
 const COMPLETE_MARKER_FILE = ".robinrun-complete";
+
+export interface PythonDownloadProgress {
+  url: string;
+  downloadedBytes: number;
+  /** 响应未带 content-length（chunked 等）时为 null。 */
+  totalBytes: number | null;
+}
 
 /** 镜像 env 模板解析：含 `{asset}` 占位符则替换；否则按 `<mirror>/<tag>/<archive>` 拼。 */
 function buildDownloadUrls(asset: HostAsset): string[] {
@@ -145,10 +114,14 @@ function buildDownloadUrls(asset: HostAsset): string[] {
 }
 
 /**
- * 下载到本地文件（重定向跟随、整体超时）。注意：node https 不走 HTTPS_PROXY 环境变量，
- * 本模块有意不实现代理隧道——过墙场景用镜像 env。
+ * 下载到本地文件（重定向跟随、整体超时、字节进度回调）。注意：node https 不走
+ * HTTPS_PROXY 环境变量，本模块有意不实现代理隧道——过墙场景用镜像 env。
  */
-function downloadToFile(url: string, destPath: string): Promise<void> {
+function downloadToFile(
+  url: string,
+  destPath: string,
+  onProgress?: (progress: PythonDownloadProgress) => void,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const handleResponse = (target: string, response: IncomingMessage, redirectsLeft: number) => {
       const location = response.headers.location;
@@ -171,7 +144,18 @@ function downloadToFile(url: string, destPath: string): Promise<void> {
         reject(new Error(`HTTP ${response.statusCode} for ${target}`));
         return;
       }
+      const contentLengthHeader = response.headers["content-length"];
+      const totalBytes =
+        typeof contentLengthHeader === "string" && Number.isFinite(Number(contentLengthHeader))
+          ? Number(contentLengthHeader)
+          : null;
+      let downloadedBytes = 0;
       const file = createWriteStream(destPath);
+      // 字节进度：chunk 累加后上抛；节流由调用方负责（端口层按步长截流）。
+      response.on("data", (chunk: Buffer) => {
+        downloadedBytes += chunk.length;
+        onProgress?.({ url: target, downloadedBytes, totalBytes });
+      });
       response.pipe(file);
       file.on("error", reject);
       file.on("close", () => {
@@ -244,7 +228,49 @@ async function resolveTarCommand(): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// ensureManagedPythonRuntime（缓存命中复用 / 下载解压原子落位）
+// 随包内置解释器（2026-11-26 打包内置）：packaged = resources/runtimes/python/<id>，
+// dev = desktop bundled-tools staging。缺失（未跑 prepare / 绿色裁剪 / 非 Electron 宿主）
+// 返回 undefined，自然落到缓存/下载路径。
+// ---------------------------------------------------------------------------
+
+function bundledPythonRuntimeCandidates(): string[] {
+  const platformKey = `${process.platform}-${process.arch}`;
+  const candidates: string[] = [];
+  // Electron（含 utility host）进程独有；web server / CLI 宿主没有该字段。
+  const resourcesPath = (process as { resourcesPath?: string }).resourcesPath;
+  if (typeof resourcesPath === "string" && resourcesPath.length > 0) {
+    candidates.push(join(resourcesPath, "runtimes", "python", PYTHON_RUNTIME_ID));
+  }
+  // dev：desktop 打包 staging（dev 启动 cwd 可能是仓库根或 packages/desktop，
+  // 多候选对齐 desktopRuntimeEnv 的 bundled-agents 解析，避免入口不同解析漂移）。
+  candidates.push(join(process.cwd(), "bundled-tools", platformKey, "python", PYTHON_RUNTIME_ID));
+  candidates.push(
+    join(
+      process.cwd(),
+      "packages",
+      "desktop",
+      "bundled-tools",
+      platformKey,
+      "python",
+      PYTHON_RUNTIME_ID,
+    ),
+  );
+  return candidates;
+}
+
+function resolveBundledPythonRuntimeDir(): string | undefined {
+  for (const candidate of bundledPythonRuntimeCandidates()) {
+    try {
+      if (existsSync(join(candidate, COMPLETE_MARKER_FILE))) return candidate;
+    } catch {
+      // 探测失败继续下一个（权限/路径异常不阻塞回退链）。
+    }
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// ensureManagedPythonRuntime（bundled 优先 / 缓存命中复用 / 下载解压原子落位）
 // ---------------------------------------------------------------------------
 
 export interface ManagedRuntimeInfo {
@@ -269,6 +295,10 @@ export async function ensureManagedPythonRuntime(params: {
   runCommand?: CommandRunner;
   /** 测试注入：覆盖平台资产（本地 HTTP fixture 的 archive/sha256；生产路径恒用钉死表）。 */
   assetOverride?: HostAsset;
+  /** 测试注入：随包内置解释器目录（生产路径按 resourcesPath / dev staging 自解析）。 */
+  bundledDir?: string;
+  /** 下载字节进度回调（原始步频；节流由调用方负责）。 */
+  onDownloadProgress?: (progress: PythonDownloadProgress) => void;
 }): Promise<ManagedRuntimeInfo> {
   const cacheRoot = params.cacheRoot ?? pythonRuntimeCacheRoot();
   const asset = params.assetOverride ?? resolveHostAsset();
@@ -279,11 +309,25 @@ export async function ensureManagedPythonRuntime(params: {
   }
   const finalDir = join(cacheRoot, PYTHON_RUNTIME_ID);
   const interpreterPath = managedInterpreterPath(finalDir);
-  const inflightKey = finalDir;
+  // 随包内置优先（开箱即用，免联网）：packaged/staging 目录标记 + 解释器齐备即整体
+  // 复用，不复制进缓存目录（避免 ~100MB 双份磁盘占用）。venv 指纹只看 PYTHON_RUNTIME_ID、
+  // 来源语义同为 managed，缓存版与内置版之间切换不触发 venv 重建。
+  const bundledDir = params.bundledDir ?? resolveBundledPythonRuntimeDir();
+  const bundledInterpreterPath =
+    bundledDir === undefined ? undefined : managedInterpreterPath(bundledDir);
+  const bundledReady =
+    bundledDir !== undefined &&
+    bundledInterpreterPath !== undefined &&
+    (await isComplete(bundledDir, bundledInterpreterPath));
+  const inflightKey = bundledReady && bundledDir !== undefined ? bundledDir : finalDir;
   const existing = inflightManaged.get(inflightKey);
   if (existing !== undefined) return existing;
 
   const task = (async (): Promise<ManagedRuntimeInfo> => {
+    if (bundledReady && bundledDir !== undefined && bundledInterpreterPath !== undefined) {
+      params.log(`using bundled python runtime: ${bundledDir}`);
+      return { interpreterPath: bundledInterpreterPath, cacheDir: bundledDir };
+    }
     if (await isComplete(finalDir, interpreterPath)) {
       return { interpreterPath, cacheDir: finalDir };
     }
@@ -294,17 +338,22 @@ export async function ensureManagedPythonRuntime(params: {
       const urls = buildDownloadUrls(asset);
       let lastError: Error | undefined;
       let downloaded = false;
-      for (const url of urls) {
-        try {
-          params.log(
-            `downloading ${PYTHON_RUNTIME_ID} (${asset.triple}) from ${new URL(url).host}`,
-          );
-          await downloadToFile(url, archivePath);
-          downloaded = true;
-          break;
-        } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error));
-          params.log(`download failed from ${url}: ${lastError.message}`);
+      // 镜像优先、官方兜底；每源重试 DOWNLOAD_ATTEMPTS_PER_URL 次（弱网断连先重试
+      // 再换源，避免镜像偶发抖动直接落到墙内更慢的官方源）。
+      downloadUrls: for (const url of urls) {
+        for (let attemptIndex = 1; attemptIndex <= DOWNLOAD_ATTEMPTS_PER_URL; attemptIndex += 1) {
+          try {
+            params.log(
+              `downloading ${PYTHON_RUNTIME_ID} (${asset.triple}) from ${new URL(url).host}` +
+                (attemptIndex > 1 ? ` (attempt ${attemptIndex}/${DOWNLOAD_ATTEMPTS_PER_URL})` : ""),
+            );
+            await downloadToFile(url, archivePath, params.onDownloadProgress);
+            downloaded = true;
+            break downloadUrls;
+          } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            params.log(`download failed from ${url}: ${lastError.message}`);
+          }
         }
       }
       if (!downloaded) {
@@ -439,6 +488,24 @@ export interface TriggerPythonRuntimePort {
   installPackages(workspacePath: string, packages: string[]): Promise<PythonPackageInstallResult>;
 }
 
+/**
+ * python 运行时供给进度事件（2026-11-26）：host 侧接 broadcastService 推 UI
+ * （设置页触发器分区状态卡）。payload 纯 JSON、可跨 IPC。
+ */
+export type PythonRuntimeProgressEvent =
+  | { kind: "probing"; workspacePath: string }
+  | {
+      kind: "downloading";
+      workspacePath: string;
+      downloadedBytes: number;
+      totalBytes: number | null;
+    }
+  | { kind: "available"; workspacePath: string; source: PythonRuntimeSource }
+  | { kind: "unavailable"; workspacePath: string; error: string };
+
+/** 下载进度事件上抛步长（1MiB）：原始 chunk 回调频率不可控，端口层统一截流。 */
+const DOWNLOAD_PROGRESS_EMIT_STEP_BYTES = 1024 * 1024;
+
 export interface TriggerPythonRuntimePortOptions {
   log(message: string): void;
   /** 测试注入：托管解释器缓存根（缺省 `~/.robinrun/runtimes/python`）。 */
@@ -447,12 +514,21 @@ export interface TriggerPythonRuntimePortOptions {
   runCommand?: CommandRunner;
   /** 测试注入：覆盖平台资产（配合本地 HTTP fixture；生产路径恒用钉死表）。 */
   assetOverride?: HostAsset;
+  /** 供给进度上抛（挂载预热/spawn 按需共用；事件节流在端口层完成）。 */
+  onProgress?: (event: PythonRuntimeProgressEvent) => void;
 }
 
 export function createTriggerPythonRuntimePort(
   options: TriggerPythonRuntimePortOptions,
 ): TriggerPythonRuntimePort {
   const log = options.log;
+  const emitProgress = (event: PythonRuntimeProgressEvent) => {
+    try {
+      options.onProgress?.(event);
+    } catch {
+      // 进度上抛失败不影响供给主链（订阅方异常不该打断下载/venv）。
+    }
+  };
   /** 工作区 → 已就绪解释器（成功后进程内缓存，避免重复读盘/探测）。 */
   const ready = new Map<string, PythonInterpreterResolution>();
   /** ensure 单飞（挂载与 spawn 同时触发的并发窗口）。 */
@@ -466,12 +542,27 @@ export function createTriggerPythonRuntimePort(
       state: "probing",
       updatedAt: new Date().toISOString(),
     });
+    emitProgress({ kind: "probing", workspacePath });
+    // 下载字节进度按 1MiB 步长上抛（ensureManagedPythonRuntime 的回调是原始 chunk 频率）。
+    let lastEmittedProgressBytes = 0;
     try {
       const managed = await ensureManagedPythonRuntime({
         ...(options.cacheRoot !== undefined ? { cacheRoot: options.cacheRoot } : {}),
         ...(options.assetOverride !== undefined ? { assetOverride: options.assetOverride } : {}),
         log,
         ...(options.runCommand !== undefined ? { runCommand: options.runCommand } : {}),
+        onDownloadProgress: (progress) => {
+          if (progress.downloadedBytes - lastEmittedProgressBytes < DOWNLOAD_PROGRESS_EMIT_STEP_BYTES) {
+            return;
+          }
+          lastEmittedProgressBytes = progress.downloadedBytes;
+          emitProgress({
+            kind: "downloading",
+            workspacePath,
+            downloadedBytes: progress.downloadedBytes,
+            totalBytes: progress.totalBytes,
+          });
+        },
       });
       const result: PythonInterpreterResolution = {
         ok: true,
@@ -485,6 +576,7 @@ export function createTriggerPythonRuntimePort(
         source: "managed",
         updatedAt: new Date().toISOString(),
       });
+      emitProgress({ kind: "available", workspacePath, source: "managed" });
       return result;
     } catch (managedError) {
       const managedMessage =
@@ -505,6 +597,7 @@ export function createTriggerPythonRuntimePort(
             source: "system",
             updatedAt: new Date().toISOString(),
           });
+          emitProgress({ kind: "available", workspacePath, source: "system" });
           return result;
         }
       }
@@ -518,6 +611,7 @@ export function createTriggerPythonRuntimePort(
         error: errorMessage,
         updatedAt: new Date().toISOString(),
       });
+      emitProgress({ kind: "unavailable", workspacePath, error: errorMessage });
       return { ok: false, error: errorMessage };
     }
   }

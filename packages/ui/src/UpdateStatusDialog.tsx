@@ -1,4 +1,5 @@
 import { CalendarDays } from "lucide-react";
+import { CloudFormattedTextContent } from "@/components/cloud-content-dialog/CloudDialogDescription.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -26,7 +27,9 @@ export function UpdateStatusDialog({
   intl,
   isUpdateActionPending,
   autoDownloadAndInstallUpdates,
+  localizedUpdateReleaseNotes,
   onAutoDownloadAndInstallUpdatesChange,
+  onOpenReleaseNotesExternalUrl,
   onCancelDownload,
   onDownloadUpdate,
   onOpenChange,
@@ -35,6 +38,7 @@ export function UpdateStatusDialog({
   open,
   phase,
   progressLabel,
+  progressFullSizeLabel = null,
   progressValue,
   releaseDateLabel,
   showOverlay = true,
@@ -56,6 +60,8 @@ export function UpdateStatusDialog({
   open: boolean;
   phase: UpdateStatusDialogPhase;
   progressLabel: string | null;
+  // 差分（blockmap 增量）下载时的完整包大小提示（已格式化，如 "189.7MB"）。
+  progressFullSizeLabel?: string | null;
   progressValue: number;
   releaseDateLabel: string | null;
   showOverlay?: boolean;
@@ -140,6 +146,17 @@ export function UpdateStatusDialog({
                 </span>
               ) : null}
             </div>
+            {progressFullSizeLabel ? (
+              // 差分（blockmap 增量）下载时 progressLabel 只是增量大小，v0.0.1→v0.0.2
+              // 实测显示 65MB 而真实安装包 189.7MB，用户会误以为下载被截断。这里补充
+              // manifest 完整包大小提示，明确当前口径是增量下载。
+              <p className="text-ui-xs leading-4 text-foreground-subtle">
+                {intl.formatMessage(
+                  { id: "updateDialog.downloadDeltaHint" },
+                  { size: progressFullSizeLabel },
+                )}
+              </p>
+            ) : null}
             <Progress
               value={progressValue}
               className="robinrun-update-charge-progress h-2 bg-primary/15 dark:bg-primary/20"
@@ -147,6 +164,27 @@ export function UpdateStatusDialog({
             />
           </section>
         </div>
+      ) : null}
+
+      {!isDownloading && localizedUpdateReleaseNotes ? (
+        // 2026-11-26 更新说明：manifest 注入 releaseNotes 后随 update-available/
+        // update-downloaded 状态到达（main 侧 toPostUpdateReleaseNotesPayload 现成管线），
+        // 下载前与已就绪阶段展示，下载中隐藏（控制器 visibleUpdateReleaseNotes 语义）。
+        // 复用云端内容弹窗的加固 markdown 渲染器（HTML 转义 + 标签白名单 + 链接安全）。
+        <section
+          className="min-h-0 space-y-1.5 [app-region:no-drag]"
+          data-testid="update-dialog-release-notes"
+        >
+          <div className="text-ui-xs font-medium leading-4 text-foreground-subtle">
+            {localizedUpdateReleaseNotes.title}
+          </div>
+          <div className="max-h-44 overflow-y-auto rounded-lg border border-border/60 bg-muted/40 p-3 text-ui-sm leading-5 text-foreground">
+            <CloudFormattedTextContent
+              text={{ format: "markdown", text: localizedUpdateReleaseNotes.markdown }}
+              onOpenExternal={onOpenReleaseNotesExternalUrl}
+            />
+          </div>
+        </section>
       ) : null}
 
       <div className={cn("[app-region:no-drag]", isDownloading ? "-mt-2" : null)}>

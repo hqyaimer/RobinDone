@@ -71,7 +71,8 @@ export function ProviderLogo({
   logo?: ProviderLogoRef | null;
   className?: string;
 }) {
-  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-dark");
+  // 兜底值与全局默认主题保持一致（useTheme/store 均默认 zai-light，2026-11-26 用户裁决）。
+  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-light");
   const src = resolveBuiltinProviderLogoAsset(logo, resolveTheme(theme));
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {

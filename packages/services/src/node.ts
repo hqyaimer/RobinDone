@@ -2374,6 +2374,14 @@ export function createLocalServices(options: {
       log: (message) => {
         void triggerEngineLogger.info(message);
       },
+      // 供给进度广播（2026-11-26 打包内置改造：下载兜底的进度可见性）。挂载预热在
+      // 启动期即触发 probing/broadcast；UI 订阅 `state:trigger-python-runtime` 刷新
+      // 设置页状态卡（失败静默吞掉，进度不阻塞供给主链）。
+      onProgress: (event) => {
+        void broadcastService
+          .send({ channel: "state:trigger-python-runtime", payload: event })
+          .catch(() => undefined);
+      },
     }),
     // 引擎托管浏览器（2026-11-25，specs/trigger-browser-hosting.md）：供给（下载/回退）+
     // 实例托管（档案级串行 + CDP endpoint 注入 + storageState 加密回写 + 有头登录会话）。

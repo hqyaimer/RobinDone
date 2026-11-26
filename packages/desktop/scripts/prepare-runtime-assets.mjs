@@ -33,6 +33,9 @@ const localRuntimeScripts = [
   "prepare:agent-bundle",
   ...(shouldPrepareWindowsCuaHelper ? ["prepare:windows-cua-helper"] : []),
   ...(nativeSearchReleasePlan.enabled ? ["prepare:native-search"] : []),
+  // python 主运行时随包内置（2026-11-26）：脚本内部按目标平台解析资产，
+  // 不支持的平台自行跳过（exit 0），支持的平台下载失败大声失败。
+  "prepare:python-runtime",
   ...(shouldPrepareWindowsBrowserImportHelper ? ["prepare:browser-import-helper"] : []),
   ...(shouldPrepareMacosWindowBounds ? ["prepare:macos-window-bounds"] : []),
 ];
