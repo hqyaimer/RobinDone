@@ -1,18 +1,18 @@
-version: 0.0.1
+version: 0.0.2
 files:
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.AppImage
-    sha512: 9c/C4LlcCZiJmbBI1eZ4BJPNsylqb0aSWWardpxQpqTaTpV2HAjntkTUyzIvFomi9D99ac3Jy7rZ0Otp//WY/Q==
-    size: 241423445
-    blockMapSize: 250985
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-amd64.deb
-    sha512: a4GzIvNXnOM+5Dh4nsWon6Q23A/jRhZOE1ljQc9R4ylfM9fdirkFaurQzYeM2am8MlMBaIdEV+6n1RQMbK/1UA==
-    size: 181691428
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.rpm
-    sha512: 9WrkPNuPer9rcyNCrE+Kl8Top95nNS0aB149X+MrnDUU2bNKNle13uK8Ch8V+BxxP5We/EMlvtLtX9KRY3edUQ==
-    size: 150328517
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x64.pkg.tar.zst
-    sha512: q43fmxgVKytvjJ6jfVMoOr1McrOi8GCtLPVWzL111Z7igApiBWeBqs9uZW0oA2Ft+jfI3ywAYqkERa2ksYPnig==
-    size: 159955912
-path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-linux-x86_64.AppImage
-sha512: 9c/C4LlcCZiJmbBI1eZ4BJPNsylqb0aSWWardpxQpqTaTpV2HAjntkTUyzIvFomi9D99ac3Jy7rZ0Otp//WY/Q==
-releaseDate: '2026-11-24T03:00:48.761Z'
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-linux-x86_64.AppImage
+    sha512: HuDCXUHfc4ONmnyJ2I53rrfrjU+PFykDonmNBa1mn2gopKlXwnpmlbAO96FO3wFghIEUyg7VH67R14rmKhhKsw==
+    size: 243339343
+    blockMapSize: 254051
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-linux-amd64.deb
+    sha512: 4bncPsK76Vh9IBIS63x0v43LML3ubjpGecyRwH0mqgRVSvU4Ss7EW/DbBTK+mgXg/BP5uQRKWR+2O/0JWChB0g==
+    size: 183268484
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-linux-x86_64.rpm
+    sha512: 3nrJgC3E5O2dNaIkMeMRmHQUSlcjbTtQwqhzTHY5d58AWzPXPTnB4HEM2FoJHQWDyOPHXpe2Xkiwad8jh/uz8w==
+    size: 151375241
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-linux-x64.pkg.tar.zst
+    sha512: RCz9m6i4oztTBD0KJfFTDFXjKFR5ieUINNnyexZBMpzkdXfnBmgsGRVf36Ty0njJV+PrfXRNKjrnmxK9re8Vtw==
+    size: 162849272
+path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-linux-x86_64.AppImage
+sha512: HuDCXUHfc4ONmnyJ2I53rrfrjU+PFykDonmNBa1mn2gopKlXwnpmlbAO96FO3wFghIEUyg7VH67R14rmKhhKsw==
+releaseDate: '2026-11-26T06:35:27.020Z'

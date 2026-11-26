@@ -1,8 +1,8 @@
-version: 0.0.1
+version: 0.0.2
 files:
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-win-x64.exe
-    sha512: 4xCiPeSugbllcB3qxXEHDx54qYp5ukIhXPOXyHM1lafs98MezRFAs3k7MiZGpnGf0oij9y1EGXXClQq6pEfQng==
-    size: 197885950
-path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.1/RobinRun-0.0.1-win-x64.exe
-sha512: 4xCiPeSugbllcB3qxXEHDx54qYp5ukIhXPOXyHM1lafs98MezRFAs3k7MiZGpnGf0oij9y1EGXXClQq6pEfQng==
-releaseDate: '2026-11-24T03:03:45.827Z'
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-win-x64.exe
+    sha512: vxjgUu4kJlPWG/WlzJ07i0odMAz5j0kXfGkn6QkqCOWUNaTQ6ougTyS6US3gs9rhEvK52lA8y9mWyTi2+eRrWg==
+    size: 198951556
+path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-win-x64.exe
+sha512: vxjgUu4kJlPWG/WlzJ07i0odMAz5j0kXfGkn6QkqCOWUNaTQ6ougTyS6US3gs9rhEvK52lA8y9mWyTi2+eRrWg==
+releaseDate: '2026-11-26T06:40:29.524Z'
