@@ -207,9 +207,13 @@ try {
   const sourceDir = join(extractDir, "python");
   await stat(sourceDir); // install_only 布局断言（缺顶层 python/ 即资产异常）
   // 原子落位：staging 完整就绪后才清旧目录、拷入、写完成标记。
+  // dereference（2026-11-26 v0.0.3 首跑 CI 实测）：POSIX 发行版 bin/ 里是符号链接
+  // （python3→python3.12 等），electron-builder 的 extraResources 拷贝会弄丢部分链接
+  // 目标（打包产物 bin/2to3 stat ENOENT——afterPack sourcemap 清理因此崩溃，且运行时
+  // 也真缺文件）。staging 一律落实体文件，下游打包/venv 不再依赖链接保真。
   await rm(finalDir, { recursive: true, force: true });
   await mkdir(dirname(finalDir), { recursive: true });
-  await cp(sourceDir, finalDir, { recursive: true });
+  await cp(sourceDir, finalDir, { recursive: true, dereference: true });
   await writeFile(join(finalDir, COMPLETE_MARKER_FILE), `${PYTHON_RUNTIME_ID}\n`, "utf8");
   const interpreterRel = process.platform === "win32" ? "python.exe" : join("bin", "python3");
   if (!existsSync(join(finalDir, interpreterRel))) {

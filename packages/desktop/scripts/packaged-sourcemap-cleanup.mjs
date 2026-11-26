@@ -1,11 +1,11 @@
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -31,7 +31,14 @@ function walkFiles(rootDir, visitor) {
 
   for (const entry of readdirSync(rootDir)) {
     const entryPath = resolve(rootDir, entry);
-    const stat = statSync(entryPath);
+    // 修复依据（v0.0.3 首跑 CI 实测）：随包 python 运行时（runtimes/python/<id>/bin/*）
+    // 在 POSIX 产物里含符号链接，electron-builder 拷贝后部分链接目标缺失，statSync
+    // （跟随链接）直接 ENOENT 炸掉 afterPack。清理器只服务 sourcemap 剥离，对符号链接
+    // 既不该跟随也不该改写——一律 lstat 跳过（含指向目录的链接，避免越界遍历）。
+    const stat = lstatSync(entryPath);
+    if (stat.isSymbolicLink()) {
+      continue;
+    }
     if (stat.isDirectory()) {
       walkFiles(entryPath, visitor);
       continue;
