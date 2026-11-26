@@ -1,8 +1,26 @@
-version: 0.0.2
+version: 0.0.3
 files:
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-win-x64.exe
-    sha512: vxjgUu4kJlPWG/WlzJ07i0odMAz5j0kXfGkn6QkqCOWUNaTQ6ougTyS6US3gs9rhEvK52lA8y9mWyTi2+eRrWg==
-    size: 198951556
-path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.2/RobinRun-0.0.2-win-x64.exe
-sha512: vxjgUu4kJlPWG/WlzJ07i0odMAz5j0kXfGkn6QkqCOWUNaTQ6ougTyS6US3gs9rhEvK52lA8y9mWyTi2+eRrWg==
-releaseDate: '2026-11-26T06:40:29.524Z'
+  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.3/RobinRun-0.0.3-win-x64.exe
+    sha512: NBKL7UPnGGVii4PY55OflXBqsrXoioXq7xQ8eeAJnWJzJdc0OawBnysNqoyG64pmvJBoGWc9lWKXhrKAmhXKCQ==
+    size: 231872142
+path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.3/RobinRun-0.0.3-win-x64.exe
+sha512: NBKL7UPnGGVii4PY55OflXBqsrXoioXq7xQ8eeAJnWJzJdc0OawBnysNqoyG64pmvJBoGWc9lWKXhrKAmhXKCQ==
+releaseDate: '2026-11-26T12:04:22.652Z'
+
+releaseNotes: |-
+  # v0.0.3 更新说明
+
+  ## 修复
+
+  - 修复应用内更新下载完成后点击「重启以更新」无反应的问题（未签名安装包被更新安装门拦截）。
+  - 修复更新弹窗显示的下载大小与实际安装包不符的问题：增量下载时现在会同时显示完整安装包大小。
+  - 修复启动时短暂闪过旧品牌图标的问题（启动页、「关于」窗口、会话首页空态均已更换为知更鸟品牌图，会话首页不再持续闪烁）。
+  - 更新弹窗新增「更新说明」：每次发布的改动内容会直接展示在更新弹窗里（本页即首发示例）。
+
+  ## 改进
+
+  - **Python 环境开箱即用**：安装包已内置脚本触发器所需的 Python 运行时，首次创建脚本触发器不再需要联网下载 Python，也不会再因下载慢而回落到 Node 模式。
+  - 网络下载 Python 的兜底路径（仅安装包缺失时使用）支持失败重试与实时下载进度（设置 → 触发器中可见）。
+  - **默认主题改为浅色**：全新安装首次启动即为浅色主题；已在设置中选择过主题的用户不受影响。
+  - 更新源（updates 分支）清理了首次发布时误发布进来的仓库杂项文件。
+  - GitHub Release 页面与更新弹窗同步展示每次发布的更新说明。
