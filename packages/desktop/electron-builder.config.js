@@ -152,6 +152,17 @@ const REQUIRED_ASAR_RUNTIME_MODULES = [
   // 已在线上触发安装包启动即报 Cannot find module 'ms'（Require stack: debug/src/common.js），
   // 自动更新链路直接崩。ms 是叶子包，显式注入即可让 debug 在 app.asar 内稳定解析。
   "ms",
+  // Bugfix: 触发器引擎托管浏览器（P3 第二十三批，specs/trigger-browser-hosting.md）经
+  // services 动态 import("@puppeteer/browsers") 下载/解析 chromium，tsup 已外置该包；
+  // 但它此前只在 desktop devDependencies，pnpm collector 不会把 devDeps 带进 app.asar——
+  // 打包版下载链路必然 MODULE_NOT_FOUND，静默回退系统 Chrome（无 Chrome 机器登录闭环全断）。
+  // 升 production 依赖（2026-11-26）后仍按 node-forge 先例显式注入 + bundle 校验兜底。
+  "@puppeteer/browsers",
+  // playwright-core（触发器浏览器 CDP 数据面 storageState 导出/注入，browser-cdp.ts
+  // 动态 import）已是 desktop production 依赖，但 undici/yauzl 先例表明 collector 在
+  // pnpm hoisted/dedup 布局下对直接生产依赖也会漏拷；与 tsup external 同口径显式注入，
+  // 缺失时登录态档案导出在打包版断裂（登录完成却存不了档）。
+  "playwright-core",
 ];
 // pacman 依赖必须使用 Arch 官方仓库中的包名。electron-builder 的历史默认集合包含
 // 已移除的 libappindicator-gtk3/http-parser，且缺少 Electron 实际需要的运行库；显式

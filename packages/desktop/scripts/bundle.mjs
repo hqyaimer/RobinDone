@@ -121,6 +121,12 @@ const requiredRuntimeModules = [
   "asn1",
   "bcrypt-pbkdf",
   "tweetnacl",
+  // 触发器引擎托管浏览器 + CDP 数据面（P3 第二十三批）：两个包都被 tsup 外置、
+  // services 运行时动态 import。@puppeteer/browsers 曾只在 devDependencies（collector
+  // 不收 devDeps），playwright-core 这类直接生产依赖也有被漏拷的先例（undici/yauzl）——
+  // 与 afterPack 注入名单同口径机械校验，缺失时打包直接失败，而非装机后登录闭环静默断裂。
+  "@puppeteer/browsers",
+  "playwright-core",
 ];
 const electronBuilderRetryCount = 3;
 const electronBuilderRetryDelayMs = 5_000;
