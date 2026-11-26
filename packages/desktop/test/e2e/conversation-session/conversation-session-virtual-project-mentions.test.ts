@@ -1,6 +1,11 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { selectNativeProjectDirectories } from "../helpers/project-sidebar.js";
+import {
+  installHandoffRpcProbe,
+  callHandoffHost,
+} from "../helpers/remote-project-handoff-probe.js";
+import { ServiceChannels } from "@robinrun/shared";
 import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -51,22 +56,14 @@ describe("虚拟项目 Composer 候选", () => {
     expect(await $(`[data-testid="${TID_COMPOSER_WORKSPACE_TRIGGER}"]`).getText()).toBe(
       initialProject,
     );
-    await openComposerProjectEditor();
-    await $('[data-testid="virtual-project-name"]').setValue("E2E_VP14_PROJECT");
-    for (const root of roots) {
-      await chooseProjectRoot(root);
-    }
-    await $('[data-testid="virtual-project-save"]').click();
-    await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
-    await $('[data-testid="project-folder-trust-confirm"]').click();
+    // 源文件夹已收口单选；VP14 的双根数据改由 Host 服务播种（跨 root @-提及是本用例内核），
+    // 草稿创建项目的自动选中行为由下方 VP15 的 UI 创建路径继续覆盖。
+    await installHandoffRpcProbe();
+    await callHandoffHost(ServiceChannels.Project, "saveProject", [
+      { name: "E2E_VP14_PROJECT", roots: [...roots] },
+    ]);
     const project = $('[data-project-name="E2E_VP14_PROJECT"]');
     await project.waitForDisplayed();
-    // PCD01：在草稿创建项目成功后自动选中新项目，取消仍保持原选择。
-    await browser.waitUntil(async () =>
-      (await $(`[data-testid="${TID_COMPOSER_WORKSPACE_TRIGGER}"]`).getText()).includes(
-        "E2E_VP14_PROJECT",
-      ),
-    );
     await project.$('[data-testid="virtual-project-create-task"]').click();
     const input = $(`[data-testid="${TID_V4_COMPOSER_INPUT}"]`);
     await input.waitForDisplayed();

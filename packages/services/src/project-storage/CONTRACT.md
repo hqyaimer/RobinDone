@@ -44,3 +44,7 @@ Host 项目组织态的持久化升级。调用者持有 app SQLite 连接，CLI
 `0010_remote_task_ownership` 仅修复历史远端 NULL：完整同 workspace 父引用，或无父引用时唯一未删除 root 匹配。只写 tasks 的项目与判定位，不改事实/排序/未读/归档/执行目录，不创建项目，不修改旧 migration。后续事实摄入可补齐晚到证据；本地 NULL 始终保留。
 
 3.17.2 集成保留已发布的 `0009_session_creation_commands`，归属修复顺延为 `0010_remote_task_ownership`。普通创建继续返回 Host 首次分配的 taskId 并保持命令回执幂等；fork 分支使用 CLI 已提交的 child ID，不再分配新 ID。
+
+## 2026-11-26 本机项目创建/编辑 UI 单根收口
+
+创建与编辑项目对话框（ProjectEditor）只允许绑定一个源文件夹：本机目录选择改系统单选，重复选择整体替换 roots，"添加文件夹/设为主要"入口移除（与远程单根策略同规）。存储表、saveProject、prepareSession 与协议 additionalDirectories 保持多根能力：legacy 多根项目照常读取与展示，编辑保存后自然收敛为单根；moveTask 缺根追加与 reuseExistingRoot 单根契约不变。创建仍允许 0 根。名称自动填充只在 UI：用户未手改名称时输入框跟随所选文件夹名，服务端 `basename(roots[0])` 兜底语义不变。

@@ -139,12 +139,12 @@ describe("虚拟项目", () => {
         await writeFile(join(path, `E2E_PROJECT_ROW_${index}.txt`), `root ${index}`);
       }),
     );
-    await openLocalProjectEditor();
-    await $('[data-testid="virtual-project-name"]').setValue("E2E_PROJECT_ROW");
-    for (const path of paths) await chooseProjectRoot(path);
-    await $('[data-testid="virtual-project-save"]').click();
-    await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
-    await $('[data-testid="project-folder-trust-confirm"]').click();
+    // 源文件夹已收口单选；本用例聚焦多根行投影与文件入口，多根数据改由 Host 服务播种。
+    await installHandoffRpcProbe();
+    await callHandoffHost(ServiceChannels.Project, "saveProject", [
+      { name: "E2E_PROJECT_ROW", roots: [...paths] },
+    ]);
+    await $('[data-testid="project-section"]').waitForDisplayed();
     const project = $('[data-project-name="E2E_PROJECT_ROW"]');
     await project.waitForDisplayed();
     const row = project.$('[data-testid="virtual-project-row"]');
@@ -207,7 +207,7 @@ describe("虚拟项目", () => {
     await original.$('[data-testid="virtual-project-create-task"]').click();
     await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);
   });
-  it("VP22：已有目录列表、设为主要与编辑器删除", async function () {
+  it("VP22：单根创建、更换文件夹替换与编辑器删除", async function () {
     this.timeout(90_000);
     const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
     if (
@@ -227,13 +227,14 @@ describe("虚拟项目", () => {
     );
     await openLocalProjectEditor();
     expect(await $('[data-testid="virtual-project-editor-delete"]').isExisting()).toBe(false);
-    for (const path of paths) await chooseProjectRoot(path);
+    await chooseProjectRoot(paths[0]!);
+    // 名称自动填充：未手输时输入框跟随所选文件夹名。
+    expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe("test-aaa");
     await $('[data-testid="virtual-project-name"]').setValue("E2E_PROJECT_EDITOR");
-    expect(
-      await $(
-        '[data-testid="virtual-project-roots"] [data-testid="virtual-project-browse"]',
-      ).getText(),
-    ).toMatch(/添加文件夹|Add folder/);
+    // 单根收口：已有目录时末行是"更换文件夹"，不再有添加入口。
+    expect(await $('[data-testid="virtual-project-browse"]').getText()).toMatch(
+      /更换文件夹|Change folder/,
+    );
     expect(await $('[role="dialog"] input[type="radio"]').isExisting()).toBe(false);
     await $('[data-testid="virtual-project-save"]').click();
     await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
@@ -254,17 +255,24 @@ describe("虚拟项目", () => {
     };
     try {
       await edit();
+      // 单根项目编辑器只展示一行，"设为主要"入口已随多根一并移除。
       const rows = await $$('[data-testid="virtual-project-root-row"]');
+      expect(rows).toHaveLength(1);
       expect(await rows[0]!.$('[data-testid="virtual-project-root-name"]').getText()).toBe(
         "test-aaa",
       );
-      expect(await rows[1]!.$('[data-testid="virtual-project-root-name"]').getText()).toBe(
+      expect(primary()).toBe(paths[0]);
+      await captureProjectDialogLayouts("populated-editor");
+      // 更换文件夹按整体替换语义生效；名称已手改，不跟随新文件夹。
+      await selectNativeProjectDirectories([paths[1]!]);
+      const replaced = await $$('[data-testid="virtual-project-root-row"]');
+      expect(replaced).toHaveLength(1);
+      expect(await replaced[0]!.$('[data-testid="virtual-project-root-name"]').getText()).toBe(
         "test-bbb",
       );
-      await rows[1]!.$('[data-testid="virtual-project-set-primary"]').click();
-      expect(primary()).toBe(paths[0]);
-      await rows[1]!.$('[data-testid="virtual-project-primary"]').waitForDisplayed();
-      await captureProjectDialogLayouts("populated-editor");
+      expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe(
+        "E2E_PROJECT_EDITOR",
+      );
       await $('[data-testid="virtual-project-save"]').click();
       await $('[role="dialog"]').waitForExist({ reverse: true });
       await browser.waitUntil(() => primary() === paths[1]);
@@ -283,9 +291,15 @@ describe("虚拟项目", () => {
       }
       await edit();
       const reopened = await $$('[data-testid="virtual-project-root-row"]');
-      await reopened[1]!.$('[data-testid="virtual-project-primary"]').waitForDisplayed();
-      await reopened[1]!.$('[data-testid="virtual-project-remove-folder"]').click();
-      await reopened[0]!.$('[data-testid="virtual-project-primary"]').waitForDisplayed();
+      expect(reopened).toHaveLength(1);
+      expect(await reopened[0]!.$('[data-testid="virtual-project-root-name"]').getText()).toBe(
+        "test-bbb",
+      );
+      // 移除后回到零目录空态卡片；取消关闭不写入。
+      await reopened[0]!.$('[data-testid="virtual-project-remove-folder"]').click();
+      expect(await $('[data-testid="virtual-project-browse"]').getText()).toMatch(
+        /可读取和编辑|can read and edit/,
+      );
       await $('[role="dialog"]')
         .$('.//button[normalize-space(.)="取消" or normalize-space(.)="Cancel"]')
         .click();
@@ -303,7 +317,7 @@ describe("虚拟项目", () => {
       );
       expect(
         db.prepare("SELECT count(*) AS n FROM project_roots WHERE project_id=?").get(id)?.n,
-      ).toBe(2);
+      ).toBe(1);
       for (const path of paths)
         expect(await readFile(join(path, "keep.txt"), "utf8")).toBe("preserve project files");
     } finally {
@@ -1135,20 +1149,20 @@ describe("虚拟项目", () => {
       throw new Error("隔离 HOME required");
     const roots = [join(testHome, "E2E_VP11_A"), join(testHome, "E2E_VP11_B")];
     await Promise.all(roots.map((path) => mkdir(path, { recursive: true })));
-    for (const [name, paths] of [
-      ["E2E_VP11_MULTI", roots],
-      ["E2E_VP11_SHARED", roots.slice(0, 1)],
-    ] as const) {
-      await openLocalProjectEditor();
-      await $('[data-testid="virtual-project-name"]').setValue(name);
-      for (const path of paths) {
-        await chooseProjectRoot(path);
-      }
-      await $('[data-testid="virtual-project-save"]').click();
-      await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
-      await $('[data-testid="project-folder-trust-confirm"]').click();
-      await $(`[data-project-name="${name}"]`).waitForDisplayed();
-    }
+    // 源文件夹已收口单选：双根项目改由 Host 服务播种，共享 root A 的对照项目仍走 UI 单选。
+    await installHandoffRpcProbe();
+    await callHandoffHost(ServiceChannels.Project, "saveProject", [
+      { name: "E2E_VP11_MULTI", roots: [...roots] },
+    ]);
+    await $('[data-testid="project-section"]').waitForDisplayed();
+    await $(`[data-project-name="E2E_VP11_MULTI"]`).waitForDisplayed();
+    await openLocalProjectEditor();
+    await $('[data-testid="virtual-project-name"]').setValue("E2E_VP11_SHARED");
+    await chooseProjectRoot(roots[0]!);
+    await $('[data-testid="virtual-project-save"]').click();
+    await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
+    await $('[data-testid="project-folder-trust-confirm"]').click();
+    await $(`[data-project-name="E2E_VP11_SHARED"]`).waitForDisplayed();
     const workspacePaths = () =>
       browser.execute(() => {
         const store = (

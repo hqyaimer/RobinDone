@@ -121,9 +121,7 @@ describe("虚拟项目手机 shared-host 导航", () => {
     )
       throw new Error("隔离 HOME required");
     const cwd = join(testHome, "E2E_VP13_UNOPENED");
-    const additionalRoot = join(testHome, "E2E_VP13_ADDITIONAL");
     await mkdir(cwd, { recursive: true });
-    await mkdir(additionalRoot, { recursive: true });
     await promisify(execFile)("git", ["init", "--initial-branch=main", cwd]);
     await writeFile(join(cwd, "E2E_VP13_FILES.txt"), "file-only target");
     // 在项目登记目录前准备已迁移数据，避免直写绕过事件后 Controller 仍持有旧列表。
@@ -138,8 +136,8 @@ describe("虚拟项目手机 shared-host 导航", () => {
     }
     await openLocalProjectEditor();
     await $('[data-testid="virtual-project-name"]').setValue("E2E_VP13_PROJECT");
+    // 源文件夹已收口单选：VP13 只需登记 cwd 一个目录。
     await chooseProjectRoot(cwd);
-    await chooseProjectRoot(additionalRoot);
     await $('[data-testid="virtual-project-save"]').click();
     await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
     await $('[data-testid="project-folder-trust-confirm"]').click();

@@ -437,18 +437,22 @@ export async function clickRemoteHostConnect(
   await openProjectMenuAction(workspacePath, "connect", options);
 }
 
-/** 仅替代系统弹窗的用户选择，保留 renderer → preload → main 的真实多目录链路。 */
+/**
+ * 仅替代系统弹窗的用户选择，保留 renderer → preload → main 的真实目录链路。
+ * 项目源文件夹已收口单选（ProjectEditor 走 selectDirectory 单目录）：mock 即使返回
+ * 多路径，编辑器也只取第一个并整体替换既有 roots。
+ */
 export async function selectNativeProjectDirectories(paths: string[]) {
   const picker = await browser.electron.mock("dialog", "showOpenDialog");
   try {
     await picker.mockResolvedValueOnce({ canceled: paths.length === 0, filePaths: paths });
     await $('[data-testid="virtual-project-browse"]').click();
     await expect(picker).toHaveBeenCalledWith({
-      properties: ["openDirectory", "createDirectory", "multiSelections"],
+      properties: ["openDirectory", "createDirectory"],
     });
     await $('[data-testid="virtual-project-save"]').waitForEnabled();
     expect(await $('[data-testid="virtual-project-directory-browser"]').isExisting()).toBe(false);
-    for (const path of paths) {
+    for (const path of paths.slice(0, 1)) {
       await $(
         `[data-testid="virtual-project-root-name"][title=${JSON.stringify(path)}]`,
       ).waitForDisplayed();

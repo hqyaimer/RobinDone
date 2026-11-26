@@ -24,7 +24,7 @@ Web 远端 attachment 的整体可选 `windowProjectDirectory` 能力提供窗�
 
 UI 纠偏：分区复用 WorkspacePurposeSection 和原折叠/顺序偏好；项目行恢复旧行高、间距及 hover/focus/touch 操作。项目菜单用非模态右键导航，编辑弹窗独占模态限制。时间线通过插件市场下的筛选菜单开放为「最近更新」。项目加号直接显示名称、设备、源文件夹。ProjectEditor 持有唯一草稿，桌面设备全集从 Source 投影读取，不取项目 open set；无 Source 管理能力的 Web／手机只投影既有 Host 目录，不扩大管理权限。选择设备无连接副作用；有目录须先确认再原子清目录并切设备。离线设备在显式选择文件夹或已有项目时复用 Root 唯一连接向导，保持原项目页签；只有新增设备进入设置。连接层收起期间保留表单。设备切换、取消和卸载使旧目录结果失效。创建前只为没有成员的已识别设备显式登记，已有成员严格复查 membership；远端保存后按原 ID 登记本机入口，登记失败重试不再创建项目。不打开 workspace tab 或 Agent。
 
-桌面本地项目添加目录通过 IPlatformService.selectDirectories 调起系统多选；结果仅合并去重到编辑器草稿，保存才提交。远端与 Web/手机目录浏览通过 projectService.readDirectory(hostId)，不从当前 tab 推导文件服务；DirectoryBrowser 的迟到响应沿用请求序号判定。选择在途与保存/关闭互斥，取消不修改草稿。见 docs/ui/project-local-directory-picker.md。
+桌面本地项目源文件夹自 2026-11-26 收口单选：通过 IPlatformService.selectDirectory 调起系统单目录选择，结果整体替换编辑器草稿的 roots（与远端单根同规），名称未手改时自动跟随所选文件夹名；「添加文件夹/设为主要」入口移除，存储层仍支持多根（legacy 兼容）。远端与 Web/手机目录浏览通过 projectService.readDirectory(hostId)，不从当前 tab 推导文件服务；DirectoryBrowser 的迟到响应沿用请求序号判定。选择在途与保存/关闭互斥，取消不修改草稿。见 docs/ui/project-local-directory-picker.md。
 
 有源文件夹的新建（含恢复）在 Host 成员登记和 saveProject 前显示本次目录信任确认，展示所选设备及完整 roots。ProjectEditor 是唯一草稿和确认请求 owner；取消保留表单，隐藏/卸载令旧查询与确认失效，单次保存以在途引用去重。确认只授权本次创建，不持久化、不改变 Hook Trust；重复使用目录仍确认，本地零 roots 直接创建。编辑和添加已有远程项目保持原行为；已保存项目的入口登记重试复用 created，不再次创建或确认。见 docs/specs/project-creation-folder-confirmation.md。
 
@@ -32,7 +32,7 @@ UI 纠偏：分区复用 WorkspacePurposeSection 和原折叠/顺序偏好；项
 
 每个 Host + project ID 的折叠状态归常驻侧栏，项目行只接收值与切换命令；文件树替换列表后返回不能重置折叠状态。
 
-编辑器的 roots/primary 只属于表单草稿，保存才通过 saveProject 提交；有 roots 显示紧凑列表和末行添加，空 roots 才展示整块空态。已有项目的删除入口复用 deleteProject，并携带原 hostId；成功刷新后关闭，失败保留弹窗，保存/删除互斥。主要目录只决定后续新任务 cwd，不重绑旧任务。
+编辑器的 roots/primary 只属于表单草稿，保存才通过 saveProject 提交；单根收口后有 roots 时末行为「更换文件夹」（再次选择整体替换），空 roots 才展示整块空态。已有项目的删除入口复用 deleteProject，并携带原 hostId；成功刷新后关闭，失败保留弹窗，保存/删除互斥。主要目录只决定后续新任务 cwd，不重绑旧任务。
 
 旧体验保留：按项目选择器复用运行层稳定排序和更新时间，从同 Host/project 的未归档成员（含置顶）派生收起未读点。偏好 hook 只拥有视图/折叠的 browser persistence；项目点击无导航。任务交互 owner 只保存尚在途的 pin 意图，Host 树始终是唯一已提交行集合；归档成功复用 UI 清理。任务行按 Shell 当前 workspaceKey 定位选中态，手机标记按完整目标地址；只有置顶区任务提供文件树按钮，按任务固化 cwd 与精确 identity/session 打开，不读取项目新主目录。远端同步/日志沿用既有接口与桌面 SSH/WSL、手机 replayable 边界，不新增业务状态所有者。
 

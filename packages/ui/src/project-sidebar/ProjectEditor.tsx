@@ -166,6 +166,8 @@ export function ProjectEditor({
   const [folderTrust, setFolderTrust] = useState<ProjectFolderTrustRequest | null>(null);
   const saveFlight = useRef<{ cancelTrust?: () => void } | null>(null);
   const saveButton = useRef<HTMLButtonElement>(null);
+  // 最近一次自动填充到名称框的文件夹名；用于"用户没改名就换文件夹"时继续跟随新文件夹。
+  const lastNameAutoFill = useRef<string | null>(null);
   const suspendedRef = useRef(suspended);
   suspendedRef.current = suspended;
   const confirm = useConfirmDialog();
@@ -207,11 +209,18 @@ export function ProjectEditor({
   };
   const addRoots = (values: string[]) => {
     if (remote && project) return;
-    const next = remote
-      ? values.filter(Boolean).slice(0, 1)
-      : [...new Set([...roots, ...values.filter(Boolean)])];
+    // 项目只允许绑定一个源文件夹（本机与远端同规）；再次选择走整体替换而不是追加。
+    // 存储层仍支持多根（legacy 只读兼容），这里只在 UI 入口收口。
+    const next = values.filter(Boolean).slice(0, 1);
     setRoots(next);
-    if (remote || !roots.length) setPrimary(next[0] ?? "");
+    setPrimary(next[0] ?? "");
+    // 名称自动填充：用户没有手输过自定义名（或仍停留在上一次自动填充值）时，跟随文件夹名；
+    // 预填充不置 nameEdited，保存仍由服务端按 basename(roots[0]) 兜底，所见即所得。
+    if (next[0] && (!nameEdited || name === lastNameAutoFill.current)) {
+      const leaf = getPathLeaf(next[0]);
+      lastNameAutoFill.current = leaf;
+      setName(leaf);
+    }
     setBrowsing(false);
   };
   const browse = async () => {
@@ -232,8 +241,9 @@ export function ProjectEditor({
       }
       return;
     }
-    // 本地曾统一走 Host 文件列表，绕过系统多选；按项目 Host 与平台能力选入口，不能借当前 tab 判定。
-    if ((hostId && hostId !== "local") || !platform?.selectDirectories) {
+    // 本地曾统一走 Host 文件列表，绕过系统选择框；按项目 Host 与平台能力选入口，不能借当前 tab 判定。
+    // 项目源文件夹已收口为单选：本机同样走系统单目录选择（与远端单根策略同规）。
+    if ((hostId && hostId !== "local") || !platform?.selectDirectory) {
       if (remote) {
         setBusy(true);
         try {
@@ -249,9 +259,9 @@ export function ProjectEditor({
     setBusy(true);
     setError(null);
     try {
-      const selected = await platform.selectDirectories();
-      logger.debug("[ProjectEditor] native directory selection", { count: selected.length });
-      if (current(request) && selected.length) addRoots(selected);
+      const selected = await platform.selectDirectory();
+      logger.debug("[ProjectEditor] native directory selection", { count: selected ? 1 : 0 });
+      if (current(request) && selected) addRoots([selected]);
     } catch (cause) {
       logger.warn("[ProjectEditor] native directory selection failed", cause);
       if (current(request)) setError(formatProjectError(cause, intl.formatMessage));
@@ -560,7 +570,7 @@ export function ProjectEditor({
                 ) : null}
                 <fieldset disabled={busy || Boolean(created)} className="min-w-0">
                   <legend className={`mb-1.5 ${FIELD_LABEL}`}>{msg("folders")}</legend>
-                  {/* 有目录时使用同一列表的末行添加，只有零目录才展示空态大卡片。 */}
+                  {/* 单根收口：零目录展示空态大卡片，已有 1 个目录时末行变成"更换文件夹"（整体替换）；legacy 多根行不提供添加入口。 */}
                   <div
                     data-testid={roots.length ? "virtual-project-roots" : undefined}
                     className={
@@ -587,24 +597,7 @@ export function ProjectEditor({
                         >
                           {fixedFolder ? root : getPathLeaf(root)}
                         </span>
-                        {root === primary ? (
-                          <span
-                            data-testid="virtual-project-primary"
-                            className="inline-flex h-7 shrink-0 items-center rounded-md border border-border px-2 text-ui-base text-foreground-subtle"
-                          >
-                            {msg("primaryBadge")}
-                          </span>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-foreground-subtle"
-                            data-testid="virtual-project-set-primary"
-                            onClick={() => setPrimary(root)}
-                          >
-                            {msg("setPrimary")}
-                          </Button>
-                        )}
+                        {/* 单根即主根，"设为主要/主要"徽标已随多根入口一并移除；legacy 多根行可逐个 X 掉收敛。 */}
                         {!fixedFolder && (!remote || !project) ? (
                           <Button
                             size="icon-sm"
@@ -623,11 +616,17 @@ export function ProjectEditor({
                         ) : null}
                       </div>
                     ))}
-                    {!fixedFolder && (!remote || !project) ? (
+                    {!fixedFolder && (!remote || !project) && roots.length <= 1 ? (
                       <button
                         type="button"
                         data-testid="virtual-project-browse"
-                        aria-label={msg(needsConnection ? "connectAndBrowse" : "browse")}
+                        aria-label={msg(
+                          needsConnection
+                            ? "connectAndBrowse"
+                            : roots.length
+                              ? "changeFolder"
+                              : "browse",
+                        )}
                         className={`group flex w-full items-center gap-2 text-ui-base transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/30 ${roots.length ? "min-h-12 px-3 py-2 text-left" : "min-h-32 flex-col justify-center rounded-lg border border-dashed border-border px-4 py-5 text-center hover:border-border-hover"}`}
                         onClick={() => {
                           void browse();
@@ -637,7 +636,7 @@ export function ProjectEditor({
                           <>
                             <FolderPlus className="size-4 shrink-0 text-foreground-subtle" />
                             <span>
-                              {msg(needsConnection ? "connectAndBrowse" : "addSourceFolder")}
+                              {msg(needsConnection ? "connectAndBrowse" : "changeFolder")}
                             </span>
                           </>
                         ) : (

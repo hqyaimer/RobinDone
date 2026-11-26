@@ -5582,5 +5582,24 @@ ensureReady/restart/resume 必须被拒，同工作区共享一次启动；两�
 这些协议与资源断言由 CLI 场景测试负责，不声称覆盖原生 WSL 或跨机 UI。
 
 HF / SLR 激活隔离补充：已有远程实例就绪后，仅替换或删除 workspaceIdentity、保持其他字段不变，
-ensureReady/restart 必须拒绝，原实例不关闭且 generation 不变；正确身份继续可用。由 CLI 协议
+ensureReady/restart 必须被拒，原实例不关闭且 generation 不变；正确身份继续可用。由 CLI 协议
 回归直接构造矛盾参数覆盖，正常桌面/手机入口继续沿用 HF/SLR E2E，不增加 UI 行为。
+
+## 虚拟项目创建/编辑单根收口（2026-11-26）
+
+产品裁决：项目只允许绑定一个源文件夹，选中后项目名称自动填充为文件夹名（可手改，手改后不被覆盖）。
+ProjectEditor 收口为单选：本机原生选择改 selectDirectory 单目录，重复选择整体替换 roots；
+「添加文件夹/设为主要/主要徽标」入口移除，i18n 废弃 project.addSourceFolder/setPrimary/primaryBadge，
+新增 project.changeFolder，browseHint 改单数。存储层 project_roots、saveProject、prepareSession 与
+协议 additionalDirectories 保持多根能力：legacy 多根项目照常读取与展示，编辑保存后自然收敛；
+moveTask 缺根追加与 reuseExistingRoot 不变；创建仍允许 0 根。正身记录见 project-storage
+CONTRACT.md 2026-11-26 节。
+
+用例同步（全部保持 pending，不自动晋升）：helper selectNativeProjectDirectories 断言改单选
+properties；VP20/VP11/VP14 的多根数据改由 callHandoffHost saveProject 播种（多根行投影、
+跨 root @-提及、设置目录去重语义不变），VP15/VP11_SHARED 等单根创建继续走 UI；
+VP22 重写为「单根创建、更换文件夹替换与编辑器删除」，原「设为主要」断言被本裁决取代；
+VP13 去掉 additionalRoot 第二次选择；设备选择用例本机项目改单目录；NDP
+（ui-shell/manual-review/pending）重写为单选替换流并新增 NDP03 名称自动填充/手改保护用例。
+未覆盖：真实 SSH/WSL 远端创建、实体手机路径重验。
+

@@ -23,7 +23,7 @@ type ThemeWindow = typeof window & {
   };
 };
 
-describe("本地项目原生多目录选择", () => {
+describe("本地项目原生目录选择（单选收口）", () => {
   const root = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "native-project-picker");
   const paths = ["one", "two", "three"].map((name) => join(root, name));
   const project = '[data-project-name="E2E_NATIVE_PROJECT_PICKER"]';
@@ -40,7 +40,7 @@ describe("本地项目原生多目录选择", () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  it("NDP01/NDP02/PRO01: 多目录新项目排首位，刷新与重开后保留", async () => {
+  it("NDP01/NDP02/PRO01: 单目录新项目排首位，刷新与重开后保留", async () => {
     const readProjectOrder = () =>
       browser.execute(() =>
         [...document.querySelectorAll('[data-testid="project-section"] [data-project-name]')].map(
@@ -52,20 +52,14 @@ describe("本地项目原生多目录选择", () => {
     await $('[data-testid="project-section"]').moveTo();
     await $('[data-testid="virtual-project-add"]').click();
     await $('[data-testid="virtual-project-name"]').setValue("E2E_NATIVE_PROJECT_PICKER");
-    await selectNativeProjectDirectories(paths.slice(0, 2));
-    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(2);
-    await $$('[data-testid="virtual-project-root-row"]')[1]!
-      .$('[data-testid="virtual-project-set-primary"]')
-      .click();
-    await selectNativeProjectDirectories([paths[1]!, paths[2]!]);
-    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(3);
+    // 单选收口：每次选择整体替换唯一源文件夹；取消选择不改 roots。
+    await selectNativeProjectDirectories([paths[0]!]);
+    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(1);
+    await selectNativeProjectDirectories([paths[1]!]);
+    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(1);
     await selectNativeProjectDirectories([]);
-    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(3);
-    expect(
-      await $$('[data-testid="virtual-project-root-row"]')[1]!
-        .$('[data-testid="virtual-project-primary"]')
-        .isExisting(),
-    ).toBe(true);
+    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(1);
+    expect(await $('[data-testid="virtual-project-primary"]').isExisting()).toBe(false);
     // PCFT01/02/03：确认前读取真实 Host，取消不能留下项目或改写草稿。
     const readSaved = () =>
       callHandoffHost<VirtualProject[]>(ServiceChannels.Project, "readProjects");
@@ -76,7 +70,7 @@ describe("本地项目原生多目录选择", () => {
       await dialog.waitForDisplayed();
       expect(
         await $$('[data-testid="project-folder-trust-path"]').map((row) => row.getText()),
-      ).toEqual(paths);
+      ).toEqual([paths[1]]);
       expect(await readSaved()).toEqual(before);
       if (action === "cancel") {
         expect(
@@ -94,7 +88,7 @@ describe("本地项目原生多目录选择", () => {
       expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe(
         "E2E_NATIVE_PROJECT_PICKER",
       );
-      expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(3);
+      expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(1);
       await browser.waitUntil(() =>
         browser.execute(
           () => document.activeElement?.getAttribute("data-testid") === "virtual-project-save",
@@ -204,7 +198,7 @@ describe("本地项目原生多目录选择", () => {
       (await readSaved())
         .find((item) => item.name === "E2E_NATIVE_PROJECT_PICKER")
         ?.roots.map((item) => item.rootPath),
-    ).toEqual(paths);
+    ).toEqual([paths[1]]);
     // 窄屏布局会自动收起侧栏；还原尺寸后通过真实入口展开，再检查项目顺序。
     if (!(await $('[data-testid="project-section"]').isDisplayed())) {
       await $('button[aria-label="Toggle sidebar"], button[aria-label="切换侧边栏"]').click();
@@ -219,13 +213,10 @@ describe("本地项目原生多目录选择", () => {
     await $(project).$('[data-testid="virtual-project-menu"]').click();
     await $('[data-testid="virtual-project-edit"]').click();
     await $('[data-testid="virtual-project-name"]').waitForDisplayed();
+    // 重开后仍是唯一一行，"主要"徽标已随多根入口移除。
     const rows = await $$('[data-testid="virtual-project-root-name"]');
-    expect(await rows.map((row) => row.getAttribute("title"))).toEqual(paths);
-    expect(
-      await $$('[data-testid="virtual-project-root-row"]')[1]!
-        .$('[data-testid="virtual-project-primary"]')
-        .isExisting(),
-    ).toBe(true);
+    expect(await rows.map((row) => row.getAttribute("title"))).toEqual([paths[1]]);
+    expect(await $('[data-testid="virtual-project-primary"]').isExisting()).toBe(false);
     const originalTheme = await browser.execute(() =>
       (window as ThemeWindow).__testActions!.getTheme(),
     );
@@ -256,6 +247,26 @@ describe("本地项目原生多目录选择", () => {
     await $(project).$('[data-testid="virtual-project-menu"]').click();
     await $('[data-testid="virtual-project-delete"]').click();
     await $(project).waitForExist({ reverse: true });
+  });
+
+  it("NDP03：名称自动填充跟随所选文件夹，手改后不被覆盖", async () => {
+    await $('[data-testid="virtual-project-add"]').click();
+    await $('[data-testid="virtual-project-name"]').waitForDisplayed();
+    // 先选文件夹：未手输名称时自动填充为文件夹名。
+    await selectNativeProjectDirectories([paths[0]!]);
+    expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe("one");
+    // 未手改名称时更换文件夹，名称跟随新文件夹。
+    await selectNativeProjectDirectories([paths[1]!]);
+    expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe("two");
+    // 手改名称后再更换文件夹，自定义名不被覆盖。
+    await $('[data-testid="virtual-project-name"]').setValue("E2E_NDP_CUSTOM");
+    await selectNativeProjectDirectories([paths[2]!]);
+    expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe("E2E_NDP_CUSTOM");
+    expect(await $('[data-testid="virtual-project-root-name"]').getAttribute("title")).toBe(
+      paths[2],
+    );
+    await browser.keys("Escape");
+    await $('[data-testid="virtual-project-name"]').waitForExist({ reverse: true });
   });
 });
 

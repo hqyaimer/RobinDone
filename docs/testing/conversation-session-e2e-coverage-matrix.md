@@ -6140,3 +6140,13 @@ covered 结论。新结构的新增覆盖（主智能体自举、跨项目拖拽
 冷启动目录校验必须判目录（`checkFilesExist` 的 isFile 语义曾致恒回落启动台）、
 列表页 DndContext 必须带 `distance:6` 约束（否则行点击被拖拽手势吞掉）。
 本轮仍未实跑 GUI 自动化，不据此变更任何 covered 结论。
+
+### 2026-11-26 创建/编辑项目单根收口
+
+产品裁决项目只绑一个源文件夹（名称自动填充、可手改；详见案例目录同日节与 project-storage
+CONTRACT.md）：ProjectEditor 单选替换，移除添加/设为主要入口。VP20/VP11/VP14 多根数据改由
+`callHandoffHost saveProject` 播种，多根行投影、跨 root @-提及、设置目录去重断言保持；
+VP22 重写为单根创建+更换文件夹替换；VP13 只登记 cwd；NDP 重写单选流并新增名称自动填充用例。
+存储/协议多根能力未裁剪，涉及「多根落库/会话 additionalDirectories」的既有行不受影响；
+本轮改动未新增实跑证据，相关行维持 pending 原状态。
+

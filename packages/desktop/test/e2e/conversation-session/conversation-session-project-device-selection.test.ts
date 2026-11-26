@@ -215,19 +215,17 @@ describe(marker, () => {
     expect(await $(`[data-project-name="${projectName}_INVALID"]`).isExisting()).toBe(false);
     await browser.keys("Escape");
 
-    const paths = [
-      join(DEFAULT_WORKSPACE, ".e2e-device", "one"),
-      join(DEFAULT_WORKSPACE, ".e2e-device", "two"),
-    ];
-    await Promise.all(paths.map((path) => mkdir(path, { recursive: true })));
+    const localRoot = join(DEFAULT_WORKSPACE, ".e2e-device", "one");
+    await mkdir(localRoot, { recursive: true });
     await openForm();
-    await $('[data-testid="virtual-project-name"]').setValue(`${projectName}_MULTI`);
-    await selectNativeProjectDirectories(paths);
-    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(2);
+    await $('[data-testid="virtual-project-name"]').setValue(`${projectName}_LOCAL`);
+    // 源文件夹已收口单选：本机项目只登记一个目录。
+    await selectNativeProjectDirectories([localRoot]);
+    expect(await $$('[data-testid="virtual-project-root-row"]').length).toBe(1);
     await $('[data-testid="virtual-project-save"]').click();
     await $('[data-testid="project-folder-trust-confirm"]').waitForDisplayed();
     await $('[data-testid="project-folder-trust-confirm"]').click();
-    await $(`[data-project-name="${projectName}_MULTI"]`).waitForDisplayed();
+    await $(`[data-project-name="${projectName}_LOCAL"]`).waitForDisplayed();
 
     await clickTestIdByDom(TID_TASK_SETTINGS_BUTTON);
     await clickTestIdByDom(testId(TID_SETTINGS_SECTION_NAV, "remoteDevices"));
@@ -245,12 +243,12 @@ describe(marker, () => {
     await clickTestIdByDom(TID_SETTINGS_BACK_BUTTON);
     await openForm();
     await $('[data-testid="virtual-project-name"]').setValue(projectName);
-    await selectNativeProjectDirectories([paths[0]!]);
+    await selectNativeProjectDirectories([localRoot]);
     await chooseDevice(host.id);
     await browser.keys("Escape");
     expect(await $('[data-testid="virtual-project-device"]').getText()).toContain("此电脑");
     expect(await $('[data-testid="virtual-project-root-name"]').getAttribute("title")).toBe(
-      paths[0],
+      localRoot,
     );
     await chooseDevice(host.id);
     await clickTestIdByDom(TID_CONFIRM_DIALOG_CONFIRM);
