@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { TID_SETTINGS_DYNAMIC_WORKFLOW_MODE_ITEM } from "@robinrun/shared";
-import { testId } from "@robinrun/shared/test-ids";
+import { TID_SETTINGS_DYNAMIC_WORKFLOW_MODE_ITEM } from "@robindone/shared";
+import { testId } from "@robindone/shared/test-ids";
 import { clearAppData, readSettings, waitForTestIdByDom } from "../helpers/desktop-app.js";
 import { prepareV4ConversationE2E, startNewV4Draft } from "../helpers/v4-conversation.js";
 import {

@@ -1,4 +1,4 @@
-import { normalizeRemoteConnectionError, sanitizeRemoteConnectionLog } from "@robinrun/shared";
+import { normalizeRemoteConnectionError, sanitizeRemoteConnectionLog } from "@robindone/shared";
 import { join } from "node:path";
 /* eslint-disable max-lines -- Host 入口集中编排 local/remote service wiring，本次退出保护需要在同一处桥接 host 上报。 */
 /* eslint-disable max-lines -- host process 入口集中维护 local/remote 初始化和资源回收，realtime bridge 接入后先保持同文件收口。 */
@@ -16,7 +16,7 @@ import { join } from "node:path";
  * 3. 后续远端 connect / scoped attachment 都由同一 Host 处理
  */
 import { createHostDatabaseStartup } from "./database-startup/hostDatabaseStartup.js";
-import { isOffPeakTerminalStatus } from "@robinrun/shared";
+import { isOffPeakTerminalStatus } from "@robindone/shared";
 import { createHostNetworkCapture } from "./hostNetworkCapture.js";
 import { randomUUID } from "node:crypto";
 import { createPluginSandboxRegistrationBridge } from "./pluginSandbox/index.js";
@@ -28,7 +28,7 @@ import {
   type IChannelServer,
   LoggingChannelServer,
   NetworkTelemetryChannelServer,
-} from "@robinrun/rpc";
+} from "@robindone/rpc";
 import { registerHostNetworkTelemetry, stopHostNetworkTelemetry } from "./hostNetworkTelemetry.js";
 import { registerHostServiceResourceTelemetry } from "./hostServiceResourceTelemetry.js";
 import { resolveResourceTelemetryEnvironmentKey } from "./hostResourceTelemetryEnvironment.js";
@@ -57,19 +57,19 @@ import {
   IWindowControllerService,
   IConversationShareService,
   IPromptAttachmentTransferService,
-  IRobinRunAgentService,
-  IRobinRunTaskService,
-  IRobinRunSessionService,
+  IRobinDoneAgentService,
+  IRobinDoneTaskService,
+  IRobinDoneSessionService,
   ITriggerEngineService,
   ICuaPipSessionService,
-  createRobinRunAgentConnectionScope,
-  type RobinRunAgentV4ClientMode,
+  createRobinDoneAgentConnectionScope,
+  type RobinDoneAgentV4ClientMode,
   collectServiceMemoryDiagnostics,
   createWebRemoteProjectTreeActivityBridge,
   type TriggerEventBatch,
   type RoutedEventBatch,
   isStaleWorkerTriggerBinding,
-} from "@robinrun/services";
+} from "@robindone/services";
 import {
   createLocalServices,
   createProjectWorkspaceNavigation,
@@ -97,7 +97,7 @@ import {
   type BotProjectConnection,
   type HostApiNetworkTransport,
   type OffPeakRequestAuthBuilder,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import { createHostResourceUsageResponder } from "./hostResourceUsage.js";
 import {
   assertBoundSessionDispatchable,
@@ -107,7 +107,7 @@ import {
   HostMessageTypes,
   HostResponseTypes,
   formatLogPrefix,
-  formatRobinRunHostProcessName,
+  formatRobinDoneHostProcessName,
   formatZodError,
   buildRemoteWorkspaceIdentity,
   buildServerRemoteWorkspaceIdentity,
@@ -120,20 +120,20 @@ import {
   REMOTE_BIND_CANCELED_ERROR_CODE,
   REMOTE_WORKSPACE_BIND_SESSION_MISSING_ERROR_CODE,
   formatModelPickerValue,
-  type RobinRunPromptAttachment,
-  type RobinRunStreamEvent,
-  type RobinRunTaskMeta,
+  type RobinDonePromptAttachment,
+  type RobinDoneStreamEvent,
+  type RobinDoneTaskMeta,
   type TaskStreamMirrorableEvent,
   type TraceId,
-  type RobinRunTaskMode,
+  type RobinDoneTaskMode,
   type WindowHostAttachmentScope,
   type SourceServerArtifactPolicy,
-  type RobinRunAutomation,
-  type RobinRunAutomationRun,
-  type RobinRunAutomationRunOutcome,
+  type RobinDoneAutomation,
+  type RobinDoneAutomationRun,
+  type RobinDoneAutomationRunOutcome,
   type ModelSelection,
   type OpsPanelWakeupRequest,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   parseHostIncomingMessageEvent,
   rejectUnavailableAttachedServicePort,
@@ -141,8 +141,8 @@ import {
 // remote backend 相关模块延迟加载：ssh2 的 CJS 依赖链（asn1 等）在 asar 打包后路径断裂，
 // 静态 import 会导致 local 模式的 host process 也崩溃。
 // 改为动态 import，仅 remote 模式时才加载。
-import type { IRemoteBackend } from "@robinrun/server/remote";
-import type { Locale, RemoteTarget } from "@robinrun/shared";
+import type { IRemoteBackend } from "@robindone/server/remote";
+import type { Locale, RemoteTarget } from "@robindone/shared";
 import { wrapElectronPort } from "./electronPort.js";
 import { createTaskRealtimeBridgeForHostInit } from "./taskRealtimeBridge.js";
 import { resolveRpcLogLevel } from "./rpcLogLevel.js";
@@ -207,7 +207,7 @@ import {
 } from "./sourceServerManagementService.js";
 import { resolveSourceServerReleaseAsset } from "./sourceServerReleaseResolver.js";
 import { resolveAutomationSubmissionModelSelection } from "./automationModelSelection.js";
-import { createRemoteConnectionProgressContext } from "@robinrun/server/remote/remoteConnectionProgressContext.js";
+import { createRemoteConnectionProgressContext } from "@robindone/server/remote/remoteConnectionProgressContext.js";
 import {
   createRemotePromptAttachmentTransferService,
   type RemotePromptAttachmentTransferService,
@@ -230,7 +230,7 @@ interface HostRemoteConnectionCapabilities {
   recordWorkspaceOpen?: (input: {
     workspacePath: string;
     workspaceIdentity: string;
-    workspacePurpose?: import("@robinrun/shared").WorkspacePurpose;
+    workspacePurpose?: import("@robindone/shared").WorkspacePurpose;
     legacyWorkspaceIdentity?: string;
     signal?: AbortSignal;
   }) => Promise<void>;
@@ -255,7 +255,7 @@ const hostRemoteMediaRequestLimiter = {
   getState: () => ({ active: activeRemoteMediaRequests, limit: 4 }),
 };
 const remoteMediaRangePreviewEnabled =
-  process.env["ROBINRUN_REMOTE_MEDIA_RANGE_PREVIEW_ENABLED"] !== "0";
+  process.env["ROBINDONE_REMOTE_MEDIA_RANGE_PREVIEW_ENABLED"] !== "0";
 
 type RemoteAssetDirs = import("./windowRemoteConnectionRegistry.js").WindowRemoteAssetDirs;
 
@@ -263,8 +263,8 @@ const { parentPort } = process;
 const hostNetworkCapture = createHostNetworkCapture(parentPort);
 
 // 进程检索体验优化：host 由 utilityProcess 拉起时外壳仍是 Electron Helper，
-// 这里根据 main 传入的窗口 label 补一层稳定的 robinrun-* title，方便系统进程列表过滤。
-process.title = formatRobinRunHostProcessName(process.env["ROBINRUN_PROCESS_LABEL"]);
+// 这里根据 main 传入的窗口 label 补一层稳定的 robindone-* title，方便系统进程列表过滤。
+process.title = formatRobinDoneHostProcessName(process.env["ROBINDONE_PROCESS_LABEL"]);
 
 type HostLogLevel = "info" | "warn" | "error";
 
@@ -400,7 +400,7 @@ const remoteConnectionProgressContext = createRemoteConnectionProgressContext({
 });
 
 function writeHostLog(level: HostLogLevel, ...args: unknown[]): void {
-  const prefix = formatLogPrefix("robinrun-host", process.pid);
+  const prefix = formatLogPrefix("robindone-host", process.pid);
   const consoleFn =
     level === "error" ? rawConsole.error : level === "warn" ? rawConsole.warn : rawConsole.log;
   consoleFn(prefix, ...args);
@@ -423,7 +423,7 @@ function createFullFeedbackLogArchiveViaMain(
       onProgress: options?.onProgress,
     });
     // 问题反馈以前在 host service 内走 compactLogArchive 的 full fallback，
-    // 收集范围和“导出日志”不一致，缺少 robinrun-cli 日志、rollout/debug 以及导出链路脱敏。
+    // 收集范围和“导出日志”不一致，缺少 robindone-cli 日志、rollout/debug 以及导出链路脱敏。
     // 这里把完整日志打包委托给 main process 的导出日志同源逻辑，host 只拿 zip 路径继续上传。
     try {
       parentPort.postMessage({
@@ -527,13 +527,13 @@ function disposeOffPeakRunSubscription(key: string): void {
 
 /** 终态回填 files_changed：复用现有 task diff 汇总（工具写盘型统计，Bash 改动不计入，接受）。 */
 async function resolveOffPeakFilesChanged(params: {
-  robinrunTaskService: IRobinRunTaskService;
+  robindoneTaskService: IRobinDoneTaskService;
   taskId: string;
   workspacePath: string;
   workspaceIdentity?: string;
 }): Promise<number | undefined> {
   try {
-    const snapshot = await params.robinrunTaskService.getTaskSnapshot({
+    const snapshot = await params.robindoneTaskService.getTaskSnapshot({
       taskId: params.taskId,
       workspacePath: params.workspacePath,
       ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
@@ -550,12 +550,12 @@ async function resolveOffPeakFilesChanged(params: {
 
 /** loop 终态 → off_peak_tasks 终态：succeeded→completed、stopped→cancelled（用户手动停止）、其余→failed。 */
 async function finalizeOffPeakRun(params: {
-  robinrunTaskService: IRobinRunTaskService;
+  robindoneTaskService: IRobinDoneTaskService;
   offPeakTaskId: string;
   taskId: string;
   workspacePath: string;
   workspaceIdentity?: string;
-  outcome: RobinRunAutomationRunOutcome;
+  outcome: RobinDoneAutomationRunOutcome;
   error?: string;
 }): Promise<void> {
   const status =
@@ -582,7 +582,7 @@ async function finalizeOffPeakRun(params: {
     `off-peak run finished task=${params.offPeakTaskId} status=${status} filesChanged=${filesChanged ?? "n/a"}`,
   );
   // 后台完成统一置未读，打开 task 时由导航链路清除（与 cron 同款）。
-  void params.robinrunTaskService.setTaskUnread({
+  void params.robindoneTaskService.setTaskUnread({
     taskId: params.taskId,
     workspacePath: params.workspacePath,
     ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
@@ -591,8 +591,8 @@ async function finalizeOffPeakRun(params: {
 }
 
 function trackOffPeakRunOutcome(params: {
-  robinrunTaskService: IRobinRunTaskService;
-  robinrunAgentService: IRobinRunAgentService;
+  robindoneTaskService: IRobinDoneTaskService;
+  robindoneAgentService: IRobinDoneAgentService;
   service: OffPeakTaskService;
   ticketId: string;
   offPeakTaskId: string;
@@ -613,11 +613,11 @@ function trackOffPeakRunOutcome(params: {
     sessionId: params.taskId,
     ticketId: params.ticketId,
     control: (control) =>
-      params.robinrunAgentService.controlOffPeakExecutionV4({ ...target, control }),
+      params.robindoneAgentService.controlOffPeakExecutionV4({ ...target, control }),
     complete: (outcome) => finalizeOffPeakRun({ ...params, outcome }),
     disposed: () => disposeOffPeakRunSubscription(key),
   });
-  const disposable = params.robinrunAgentService.onDynamicOffPeakLifecycle(target)((event) => {
+  const disposable = params.robindoneAgentService.onDynamicOffPeakLifecycle(target)((event) => {
     if (event.executionId !== params.traceId || event.sessionId !== params.taskId) return;
     void params.service.residentExecutions
       .handle(event)
@@ -642,10 +642,10 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
   sessionId?: string;
   lifecycleManaged: true;
 }> {
-  const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-  const robinrunAgentService = activeServices?.getOptional(IRobinRunAgentService);
-  if (!robinrunTaskService || !robinrunAgentService) {
-    throw new Error("RobinRun task service is not initialized.");
+  const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+  const robindoneAgentService = activeServices?.getOptional(IRobinDoneAgentService);
+  if (!robindoneTaskService || !robindoneAgentService) {
+    throw new Error("RobinDone task service is not initialized.");
   }
   const runtime = await ensureOffPeakRuntime();
   if (!runtime) {
@@ -721,21 +721,21 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
       // 永远不会是 running，原来按 listTasks(...).status === "running" 的忙碌判断已失效，
       // 闲时任务会被派发到仍在运行的绑定会话上。运行中事实只能取 syncer 的活动集合。
       const [deletedIds, activeIds] = await Promise.all([
-        robinrunTaskService.listDeletedTaskIds(workspaceScope),
-        robinrunTaskService.listActiveTaskIds(workspaceScope),
+        robindoneTaskService.listDeletedTaskIds(workspaceScope),
+        robindoneTaskService.listActiveTaskIds(workspaceScope),
       ]);
       assertBoundSessionDispatchable({
         sessionId: taskId,
         deleted: deletedIds.includes(taskId),
         running: activeIds.includes(taskId),
       });
-      await robinrunTaskService.resumeTask({
+      await robindoneTaskService.resumeTask({
         ...workspaceScope,
         taskId,
         // 绑定会话首次盖章归属标记，侧栏归入闲时分组（机制同 cron targetTaskId）。
         offPeakTaskId: request.offPeakTaskId,
       });
-      await robinrunTaskService.setConfigOption({
+      await robindoneTaskService.setConfigOption({
         taskId,
         traceId,
         configId: "mode",
@@ -748,7 +748,7 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
       // 不能复用 task ID，也不能依赖同毫秒时间戳避免碰撞。
       traceId = `${request.offPeakTaskId}:resume:${randomUUID()}` as TraceId;
       promptContent = OFF_PEAK_RESUME_PROMPT;
-      await robinrunTaskService.resumeTask({
+      await robindoneTaskService.resumeTask({
         taskId,
         workspacePath: request.workspacePath,
         workspaceIdentity: request.workspaceIdentity,
@@ -757,7 +757,7 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
         offPeakTaskId: request.offPeakTaskId,
       });
       // 权限模式随派发下发（resume 后显式设置，幂等）。
-      await robinrunTaskService.setConfigOption({
+      await robindoneTaskService.setConfigOption({
         taskId,
         traceId,
         configId: "mode",
@@ -765,14 +765,14 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
       });
       // 档位是 idle Selection 的一部分，只在 sendPrompt 注入；单独写档位会污染用户会话。
     } else {
-      const task = await robinrunTaskService.createTask({
+      const task = await robindoneTaskService.createTask({
         projectId: request.projectId,
         workspacePath: request.workspacePath,
         workspaceIdentity: request.workspaceIdentity,
         additionalDirectories: request.additionalDirectories,
         // 空 Session 沿用普通初始化；idle Selection 只在下方执行中注入。
         // 在此写入会让闲时轮结束后的普通消息继续使用无票的隐藏 Provider。
-        mode: request.permissionMode as RobinRunTaskMode,
+        mode: request.permissionMode as RobinDoneTaskMode,
         // 闲时任务是无界面的 createTask + sendPrompt 连续派发；空 session 必须在首条
         // V4 admission 内先持久化，否则 session_input 外键会先于 session 主记录写入。
         deferPersistenceUntilFirstPrompt: true,
@@ -790,8 +790,8 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
     }
     trackedKey = offPeakRunSubscriptionKey(taskId, traceId);
     const lifecycle = trackOffPeakRunOutcome({
-      robinrunTaskService,
-      robinrunAgentService,
+      robindoneTaskService,
+      robindoneAgentService,
       service: runtime.service,
       ticketId: request.serverTicketId,
       offPeakTaskId: request.offPeakTaskId,
@@ -800,7 +800,7 @@ async function dispatchOffPeakRun(request: OffPeakRunDispatchRequest): Promise<{
       workspacePath: request.workspacePath,
       ...(request.workspaceIdentity ? { workspaceIdentity: request.workspaceIdentity } : {}),
     });
-    await robinrunTaskService.sendPrompt({
+    await robindoneTaskService.sendPrompt({
       taskId,
       traceId,
       content: promptContent,
@@ -856,7 +856,7 @@ interface CronRunDispatchRequest {
   prompt: string;
   targetTaskId?: string;
   modelSelection?: ModelSelection;
-  mode?: RobinRunTaskMode;
+  mode?: RobinDoneTaskMode;
   workspacePath: string;
   workspaceIdentity?: string;
   projectId?: string | null;
@@ -908,7 +908,7 @@ function markCronRunOutcome(params: {
   workspaceKey: string;
   scheduledAt: number | null;
   trigger: "schedule" | "manual";
-  outcome: RobinRunAutomationRunOutcome;
+  outcome: RobinDoneAutomationRunOutcome;
   error?: string;
 }): void {
   void recordCronRunOutcomeBestEffort({
@@ -926,7 +926,7 @@ function disposeCronRunSubscription(key: string): void {
 }
 
 async function applyCronRunConfigToExistingTask(params: {
-  robinrunTaskService: IRobinRunTaskService;
+  robindoneTaskService: IRobinDoneTaskService;
   taskId: string;
   traceId: TraceId;
   modelSelection?: ModelSelection;
@@ -935,18 +935,18 @@ async function applyCronRunConfigToExistingTask(params: {
   let thoughtAppliedWithModel = false;
   let modeAppliedWithModel = false;
   if (params.modelSelection) {
-    await params.robinrunTaskService.setAutomationSessionConfig({
+    await params.robindoneTaskService.setAutomationSessionConfig({
       taskId: params.taskId,
       traceId: params.traceId,
       modelSelection: params.modelSelection,
       thoughtLevel: params.modelSelection.options?.reasoningLevel,
-      mode: params.mode?.trim() as RobinRunTaskMode | undefined,
+      mode: params.mode?.trim() as RobinDoneTaskMode | undefined,
     });
     thoughtAppliedWithModel = true;
     modeAppliedWithModel = true;
   }
   if (!modeAppliedWithModel && params.mode?.trim()) {
-    await params.robinrunTaskService.setConfigOption({
+    await params.robindoneTaskService.setConfigOption({
       taskId: params.taskId,
       traceId: params.traceId,
       configId: "mode",
@@ -954,7 +954,7 @@ async function applyCronRunConfigToExistingTask(params: {
     });
   }
   if (!thoughtAppliedWithModel && params.modelSelection?.options?.reasoningLevel) {
-    await params.robinrunTaskService.setConfigOption({
+    await params.robindoneTaskService.setConfigOption({
       taskId: params.taskId,
       traceId: params.traceId,
       configId: "thought_level",
@@ -964,7 +964,7 @@ async function applyCronRunConfigToExistingTask(params: {
 }
 
 function trackCronRunOutcome(params: {
-  robinrunTaskService: IRobinRunTaskService;
+  robindoneTaskService: IRobinDoneTaskService;
   taskId: string;
   traceId: TraceId;
   workspacePath: string;
@@ -978,7 +978,7 @@ function trackCronRunOutcome(params: {
   const key = cronRunSubscriptionKey(params.taskId, params.traceId);
   disposeCronRunSubscription(key);
   markCronRunOutcome({ ...params, outcome: "running" });
-  const disposable = params.robinrunTaskService.onDynamicTaskTerminalOutcome(params.taskId)(
+  const disposable = params.robindoneTaskService.onDynamicTaskTerminalOutcome(params.taskId)(
     (result) => {
       if (result.inputId !== params.traceId) return;
       void settleCronRunTerminalOutcome({
@@ -989,7 +989,7 @@ function trackCronRunOutcome(params: {
         logWarn: (message, error) => logger.warn(message, error),
       });
       // 定时任务在后台完成后统一置为未读，真正打开 task 时再由导航链路清除。
-      void params.robinrunTaskService.setTaskUnread({
+      void params.robindoneTaskService.setTaskUnread({
         taskId: params.taskId,
         workspacePath: params.workspacePath,
         ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
@@ -1102,13 +1102,13 @@ function renderRoutedEventPrompt(batch: RoutedEventBatch): string {
  * 前存在性校验落空。延迟递增重试消化物化窗口；重试耗尽仍失败由调用方留痕）。
  */
 async function renameTaskWithRetry(
-  robinrunTaskService: IRobinRunTaskService,
-  params: Parameters<IRobinRunTaskService["renameTask"]>[0],
+  robindoneTaskService: IRobinDoneTaskService,
+  params: Parameters<IRobinDoneTaskService["renameTask"]>[0],
   attempts = 4,
 ): Promise<void> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      await robinrunTaskService.renameTask(params);
+      await robindoneTaskService.renameTask(params);
       return;
     } catch (error) {
       if (attempt === attempts - 1) throw error;
@@ -1132,9 +1132,9 @@ async function renameTaskWithRetry(
  * sendPrompt 路径，零 worker 特判。
  */
 async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: string }> {
-  const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-  if (!robinrunTaskService) {
-    throw new Error("RobinRun task service is not initialized.");
+  const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+  if (!robindoneTaskService) {
+    throw new Error("RobinDone task service is not initialized.");
   }
   const promptTraceId = `trigger:${batch.triggerId}:${randomUUID()}` as TraceId;
   const subscriberWorkerId = batch.subscriberAgentId.startsWith("wkr-")
@@ -1156,7 +1156,7 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
   let boundTaskId = batch.routing === "fixed" ? undefined : batch.existingTaskId;
   if (boundTaskId && subscriberWorkerId) {
     try {
-      const boundMeta = await robinrunTaskService.getTaskMeta({
+      const boundMeta = await robindoneTaskService.getTaskMeta({
         taskId: boundTaskId,
         workspacePath: batch.workspacePath,
         ...(batch.workspaceIdentity !== undefined
@@ -1176,7 +1176,7 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
     }
   }
   if (boundTaskId) {
-    await robinrunTaskService.resumeTask({
+    await robindoneTaskService.resumeTask({
       taskId: boundTaskId,
       workspacePath: batch.workspacePath,
       workspaceIdentity: batch.workspaceIdentity,
@@ -1184,7 +1184,7 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
     });
     taskId = boundTaskId;
   } else {
-    const task = await robinrunTaskService.createTask({
+    const task = await robindoneTaskService.createTask({
       ...(batch.projectId !== undefined ? { projectId: batch.projectId } : {}),
       workspacePath: batch.workspacePath,
       workspaceIdentity: batch.workspaceIdentity,
@@ -1203,7 +1203,7 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
         ? `${batch.triggerName}: ${batch.events[0]?.summary ?? "event"}`.slice(0, 80)
         : batch.triggerName;
     try {
-      await renameTaskWithRetry(robinrunTaskService, {
+      await renameTaskWithRetry(robindoneTaskService, {
         taskId,
         workspacePath: batch.workspacePath,
         ...(batch.workspaceIdentity !== undefined
@@ -1227,7 +1227,7 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
       workspaceIdentity: batch.workspaceIdentity,
     });
   }
-  await robinrunTaskService.sendPrompt({
+  await robindoneTaskService.sendPrompt({
     taskId,
     traceId: promptTraceId,
     // 系统订阅唤醒自带渲染好的正文（promptOverride，2026-11-24 面板裁决）；dispatcher
@@ -1264,9 +1264,9 @@ async function dispatchTriggerRun(batch: TriggerEventBatch): Promise<{ taskId: s
 async function dispatchRoutedEventRun(
   batch: RoutedEventBatch,
 ): Promise<{ taskId: string; degraded: boolean }> {
-  const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-  if (!robinrunTaskService) {
-    throw new Error("RobinRun task service is not initialized.");
+  const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+  if (!robindoneTaskService) {
+    throw new Error("RobinDone task service is not initialized.");
   }
   const promptTraceId = `trigger:${batch.triggerId}:${randomUUID()}` as TraceId;
   const subscriberWorkerId = batch.subscriberAgentId.startsWith("wkr-")
@@ -1277,7 +1277,7 @@ async function dispatchRoutedEventRun(
   let targetTaskId: string | undefined;
   if (batch.target.kind === "existing") {
     try {
-      const meta = await robinrunTaskService.getTaskMeta({
+      const meta = await robindoneTaskService.getTaskMeta({
         taskId: batch.target.taskId,
         workspacePath: batch.workspacePath,
         ...(batch.workspaceIdentity !== undefined
@@ -1307,7 +1307,7 @@ async function dispatchRoutedEventRun(
   }
   let taskId: string;
   if (targetTaskId !== undefined) {
-    await robinrunTaskService.resumeTask({
+    await robindoneTaskService.resumeTask({
       taskId: targetTaskId,
       workspacePath: batch.workspacePath,
       workspaceIdentity: batch.workspaceIdentity,
@@ -1315,7 +1315,7 @@ async function dispatchRoutedEventRun(
     });
     taskId = targetTaskId;
   } else {
-    const task = await robinrunTaskService.createTask({
+    const task = await robindoneTaskService.createTask({
       ...(batch.projectId !== undefined ? { projectId: batch.projectId } : {}),
       workspacePath: batch.workspacePath,
       workspaceIdentity: batch.workspaceIdentity,
@@ -1327,7 +1327,7 @@ async function dispatchRoutedEventRun(
     taskId = task.taskId;
     // 处理会话标题 = 触发器名 + 首事件摘要（同触发器的多个话题会话在侧栏可区分）。
     try {
-      await renameTaskWithRetry(robinrunTaskService, {
+      await renameTaskWithRetry(robindoneTaskService, {
         taskId,
         workspacePath: batch.workspacePath,
         ...(batch.workspaceIdentity !== undefined
@@ -1351,7 +1351,7 @@ async function dispatchRoutedEventRun(
       workspaceIdentity: batch.workspaceIdentity,
     });
   }
-  await robinrunTaskService.sendPrompt({
+  await robindoneTaskService.sendPrompt({
     taskId,
     traceId: promptTraceId,
     content: renderRoutedEventPrompt(batch),
@@ -1438,9 +1438,9 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
   sessionId: string;
 }> {
   const targetServices = resolveAutomationTargetServices(request);
-  const robinrunTaskService = targetServices.getOptional(IRobinRunTaskService);
-  if (!robinrunTaskService) {
-    throw new Error("RobinRun task service is not initialized.");
+  const robindoneTaskService = targetServices.getOptional(IRobinDoneTaskService);
+  if (!robindoneTaskService) {
+    throw new Error("RobinDone task service is not initialized.");
   }
   const modelSelectionService = targetServices.getOptional(IModelSelectionService);
   if (!modelSelectionService) {
@@ -1472,7 +1472,7 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
   try {
     const task = request.targetTaskId
       ? { taskId: request.targetTaskId }
-      : await robinrunTaskService.createTask({
+      : await robindoneTaskService.createTask({
           projectId: request.projectId,
           workspacePath: request.workspacePath,
           workspaceIdentity: request.workspaceIdentity,
@@ -1489,7 +1489,7 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
     if (request.targetTaskId) {
       // 绑定会话在 app 重启或切换 workspace 后通常不处于 active；旧实现直接
       // setConfig/sendPrompt 会立即报 Session is not active，看起来像「立即运行」没有触发。
-      await robinrunTaskService.resumeTask({
+      await robindoneTaskService.resumeTask({
         taskId: task.taskId,
         workspacePath: request.workspacePath,
         workspaceIdentity: request.workspaceIdentity,
@@ -1499,7 +1499,7 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
         automationId: request.automationId,
       });
       await applyCronRunConfigToExistingTask({
-        robinrunTaskService,
+        robindoneTaskService,
         taskId: task.taskId,
         traceId: promptTraceId,
         modelSelection: submissionModelSelection,
@@ -1529,7 +1529,7 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
     }
     trackedKey = cronRunSubscriptionKey(task.taskId, promptTraceId);
     trackCronRunOutcome({
-      robinrunTaskService,
+      robindoneTaskService,
       taskId: task.taskId,
       traceId: promptTraceId,
       workspacePath: request.workspacePath,
@@ -1540,7 +1540,7 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
       scheduledAt,
       trigger,
     });
-    await robinrunTaskService.sendPrompt({
+    await robindoneTaskService.sendPrompt({
       taskId: task.taskId,
       traceId: promptTraceId,
       content: request.prompt,
@@ -1573,8 +1573,8 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
 }
 
 async function dispatchManualAutomationRun(params: {
-  automation: RobinRunAutomation;
-  run: RobinRunAutomationRun;
+  automation: RobinDoneAutomation;
+  run: RobinDoneAutomationRun;
 }): Promise<void> {
   logger.info(
     `direct manual automation dispatch started automation=${params.automation.automationId} runId=${params.run.runId}`,
@@ -1733,7 +1733,7 @@ const workspaceTaskTracker = createHostWorkspaceTaskTracker((event) => {
   reportHostRunningTaskCount();
 });
 
-function isRobinRunTaskMeta(value: unknown): value is RobinRunTaskMeta {
+function isRobinDoneTaskMeta(value: unknown): value is RobinDoneTaskMeta {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -1747,12 +1747,12 @@ function isRobinRunTaskMeta(value: unknown): value is RobinRunTaskMeta {
 }
 
 function isRemoteMirrorableStreamEvent(
-  event: RobinRunStreamEvent,
+  event: RobinDoneStreamEvent,
 ): event is TaskStreamMirrorableEvent {
   return event.type !== "task_stream_mirror_batch" && event.type !== "task_snapshot_updated";
 }
 
-function createReportingRemoteRobinRunTaskService<T extends object>(
+function createReportingRemoteRobinDoneTaskService<T extends object>(
   service: T,
   options?: {
     reportRunningPromptCount?: boolean;
@@ -1761,8 +1761,8 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
       taskId: string;
       traceId: TraceId;
       content: string;
-      attachments?: RobinRunPromptAttachment[];
-    }) => Promise<{ content: string; attachments?: RobinRunPromptAttachment[] }>;
+      attachments?: RobinDonePromptAttachment[];
+    }) => Promise<{ content: string; attachments?: RobinDonePromptAttachment[] }>;
   },
 ): T {
   const workspaceProxyState = createHostRemoteWorkspaceProxyState();
@@ -1774,7 +1774,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
     });
   }
 
-  function subscribeSessionMessageRequests(target: T, meta: RobinRunTaskMeta): void {
+  function subscribeSessionMessageRequests(target: T, meta: RobinDoneTaskMeta): void {
     const onDynamicWorkspaceEvent = Reflect.get(target, "onDynamicWorkspaceEvent");
     if (typeof onDynamicWorkspaceEvent !== "function") {
       return;
@@ -1800,7 +1800,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
   }
 
   function rememberTaskMeta(result: unknown): void {
-    if (isRobinRunTaskMeta(result)) {
+    if (isRobinDoneTaskMeta(result)) {
       workspaceProxyState.rememberTaskMeta(result);
       subscribeSessionMessageRequests(service, result);
       parentPort?.postMessage({
@@ -1840,12 +1840,12 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
     taskId: string;
     traceId: TraceId;
     content: string;
-    attachments?: RobinRunPromptAttachment[];
+    attachments?: RobinDonePromptAttachment[];
   }): Promise<{
     taskId: string;
     traceId: TraceId;
     content: string;
-    attachments?: RobinRunPromptAttachment[];
+    attachments?: RobinDonePromptAttachment[];
   }> {
     if (!options?.materializePromptAttachments) {
       return params;
@@ -1863,7 +1863,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
       taskId: string;
       traceId: TraceId;
       content: string;
-      attachments?: RobinRunPromptAttachment[];
+      attachments?: RobinDonePromptAttachment[];
     },
   ): Promise<unknown> {
     const taskRealtimePort = options?.taskRealtimePort;
@@ -1900,10 +1900,10 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
 
     // 写路径（send/stop/交互回执）已收敛 v4 命令面；本镜像属**读路径**——
     // taskRealtimePort → 手机 relay → 手机端
-    // robinrunSessionStore 的整条消费链词表都是 RobinRunStreamEvent。两个方案的评估结论：
+    // robindoneSessionStore 的整条消费链词表都是 RobinDoneStreamEvent。两个方案的评估结论：
     // a) relay 直接转发 v4 帧、手机端消费 v4 store（正解）：需要重做 relay stream-op
     //    协议 + 手机端 store；
-    // b) 帧→RobinRunStreamEvent 薄映射：等价复刻 adapter mapSessionEvent，
+    // b) 帧→RobinDoneStreamEvent 薄映射：等价复刻 adapter mapSessionEvent，
     //    否决。
     // 结论：本镜像保持 legacy 源不动。
     const dynamicStreamEvent = Reflect.get(target, "onDynamicStreamEvent");
@@ -1912,7 +1912,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
         ? dynamicStreamEvent.call(
             target,
             params.taskId,
-          )((event: RobinRunStreamEvent) => {
+          )((event: RobinDoneStreamEvent) => {
             if (isRemoteMirrorableStreamEvent(event)) {
               taskRealtimePort.publishStreamOp(mirrorTarget, {
                 kind: "stream_event",
@@ -1925,19 +1925,19 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
     try {
       return await sendPrompt.call(target, params);
     } finally {
-      // 远端 robinrun-server 没有 desktop realtime port；由窗口 Host 内的
+      // 远端 robindone-server 没有 desktop realtime port；由窗口 Host 内的
       // remote facade 接管 lease 和 stream mirror，确保 UI 能持续收到远端会话流。
       streamDisposable?.dispose();
       taskRealtimePort.releaseTaskRunLease(mirrorTarget);
     }
   }
 
-  function finishWorkspaceTask(taskId: string, meta: RobinRunTaskMeta): void {
+  function finishWorkspaceTask(taskId: string, meta: RobinDoneTaskMeta): void {
     workspaceProxyState.disposeTaskReadySubscription(taskId);
     workspaceTaskTracker.finish(taskId, meta);
   }
 
-  function beginWorkspaceTask(target: T, taskId: string, meta: RobinRunTaskMeta): boolean {
+  function beginWorkspaceTask(target: T, taskId: string, meta: RobinDoneTaskMeta): boolean {
     const started = workspaceTaskTracker.begin(taskId, meta);
     if (!started) {
       return false;
@@ -1945,12 +1945,12 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
     const onDynamicTaskReady = Reflect.get(target, "onDynamicTaskReady");
     if (typeof onDynamicTaskReady !== "function") {
       workspaceTaskTracker.finish(taskId, meta);
-      throw new Error("remote RobinRun task service does not expose onDynamicTaskReady");
+      throw new Error("remote RobinDone task service does not expose onDynamicTaskReady");
     }
     const subscribe = onDynamicTaskReady.call(target, taskId);
     if (typeof subscribe !== "function") {
       workspaceTaskTracker.finish(taskId, meta);
-      throw new Error("remote RobinRun task ready event is not subscribable");
+      throw new Error("remote RobinDone task ready event is not subscribable");
     }
     workspaceProxyState.trackTaskReady(
       taskId,
@@ -1961,7 +1961,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
     return true;
   }
 
-  // remote workspace 的 RobinRun Agent manager 跑在远端 server，desktop main 不能直接看到
+  // remote workspace 的 RobinDone Agent manager 跑在远端 server，desktop main 不能直接看到
   // `handles` 状态。sendPrompt Promise 只是远端 ACK，必须等待 task ready 才能允许回收 workspace。
   return new Proxy(service, {
     get(target, property, receiver) {
@@ -2019,7 +2019,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
       }
 
       return async (...args: unknown[]) => {
-        let trackedTask: { taskId: string; meta: RobinRunTaskMeta; started: boolean } | undefined;
+        let trackedTask: { taskId: string; meta: RobinDoneTaskMeta; started: boolean } | undefined;
         let tracksOnlyRpcLifetime = false;
         try {
           const params = args[0];
@@ -2034,10 +2034,10 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
               taskId: string;
               traceId: TraceId;
               content: string;
-              attachments?: RobinRunPromptAttachment[];
+              attachments?: RobinDonePromptAttachment[];
             };
             const taskMeta = workspaceProxyState.getTaskMeta(promptParams.taskId) as
-              | RobinRunTaskMeta
+              | RobinDoneTaskMeta
               | undefined;
             if (taskMeta) {
               trackedTask = {
@@ -2081,7 +2081,7 @@ function createReportingRemoteRobinRunTaskService<T extends object>(
   });
 }
 
-function warmUpRobinRunAgent(
+function warmUpRobinDoneAgent(
   services: ServiceCollection,
   context: { workspacePath?: string; workspaceIdentity?: string },
   reason: string,
@@ -2091,11 +2091,11 @@ function warmUpRobinRunAgent(
   }
   const workspacePath = context.workspacePath;
   const workspaceIdentity = context.workspaceIdentity;
-  const robinrunSessionService = services.getOptional(IRobinRunSessionService);
-  if (!robinrunSessionService) {
+  const robindoneSessionService = services.getOptional(IRobinDoneSessionService);
+  if (!robindoneSessionService) {
     return;
   }
-  void robinrunSessionService
+  void robindoneSessionService
     .initializeWorkspace({
       workspacePath,
       ...(workspaceIdentity ? { workspaceIdentity } : {}),
@@ -2104,12 +2104,12 @@ function warmUpRobinRunAgent(
       if (!result.available) {
         if (result.reasonCode === "provider_not_ready") {
           logger.info(
-            `RobinRun agent warmup waiting for provider/model (${reason}) workspace=${workspacePath}`,
+            `RobinDone agent warmup waiting for provider/model (${reason}) workspace=${workspacePath}`,
           );
           return;
         }
         logger.warn(
-          `RobinRun agent warmup unavailable (${reason}) workspace=${workspacePath} reason=${result.reason ?? "unknown"}`,
+          `RobinDone agent warmup unavailable (${reason}) workspace=${workspacePath} reason=${result.reason ?? "unknown"}`,
         );
         return;
       }
@@ -2117,11 +2117,11 @@ function warmUpRobinRunAgent(
       // presentation 只剩 mode 与 slash commands。预热不能为读取 presentation 额外创建
       // Agent App，否则其 MCP close 会占住协议通道并阻塞真正的 Session 初始化。
       logger.info(
-        `RobinRun agent warmup ready (${reason}) workspace=${workspacePath} transport=${result.transportKind ?? "unknown"}`,
+        `RobinDone agent warmup ready (${reason}) workspace=${workspacePath} transport=${result.transportKind ?? "unknown"}`,
       );
     })
     .catch((error) => {
-      logger.warn(`RobinRun agent warmup failed (${reason}) workspace=${workspacePath}:`, error);
+      logger.warn(`RobinDone agent warmup failed (${reason}) workspace=${workspacePath}:`, error);
     });
 }
 
@@ -2178,7 +2178,7 @@ let databaseStartup: ReturnType<typeof createHostDatabaseStartup> | undefined;
 const pendingStartupAttachments = new Map<string, () => void>();
 let activeServices: ServiceCollection | null = null;
 /**
- * Main 推送的实时界面语言，供 RobinRun endpoint 请求的 X-Client-Language。
+ * Main 推送的实时界面语言，供 RobinDone endpoint 请求的 X-Client-Language。
  * 过去 Host 用进程 Intl locale（Dock 启动无 LANG 会回退 en-US）；setting.json 写入可能滞后或失败，
  * 也不能代表当前界面，所以只认 Main 的 InitLocal 初值与 application-locale-changed 变更。
  */
@@ -2214,11 +2214,11 @@ function resolveBotProjectConnection(hostId: string): BotProjectConnection | und
     const services = registered.services;
     return {
       owner: registered.capabilities?.physicalOwner?.() ?? services,
-      taskService: createControllerRoutedTaskService(services.get(IRobinRunTaskService), {
+      taskService: createControllerRoutedTaskService(services.get(IRobinDoneTaskService), {
         kind: "local",
       }),
       modelSelectionService: services.get(IModelSelectionService),
-      agentService: services.get(IRobinRunAgentService),
+      agentService: services.get(IRobinDoneAgentService),
       bindWorkspace: async (target) => {
         await registered.capabilities?.bindWorkspaceIdentity?.({
           workspacePath: target.workspacePath,
@@ -2232,11 +2232,11 @@ function resolveBotProjectConnection(hostId: string): BotProjectConnection | und
   if (!connection) return undefined;
   return {
     owner: connection.services,
-    taskService: createControllerRoutedTaskService(connection.services.robinrunTaskService, {
+    taskService: createControllerRoutedTaskService(connection.services.robindoneTaskService, {
       kind: "local",
     }),
     modelSelectionService: connection.services.modelSelectionService,
-    agentService: connection.services.robinrunAgentService,
+    agentService: connection.services.robindoneAgentService,
     bindWorkspace: async (target) => {
       await connection.services.sourceServerWorkspaceService.resolveWorkspace({
         workspacePath: target.workspacePath,
@@ -2292,7 +2292,7 @@ async function ensureSourceServerConnectionManager(): Promise<SourceServerConnec
 let activeLocalResourceTelemetry: IDisposable | null = null;
 // 资源管理器采样只在 main 请求时执行一次，Host 不维护任何周期定时器。
 const hostResourceUsageResponder = createHostResourceUsageResponder({
-  getAgentService: () => activeServices?.getOptional(IRobinRunAgentService),
+  getAgentService: () => activeServices?.getOptional(IRobinDoneAgentService),
   postMessage: (message) => parentPort?.postMessage(message),
 });
 let activeSessionRealtimePort: ReturnType<typeof createTaskRealtimeBridgeForHostInit> = null;
@@ -2326,7 +2326,7 @@ async function createWindowRemoteConnectionHandle(params: {
     }
   };
   let connection: HostRemoteConnection;
-  let managedProfile: import("@robinrun/shared").ConnectionProfile | undefined;
+  let managedProfile: import("@robindone/shared").ConnectionProfile | undefined;
   let reusedConnectionTarget: RemoteTarget | undefined;
   let managerStateSubscription: { dispose(): void } | undefined;
   let managerConnectionInvalidatedSubscription: { dispose(): void } | undefined;
@@ -2373,7 +2373,7 @@ async function createWindowRemoteConnectionHandle(params: {
     });
     params.signal.throwIfAborted();
     topicResourceRelay = createWindowTopicResourceRelay({
-      getPeerAgentService: () => connection?.services.robinrunAgentService,
+      getPeerAgentService: () => connection?.services.robindoneAgentService,
       resolveServices: (scope) => windowRemoteConnectionRegistry.resolveScopedServices(scope),
       getBots: () => activeServices?.getOptional(IBotsService),
     });
@@ -2673,7 +2673,7 @@ const windowRemoteConnectionRegistry = createWindowRemoteConnectionRegistry<
     }
   },
   releaseWorkspace: async (services, context) => {
-    await services.get(IRobinRunTaskService).releaseWorkspacePreparation({
+    await services.get(IRobinDoneTaskService).releaseWorkspacePreparation({
       workspacePath: context.workspacePath,
       ...(context.workspaceIdentity ? { workspaceIdentity: context.workspaceIdentity } : {}),
       provider: "glm",
@@ -2758,8 +2758,8 @@ const windowRemoteConnectionRegistry = createWindowRemoteConnectionRegistry<
       previousScope,
       {
         scope: currentScope,
-        taskService: currentServices.get(IRobinRunTaskService),
-        agentService: currentServices.getOptional(IRobinRunAgentService),
+        taskService: currentServices.get(IRobinDoneTaskService),
+        agentService: currentServices.getOptional(IRobinDoneAgentService),
         sourceAvailability: "online",
       },
       {
@@ -2809,7 +2809,7 @@ const windowHostControllerRuntime = createWindowHostControllerRuntime({
   createId: randomUUID,
   readHostTaskList: (query) => {
     if (!activeServices) throw new Error("Window Host services unavailable");
-    return activeServices.get(IRobinRunTaskService).listTaskList(query);
+    return activeServices.get(IRobinDoneTaskService).listTaskList(query);
   },
   onSourceError: (scope, operation, error) => {
     logger.warn(
@@ -2842,8 +2842,8 @@ const windowHostControllerRuntime = createWindowHostControllerRuntime({
       const services = windowRemoteConnectionRegistry.resolveScopedServices(controllerScope);
       return {
         scope: controllerScope,
-        taskService: services.get(IRobinRunTaskService),
-        agentService: services.getOptional(IRobinRunAgentService),
+        taskService: services.get(IRobinDoneTaskService),
+        agentService: services.getOptional(IRobinDoneAgentService),
         sourceAvailability: "online" as const,
       };
     }
@@ -2872,16 +2872,16 @@ const windowHostControllerRuntime = createWindowHostControllerRuntime({
             workspaceIdentity: scope.workspaceIdentity,
           },
           taskService:
-            connection?.services.robinrunTaskService ??
-            registered!.services.get(IRobinRunTaskService),
+            connection?.services.robindoneTaskService ??
+            registered!.services.get(IRobinDoneTaskService),
           agentService:
-            connection?.services.robinrunAgentService ??
-            registered!.services.getOptional(IRobinRunAgentService),
+            connection?.services.robindoneAgentService ??
+            registered!.services.getOptional(IRobinDoneAgentService),
           sourceAvailability: "online" as const,
         };
       return null;
     }
-    const taskService = activeServices?.getOptional(IRobinRunTaskService);
+    const taskService = activeServices?.getOptional(IRobinDoneTaskService);
     if (!taskService) {
       return null;
     }
@@ -2892,7 +2892,7 @@ const windowHostControllerRuntime = createWindowHostControllerRuntime({
         ...(scope.workspaceIdentity ? { workspaceIdentity: scope.workspaceIdentity } : {}),
       },
       taskService,
-      agentService: activeServices?.getOptional(IRobinRunAgentService),
+      agentService: activeServices?.getOptional(IRobinDoneAgentService),
       sourceAvailability: "online" as const,
     };
   },
@@ -2931,9 +2931,9 @@ type ExposedServicePortHandle = {
 };
 
 function createControllerRoutedTaskService(
-  base: IRobinRunTaskService,
+  base: IRobinDoneTaskService,
   attachmentScope: WindowHostAttachmentScope,
-): IRobinRunTaskService {
+): IRobinDoneTaskService {
   const route = async (
     params: {
       taskId: string;
@@ -2960,7 +2960,7 @@ function createControllerRoutedTaskService(
   return new Proxy(base, {
     get(target, property, receiver) {
       if (property === "setTaskPinned") {
-        return async (params: Parameters<IRobinRunTaskService["setTaskPinned"]>[0]) => {
+        return async (params: Parameters<IRobinDoneTaskService["setTaskPinned"]>[0]) => {
           const meta = await route(params, {
             kind: "pin",
             pinned: params.pinned,
@@ -2972,8 +2972,8 @@ function createControllerRoutedTaskService(
       if (property === "archiveTask" || property === "unarchiveTask") {
         return async (
           params:
-            | Parameters<IRobinRunTaskService["archiveTask"]>[0]
-            | Parameters<IRobinRunTaskService["unarchiveTask"]>[0],
+            | Parameters<IRobinDoneTaskService["archiveTask"]>[0]
+            | Parameters<IRobinDoneTaskService["unarchiveTask"]>[0],
         ) => {
           const meta = await route(params, {
             kind: "archive",
@@ -2984,12 +2984,12 @@ function createControllerRoutedTaskService(
         };
       }
       if (property === "deleteTask") {
-        return async (params: Parameters<IRobinRunTaskService["deleteTask"]>[0]) => {
+        return async (params: Parameters<IRobinDoneTaskService["deleteTask"]>[0]) => {
           await route(params, { kind: "delete" });
         };
       }
       if (property === "deleteArchivedTasks") {
-        return async (params: Parameters<IRobinRunTaskService["deleteArchivedTasks"]>[0]) => {
+        return async (params: Parameters<IRobinDoneTaskService["deleteArchivedTasks"]>[0]) => {
           if (params.taskIds.length === 0) {
             return { deletedTaskIds: [], skippedTaskIds: [], failedTaskIds: [] };
           }
@@ -3006,7 +3006,7 @@ function createControllerRoutedTaskService(
         };
       }
       if (property === "deleteArchivedTask") {
-        return async (params: Parameters<IRobinRunTaskService["deleteArchivedTask"]>[0]) =>
+        return async (params: Parameters<IRobinDoneTaskService["deleteArchivedTask"]>[0]) =>
           windowHostControllerRuntime.service.deleteArchivedTask({
             address: await windowHostControllerRuntime.resolveTaskAddress({
               ...params,
@@ -3016,7 +3016,7 @@ function createControllerRoutedTaskService(
           });
       }
       if (property === "setTaskUnread") {
-        return async (params: Parameters<IRobinRunTaskService["setTaskUnread"]>[0]) => {
+        return async (params: Parameters<IRobinDoneTaskService["setTaskUnread"]>[0]) => {
           const meta = await route(
             params,
             params.unread
@@ -3058,7 +3058,7 @@ function exposeServicesOnMessagePort(
   port: Electron.MessagePortMain,
   services: ServiceCollection,
   deferInit: boolean,
-  clientMode: RobinRunAgentV4ClientMode = "desktop-continuous",
+  clientMode: RobinDoneAgentV4ClientMode = "desktop-continuous",
   attachmentScope: WindowHostAttachmentScope = { kind: "local" },
   capabilities?: HostRemoteConnectionCapabilities,
   terminalOwnerId?: string,
@@ -3091,10 +3091,10 @@ function exposeServicesOnMessagePort(
   const rawServer = new ChannelServer(protocol, "host", 1000, deferInit);
   const loggedServer = new LoggingChannelServer(rawServer, logRpc);
   const server = new NetworkTelemetryChannelServer(loggedServer);
-  const agentService = services.getOptional(IRobinRunAgentService);
+  const agentService = services.getOptional(IRobinDoneAgentService);
   const connectionContext = { connectionId: `host-rpc-${randomUUID()}`, clientMode };
   const connectionScope = agentService
-    ? createRobinRunAgentConnectionScope(agentService, connectionContext)
+    ? createRobinDoneAgentConnectionScope(agentService, connectionContext)
     : undefined;
   services.register(IWindowControllerService, windowHostControllerRuntime.service);
   // 未读自动写入只归窗口 base renderer；手机和 remote facade 不能重复消费同一完成信号。
@@ -3134,15 +3134,15 @@ function exposeServicesOnMessagePort(
     // dispose 只属于 Host attachment 生命周期，不暴露为 Renderer RPC。
     overrides.set(IPromptAttachmentTransferService.channelName, promptAttachmentService);
   }
-  const taskService = services.getOptional(IRobinRunTaskService);
+  const taskService = services.getOptional(IRobinDoneTaskService);
   if (taskService) {
     overrides.set(
-      IRobinRunTaskService.channelName,
+      IRobinDoneTaskService.channelName,
       createControllerRoutedTaskService(taskService, attachmentScope),
     );
   }
   if (connectionScope) {
-    overrides.set(IRobinRunAgentService.channelName, connectionScope.service);
+    overrides.set(IRobinDoneAgentService.channelName, connectionScope.service);
   }
   const conversationShareService = services.getOptional(IConversationShareService);
   if (conversationShareService) {
@@ -3665,7 +3665,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
       try {
         const dispatchResult = await dispatchCronRun({
           ...msg,
-          mode: msg.mode as RobinRunTaskMode | undefined,
+          mode: msg.mode as RobinDoneTaskMode | undefined,
         });
         parentPort.postMessage({
           type: HostResponseTypes.CronRunResult,
@@ -3743,12 +3743,12 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
   }
 
   if (msg.type === HostMessageTypes.SessionMessageDeliver) {
-    const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-    if (!robinrunTaskService) {
+    const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+    if (!robindoneTaskService) {
       parentPort.postMessage({
         type: HostResponseTypes.SessionMessageDeliverResult,
         result: {
-          error: "RobinRun task service is not initialized.",
+          error: "RobinDone task service is not initialized.",
           messageId: msg.request.messageId,
           requestId: msg.request.requestId,
           sessionId: msg.request.fromSessionId,
@@ -3758,7 +3758,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
       return;
     }
 
-    void robinrunTaskService
+    void robindoneTaskService
       .deliverSessionMessage(msg.request)
       .then((deliveryResult) => {
         parentPort.postMessage({
@@ -3782,14 +3782,14 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
   }
 
   if (msg.type === HostMessageTypes.SessionMessageDeliveryResult) {
-    const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-    if (!robinrunTaskService) {
+    const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+    if (!robindoneTaskService) {
       logger.warn(
-        "session message delivery result received before RobinRun task service initialized",
+        "session message delivery result received before RobinDone task service initialized",
       );
       return;
     }
-    void robinrunTaskService.sendSessionMessageDeliveryResult(msg.result).catch((error) => {
+    void robindoneTaskService.sendSessionMessageDeliveryResult(msg.result).catch((error) => {
       logger.warn("failed to forward session message delivery result:", error);
     });
     return;
@@ -3903,7 +3903,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
               const services = windowRemoteConnectionRegistry.resolveScopedServices(nextScope);
               await windowHostControllerRuntime.replaceDisconnectedSource(previousScope, {
                 scope: nextScope,
-                taskService: services.get(IRobinRunTaskService),
+                taskService: services.get(IRobinDoneTaskService),
                 sourceAvailability: "online",
               });
             } catch (error) {
@@ -4495,7 +4495,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
                     .listReadyConnections()
                     .map(({ target, services: remoteServices }) => ({
                       target,
-                      robinrunAgentService: remoteServices.get(IRobinRunAgentService),
+                      robindoneAgentService: remoteServices.get(IRobinDoneAgentService),
                     })),
                   mode,
                   (error) => logger.warn("remote dynamic workflow user mode forward failed", error),
@@ -4508,8 +4508,8 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
                 runtimeSurface: "desktop_local_host",
               },
               serviceAuthorityMode: "desktop-local",
-              robinrunAgentSpawnFallbackCwd: msg.agentSpawnFallbackCwd,
-              robinrunBuiltinProviderConfigFilePath: msg.robinrunBuiltinProviderConfigFilePath,
+              robindoneAgentSpawnFallbackCwd: msg.agentSpawnFallbackCwd,
+              robindoneBuiltinProviderConfigFilePath: msg.robindoneBuiltinProviderConfigFilePath,
               processLifecycleReporter: runtimeProcessLifecycleReporter,
               taskRuntimeReporter: runtimeTaskReporter,
               feedback: {
@@ -4534,9 +4534,9 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
               // 会话忙查询（2026-11-22 忙时合并投递修复）：聚合器据此把忙会话的事件留桶
               // 累积，空闲后合并为一条投递（裁决 7；服务缺席 fail-open 走旧逐批行为）。
               isTriggerTaskBusy: async (task) => {
-                const robinrunTaskService = activeServices?.getOptional(IRobinRunTaskService);
-                if (!robinrunTaskService) return false;
-                return robinrunTaskService.isTaskBusy(task);
+                const robindoneTaskService = activeServices?.getOptional(IRobinDoneTaskService);
+                if (!robindoneTaskService) return false;
+                return robindoneTaskService.isTaskBusy(task);
               },
               onOffPeakSchedulerWakeRequested: () => {
                 parentPort?.postMessage({ type: HostResponseTypes.OffPeakSchedulerWakeRequest });
@@ -4547,7 +4547,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
                   trigger,
                 });
               },
-              // browser-use：agent 的 interaction/browserExecute 经 robinrunAgentService 转到这个 executor，
+              // browser-use：agent 的 interaction/browserExecute 经 robindoneAgentService 转到这个 executor，
               // 再经 parentPort 到 main 的 WebContentsView+CDP 执行。
               browserControlExecutor: browserControlMainBridge,
               // CUA 顶部提示属于物理 Windows 桌面投影；非 Windows 和远端 authority 都不得上报。
@@ -4559,15 +4559,15 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
             return initializedServices;
           },
         });
-        const robinrunTaskService = services.getOptional(IRobinRunTaskService);
-        if (robinrunTaskService) {
-          const reportingRobinRunTaskService = createReportingRemoteRobinRunTaskService(
-            robinrunTaskService,
+        const robindoneTaskService = services.getOptional(IRobinDoneTaskService);
+        if (robindoneTaskService) {
+          const reportingRobinDoneTaskService = createReportingRemoteRobinDoneTaskService(
+            robindoneTaskService,
             {
               reportRunningPromptCount: false,
             },
           );
-          services.register(IRobinRunTaskService, reportingRobinRunTaskService);
+          services.register(IRobinDoneTaskService, reportingRobinDoneTaskService);
         }
         sourceServerDirectory = new SourceServerDirectory({
           settingService: services.get(ISettingService),
@@ -4664,7 +4664,7 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
         // Main 已把启动预热限制为 active workspace 1 个；Host 必须显式消费这份固定名单，
         // 不能让后续 task-list observer 再隐式扩大，也不能因失败扫描补位。
         agentWarmupTargets.forEach((target, index) => {
-          warmUpRobinRunAgent(
+          warmUpRobinDoneAgent(
             services,
             target,
             `local host init (${index + 1}/${agentWarmupTargets.length})`,

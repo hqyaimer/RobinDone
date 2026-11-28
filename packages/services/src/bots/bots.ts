@@ -1,8 +1,8 @@
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 import type {
-  RobinRunConfigOption,
-  RobinRunProvider,
+  RobinDoneConfigOption,
+  RobinDoneProvider,
   BotConfig,
   BotContextState,
   BotInboundMessage,
@@ -12,9 +12,9 @@ import type {
   BotServiceStatus,
   BotWorkspaceRef,
   BotsConfigFile,
-  RobinRunAutomationBotDeliveryTarget,
-} from "@robinrun/shared";
-import type { RobinRunAgentAppRuntimePreferences } from "../robinrun-agent/robinrunAgent.js";
+  RobinDoneAutomationBotDeliveryTarget,
+} from "@robindone/shared";
+import type { RobinDoneAgentAppRuntimePreferences } from "../robindone-agent/robindoneAgent.js";
 
 export interface BotCreateBindCodeParams {
   botId?: string;
@@ -47,13 +47,13 @@ export interface BotListWorkspaceRefsParams {
 export interface BotUserConfigOptionsParams {
   workspacePath: string;
   workspaceIdentity?: string;
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
 }
 
 export interface BotAutomationRunWatchParams {
   /** 与该次 sendPrompt.traceId 一致，避免排队期间污染其他轮次。 */
   runId?: string;
-  target: RobinRunAutomationBotDeliveryTarget;
+  target: RobinDoneAutomationBotDeliveryTarget;
   taskId: string;
   workspacePath: string;
   workspaceIdentity?: string;
@@ -128,22 +128,22 @@ export type BotFeishuRegistrationPollResult =
 
 export interface IBotsService {
   replyToChannel?(
-    params: import("@robinrun/shared").ChannelReplyHostRequest,
-  ): Promise<import("@robinrun/shared").ChannelReplyResult>;
+    params: import("@robindone/shared").ChannelReplyHostRequest,
+  ): Promise<import("@robindone/shared").ChannelReplyResult>;
   validateTopicResource?(
     params: import("#src/bots/topicResource.js").TopicResourceRequest,
   ): Promise<void>;
   readTopicResource?(
     params: import("#src/bots/topicResource.js").TopicResourceRequest,
-  ): Promise<import("@robinrun/shared").RobinRunPromptAttachment>;
+  ): Promise<import("@robindone/shared").RobinDonePromptAttachment>;
   /**
    * 将 App 全局交互偏好同步给 Bot 已持有的远端 runtime；不得为此建立新的远端连接。
    */
-  syncAppRuntimePreferences(preferences: RobinRunAgentAppRuntimePreferences): Promise<void>;
+  syncAppRuntimePreferences(preferences: RobinDoneAgentAppRuntimePreferences): Promise<void>;
   getStatus(): Promise<BotServiceStatus>;
   getConfig(): Promise<BotsConfigFile>;
   listWorkspaceRefs(params?: BotListWorkspaceRefsParams): Promise<BotWorkspaceRef[]>;
-  getUserConfigOptions(params: BotUserConfigOptionsParams): Promise<RobinRunConfigOption[]>;
+  getUserConfigOptions(params: BotUserConfigOptionsParams): Promise<RobinDoneConfigOption[]>;
   beginFeishuRegistration(
     params?: BotFeishuRegistrationBeginParams,
   ): Promise<BotFeishuRegistrationBeginResult>;
@@ -193,13 +193,13 @@ export interface IBotsService {
     deliveryId: string;
     threadId?: string;
     received: boolean;
-  }): Promise<import("@robinrun/shared").BotGroupDelivery>;
+  }): Promise<import("@robindone/shared").BotGroupDelivery>;
   resendGroupResult?(params: {
     botId: string;
     chatId: string;
     deliveryId: string;
     threadId?: string;
-  }): Promise<import("@robinrun/shared").BotGroupDelivery>;
+  }): Promise<import("@robindone/shared").BotGroupDelivery>;
   retryPrivateDelivery?(params: { botId: string; deliveryId: string }): Promise<void>;
   resetBotState(contextKey: string): Promise<void>;
   /** 在 automation prompt 派发前订阅终态，并把结果回推到创建它的 Bot 会话。 */
@@ -218,7 +218,7 @@ export const IBotsService = createServiceDescriptor<IBotsService>(ServiceChannel
 export interface BotRemoteWorkspaceResolution {
   workspacePath: string;
   workspaceIdentity: string;
-  target: import("@robinrun/shared").RemoteTarget;
+  target: import("@robindone/shared").RemoteTarget;
   /** 只有当前窗口存在在线 logical session 才有值，用于 attachment 换代隔离。 */
   runtimeKey?: string;
 }

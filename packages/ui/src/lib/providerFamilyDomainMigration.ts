@@ -1,9 +1,9 @@
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import {
   type ProviderFamilyDomain,
   resolveModelProviderFamilyIdByProviderId,
   resolveProviderFamilyDomainFromOAuthProvider,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logger } from "@/logger.js";
 
 function inferProviderFamilyDomainFromSelection(

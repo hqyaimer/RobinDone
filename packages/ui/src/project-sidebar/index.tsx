@@ -4,7 +4,7 @@ export { useWebRemoteControlRendererActions } from "@/project-sidebar/useWebRemo
 export { ProjectManagement } from "@/project-sidebar/ProjectManagement.js";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ScrollFadeViewport } from "@/components/ui/scroll-fade-viewport.js";
-import { TID_SIDEBAR } from "@robinrun/shared/test-ids";
+import { TID_SIDEBAR } from "@robindone/shared/test-ids";
 import { remoteHostIdFromWorkspaceIdentity } from "@/project-sidebar/contract.js";
 import type {
   ProjectSidebarProps,
@@ -51,14 +51,14 @@ import { ProjectSidebarNavigation } from "@/project-sidebar/ProjectSidebarNaviga
 import { HomeOnlyWorkspaceRows } from "@/project-sidebar/HomeOnlyWorkspaceRows.js";
 import { WorkspaceSidebarFooter } from "@/WorkspaceSidebarFooter.js";
 import { SidebarBottomActivity } from "@/sidebar-activity/SidebarBottomActivity.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useTabStoreApi } from "@/store/TabStoreProvider.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级入口」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级入口」——Root 已摘除 CodingPlanUpgradeDialogProvider，
 // 非可选 hook 无 Provider 会 throw，恢复时随 Root Provider 一并取消注释
 // import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 export { attachRemoteProjectWorkspace } from "@/project-sidebar/remote-navigation.js";
 export { resolveEntryProject } from "@/project-sidebar/view.js";
 export type {
@@ -89,12 +89,12 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
   const remoteSync = useProjectRemoteSync(directory);
   const diagnostics = useProjectConnectionDiagnostics(directory, props, hostReadErrors);
   const onSelectTask = useProjectTaskNavigation(props, tree, remoteService);
-  const { intl, localePreference, setLocalePreference } = useRobinRunIntl();
+  const { intl, localePreference, setLocalePreference } = useRobinDoneIntl();
   const tabStore = useTabStoreApi();
-  const setTheme = useRobinRunStore((state) => state.setTheme);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级 hook」——恢复时取消本行注释
+  const setTheme = useRobinDoneStore((state) => state.setTheme);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「侧栏升级 hook」——恢复时取消本行注释
   // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const scrollRef = useRef<HTMLDivElement>(null);
   const [groupedToolbar, setGroupedToolbar] = useState<HTMLDivElement | null>(null);
   const [groupedSticky, setGroupedSticky] = useState<HTMLDivElement | null>(null);
@@ -102,7 +102,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
   const [creating, setCreating] = useState(false);
   // 当前任务只影响远端“创建项目”的默认设备；分组继承在点击时读，
   // 避免本地会话/草稿切换让全部项目的菜单与 Tooltip 重渲染。
-  const hasActiveRemoteTask = useRobinRunSessionStore((state) =>
+  const hasActiveRemoteTask = useRobinDoneSessionStore((state) =>
     Boolean(
       props.workspaceIdentity &&
       state.workspaces[props.workspaceIdentity.trim() || props.workspacePath]?.activeTaskId,
@@ -137,7 +137,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
     ],
   );
   const start = async (projectId?: string, hostId?: string, taskGroupId?: string | null) => {
-    const workspaceState = useRobinRunSessionStore
+    const workspaceState = useRobinDoneSessionStore
       .getState()
       .getWorkspaceState(props.workspacePath, props.workspaceIdentity);
     // 侧栏已固定为智能体列表：未显式指定归属时继承活动任务的智能体，否则继承草稿意图。
@@ -173,7 +173,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
       over,
     );
   };
-  // RobinRun 项目列表导航（2026-11-15 裁决）：桌面端侧栏一级平铺所有项目（不显示智能体
+  // RobinDone 项目列表导航（2026-11-15 裁决）：桌面端侧栏一级平铺所有项目（不显示智能体
   // 和会话），点击项目进入该项目的智能体页；返回按钮回到项目列表。导航未启用（web 远控）
   // 保持 P2 的“所有项目一棵树”渲染。null = 项目列表页。
   const navigationEnabled = props.isDesktop === true && Boolean(props.onOpenProject);
@@ -267,7 +267,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
     [setLocalePreference],
   );
   const changeTheme = useCallback((value: string) => setTheme(value as Theme), [setTheme]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级回调」——footer onUpgradeClick prop 已注释移除，
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级回调」——footer onUpgradeClick prop 已注释移除，
   // 恢复时取消本段注释
   // const upgrade = useCallback<
   //   NonNullable<Parameters<typeof WorkspaceSidebarFooter>[0]["onUpgradeClick"]>
@@ -275,7 +275,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
   //   (providerId, funnelContext) => openCodingPlanUpgrade({ providerId, funnelContext }),
   //   [openCodingPlanUpgrade],
   // );
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const banner = useMemo(() => <SidebarBottomActivity />, []);
   // 手机远控 home-only 没有 base attachment，也就没有项目契约；改用 relay 层工作区列表与重连入口。
   const homeOnlySwitcher = service ? undefined : props.webRemoteControlWorkspaceSwitcher;
@@ -385,7 +385,7 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                           // 智能体页数据范围（2026-11-15 裁决）：进入的项目非空即页面模式，
                           // 驱动 worker 投影与按项目收敛（树模式恒为 null，全量渲染）。
                           enteredProject={agentPageMode ? enteredProject : null}
-                          // worker 组"查看文件"：复用文件面板打开 worker 的 .robinrun/agents/<id>/ 目录
+                          // worker 组"查看文件"：复用文件面板打开 worker 的 .robindone/agents/<id>/ 目录
                           // （远程项目带当前工作区 remoteSessionId，文件树服务按完整 attachment 解析）。
                           onOpenWorkerFolder={props.onOpenFileManager}
                           workspaceRemoteSessionId={props.workspaceRemoteSessionId}
@@ -412,13 +412,13 @@ export const ProjectSidebar = memo(function ProjectSidebar(props: ProjectSidebar
                 onLocaleChange={changeLocale}
                 onThemeChange={changeTheme}
                 onSettingsButtonClick={openSettings}
-                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「footer usage/upgrade/登录/登出传参」——
+                // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「footer usage/upgrade/登录/登出传参」——
                 // footer 侧对应 props 已注释移除，恢复时取消以下注释
                 // onUsageClick={openSettings}
                 // onUpgradeClick={upgrade}
                 // onLogin={props.onLogin}
                 // onLogout={props.onLogout}
-                // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+                // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
                 user={props.user}
                 workspacePath={props.workspacePath}
                 // 项目侧栏不再从 tab 反推身份；远控入口必须沿用当前 attachment 的精确 scope。

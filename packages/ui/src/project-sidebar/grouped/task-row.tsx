@@ -1,17 +1,17 @@
-import { TID_TASK_ITEM, testId } from "@robinrun/shared/test-ids";
-import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
+import { TID_TASK_ITEM, testId } from "@robindone/shared/test-ids";
+import type { ProjectTask as RobinDoneTaskMeta } from "@/project-sidebar/contract.js";
 import { memo, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { UniqueIdentifier } from "@dnd-kit/core";
-import { isCronTask, isOffPeakTask } from "@robinrun/shared";
+import { isCronTask, isOffPeakTask } from "@robindone/shared";
 import { ArrowUpToLine, Clock, Cloud, Folder, LoaderIcon, Moon, X } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Badge } from "@/components/ui/badge.js";
 import { toast } from "@/components/ui/toast.js";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   deriveTaskLeadingIndicator,
   formatTaskRelativeTime,
@@ -57,7 +57,7 @@ function GroupedTaskRowComponent({
   dragOverlay,
   tooltipsDisabled,
 }: {
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   currentGroupId?: string;
   groups: TaskGroupMenuItem[];
   remoteSessionId?: string;
@@ -65,18 +65,18 @@ function GroupedTaskRowComponent({
   isMobileActive: boolean;
   workspaceLabel: string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
-  onCloseTask: (task: RobinRunTaskMeta) => void;
-  onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
-  onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
-  onStartRenameTask: (task: RobinRunTaskMeta) => void;
-  onArchiveTask: (task: RobinRunTaskMeta) => void;
-  onMarkTaskAsUnread: (task: RobinRunTaskMeta) => void;
+  onCloseTask: (task: RobinDoneTaskMeta) => void;
+  onMoveTaskToGroup: (task: RobinDoneTaskMeta, groupId: string | null) => void;
+  onMoveTaskToTop: (task: RobinDoneTaskMeta) => void;
+  onStartRenameTask: (task: RobinDoneTaskMeta) => void;
+  onArchiveTask: (task: RobinDoneTaskMeta) => void;
+  onMarkTaskAsUnread: (task: RobinDoneTaskMeta) => void;
   dragId?: UniqueIdentifier;
   dragging?: boolean;
   dragOverlay?: boolean;
   tooltipsDisabled?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const workspaceActionsDisabled = useOptionalTabStore((state) =>
     isWorkspaceReadOnly(state, task.workspacePath, task.workspaceIdentity),
   );

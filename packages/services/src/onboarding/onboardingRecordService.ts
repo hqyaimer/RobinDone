@@ -4,13 +4,13 @@ import {
   onboardingDecisionSchema,
   onboardingRecordEntrySchema,
   onboardingRecordFileSchema,
-} from "@robinrun/shared";
-import { appSettingsOccupationEnum } from "@robinrun/shared";
+} from "@robindone/shared";
+import { appSettingsOccupationEnum } from "@robindone/shared";
 import type {
   OnboardingRecordEntry,
   OnboardingRecordEntryInput,
   OnboardingRecordFile,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { atomicWriteText } from "../fs/atomicFileUtils.js";
 import { getAppConfigDir } from "../paths.js";
 import { createServiceLogger } from "../logger/serviceLogger.js";
@@ -23,7 +23,7 @@ import type {
 const logger = createServiceLogger("onboardingRecordService");
 
 function getRecordFile(): string {
-  // 记录是设备级数据，必须跟随 dataBaseDir（用户自定义数据目录时落在其 .robinrun/v2 下，
+  // 记录是设备级数据，必须跟随 dataBaseDir（用户自定义数据目录时落在其 .robindone/v2 下，
   // 与 telemetry-state.json 一致），不能学 setting.json 固定写 home——setting.json 留在 home
   // 只是启动引导需要固定位置读取 dataBaseDir，不代表其他设备数据的落点。
   return join(getAppConfigDir(), "onboarding-record.json");

@@ -3,8 +3,8 @@ import type {
   GitDiffResult,
   GitFileChange,
   Locale,
-  RobinRunWorkspaceGenerateTextParams,
-} from "@robinrun/shared";
+  RobinDoneWorkspaceGenerateTextParams,
+} from "@robindone/shared";
 import type { ServiceLogger } from "#src/logger/serviceLogger.js";
 
 const MAX_PROMPT_FILES = 20;
@@ -24,17 +24,17 @@ export interface GitCommitMessageCurrentModelProvider {
   readCurrentModel(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-  }): Promise<RobinRunWorkspaceGenerateTextParams["selection"] | null>;
+  }): Promise<RobinDoneWorkspaceGenerateTextParams["selection"] | null>;
 }
 
 export interface GitCommitMessageTextGenerator {
   generateText(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    selection: RobinRunWorkspaceGenerateTextParams["selection"];
+    selection: RobinDoneWorkspaceGenerateTextParams["selection"];
     prompt: string;
     querySource: string;
-  }): Promise<{ text: string; selection: RobinRunWorkspaceGenerateTextParams["selection"] }>;
+  }): Promise<{ text: string; selection: RobinDoneWorkspaceGenerateTextParams["selection"] }>;
 }
 
 export interface GitCommitMessageGeneratorOptions {
@@ -120,7 +120,7 @@ export class GitCommitMessageGenerator {
   private async resolveCurrentModel(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-  }): Promise<RobinRunWorkspaceGenerateTextParams["selection"]> {
+  }): Promise<RobinDoneWorkspaceGenerateTextParams["selection"]> {
     const currentModel = await this.options.currentModelProvider.readCurrentModel({
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity,
@@ -147,7 +147,7 @@ export class GitCommitMessageGenerator {
   private async complete(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    selection: RobinRunWorkspaceGenerateTextParams["selection"];
+    selection: RobinDoneWorkspaceGenerateTextParams["selection"];
     prompt: string;
   }): Promise<string> {
     try {

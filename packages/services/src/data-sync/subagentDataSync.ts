@@ -8,8 +8,8 @@ import {
   type DataSyncImportResultItem,
   type DataSyncListItem,
   type SubagentDataSyncPayload,
-} from "@robinrun/shared";
-import { migrateSubagentStateFile, migrateUserSubagentMarkdown } from "@robinrun/shared/node";
+} from "@robindone/shared";
+import { migrateSubagentStateFile, migrateUserSubagentMarkdown } from "@robindone/shared/node";
 import { pathExists, updateJsonObjectFile, writeFileAtomically } from "#src/fs/atomicFileUtils.js";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { checkRemoteSyncDirectoriesWriteAccess } from "#src/remote-sync/remoteSyncWriteAccess.js";

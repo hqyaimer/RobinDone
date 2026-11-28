@@ -1,4 +1,4 @@
-import type { McpAppsStyleVariables } from "@robinrun/shared/mcp-apps";
+import type { McpAppsStyleVariables } from "@robindone/shared/mcp-apps";
 import { buildPluginUiStyleVariables } from "../domain/pluginUiStyleVariables.js";
 
 /**

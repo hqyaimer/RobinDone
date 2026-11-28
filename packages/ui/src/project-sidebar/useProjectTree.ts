@@ -11,7 +11,7 @@ import { stabilizeProjectTree, applyProjectTaskActivities } from "@/project-side
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { useWorkspaceSessionsIndexItems } from "@/v4/useWorkspaceSessionsIndexItems.js";
 import { getTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 import { getWindowControllerTaskListRegistry } from "@/v4/windowControllerTaskListRegistry.js";
@@ -51,7 +51,7 @@ export function useProjectTree(isDesktop = false) {
   const directoryRevision = registry?.getDirectoryRevision() ?? 0;
   const sourceRevision = registry?.getSourceRevision() ?? 0;
   const tabs = useTabStore((state) => state.tabs);
-  const version = useRobinRunSessionStore((state) =>
+  const version = useRobinDoneSessionStore((state) =>
     Object.values(state.workspaces).reduce((n, workspace) => n + workspace.taskListVersion, 0),
   );
   const [tree, setTree] = useState<ProjectTree>(EMPTY);
@@ -76,7 +76,7 @@ export function useProjectTree(isDesktop = false) {
       finish(error?: unknown): void;
     }>(),
   );
-  const removeTaskState = useRobinRunSessionStore((state) => state.removeTaskState);
+  const removeTaskState = useRobinDoneSessionStore((state) => state.removeTaskState);
   const accepted = useRef<{
     service: typeof service;
     remote: typeof remoteService;
@@ -341,7 +341,7 @@ export function useProjectTree(isDesktop = false) {
   }, [refreshDirectory]);
   useEffect(() => {
     const subscriptions = (registry ? [] : scopes).map((scope) =>
-      services.robinrunTaskService.onDynamicWorkspaceEvent(scope)((event) => {
+      services.robindoneTaskService.onDynamicWorkspaceEvent(scope)((event) => {
         if (event.type === "workspace_task_list_changed") void refresh();
       }),
     );

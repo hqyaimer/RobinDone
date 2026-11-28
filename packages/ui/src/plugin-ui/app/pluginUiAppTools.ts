@@ -1,5 +1,5 @@
 import type { McpUiAppCapabilities } from "@modelcontextprotocol/ext-apps/app-bridge";
-import type { IPluginUiAppToolsService, PluginUiPluginScope } from "@robinrun/services";
+import type { IPluginUiAppToolsService, PluginUiPluginScope } from "@robindone/services";
 import {
   MCP_APPS_APP_TOOLS_MAX_PER_INSTANCE,
   MCP_APPS_APP_TOOLS_REFRESH_INTERVAL_MS,
@@ -8,7 +8,7 @@ import {
   normalizeMcpAppsAppTools,
   type McpAppsAppToolCallRequest,
   type McpAppsAppToolCallResult,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 import type { PluginUiHostBridge } from "./pluginUiHostBridge.js";
 
 /** tools/list 翻页上限：够取满 50 个工具，防页面返回无穷游标。 */

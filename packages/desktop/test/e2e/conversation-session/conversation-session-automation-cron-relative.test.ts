@@ -6,7 +6,7 @@ import {
   TID_CONFIRM_DIALOG_CONFIRM,
   TID_CRON_CREATE_CARD,
   TID_CRON_CREATE_OPEN,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,

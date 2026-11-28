@@ -113,12 +113,12 @@ export async function prepareWebRemoteControlAuthGateFixture(options: {
   const envPatch = {
     // 缓存账号会触发独立业务 API；必须同样隔离，避免合成凭据收到线上401并提前登出。
     ZAI_BUSINESS_BASE_URL: baseUrl,
-    ROBINRUN_E2E_REMOTE_AUTH_GATE_URL: baseUrl,
-    ROBINRUN_BASE_URL: baseUrl,
-    ROBINRUN_ENDPOINT_ORIGIN: baseUrl,
-    ROBINRUN_TEST_BASE_URL: baseUrl,
-    ROBINRUN_WEB_REMOTE_CONTROL_RELAY_WS_URL: `${baseUrl.replace("http:", "ws:")}/api/v1/remote/ws2`,
-    ROBINRUN_WEB_REMOTE_CONTROL_URL: `${baseUrl}/remote/v4`,
+    ROBINDONE_E2E_REMOTE_AUTH_GATE_URL: baseUrl,
+    ROBINDONE_BASE_URL: baseUrl,
+    ROBINDONE_ENDPOINT_ORIGIN: baseUrl,
+    ROBINDONE_TEST_BASE_URL: baseUrl,
+    ROBINDONE_WEB_REMOTE_CONTROL_RELAY_WS_URL: `${baseUrl.replace("http:", "ws:")}/api/v1/remote/ws2`,
+    ROBINDONE_WEB_REMOTE_CONTROL_URL: `${baseUrl}/remote/v4`,
   };
   const previous = Object.fromEntries(Object.keys(envPatch).map((key) => [key, process.env[key]]));
   Object.assign(process.env, envPatch);
@@ -128,7 +128,7 @@ export async function prepareWebRemoteControlAuthGateFixture(options: {
     options.settingsFile,
     JSON.stringify({
       ...settings,
-      robinrunEndpointOrigin: baseUrl,
+      robindoneEndpointOrigin: baseUrl,
       webRemoteControlLastEnabledContext: { workspacePath: options.workspacePath },
     }),
   );

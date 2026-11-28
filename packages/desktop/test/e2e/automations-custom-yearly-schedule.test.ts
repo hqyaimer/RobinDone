@@ -16,7 +16,7 @@ import {
   TID_AUTOMATIONS_LIST,
   TID_AUTOMATIONS_OPEN,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,

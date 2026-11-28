@@ -22,22 +22,22 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   getModelProviderFamilySpec,
   resolveModelProviderFamilySpecByProviderId,
-  ROBINRUN_AGENT_PROVIDER,
+  ROBINDONE_AGENT_PROVIDER,
   type ProviderFamilyConnectionSelection,
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
   type UsageEntitlementSnapshot,
-  type RobinRunAccountAccess,
-  type RobinRunProviderAccountAccess,
-  type RobinRunConfigOption,
-  type RobinRunProvider,
-} from "@robinrun/shared";
-import { TID_V4_MODEL_CONFIG, TID_V4_COMPOSER_INPUT } from "@robinrun/shared/test-ids";
+  type RobinDoneAccountAccess,
+  type RobinDoneProviderAccountAccess,
+  type RobinDoneConfigOption,
+  type RobinDoneProvider,
+} from "@robindone/shared";
+import { TID_V4_MODEL_CONFIG, TID_V4_COMPOSER_INPUT } from "@robindone/shared/test-ids";
 import type {
   SessionConfigState,
   SessionPhase,
   SessionUsageState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { ModelConfigSelect, type ModelSelectGroup } from "@/ModelConfigSelect.js";
 import type { ComposerModelOptions } from "@/chat-input-toolbar/ComposerModelMenu.js";
 import { Button } from "@/components/ui/button.js";
@@ -69,7 +69,7 @@ import {
   setPendingSettingsUsageCodingPlanIntent,
 } from "@/lib/settingsNavigation.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
-import type { ModelSelectionView } from "@robinrun/services";
+import type { ModelSelectionView } from "@robindone/services";
 import type {
   ModelSelectionState,
   ModelSelectionRefreshResult,
@@ -82,27 +82,27 @@ import {
   composerConnectionKey,
   chooseConnectionModel,
 } from "@/lib/composerPlanGroups.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import {
   useUsageEntitlement,
   type UsageEntitlementRefreshOptions,
 } from "@/hooks/useUsageEntitlement.js";
-import { useToolbarConfigOptions } from "@/hooks/useRobinRunConfig.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 升级回调已注释，funnel 埋点工具随之停用——恢复时取消本段注释
+import { useToolbarConfigOptions } from "@/hooks/useRobinDoneConfig.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+// RobinDone(2026-11-22): [hide-upstream-account] 升级回调已注释，funnel 埋点工具随之停用——恢复时取消本段注释
 // import {
 //   createCodingPlanFunnelContext,
 //   resolveCodingPlanEntryPlanState,
 // } from "@/lib/codingPlanFunnelTelemetry.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { logger } from "@/logger.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」import——恢复时取消本行
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」import——恢复时取消本行
 // import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useCodingPlanEntitlements } from "@/settings/model-provider-section/useCodingPlanEntitlements.js";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
 import {
   buildCodingPlanUsageSources,
@@ -132,7 +132,7 @@ const MODEL_SELECTION_LOADING_STATE: ModelSelectionState = { status: "loading" }
 function noop(): void {}
 
 function HighspeedCountdown({ expiresAt }: { expiresAt: number }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -283,7 +283,7 @@ function resolveContextTeamUsageSourceFromEntitlementSnapshot({
   accountAccess,
   snapshot,
 }: {
-  accountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess | null;
+  accountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess | null;
   snapshot?: UsageEntitlementSnapshot | null;
 }): CodingPlanUsageSource | null {
   if (snapshot?.context?.scope !== "team") {
@@ -340,7 +340,7 @@ function resolveContextTeamUsageSourceFromEntitlementSnapshot({
 }
 
 function resolveContextCodingPlanUsageSource(params: {
-  accountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess | null;
+  accountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess | null;
   cachedTeamSources?: readonly CodingPlanUsageSource[];
   entitlementSnapshot?: UsageEntitlementSnapshot | null;
   // 原类型/守卫硬绑 bigmodelCodingPlan，zai team 上下文永远返回 null。
@@ -395,7 +395,7 @@ export interface V4ComposerToolbarProps {
   modelSelectionRefresh?: () => Promise<ModelSelectionRefreshResult>;
   sessionId: string | null;
   phase: SessionPhase | null;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   /** 当前工具条是否运行在 Web 远控壳中。 */
   isWebRemoteControl?: boolean;
   /** 当前视口是否为手机输入布局。 */
@@ -471,13 +471,13 @@ function V4ComposerModelControlsImpl({
   onSendCompressionCommand,
   onRecoverCustomModelSelection,
 }: V4ComposerToolbarProps) {
-  const { intl, locale } = useRobinRunIntl();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  const { intl, locale } = useRobinDoneIntl();
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
   // 非可选 hook 无 Provider 会 throw；下方用量/余额链路本身被登录态门控（无账号时不渲染、不发请求），
   // 仅 Start Plan 升级回调需要一并注释。恢复时随 Root Provider 一并取消注释
   // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-  const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+  const displayProvider = provider ?? ROBINDONE_AGENT_PROVIDER;
   // 配置面读取：workspace 缺省目录（taskId=null），不读旧会话态。
   const { error: configOptionsError } = useToolbarConfigOptions(
     workspacePath,
@@ -531,7 +531,7 @@ function V4ComposerModelControlsImpl({
         type: "select",
         currentValue: "",
         options: [],
-      } satisfies RobinRunConfigOption)
+      } satisfies RobinDoneConfigOption)
     : undefined;
 
   // 空模型/档位曾被 Session 旧值补回，界面显示与实际不可提交状态矛盾。
@@ -540,7 +540,7 @@ function V4ComposerModelControlsImpl({
     return resolveDraftDisplayedConfig(draftConfig ?? {});
   }, [draftConfig]);
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级回调」——升级弹窗 Provider 已摘除，恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级回调」——升级弹窗 Provider 已摘除，恢复时取消本段注释
   // const handleOpenStartPlanUpgrade = useCallback(
   //   (providerId: string) => {
   //     openCodingPlanUpgrade({
@@ -560,7 +560,7 @@ function V4ComposerModelControlsImpl({
   //   },
   //   [intl, openCodingPlanUpgrade],
   // );
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const handleOpenUsageDetails = useCallback(
     (sourceId?: SidebarUsageCodingPlanSourceId) => {
       if (sourceId) {
@@ -612,9 +612,9 @@ function V4ComposerModelControlsImpl({
             onAccess: () => refreshCodingPlanEntitlements({ silent: true, reason: "access" }),
           }
         : {}),
-      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级按钮」——升级回调已注释，恢复时取消本行
+      // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Start Plan 升级按钮」——升级回调已注释，恢复时取消本行
       // onUpgradeClick: () => handleOpenStartPlanUpgrade(contextPlanConnection.providerId),
-      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+      // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
       snapshot:
         entitlement?.snapshot?.provider?.id === contextPlanConnection.providerId
           ? entitlement.snapshot
@@ -624,9 +624,9 @@ function V4ComposerModelControlsImpl({
     contextPlanConnection,
     enabledStartPlanProviderIds,
     entitlements,
-    // RobinRun(2026-11-22): [hide-upstream-account] handleOpenStartPlanUpgrade 已注释——恢复时取消本行
+    // RobinDone(2026-11-22): [hide-upstream-account] handleOpenStartPlanUpgrade 已注释——恢复时取消本行
     // handleOpenStartPlanUpgrade,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     providerSourcesLoading,
     refreshCodingPlanEntitlements,
   ]);
@@ -639,7 +639,7 @@ function V4ComposerModelControlsImpl({
     resolveModelProviderFamilySpecByProviderId(effectiveConfig?.provider ?? "")?.id ??
     sharedSettings?.providerFamilyDomain ??
     "bigmodel";
-  const user = useRobinRunStoreWithDefault((state) => state.user, undefined);
+  const user = useRobinDoneStoreWithDefault((state) => state.user, undefined);
   const connectionAuthenticated =
     user !== null &&
     Boolean(
@@ -668,7 +668,7 @@ function V4ComposerModelControlsImpl({
         : undefined) ?? [],
     [connectionAuthenticated, enterpriseProducts.snapshot?.productList],
   );
-  const authSessionSeq = useRobinRunStoreWithDefault((state) => state.authSessionSeq, 0);
+  const authSessionSeq = useRobinDoneStoreWithDefault((state) => state.authSessionSeq, 0);
   const teamUsageScope = useMemo(
     () => ({}),
     [baseServices, connectionFamily, user?.id, authSessionSeq],
@@ -1096,7 +1096,7 @@ function V4ComposerModelControlsImpl({
   );
 
   // 候选档位只来自目标 Host 的 ModelSelectionView，已选档位只来自 Composer。
-  const thoughtOption = useMemo<RobinRunConfigOption | null>(() => {
+  const thoughtOption = useMemo<RobinDoneConfigOption | null>(() => {
     if (!effectiveConfig) return null;
     if (!draftModelThoughtOption) return null;
     return {
@@ -1405,4 +1405,4 @@ function V4ComposerModelControlsImpl({
 }
 
 export const V4ComposerModelControls = memo(V4ComposerModelControlsImpl);
-import { isApiKeyAccess } from "@robinrun/provider";
+import { isApiKeyAccess } from "@robindone/provider";

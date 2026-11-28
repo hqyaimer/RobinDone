@@ -1,4 +1,4 @@
-import type { OutputStyle, OutputStyleConfig } from "@robinrun/shared";
+import type { OutputStyle, OutputStyleConfig } from "@robindone/shared";
 import type { IOutputStyleService } from "./outputStyle.js";
 import { access, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";

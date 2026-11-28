@@ -9,7 +9,7 @@ import type {
   McpServerConfig,
   MigrateLegacyCommonMcpRequest,
   MigrateLegacyCommonMcpResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { isRecord, normalizeServerMap } from "./utils.js";
 
 function extractBalancedJson(text: string, startIndex: number): string | null {
@@ -202,25 +202,25 @@ function buildLegacyCommonMcpStorageCandidates(request?: MigrateLegacyCommonMcpR
   const appData = process.env.APPDATA ?? join(homedir(), "AppData", "Roaming");
 
   // 优先从老的 store.json 读取 common MCP 配置
-  candidates.push(join(appData, "ai.z.robinrun", "store.json"));
+  candidates.push(join(appData, "ai.z.robindone", "store.json"));
 
   candidates.push(
     join(localAppData, "ai.z.work", "EBWebView", "Default", "Local Storage", "leveldb"),
-    join(appData, "RobinRun", "Local Storage", "leveldb"),
+    join(appData, "RobinDone", "Local Storage", "leveldb"),
     join(
       appData,
-      "RobinRun",
+      "RobinDone",
       "Partitions",
-      "robinrun-embedded-browser",
+      "robindone-embedded-browser",
       "Local Storage",
       "leveldb",
     ),
-    join(appData, "RobinRun Dev", "Local Storage", "leveldb"),
+    join(appData, "RobinDone Dev", "Local Storage", "leveldb"),
     join(
       appData,
-      "RobinRun Dev",
+      "RobinDone Dev",
       "Partitions",
-      "robinrun-embedded-browser",
+      "robindone-embedded-browser",
       "Local Storage",
       "leveldb",
     ),

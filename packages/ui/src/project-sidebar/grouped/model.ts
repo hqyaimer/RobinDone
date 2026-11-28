@@ -8,10 +8,10 @@ import type {
 import { groupTaskRef, projectGroupedNodes } from "@/project-sidebar/grouped-view.js";
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import type {
-  RobinRunGroupedTaskView,
-  RobinRunGroupedTaskViewNode,
+  RobinDoneGroupedTaskView,
+  RobinDoneGroupedTaskViewNode,
 } from "@/project-sidebar/grouped/types.js";
-import { isMainAgentGroupId, isWorkerGroupId } from "@robinrun/shared";
+import { isMainAgentGroupId, isWorkerGroupId } from "@robindone/shared";
 import { taskKey } from "@/project-sidebar/grouped/ids.js";
 
 /** 旧组件只消费展示树；任务事实与组织结构仍来自当前唯一 owner。 */
@@ -19,9 +19,9 @@ export function buildGroupedTaskView(
   tasks: ProjectTask[],
   structure: TaskGroupStructure,
   triggerBoundTaskIds?: ReadonlySet<string>,
-): RobinRunGroupedTaskView {
-  const nodes: RobinRunGroupedTaskViewNode[] = [];
-  const groups = new Map<string, Extract<RobinRunGroupedTaskViewNode, { type: "group" }>>();
+): RobinDoneGroupedTaskView {
+  const nodes: RobinDoneGroupedTaskViewNode[] = [];
+  const groups = new Map<string, Extract<RobinDoneGroupedTaskViewNode, { type: "group" }>>();
   for (const row of projectGroupedNodes(tasks, structure, new Set(), triggerBoundTaskIds)) {
     if (row.type === "group") {
       const node = { type: "group" as const, group: row.group, tasks: [] as ProjectTask[] };
@@ -35,7 +35,7 @@ export function buildGroupedTaskView(
   return { nodes };
 }
 
-export type AgentGroupNode = Extract<RobinRunGroupedTaskViewNode, { type: "group" }>;
+export type AgentGroupNode = Extract<RobinDoneGroupedTaskViewNode, { type: "group" }>;
 
 export interface AgentTreeLayout {
   /** 项目文件夹段落：按项目展示顺序排列，agents 为主智能体置顶的该项目智能体节点。 */
@@ -61,7 +61,7 @@ export interface AgentTreeLayout {
  * 保留，重新启用后名册同步效果会恢复显示并同步标题。缺省（未传）保持全量。
  */
 export function buildAgentTreeLayout(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   projects: VirtualProject[],
   scopeProject?: VirtualProject | null,
   options?: { activeWorkerGroupIds?: ReadonlySet<string> },
@@ -111,7 +111,7 @@ export function buildAgentTreeLayout(
   return { sections, unbound, ungrouped };
 }
 
-function locate(view: RobinRunGroupedTaskView, source: GroupNode) {
+function locate(view: RobinDoneGroupedTaskView, source: GroupNode) {
   for (const [index, node] of view.nodes.entries()) {
     if (source.type === "group" && node.type === "group" && node.group.id === source.groupId)
       return { groupId: null, index, siblings: view.nodes };
@@ -130,15 +130,15 @@ function locate(view: RobinRunGroupedTaskView, source: GroupNode) {
   }
   return null;
 }
-const ref = (node: RobinRunGroupedTaskViewNode): GroupNode =>
+const ref = (node: RobinDoneGroupedTaskViewNode): GroupNode =>
   node.type === "group"
     ? { type: "group", groupId: node.group.id }
     : { type: "task", task: groupTaskRef(node.task) };
 
 /** 旧版整表 applyOrder 会覆盖不可见成员；恢复交互时只提交被拖动节点和相邻锚点。 */
 export function groupedMoveCommand(
-  origin: RobinRunGroupedTaskView,
-  preview: RobinRunGroupedTaskView,
+  origin: RobinDoneGroupedTaskView,
+  preview: RobinDoneGroupedTaskView,
   source: GroupNode,
 ): MoveGroupNode | null {
   const before = locate(origin, source),

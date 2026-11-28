@@ -1,11 +1,11 @@
-import type { PostUpdateReleaseNotesPayload } from "@robinrun/shared";
+import type { PostUpdateReleaseNotesPayload } from "@robindone/shared";
 import { MessageResponse } from "@/components/ai-elements/message.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import { GlmMonochromeIcon } from "@/components/ui/GlmMonochromeIcon.js";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { DEFAULT_CODE_PREVIEW_SETTINGS } from "@/lib/codePreviewSettings.js";
 
 interface PostUpdateReleaseNotesDialogProps {
@@ -19,10 +19,10 @@ export function PostUpdateReleaseNotesDialog({
   onAcknowledge,
   onOpenExternalUrl,
 }: PostUpdateReleaseNotesDialogProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // M5②.5 store 耦合剥离：MessageResponse 不再自取 store，主题/代码预览设置由调用方传入。
-  const theme = useRobinRunStoreWithDefault((state) => state.theme, "system");
-  const codePreviewSettings = useRobinRunStoreWithDefault(
+  const theme = useRobinDoneStoreWithDefault((state) => state.theme, "system");
+  const codePreviewSettings = useRobinDoneStoreWithDefault(
     (state) => state.codePreviewSettings,
     DEFAULT_CODE_PREVIEW_SETTINGS,
   );
@@ -45,7 +45,7 @@ export function PostUpdateReleaseNotesDialog({
       >
         <div className="flex flex-col px-8 py-6">
           <div className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <GlmMonochromeIcon className="size-5 shrink-0" alt="RobinRun" />
+            <GlmMonochromeIcon className="size-5 shrink-0" alt="RobinDone" />
             <div className="min-w-0 flex-1">
               <DialogTitle className="text-lg leading-snug tracking-tight text-foreground">
                 {dialogHeading}

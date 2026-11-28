@@ -14,11 +14,11 @@ import {
   type LocalTtftFacts,
   type LocalTtftRecord,
   type LocalTtftOutputKind,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   ConversationTopicFrame,
   TopicFrameDeliveryKind,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 /** Renderer 独占点击总时钟；不使用 ACK 或旁路 telemetry 判定首输出。 */
 export class LocalTtftObserver {

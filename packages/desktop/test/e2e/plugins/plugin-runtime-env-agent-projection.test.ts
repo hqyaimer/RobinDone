@@ -7,7 +7,7 @@ import {
   TID_SUBAGENT_ROW,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByDom, waitForTestIdByDom } from "../helpers/desktop-app.js";
 import {
   ELECTRON_WINDOW_RECORDING_CAPTURE_MODE,

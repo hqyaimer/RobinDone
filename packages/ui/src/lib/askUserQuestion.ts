@@ -1,4 +1,4 @@
-type RobinRunUserQuestionAnswers = Record<string, unknown>;
+type RobinDoneUserQuestionAnswers = Record<string, unknown>;
 
 type AskUserQuestionType = "single" | "multiple";
 
@@ -20,7 +20,7 @@ interface AskUserQuestionItem {
 
 interface AskUserQuestionData {
   questions: AskUserQuestionItem[];
-  answers?: RobinRunUserQuestionAnswers;
+  answers?: RobinDoneUserQuestionAnswers;
 }
 
 interface AskUserQuestionAnswerDraft {
@@ -104,13 +104,13 @@ function readQuestions(input: unknown): unknown[] {
   if (Array.isArray(questions)) {
     return questions;
   }
-  // Bugfix: RobinRun Agent 的 AskUserQuestion 工具输入是单题结构：
+  // Bugfix: RobinDone Agent 的 AskUserQuestion 工具输入是单题结构：
   // { header, question, options }，不是多题结构 { questions: [...] }。
   // 这里把单题结构归一化成同一条 questions 管线，避免消息流工具块显示“没有可回答的问题”。
   return typeof input.question === "string" && Array.isArray(input.options) ? [input] : [];
 }
 
-function readAnswers(input: unknown): RobinRunUserQuestionAnswers | undefined {
+function readAnswers(input: unknown): RobinDoneUserQuestionAnswers | undefined {
   if (!isPlainRecord(input)) {
     return undefined;
   }
@@ -120,12 +120,12 @@ function readAnswers(input: unknown): RobinRunUserQuestionAnswers | undefined {
 
 function parseClaudeAskUserQuestionOutput(
   output: unknown,
-): RobinRunUserQuestionAnswers | undefined {
+): RobinDoneUserQuestionAnswers | undefined {
   if (typeof output !== "string" || output.trim().length === 0) {
     return undefined;
   }
 
-  const answers: RobinRunUserQuestionAnswers = {};
+  const answers: RobinDoneUserQuestionAnswers = {};
   const answerPattern = /"([^"]+)"="([^"]*)"/g;
   for (const match of output.matchAll(answerPattern)) {
     const question = match[1]?.trim();
@@ -143,7 +143,11 @@ function readOutputDisplayText(candidate: unknown): string | undefined {
   if (typeof candidate === "string" && candidate.trim().length > 0) {
     return candidate;
   }
-  if (isPlainRecord(candidate) && typeof candidate.text === "string" && candidate.text.trim().length > 0) {
+  if (
+    isPlainRecord(candidate) &&
+    typeof candidate.text === "string" &&
+    candidate.text.trim().length > 0
+  ) {
     return candidate.text;
   }
   return undefined;
@@ -163,8 +167,8 @@ const AUTO_CONTINUED_OUTPUT_PREFIX = "The user did not provide answers";
 function parseAnchoredAnswers(
   outputText: string,
   questionTexts: string[],
-): RobinRunUserQuestionAnswers | undefined {
-  const answers: RobinRunUserQuestionAnswers = {};
+): RobinDoneUserQuestionAnswers | undefined {
+  const answers: RobinDoneUserQuestionAnswers = {};
   questionTexts.forEach((questionText, index) => {
     const anchor = `"${questionText}"="`;
     const start = outputText.indexOf(anchor);
@@ -201,7 +205,9 @@ function parseJsonRecord(output: unknown): Record<string, unknown> | undefined {
   }
 }
 
-function readNestedAskUserQuestionAnswers(input: unknown): RobinRunUserQuestionAnswers | undefined {
+function readNestedAskUserQuestionAnswers(
+  input: unknown,
+): RobinDoneUserQuestionAnswers | undefined {
   const directTextAnswers = parseClaudeAskUserQuestionOutput(input);
   if (directTextAnswers) {
     return directTextAnswers;
@@ -244,10 +250,10 @@ function readNestedAskUserQuestionAnswers(input: unknown): RobinRunUserQuestionA
   return readNestedAskUserQuestionAnswers(record.output);
 }
 
-function parseRobinRunAskUserQuestionOutput(
+function parseRobinDoneAskUserQuestionOutput(
   output: unknown,
   input: unknown,
-): RobinRunUserQuestionAnswers | undefined {
+): RobinDoneUserQuestionAnswers | undefined {
   const outputRecord = parseJsonRecord(output);
   if (!outputRecord) {
     return undefined;
@@ -363,7 +369,7 @@ export function readAskUserQuestionAnswers(value: {
   input?: unknown;
   output?: unknown;
   raw?: unknown;
-}): RobinRunUserQuestionAnswers | undefined {
+}): RobinDoneUserQuestionAnswers | undefined {
   // 锚点解析优先于朴素配对（2026-11-26 实测缺陷修复）：朴素正则在问题/答案含 ASCII
   // 引号时会配对错位且仍返回非空结果，抢占后续读取路径——必须先按确切问题文本锚定。
   const raw = isPlainRecord(value.raw) ? value.raw : undefined;
@@ -376,9 +382,9 @@ export function readAskUserQuestionAnswers(value: {
       // runtime 自动继续的显式语义：空对象让渲染层显示"已自动继续"而非"未提供回答"。
       return {};
     }
-    const questionTexts = normalizeAskUserQuestionInput(readAskUserQuestionInput(value)).questions.map(
-      (question) => question.question,
-    );
+    const questionTexts = normalizeAskUserQuestionInput(
+      readAskUserQuestionInput(value),
+    ).questions.map((question) => question.question);
     const anchored = parseAnchoredAnswers(displayText, questionTexts);
     if (anchored !== undefined) {
       return anchored;
@@ -395,12 +401,12 @@ export function readAskUserQuestionAnswers(value: {
   if (parsedOutputAnswers) {
     return parsedOutputAnswers;
   }
-  const parsedRobinRunOutputAnswers = parseRobinRunAskUserQuestionOutput(
+  const parsedRobinDoneOutputAnswers = parseRobinDoneAskUserQuestionOutput(
     value.output,
     readAskUserQuestionInput(value),
   );
-  if (parsedRobinRunOutputAnswers) {
-    return parsedRobinRunOutputAnswers;
+  if (parsedRobinDoneOutputAnswers) {
+    return parsedRobinDoneOutputAnswers;
   }
   if (isPlainRecord(value.input) && isPlainRecord(value.input.answers)) {
     return value.input.answers;
@@ -414,12 +420,12 @@ export function readAskUserQuestionAnswers(value: {
     if (parsedRawOutputAnswers) {
       return parsedRawOutputAnswers;
     }
-    const parsedRawRobinRunOutputAnswers = parseRobinRunAskUserQuestionOutput(
+    const parsedRawRobinDoneOutputAnswers = parseRobinDoneAskUserQuestionOutput(
       value.raw.rawOutput,
       readAskUserQuestionInput(value),
     );
-    if (parsedRawRobinRunOutputAnswers) {
-      return parsedRawRobinRunOutputAnswers;
+    if (parsedRawRobinDoneOutputAnswers) {
+      return parsedRawRobinDoneOutputAnswers;
     }
     const nestedRawAnswers = readNestedAskUserQuestionAnswers(value.raw.output);
     if (nestedRawAnswers) {
@@ -429,12 +435,12 @@ export function readAskUserQuestionAnswers(value: {
     if (parsedRawAnswers) {
       return parsedRawAnswers;
     }
-    const parsedRawRobinRunAnswers = parseRobinRunAskUserQuestionOutput(
+    const parsedRawRobinDoneAnswers = parseRobinDoneAskUserQuestionOutput(
       value.raw.output,
       readAskUserQuestionInput(value),
     );
-    if (parsedRawRobinRunAnswers) {
-      return parsedRawRobinRunAnswers;
+    if (parsedRawRobinDoneAnswers) {
+      return parsedRawRobinDoneAnswers;
     }
     const nestedRawContentAnswers = readNestedAskUserQuestionAnswers(value.raw.content);
     if (nestedRawContentAnswers) {
@@ -446,7 +452,7 @@ export function readAskUserQuestionAnswers(value: {
 
 export function getAskUserQuestionAnswerText(
   question: AskUserQuestionItem,
-  answers: RobinRunUserQuestionAnswers | undefined,
+  answers: RobinDoneUserQuestionAnswers | undefined,
   noAnswerText: string,
 ) {
   const value = answers?.[question.question] ?? answers?.[question.id];

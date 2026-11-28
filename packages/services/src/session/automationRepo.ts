@@ -13,21 +13,21 @@ import {
   AUTOMATION_CREATE_LIMIT,
   AUTOMATION_CREATE_LIMIT_ERROR_CODE,
   resolveWorkspaceKey,
-  robinrunAutomationBotDeliveryTargetSchema,
+  robindoneAutomationBotDeliveryTargetSchema,
   modelSelectionSchema,
-  robinrunTaskModeSchema,
-  type RobinRunAutomation,
-  type RobinRunAutomationBotDeliveryTarget,
-  type RobinRunAutomationCreateParams,
-  type RobinRunAutomationDispatchStatus,
-  type RobinRunAutomationLifecycleStatus,
+  robindoneTaskModeSchema,
+  type RobinDoneAutomation,
+  type RobinDoneAutomationBotDeliveryTarget,
+  type RobinDoneAutomationCreateParams,
+  type RobinDoneAutomationDispatchStatus,
+  type RobinDoneAutomationLifecycleStatus,
   type ModelSelection,
-  type RobinRunAutomationRun,
-  type RobinRunAutomationRunDispatchStatus,
-  type RobinRunAutomationRunOutcome,
-  type RobinRunAutomationTrigger,
-  type RobinRunAutomationUpdateParams,
-} from "@robinrun/shared";
+  type RobinDoneAutomationRun,
+  type RobinDoneAutomationRunDispatchStatus,
+  type RobinDoneAutomationRunOutcome,
+  type RobinDoneAutomationTrigger,
+  type RobinDoneAutomationUpdateParams,
+} from "@robindone/shared";
 import { getTasksIndexDatabasePath } from "#src/paths.js";
 import { runTasksDatabaseMigrations } from "#src/session/tasksDatabase/migrations.js";
 
@@ -111,11 +111,11 @@ interface AutomationRunRow {
 }
 
 export interface ClaimedManualAutomationRun {
-  automation: RobinRunAutomation;
-  run: RobinRunAutomationRun;
+  automation: RobinDoneAutomation;
+  run: RobinDoneAutomationRun;
 }
 
-function rowToAutomation(row: AutomationRow): RobinRunAutomation {
+function rowToAutomation(row: AutomationRow): RobinDoneAutomation {
   const modelSelection = readAutomationModelSelection(row);
   return {
     automationId: row.automation_id,
@@ -145,15 +145,15 @@ function rowToAutomation(row: AutomationRow): RobinRunAutomation {
     maxRuns: row.max_runs ?? undefined,
     endAt: row.end_at ?? undefined,
     scheduleRule: row.schedule_rule
-      ? (JSON.parse(row.schedule_rule) as RobinRunAutomation["scheduleRule"])
+      ? (JSON.parse(row.schedule_rule) as RobinDoneAutomation["scheduleRule"])
       : undefined,
     ...(row.schedule_edited_by_user === 1 ? { scheduleEditedByUser: true } : {}),
     runCount: row.run_count,
     enabled: row.enabled === 1,
-    lifecycleStatus: row.lifecycle_status as RobinRunAutomationLifecycleStatus,
+    lifecycleStatus: row.lifecycle_status as RobinDoneAutomationLifecycleStatus,
     nextRunAt: row.next_run_at ?? undefined,
     lastRunAt: row.last_run_at ?? undefined,
-    dispatchStatus: row.dispatch_status as RobinRunAutomationDispatchStatus,
+    dispatchStatus: row.dispatch_status as RobinDoneAutomationDispatchStatus,
     dispatchAttempts: row.dispatch_attempts,
     retryAt: row.retry_at ?? undefined,
     lastError: row.last_error ?? undefined,
@@ -162,13 +162,13 @@ function rowToAutomation(row: AutomationRow): RobinRunAutomation {
   };
 }
 
-function readAutomationModelSelection(row: AutomationRow): RobinRunAutomation["modelSelection"] {
+function readAutomationModelSelection(row: AutomationRow): RobinDoneAutomation["modelSelection"] {
   // 旧字段只能经过独立 importer；新字段损坏或明确清空时不能复活旧选择。
   return readSerializedModelSelection(row.model_selection);
 }
 
 function serializeAutomationModelSelection(
-  selection: RobinRunAutomation["modelSelection"],
+  selection: RobinDoneAutomation["modelSelection"],
 ): string | null {
   if (!selection) return null;
   const options = selection.options;
@@ -180,30 +180,30 @@ function serializeAutomationModelSelection(
   return JSON.stringify(parsed);
 }
 
-function normalizeAutomationMode(mode: string | null): RobinRunAutomation["mode"] | undefined {
-  const parsed = robinrunTaskModeSchema.safeParse(mode);
+function normalizeAutomationMode(mode: string | null): RobinDoneAutomation["mode"] | undefined {
+  const parsed = robindoneTaskModeSchema.safeParse(mode);
   return parsed.success ? parsed.data : undefined;
 }
 
 function assertValidAutomationMode(mode: unknown): void {
   if (mode === undefined || mode === null) return;
-  if (!robinrunTaskModeSchema.safeParse(mode).success) {
+  if (!robindoneTaskModeSchema.safeParse(mode).success) {
     // 读取兼容历史脏数据不代表允许继续写脏数据；Repo 是绕过 RPC 时的最终持久化边界。
     throw new Error(`Invalid automation mode: ${String(mode)}`);
   }
 }
 
-function rowToRun(row: AutomationRunRow): RobinRunAutomationRun {
+function rowToRun(row: AutomationRunRow): RobinDoneAutomationRun {
   const modelSelection = readSerializedModelSelection(row.model_selection);
   return {
     runId: row.run_id,
     automationId: row.automation_id,
     workspaceKey: row.workspace_key,
     scheduledAt: row.scheduled_at ?? undefined,
-    trigger: row.trigger as RobinRunAutomationTrigger,
+    trigger: row.trigger as RobinDoneAutomationTrigger,
     ...(modelSelection ? { modelSelection } : {}),
-    dispatchStatus: row.dispatch_status as RobinRunAutomationRunDispatchStatus,
-    outcome: (row.outcome as RobinRunAutomationRunOutcome | null) ?? undefined,
+    dispatchStatus: row.dispatch_status as RobinDoneAutomationRunDispatchStatus,
+    outcome: (row.outcome as RobinDoneAutomationRunOutcome | null) ?? undefined,
     sessionId: row.session_id ?? undefined,
     error: row.error ?? undefined,
     attempts: row.attempts,
@@ -245,7 +245,7 @@ export class AutomationRepo {
   private initializePromise: Promise<void> | null = null;
   // db 路径不能从进程级全局 _dataBaseDir（getTasksIndexDatabasePath）解析：
   // vitest threads 池会在同一进程并发跑多个测试文件，各文件的 setDataBaseDir(tempDir)
-  // 互相覆盖全局值，导致 repo 与裸 SQL 操作在并发窗口内写进真实库 ~/.robinrun/v2（历史脏数据
+  // 互相覆盖全局值，导致 repo 与裸 SQL 操作在并发窗口内写进真实库 ~/.robindone/v2（历史脏数据
   // /tmp/ws 系列即因此污染）。改为构造期固定一份 dbPath，测试通过依赖注入传入临时库路径，
   // 生产路径不传则回退 getTasksIndexDatabasePath，向后兼容。
   private readonly resolvedDbPath: string | null;
@@ -326,9 +326,9 @@ export class AutomationRepo {
   // ---- 管理 CRUD ----
 
   async create(
-    params: RobinRunAutomationCreateParams,
-    options: { nextRunAt: number | null; lifecycleStatus?: RobinRunAutomationLifecycleStatus },
-  ): Promise<RobinRunAutomation> {
+    params: RobinDoneAutomationCreateParams,
+    options: { nextRunAt: number | null; lifecycleStatus?: RobinDoneAutomationLifecycleStatus },
+  ): Promise<RobinDoneAutomation> {
     assertValidAutomationMode(params.mode);
     await this.ensureReady();
     const now = Date.now();
@@ -415,7 +415,7 @@ export class AutomationRepo {
   async list(scope?: {
     workspacePath?: string;
     workspaceIdentity?: string;
-  }): Promise<RobinRunAutomation[]> {
+  }): Promise<RobinDoneAutomation[]> {
     await this.ensureReady();
     const workspaceKey = scope?.workspacePath
       ? resolveWorkspaceKey({
@@ -455,12 +455,12 @@ export class AutomationRepo {
   async getBotDeliveryTarget(
     automationId: string,
     workspaceKey?: string,
-  ): Promise<RobinRunAutomationBotDeliveryTarget | undefined> {
+  ): Promise<RobinDoneAutomationBotDeliveryTarget | undefined> {
     await this.ensureReady();
     const raw = this.getRow(automationId, workspaceKey)?.bot_delivery_target;
     if (!raw) return undefined;
     try {
-      const parsed = robinrunAutomationBotDeliveryTargetSchema.safeParse(JSON.parse(raw));
+      const parsed = robindoneAutomationBotDeliveryTargetSchema.safeParse(JSON.parse(raw));
       return parsed.success ? parsed.data : undefined;
     } catch {
       // Bug 原因：历史/外部写入的脏 JSON 不能拖垮任务列表或 scheduler；无效来源按未配置处理。
@@ -489,7 +489,7 @@ export class AutomationRepo {
     return row !== undefined;
   }
 
-  async get(automationId: string, workspaceKey?: string): Promise<RobinRunAutomation | null> {
+  async get(automationId: string, workspaceKey?: string): Promise<RobinDoneAutomation | null> {
     await this.ensureReady();
     const row = this.getRow(automationId, workspaceKey);
     return row ? rowToAutomation(row) : null;
@@ -508,14 +508,14 @@ export class AutomationRepo {
    */
   async update(
     automationId: string,
-    params: RobinRunAutomationUpdateParams,
+    params: RobinDoneAutomationUpdateParams,
     options?: {
       nextRunAt?: number | null;
-      lifecycleStatus?: RobinRunAutomationLifecycleStatus;
+      lifecycleStatus?: RobinDoneAutomationLifecycleStatus;
       resetRetry?: boolean;
     },
     workspaceKey?: string,
-  ): Promise<RobinRunAutomation | null> {
+  ): Promise<RobinDoneAutomation | null> {
     assertValidAutomationMode(params.mode);
     await this.ensureReady();
     const existing = this.getRow(automationId, workspaceKey);
@@ -756,7 +756,7 @@ export class AutomationRepo {
    * single-flight 认领到期项：原子 running=0→1。同时回收认领超时（claimed_at 过期）的僵尸项。
    * due 判定同时看 next_run_at 与 retry_at，任一到期即 due。
    */
-  async claimDue(now: number): Promise<RobinRunAutomation[]> {
+  async claimDue(now: number): Promise<RobinDoneAutomation[]> {
     await this.ensureReady();
     const db = this.getDatabase();
     db.exec("BEGIN IMMEDIATE");
@@ -789,7 +789,7 @@ export class AutomationRepo {
             )`,
         )
         .all({ now }) as unknown as AutomationRow[];
-      const claimed: RobinRunAutomation[] = [];
+      const claimed: RobinDoneAutomation[] = [];
       const claim = db.prepare(
         `UPDATE automations
         SET running = 1, claimed_at = @now, dispatch_status = 'claimed', updated_at = @now
@@ -1217,7 +1217,7 @@ export class AutomationRepo {
     automationId: string;
     workspaceKey: string;
     scheduledAt: number | null;
-    trigger: RobinRunAutomationTrigger;
+    trigger: RobinDoneAutomationTrigger;
   }): Promise<void> {
     await this.ensureReady();
     const now = Date.now();
@@ -1245,7 +1245,7 @@ export class AutomationRepo {
     automationId: string;
     workspaceKey: string;
     scheduledAt: number | null;
-    trigger: RobinRunAutomationTrigger;
+    trigger: RobinDoneAutomationTrigger;
     modelSelection?: ModelSelection;
   }): Promise<void> {
     await this.ensureReady();
@@ -1302,7 +1302,7 @@ export class AutomationRepo {
   /** 派发结果回写 run（dispatched 回填 session_id / failed_to_dispatch 记 error）。 */
   async markRunDispatch(params: {
     runId: string;
-    dispatchStatus: RobinRunAutomationRunDispatchStatus;
+    dispatchStatus: RobinDoneAutomationRunDispatchStatus;
     sessionId?: string | null;
     error?: string | null;
   }): Promise<void> {
@@ -1392,7 +1392,7 @@ export class AutomationRepo {
   /** session runtime 回写运行结果（running / succeeded / failed / stopped）。 */
   async markRunOutcome(
     runId: string,
-    outcome: RobinRunAutomationRunOutcome,
+    outcome: RobinDoneAutomationRunOutcome,
     error?: string,
   ): Promise<void> {
     await this.ensureReady();
@@ -1419,7 +1419,7 @@ export class AutomationRepo {
     automationId: string;
     workspaceKey: string;
     scheduledAt: number | null;
-    trigger: RobinRunAutomationTrigger;
+    trigger: RobinDoneAutomationTrigger;
     reason: string;
   }): Promise<void> {
     await this.ensureReady();
@@ -1444,7 +1444,7 @@ export class AutomationRepo {
       });
   }
 
-  async listRuns(automationId: string, workspaceKey?: string): Promise<RobinRunAutomationRun[]> {
+  async listRuns(automationId: string, workspaceKey?: string): Promise<RobinDoneAutomationRun[]> {
     await this.ensureReady();
     const rows = this.getDatabase()
       .prepare(
@@ -1460,7 +1460,7 @@ export class AutomationRepo {
     return rows.map(rowToRun);
   }
 
-  async getRun(runId: string): Promise<RobinRunAutomationRun | null> {
+  async getRun(runId: string): Promise<RobinDoneAutomationRun | null> {
     await this.ensureReady();
     const row = this.getDatabase()
       .prepare(`SELECT * FROM automation_runs WHERE run_id = @run_id`)

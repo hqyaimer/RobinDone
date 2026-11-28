@@ -1,4 +1,4 @@
-import { TID_BROWSER_WEBVIEW } from "@robinrun/shared/test-ids";
+import { TID_BROWSER_WEBVIEW } from "@robindone/shared/test-ids";
 import { clearAppData } from "./helpers/desktop-app.js";
 import { prepareConversationE2E } from "./helpers/conversation-session.js";
 import { reloadElectronSessionPreservingBrowserProfile } from "./helpers/e2e-electron-reload.js";
@@ -258,7 +258,7 @@ async function registerDetachedBrowserTab(
   const result = (await browser.executeAsync(
     async (targetTabId, guestId, targetWorkspaceKey, done) => {
       try {
-        const bridge = (window as Window & { robinrun?: BrowserTestBridge }).robinrun;
+        const bridge = (window as Window & { robindone?: BrowserTestBridge }).robindone;
         const attached = await bridge?.browserViewAttachGuest?.({
           key: targetTabId,
           webContentsId: guestId,
@@ -292,14 +292,14 @@ function readActiveWorkspaceKey(): Promise<string | null> {
   return browser.execute(() => {
     const bridge = (
       window as Window & {
-        __robinrunTabStoreE2E?: {
+        __robindoneTabStoreE2E?: {
           getState?: () => {
             activeWorkspaceIdentity?: string | null;
             activeWorkspacePath?: string | null;
           };
         };
       }
-    ).__robinrunTabStoreE2E;
+    ).__robindoneTabStoreE2E;
     const state = bridge?.getState?.();
     return state?.activeWorkspaceIdentity?.trim() || state?.activeWorkspacePath || null;
   });

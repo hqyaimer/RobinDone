@@ -1,12 +1,12 @@
-import { ModelConfig, ModelPropertiesConfig } from "@robinrun/provider";
-import { NodePersonalProviderConfigRepository } from "@robinrun/provider-node";
+import { ModelConfig, ModelPropertiesConfig } from "@robindone/provider";
+import { NodePersonalProviderConfigRepository } from "@robindone/provider-node";
 import {
   TID_MODEL_PROVIDER_NAV_ITEM,
   TID_MODEL_PROVIDER_ADD_MODEL_BUTTON,
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByDom, getE2EAppDataPaths } from "#e2e/helpers/desktop-app";
 import { restartIntoWorkspace, seedReplayProvider } from "#e2e/helpers/model-provider-restart";
 import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";

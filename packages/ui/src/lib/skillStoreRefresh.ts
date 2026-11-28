@@ -1,16 +1,16 @@
-import type { ISkillsService } from "@robinrun/services";
+import type { ISkillsService } from "@robindone/services";
 import {
-  normalizeAgentProviderToRobinRunAgent,
-  ROBINRUN_AGENT_PROVIDER,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  normalizeAgentProviderToRobinDoneAgent,
+  ROBINDONE_AGENT_PROVIDER,
+  type RobinDoneProvider,
+} from "@robindone/shared";
 import { useSkillStore } from "@/store/skillStore.js";
 
 export async function refreshSharedSkillStoreForWorkspace(params: {
   workspacePath: string | null | undefined;
   workspaceIdentity?: string | null;
   skillsService: ISkillsService;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
 }): Promise<void> {
   const workspacePath = params.workspacePath;
   if (!workspacePath) {
@@ -18,8 +18,8 @@ export async function refreshSharedSkillStoreForWorkspace(params: {
   }
   const skillStore = useSkillStore.getState();
   const normalizedWorkspaceIdentity = params.workspaceIdentity?.trim() || null;
-  const normalizedProvider = normalizeAgentProviderToRobinRunAgent(
-    params.provider ?? ROBINRUN_AGENT_PROVIDER,
+  const normalizedProvider = normalizeAgentProviderToRobinDoneAgent(
+    params.provider ?? ROBINDONE_AGENT_PROVIDER,
   );
   const refreshes: Promise<void>[] = [];
 
@@ -28,7 +28,7 @@ export async function refreshSharedSkillStoreForWorkspace(params: {
     skillStore.workspaceIdentity === normalizedWorkspaceIdentity &&
     skillStore.loadedWorkspacePath === workspacePath &&
     skillStore.loadedWorkspaceIdentity === normalizedWorkspaceIdentity &&
-    normalizeAgentProviderToRobinRunAgent(skillStore.provider) === normalizedProvider &&
+    normalizeAgentProviderToRobinDoneAgent(skillStore.provider) === normalizedProvider &&
     skillStore.loadedProvider === normalizedProvider
   ) {
     refreshes.push(

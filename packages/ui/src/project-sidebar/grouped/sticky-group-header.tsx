@@ -1,7 +1,7 @@
 import { SidebarNativeTooltip, ControlHintTooltip } from "@/ControlHintTooltip.js";
 import type {
-  RobinRunGroupedTaskViewNode,
-  RobinRunTaskGroupColor,
+  RobinDoneGroupedTaskViewNode,
+  RobinDoneTaskGroupColor,
 } from "@/project-sidebar/grouped/types.js";
 
 import { Bot, ChevronDownIcon, ChevronRightIcon, MessageCirclePlus } from "lucide-react";
@@ -30,8 +30,8 @@ import {
   OFF_PEAK_DEFAULT_GROUP_ID,
   isMainAgentGroupId,
   isWorkerGroupId,
-} from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+} from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getTaskGroupDisplayTitle } from "@/project-sidebar/grouped/group-title.js";
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import {
@@ -40,7 +40,7 @@ import {
   TaskGroupColorMark,
 } from "@/project-sidebar/grouped/shared.js";
 
-type StickyGroupNode = Extract<RobinRunGroupedTaskViewNode, { type: "group" }>;
+type StickyGroupNode = Extract<RobinDoneGroupedTaskViewNode, { type: "group" }>;
 
 export function StickyGroupHeader({
   node,
@@ -56,10 +56,10 @@ export function StickyGroupHeader({
   tooltipsDisabled?: boolean;
   onCreateTask: () => void;
   onToggleCollapsed: (groupId: string) => void;
-  onUpdateGroupColor: (groupId: string, color: RobinRunTaskGroupColor) => void;
+  onUpdateGroupColor: (groupId: string, color: RobinDoneTaskGroupColor) => void;
   onUngroupGroup: (groupId: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const taskCount = node.tasks.length;
   // 系统分组/主智能体/未分组伪组的标题按语言环境本地化展示，与 GroupItem 保持一致。
   const isUngroupedGroup = node.group.id === UNGROUPED_AGENT_ID;
@@ -81,7 +81,7 @@ export function StickyGroupHeader({
     isUngroupedGroup;
   const handleToggle = () => onToggleCollapsed(node.group.id);
   const handleGroupColorChange = (color: string) => {
-    onUpdateGroupColor(node.group.id, color as RobinRunTaskGroupColor);
+    onUpdateGroupColor(node.group.id, color as RobinDoneTaskGroupColor);
   };
   const newTaskButton = (
     <Button

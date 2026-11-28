@@ -24,7 +24,7 @@ import {
 
 const CASE_MARKER = "E2E_R3_BOUNDARY_ACK";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-boundary-ack",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-boundary-ack",
 );
 const BOUNDARY = '[data-testid="source-server-boundary-dialog"]';
 const STRICT_BOUNDARY = { allowBoundaryAcknowledgement: false };

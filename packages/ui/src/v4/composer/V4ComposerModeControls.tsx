@@ -1,16 +1,16 @@
 import { memo, useCallback, useMemo } from "react";
 import { LightbulbIcon, XIcon, ChevronDownIcon } from "lucide-react";
 import {
-  ROBINRUN_AGENT_PROVIDER,
-  getRobinRunAgentAvailableModes,
-  type RobinRunConfigOption,
-} from "@robinrun/shared";
+  ROBINDONE_AGENT_PROVIDER,
+  getRobinDoneAgentAvailableModes,
+  type RobinDoneConfigOption,
+} from "@robindone/shared";
 import {
   TID_CHAT_MODE_SELECT_TRIGGER,
   TID_CHAT_MODE_SELECT_ITEM,
   TID_V4_COMPOSER_INPUT,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -28,7 +28,7 @@ import {
   getModeOptionDescriptionMessageId,
   resolveModeOptionIcon,
 } from "@/chat-input-toolbar/display.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useYoloModeConfirmation } from "@/hooks/useConfirmDialog.js";
 import { useConfirmDialogStore } from "@/store/confirmDialogStore.js";
 import { isCoarseTouchDevice } from "@/lib/pickerFocus.js";
@@ -63,7 +63,7 @@ function V4ComposerModeSwitchImpl({
   | "onConfigPickerOpenChange"
   | "onSwitchMode"
 >) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // 原草稿回调随 scope 换代，旧确认不能把权限写入后来选中的任务。
   // 项目权限全量同步（2026-11-18）：传项目上下文启用「每项目只确认一次 + 运行中会话
   // 实时同步」；远端会话（workspaceIdentity 在场）同样按项目路径去重。
@@ -78,9 +78,9 @@ function V4ComposerModeSwitchImpl({
     },
     [confirmMode, onSwitchMode],
   );
-  const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
+  const displayProvider = provider ?? ROBINDONE_AGENT_PROVIDER;
   const modeShortcutLabel = useShortcutCommandLabel("cycleSessionMode");
-  const modes = getRobinRunAgentAvailableModes();
+  const modes = getRobinDoneAgentAvailableModes();
   const permissions = modes.filter((mode) => mode.id !== "plan");
   // 新菜单隐藏 Edit，但历史草稿仍可回显，不能因候选变化隐藏整个权限入口。
   const selected =
@@ -92,14 +92,14 @@ function V4ComposerModeSwitchImpl({
   const planLabel = label(plan);
   // Plan 拆成独立勾选项后仍需保留原菜单说明，复用相同的国际化映射。
   const planDescriptionId = getModeOptionDescriptionMessageId(displayProvider, { value: plan.id });
-  const modeOption = useMemo<RobinRunConfigOption>(
+  const modeOption = useMemo<RobinDoneConfigOption>(
     () => ({
       id: "mode",
       name: "Mode",
       category: "mode",
       type: "select",
       currentValue: draftConfig?.mode ?? "build",
-      options: getRobinRunAgentAvailableModes()
+      options: getRobinDoneAgentAvailableModes()
         .filter((mode) => mode.id !== "plan")
         .map((mode) => ({ value: mode.id, name: mode.name })),
     }),

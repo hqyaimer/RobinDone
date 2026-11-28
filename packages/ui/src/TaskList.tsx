@@ -1,20 +1,24 @@
 /* eslint-disable max-lines -- TaskList 同时承接 workspace 列表渲染、行内操作和外部数据源兼容，先集中收口避免 UI 结构漂移。 */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Settings2 } from "lucide-react";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
-import { TID_TASK_LIST, TID_TASK_EMPTY, TID_TASK_SETTINGS_BUTTON } from "@robinrun/shared/test-ids";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
+import {
+  TID_TASK_LIST,
+  TID_TASK_EMPTY,
+  TID_TASK_SETTINGS_BUTTON,
+} from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { NewTaskButtonGroup } from "@/NewTaskButtonGroup.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { MemoTaskItem, TaskListItemContextMenuContent } from "@/TaskListItem.js";
 import { TaskListLoadingHint } from "@/TaskListLoadingHint.js";
 import { TaskRenameDialog } from "@/TaskRenameDialog.js";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
-import { compareRobinRunTaskListItems } from "@/lib/taskListOrdering.js";
+import { compareRobinDoneTaskListItems } from "@/lib/taskListOrdering.js";
 import { logger } from "@/logger.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 
@@ -22,7 +26,7 @@ export { deriveTaskLeadingIndicator } from "@/lib/taskListItemPresentation.js";
 
 // 默认参数里的 [] 会在每次 TaskList render 时创建新数组；
 // 任务流刷新期间这会放大 memo 子组件的等价数据判断成本。
-const EMPTY_PINNED_TASKS: RobinRunTaskMeta[] = [];
+const EMPTY_PINNED_TASKS: RobinDoneTaskMeta[] = [];
 
 // 父级 App/Shell 可能因 stream 状态更新重渲，但列表 props 本身未变。
 // TaskList 先整体 memo，避免无关父 render 重新遍历任务并触发 MemoTaskItem props 计算。
@@ -58,8 +62,8 @@ export const TaskList = memo(function TaskList({
   workspacePath: string;
   remoteSessionId?: string;
   workspaceIdentity?: string;
-  tasks: RobinRunTaskMeta[];
-  pinnedTasks?: RobinRunTaskMeta[];
+  tasks: RobinDoneTaskMeta[];
+  pinnedTasks?: RobinDoneTaskMeta[];
   activeTaskId: string | null;
   sortBy?: "manual" | "created" | "updated";
   isWorkspaceActive?: boolean;
@@ -72,22 +76,22 @@ export const TaskList = memo(function TaskList({
   loading?: boolean;
   hasMore?: boolean;
   onShowMore?: () => void;
-  onRenameTask: (taskId: string, title: string) => Promise<RobinRunTaskMeta | null>;
-  onSetTaskPinned: (taskId: string, pinned: boolean) => Promise<RobinRunTaskMeta | null>;
-  onArchiveTask: (taskId: string) => Promise<RobinRunTaskMeta | null>;
+  onRenameTask: (taskId: string, title: string) => Promise<RobinDoneTaskMeta | null>;
+  onSetTaskPinned: (taskId: string, pinned: boolean) => Promise<RobinDoneTaskMeta | null>;
+  onArchiveTask: (taskId: string) => Promise<RobinDoneTaskMeta | null>;
   isArchived?: boolean;
-  onSetTaskUnread: (taskId: string, unread: boolean) => Promise<RobinRunTaskMeta | null>;
+  onSetTaskUnread: (taskId: string, unread: boolean) => Promise<RobinDoneTaskMeta | null>;
   mobileActiveTaskKey?: string | null;
   readOnlyReason?: string;
   onOpenFileTree?: () => void | Promise<void>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const pinnedTaskIdSet = useMemo(
     () => new Set(pinnedTasks.map((task) => task.taskId)),
     [pinnedTasks],
   );
   const taskLookup = useMemo(() => [...tasks, ...pinnedTasks], [pinnedTasks, tasks]);
-  const startDraft = useRobinRunSessionStore((state) => state.startDraft);
+  const startDraft = useRobinDoneSessionStore((state) => state.startDraft);
   const openSettingsTab = useTabStore((state) => state.openSettingsTab);
   const [pendingArchiveTaskId, setPendingArchiveTaskId] = useState<string | null>(null);
   const [renamingTaskId, setRenamingTaskId] = useState<string | null>(null);
@@ -249,7 +253,7 @@ export const TaskList = memo(function TaskList({
         previousTitleLength: task.title.length,
         nextTitleLength: normalizedTitle.length,
       });
-      let renamedTask: RobinRunTaskMeta | null;
+      let renamedTask: RobinDoneTaskMeta | null;
       try {
         renamedTask = await onRenameTask(taskId, normalizedTitle);
       } catch (error) {
@@ -320,7 +324,7 @@ export const TaskList = memo(function TaskList({
     const orderedTasks =
       sortBy === "manual"
         ? tasks
-        : [...tasks].sort((left, right) => compareRobinRunTaskListItems(left, right, sortBy));
+        : [...tasks].sort((left, right) => compareRobinDoneTaskListItems(left, right, sortBy));
     return orderedTasks;
   }, [sortBy, tasks]);
   useEffect(() => {

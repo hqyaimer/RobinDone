@@ -4,12 +4,12 @@ import {
   desktopMenuMessageIds,
   getDesktopMenuMessage,
   isValidShortcutBinding,
-  ROBINRUN_ENV,
-  ROBINRUN_PRODUCT_FLAVOR,
+  ROBINDONE_ENV,
+  ROBINDONE_PRODUCT_FLAVOR,
   type DesktopCommandId,
   type Locale,
-} from "@robinrun/shared";
-import { readRobinRunStdioTapDevState } from "@robinrun/services/node";
+} from "@robindone/shared";
+import { readRobinDoneStdioTapDevState } from "@robindone/services/node";
 import { CHECK_FOR_UPDATE_MENU_ID, setAutoUpdaterMenuLocale } from "./autoUpdater.js";
 import {
   DESKTOP_ZOOM_MAX_LEVEL,
@@ -17,12 +17,12 @@ import {
   clampDesktopZoomLevel,
 } from "./desktopZoom.js";
 import {
-  HELP_TOGGLE_ROBINRUN_STDIO_TAP_MENU_ID,
+  HELP_TOGGLE_ROBINDONE_STDIO_TAP_MENU_ID,
   HELP_TOGGLE_DEV_TOOLS_MENU_ID,
 } from "./desktopCommandHandlers.js";
 
-export const HELP_ROBINRUN_ENDPOINT_PRODUCTION_MENU_ID = "help.robinrun-endpoint.production";
-export const HELP_ROBINRUN_ENDPOINT_TEST_MENU_ID = "help.robinrun-endpoint.test";
+export const HELP_ROBINDONE_ENDPOINT_PRODUCTION_MENU_ID = "help.robindone-endpoint.production";
+export const HELP_ROBINDONE_ENDPOINT_TEST_MENU_ID = "help.robindone-endpoint.test";
 
 export function getDesktopMenuLabel(
   locale: Locale,
@@ -38,13 +38,13 @@ export function resolveSystemApplicationLocale(): Locale {
   return systemLocale.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
-export function updateRobinRunStdioTapDevMenuState() {
+export function updateRobinDoneStdioTapDevMenuState() {
   const menu = Menu.getApplicationMenu();
-  const item = menu?.getMenuItemById(HELP_TOGGLE_ROBINRUN_STDIO_TAP_MENU_ID);
+  const item = menu?.getMenuItemById(HELP_TOGGLE_ROBINDONE_STDIO_TAP_MENU_ID);
   if (!item) {
     return;
   }
-  const state = readRobinRunStdioTapDevState();
+  const state = readRobinDoneStdioTapDevState();
   item.checked = state.enabled;
   item.visible = state.visible;
 }
@@ -83,7 +83,7 @@ function resolveMenuAccelerator(
 
 function buildApplicationMenuTemplate(options: {
   currentApplicationLocale: Locale;
-  robinrunEndpointSelection?: "production" | "test" | "custom";
+  robindoneEndpointSelection?: "production" | "test" | "custom";
   executeDesktopCommand: (
     command: DesktopCommandId,
     senderWindow?: BrowserWindow | null,
@@ -97,7 +97,7 @@ function buildApplicationMenuTemplate(options: {
     getDesktopMenuLabel(options.currentApplicationLocale, id);
   const getAppLabel = (id: (typeof desktopMenuMessageIds)[keyof typeof desktopMenuMessageIds]) =>
     getLabel(id).replaceAll("{appName}", app.name);
-  const stdioTapState = readRobinRunStdioTapDevState();
+  const stdioTapState = readRobinDoneStdioTapDevState();
   const isLocalDevelopmentRuntime = !app.isPackaged;
   const currentZoomLevel = clampDesktopZoomLevel(options.currentZoomLevel ?? 0);
   const canResetZoom = currentZoomLevel !== 0;
@@ -119,7 +119,7 @@ function buildApplicationMenuTemplate(options: {
                 click: () => void options.executeDesktopCommand(DesktopCommandIds.ShowAbout),
               },
               // 更新入口跟随产品身份：Preview 禁用更新器，生产后端的 Preview 也不例外。
-              ...(ROBINRUN_PRODUCT_FLAVOR === "production"
+              ...(ROBINDONE_PRODUCT_FLAVOR === "production"
                 ? [
                     {
                       id: CHECK_FOR_UPDATE_MENU_ID,
@@ -260,7 +260,7 @@ function buildApplicationMenuTemplate(options: {
                 label: getLabel(desktopMenuMessageIds.helpAbout),
                 click: () => void options.executeDesktopCommand(DesktopCommandIds.ShowAbout),
               },
-              ...(ROBINRUN_PRODUCT_FLAVOR === "production"
+              ...(ROBINDONE_PRODUCT_FLAVOR === "production"
                 ? [
                     {
                       id: CHECK_FOR_UPDATE_MENU_ID,
@@ -273,64 +273,66 @@ function buildApplicationMenuTemplate(options: {
               { type: "separator" as const },
             ]
           : []),
-        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「What's New」菜单项——changelog 指向 ZCode 官方站，
+        // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「What's New」菜单项——changelog 指向 ZCode 官方站，
         // 恢复时取消本段注释（OpenFeedback 同理见下方）
         // {
         //   label: getLabel(desktopMenuMessageIds.helpWhatsNew),
         //   click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenChangelog),
         // },
         // { type: "separator" as const },
-        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+        // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
         ...(isLocalDevelopmentRuntime && stdioTapState.visible
           ? [
               {
-                id: HELP_TOGGLE_ROBINRUN_STDIO_TAP_MENU_ID,
-                label: getLabel(desktopMenuMessageIds.helpToggleRobinRunStdioTap),
+                id: HELP_TOGGLE_ROBINDONE_STDIO_TAP_MENU_ID,
+                label: getLabel(desktopMenuMessageIds.helpToggleRobinDoneStdioTap),
                 type: "checkbox" as const,
                 checked: stdioTapState.enabled,
                 click: () =>
                   void options.executeDesktopCommand(
-                    DesktopCommandIds.ToggleRobinRunStdioTapDevProxy,
+                    DesktopCommandIds.ToggleRobinDoneStdioTapDevProxy,
                   ),
               },
               { type: "separator" as const },
             ]
           : []),
-        ...(ROBINRUN_ENV === "test"
+        ...(ROBINDONE_ENV === "test"
           ? [
               {
-                label: getLabel(desktopMenuMessageIds.helpRobinRunEndpoint),
+                label: getLabel(desktopMenuMessageIds.helpRobinDoneEndpoint),
                 submenu: [
                   {
-                    id: HELP_ROBINRUN_ENDPOINT_PRODUCTION_MENU_ID,
-                    label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointProduction),
+                    id: HELP_ROBINDONE_ENDPOINT_PRODUCTION_MENU_ID,
+                    label: getLabel(desktopMenuMessageIds.helpRobinDoneEndpointProduction),
                     type: "radio" as const,
-                    checked: (options.robinrunEndpointSelection ?? "production") === "production",
+                    checked: (options.robindoneEndpointSelection ?? "production") === "production",
                     click: () =>
                       void options.executeDesktopCommand(
-                        DesktopCommandIds.SetRobinRunEndpointProduction,
+                        DesktopCommandIds.SetRobinDoneEndpointProduction,
                       ),
                   },
                   {
-                    id: HELP_ROBINRUN_ENDPOINT_TEST_MENU_ID,
-                    label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointTest),
+                    id: HELP_ROBINDONE_ENDPOINT_TEST_MENU_ID,
+                    label: getLabel(desktopMenuMessageIds.helpRobinDoneEndpointTest),
                     type: "radio" as const,
-                    checked: options.robinrunEndpointSelection === "test",
+                    checked: options.robindoneEndpointSelection === "test",
                     click: () =>
-                      void options.executeDesktopCommand(DesktopCommandIds.SetRobinRunEndpointTest),
+                      void options.executeDesktopCommand(
+                        DesktopCommandIds.SetRobinDoneEndpointTest,
+                      ),
                   },
                   { type: "separator" as const },
                   {
-                    label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointCustom),
+                    label: getLabel(desktopMenuMessageIds.helpRobinDoneEndpointCustom),
                     click: () =>
                       void options.executeDesktopCommand(
-                        DesktopCommandIds.SetRobinRunEndpointCustom,
+                        DesktopCommandIds.SetRobinDoneEndpointCustom,
                       ),
                   },
                   {
-                    label: getLabel(desktopMenuMessageIds.helpRobinRunEndpointReset),
+                    label: getLabel(desktopMenuMessageIds.helpRobinDoneEndpointReset),
                     click: () =>
-                      void options.executeDesktopCommand(DesktopCommandIds.ResetRobinRunEndpoint),
+                      void options.executeDesktopCommand(DesktopCommandIds.ResetRobinDoneEndpoint),
                   },
                 ],
               },
@@ -349,12 +351,12 @@ function buildApplicationMenuTemplate(options: {
           click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenResourceManager),
         },
         { type: "separator" as const },
-        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「反馈」菜单项——上游反馈表单/in-app 触达，恢复时取消本段注释
+        // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「反馈」菜单项——上游反馈表单/in-app 触达，恢复时取消本段注释
         // {
         //   label: getLabel(desktopMenuMessageIds.helpFeedback),
         //   click: () => void options.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
         // },
-        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+        // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
         {
           label: getLabel(desktopMenuMessageIds.helpExportLogs),
           click: () => void options.executeDesktopCommand(DesktopCommandIds.ExportLogs),
@@ -371,7 +373,7 @@ function buildApplicationMenuTemplate(options: {
 
 export function rebuildApplicationMenu(options: {
   currentApplicationLocale: Locale;
-  robinrunEndpointSelection?: "production" | "test" | "custom";
+  robindoneEndpointSelection?: "production" | "test" | "custom";
   executeDesktopCommand: (
     command: DesktopCommandId,
     senderWindow?: BrowserWindow | null,
@@ -385,7 +387,7 @@ export function rebuildApplicationMenu(options: {
     Menu.buildFromTemplate(
       buildApplicationMenuTemplate({
         currentApplicationLocale: options.currentApplicationLocale,
-        robinrunEndpointSelection: options.robinrunEndpointSelection,
+        robindoneEndpointSelection: options.robindoneEndpointSelection,
         executeDesktopCommand: options.executeDesktopCommand,
         currentZoomLevel: options.currentZoomLevel,
         shortcutBindings: options.shortcutBindings,
@@ -395,6 +397,6 @@ export function rebuildApplicationMenu(options: {
   );
   setAutoUpdaterMenuLocale(options.currentApplicationLocale);
   if (!app.isPackaged) {
-    updateRobinRunStdioTapDevMenuState();
+    updateRobinDoneStdioTapDevMenuState();
   }
 }

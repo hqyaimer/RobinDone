@@ -25,7 +25,7 @@ import {
   type OpsPanelView,
   type ProgressEntry,
   type ProgressView,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   IOpsPanelService,
   OpsApprovalDecision,

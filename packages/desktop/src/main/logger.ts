@@ -1,14 +1,14 @@
 import { mkdirSync, appendFileSync } from "node:fs";
 import { mkdir, appendFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { createLocalTtftLogQueue, formatTimestamp } from "@robinrun/shared";
+import { createLocalTtftLogQueue, formatTimestamp } from "@robindone/shared";
 import { cleanupExpiredLogFiles, LOG_RETENTION_DAYS } from "./logRetention.js";
-import { getAppConfigDir, maybeThrowInjectedFsFault } from "@robinrun/services/node";
+import { getAppConfigDir, maybeThrowInjectedFsFault } from "@robindone/services/node";
 
 function getLogDir() {
   const e2eLogDir =
-    process.env.ROBINRUN_ENV === "test"
-      ? process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR?.trim()
+    process.env.ROBINDONE_ENV === "test"
+      ? process.env.ROBINDONE_E2E_RUNTIME_LOG_DIR?.trim()
       : undefined;
   if (e2eLogDir) {
     return e2eLogDir;
@@ -141,7 +141,7 @@ function writeDedicated(filePrefix: string, level: LogLevel, source: string, ...
 }
 
 /**
- * main 进程日志，默认写入 ~/.robinrun/v2/logs/YYYY-MM-DD.log；E2E 测试使用 worker 专属目录。
+ * main 进程日志，默认写入 ~/.robindone/v2/logs/YYYY-MM-DD.log；E2E 测试使用 worker 专属目录。
  * 同时保留 console 输出方便开发调试
  */
 export const logger = {

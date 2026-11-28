@@ -1,4 +1,4 @@
-import type { WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunState } from "@robindone/shared/robindone-protocol-v4";
 import { phaseNameMatches } from "@/components/workflow-graph/phase-name.js";
 import type { StepRunStatus } from "@/components/workflow-graph/types.js";
 import type { StreamSpec } from "./timeline-bands.js";

@@ -15,9 +15,9 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   isAutomationCreateLimitError,
   resolveWorkspaceKey,
-  type RobinRunAutomation,
-  type RobinRunOffPeakTask,
-} from "@robinrun/shared";
+  type RobinDoneAutomation,
+  type RobinDoneOffPeakTask,
+} from "@robindone/shared";
 import {
   TID_AUTOMATION_ACTION_DELETE,
   TID_AUTOMATION_ACTION_TOGGLE,
@@ -27,7 +27,7 @@ import {
   TID_AUTOMATIONS_STATUS_FILTER,
   TID_OFFPEAK_CREATE_BUTTON,
   TID_OFFPEAK_TAB,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import {
   DropdownMenu,
@@ -41,7 +41,7 @@ import { toast as showToast, type ToastOptions } from "@/components/ui/toast.js"
 import { cn } from "@/components/lib/utils.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { AutomationScheduledTemplateIcon } from "@/settings/AutomationScheduledTemplateIcon.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
@@ -192,7 +192,7 @@ function OffPeakCreateButton({
   greyTooltip?: string;
   onCreate: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // disabled 按钮 pointer-events-none，tooltip 必须挂在外层可指针元素上。
   const button = (
     <Button
@@ -232,9 +232,9 @@ export interface AutomationDraft {
 type AutomationsView =
   | { mode: "list" }
   | { mode: "create"; draft: AutomationDraft | null }
-  | { mode: "edit"; automation: RobinRunAutomation }
+  | { mode: "edit"; automation: RobinDoneAutomation }
   | { mode: "offpeak-create"; draft?: OffPeakCreateDraft }
-  | { mode: "offpeak-edit"; task: RobinRunOffPeakTask };
+  | { mode: "offpeak-edit"; task: RobinDoneOffPeakTask };
 
 /** 主视图标签页：Scheduled 常驻，Idle-time 受灰度控制（D31）；不设 All 混排视图。 */
 export type AutomationsTab = "scheduled" | "idle";
@@ -314,13 +314,13 @@ function automationPromptSummary(prompt: string): string {
 }
 
 export function canRestartAutomation(
-  automation: Pick<RobinRunAutomation, "lifecycleStatus">,
+  automation: Pick<RobinDoneAutomation, "lifecycleStatus">,
 ): boolean {
   return automation.lifecycleStatus === "failed";
 }
 
 export function canToggleAutomation(
-  automation: Pick<RobinRunAutomation, "lifecycleStatus">,
+  automation: Pick<RobinDoneAutomation, "lifecycleStatus">,
 ): boolean {
   return automation.lifecycleStatus !== "completed" && automation.lifecycleStatus !== "failed";
 }
@@ -347,19 +347,22 @@ export function getAutomationCreateErrorToastId(error: unknown): string {
 }
 
 export function resolveAutomationDetailTarget(
-  automations: readonly RobinRunAutomation[],
+  automations: readonly RobinDoneAutomation[],
   automationId?: string | null,
-): RobinRunAutomation | null {
+): RobinDoneAutomation | null {
   const targetId = automationId?.trim();
   if (!targetId) return null;
   return automations.find((automation) => automation.automationId === targetId) ?? null;
 }
 
 export function resolveAutomationDetailNavigation(
-  automations: readonly RobinRunAutomation[],
+  automations: readonly RobinDoneAutomation[],
   automationId: string | null | undefined,
   listReady: boolean,
-): { status: "pending" } | { status: "missing" } | { status: "found"; target: RobinRunAutomation } {
+):
+  | { status: "pending" }
+  | { status: "missing" }
+  | { status: "found"; target: RobinDoneAutomation } {
   if (!automationId?.trim() || !listReady) return { status: "pending" };
   const target = resolveAutomationDetailTarget(automations, automationId);
   return target ? { status: "found", target } : { status: "missing" };
@@ -372,7 +375,7 @@ export function isOffPeakDetailNavigationId(automationId: string | null | undefi
 
 /** D49：闲时轮尾卡跳转的并行解析路径；与 cron 的 resolveAutomationDetailNavigation 对称。 */
 export function resolveOffPeakDetailNavigation(
-  tasks: readonly RobinRunOffPeakTask[],
+  tasks: readonly RobinDoneOffPeakTask[],
   offPeakTaskId: string | null | undefined,
   listReady: boolean,
   listError: string | null = null,
@@ -380,7 +383,7 @@ export function resolveOffPeakDetailNavigation(
   | { status: "pending" }
   | { status: "unavailable" }
   | { status: "missing" }
-  | { status: "found"; target: RobinRunOffPeakTask } {
+  | { status: "found"; target: RobinDoneOffPeakTask } {
   const targetId = offPeakTaskId?.trim();
   if (!targetId || !listReady) return { status: "pending" };
   // review：store.refresh 吞错保留旧列表；列表不可信时不能做 found/missing 终审。
@@ -390,15 +393,15 @@ export function resolveOffPeakDetailNavigation(
 }
 
 interface AutomationActionsMenuProps {
-  automation: RobinRunAutomation;
+  automation: RobinDoneAutomation;
   busy: boolean;
   canRestart: boolean;
   canToggle: boolean;
-  onRunNow: (automation: RobinRunAutomation) => void;
-  onEdit: (automation: RobinRunAutomation) => void;
-  onToggle: (automation: RobinRunAutomation, enabled: boolean) => void;
-  onRestart: (automation: RobinRunAutomation) => void;
-  onDelete: (automation: RobinRunAutomation) => void;
+  onRunNow: (automation: RobinDoneAutomation) => void;
+  onEdit: (automation: RobinDoneAutomation) => void;
+  onToggle: (automation: RobinDoneAutomation, enabled: boolean) => void;
+  onRestart: (automation: RobinDoneAutomation) => void;
+  onDelete: (automation: RobinDoneAutomation) => void;
 }
 
 function AutomationActionsMenu({
@@ -412,7 +415,7 @@ function AutomationActionsMenu({
   onRestart,
   onDelete,
 }: AutomationActionsMenuProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -509,7 +512,7 @@ function AutomationActionsMenu({
 
 /** 状态筛选命中 0 条时的占位；复用闲时空态卡的描边样式，文案与「还没有任务」区分开。 */
 function AutomationStatusFilterEmpty() {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div className="rounded-[10px] border border-card-border px-3 py-3 text-ui-base text-foreground-subtle">
       {intl.formatMessage({ id: "automations.statusFilter.empty" })}
@@ -531,9 +534,9 @@ export function AutomationsSection({
   onOpenWorkflowConsumed,
   onOpenSession,
 }: AutomationsSectionProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const platform = usePlatform();
-  const { clientScenesService, offPeakTaskService, robinrunAgentService } = useServices();
+  const { clientScenesService, offPeakTaskService, robindoneAgentService } = useServices();
   const confirmDialog = useConfirmDialog();
   const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
   const providerSettingsRead = useProviderSettingsView();
@@ -709,14 +712,14 @@ export function AutomationsSection({
     void initialize({
       workspacePath,
       workspaceIdentity,
-      agentService: robinrunAgentService,
+      agentService: robindoneAgentService,
     }).then(() => {
       if (!disposed) setLoadedWorkspaceKey(workspaceKey);
     });
     return () => {
       disposed = true;
     };
-  }, [workspacePath, workspaceIdentity, robinrunAgentService, initialize]);
+  }, [workspacePath, workspaceIdentity, robindoneAgentService, initialize]);
 
   useEffect(() => {
     const nextTab = resolveAutomationTabAfterOffPeakChange(tab, offPeakVisible);
@@ -810,7 +813,7 @@ export function AutomationsSection({
     setRefreshing(true);
     try {
       await Promise.all([
-        refresh(robinrunAgentService),
+        refresh(robindoneAgentService),
         offPeakRefresh(offPeakTaskService),
         ...(offPeakGrayEnabled ? [offPeakRefreshCodingPlanSupport(offPeakTaskService)] : []),
       ]);
@@ -824,7 +827,7 @@ export function AutomationsSection({
     offPeakRefreshCodingPlanSupport,
     offPeakTaskService,
     refresh,
-    robinrunAgentService,
+    robindoneAgentService,
   ]);
 
   // New task 页模板卡跳转过来：消费预填草稿 → 切 idle tab + 打开创建表单预填。
@@ -1026,7 +1029,7 @@ export function AutomationsSection({
         const ok = await updateAutomation(
           view.automation.automationId,
           input,
-          robinrunAgentService,
+          robindoneAgentService,
         );
         if (!ok) {
           toast(
@@ -1049,7 +1052,7 @@ export function AutomationsSection({
           workspacePath: targetPath,
           workspaceIdentity: targetIdentity,
         },
-        robinrunAgentService,
+        robindoneAgentService,
       );
       void reportAutomationCreateResult(platform, {
         automationId: created?.automationId,
@@ -1083,13 +1086,13 @@ export function AutomationsSection({
       showAutomationCreateLimitToast,
       updateAutomation,
       view,
-      robinrunAgentService,
+      robindoneAgentService,
     ],
   );
 
   const handleToggle = useCallback(
-    async (automation: RobinRunAutomation, enabled: boolean) => {
-      await setEnabled(automation.automationId, enabled, robinrunAgentService);
+    async (automation: RobinDoneAutomation, enabled: boolean) => {
+      await setEnabled(automation.automationId, enabled, robindoneAgentService);
       const message = useAutomationManagementStore.getState().error;
       if (message) toast(intl.formatMessage({ id: getAutomationActionErrorToastId("toggle") }));
       else {
@@ -1110,12 +1113,12 @@ export function AutomationsSection({
         setNow(Date.now());
       }
     },
-    [intl, setEnabled, robinrunAgentService],
+    [intl, setEnabled, robindoneAgentService],
   );
 
   const handleRestart = useCallback(
-    async (automation: RobinRunAutomation) => {
-      await restartAutomation(automation.automationId, robinrunAgentService);
+    async (automation: RobinDoneAutomation) => {
+      await restartAutomation(automation.automationId, robindoneAgentService);
       const message = useAutomationManagementStore.getState().error;
       if (message)
         toast(
@@ -1125,11 +1128,11 @@ export function AutomationsSection({
         );
       else setNow(Date.now());
     },
-    [intl, restartAutomation, robinrunAgentService],
+    [intl, restartAutomation, robindoneAgentService],
   );
 
   const handleRunNow = useCallback(
-    async (automation: RobinRunAutomation, source: "list" | "editor" = "list") => {
+    async (automation: RobinDoneAutomation, source: "list" | "editor" = "list") => {
       logger.debug("[automations] 立即运行交互开始", {
         automationId: automation.automationId,
         source,
@@ -1140,14 +1143,14 @@ export function AutomationsSection({
         automation,
         providerSettingsView,
       });
-      const result = await runAutomationNow(automation.automationId, robinrunAgentService);
+      const result = await runAutomationNow(automation.automationId, robindoneAgentService);
       logger.debug("[automations] 立即运行交互结束", {
         automationId: automation.automationId,
         source,
         result,
       });
       if (result === "queued") {
-        await loadRuns(automation.automationId, robinrunAgentService, true);
+        await loadRuns(automation.automationId, robindoneAgentService, true);
         const latestSessionId = useAutomationManagementStore
           .getState()
           .runsCache[automation.automationId]?.runs?.find(
@@ -1192,12 +1195,12 @@ export function AutomationsSection({
       platform,
       providerSettingsView,
       runAutomationNow,
-      robinrunAgentService,
+      robindoneAgentService,
     ],
   );
 
   const handleDelete = useCallback(
-    async (automation: RobinRunAutomation, source: "list" | "editor" = "list") => {
+    async (automation: RobinDoneAutomation, source: "list" | "editor" = "list") => {
       const confirmed = await confirmDialog({
         presentation: "automation-confirmation",
         title: intl.formatMessage({ id: "automations.delete.title" }),
@@ -1218,7 +1221,7 @@ export function AutomationsSection({
         automation,
         providerSettingsView,
       });
-      await deleteAutomation(automation.automationId, robinrunAgentService);
+      await deleteAutomation(automation.automationId, robindoneAgentService);
       const message = useAutomationManagementStore.getState().error;
       if (message) toast(intl.formatMessage({ id: getAutomationActionErrorToastId("delete") }));
       // 若在编辑该任务的整页,删除后回列表。
@@ -1228,11 +1231,11 @@ export function AutomationsSection({
           : prev,
       );
     },
-    [confirmDialog, deleteAutomation, intl, platform, providerSettingsView, robinrunAgentService],
+    [confirmDialog, deleteAutomation, intl, platform, providerSettingsView, robindoneAgentService],
   );
 
   const handleOffPeakOpenSession = useCallback(
-    (task: RobinRunOffPeakTask) => {
+    (task: RobinDoneOffPeakTask) => {
       if (!task.sessionId || !onOpenSession) return;
       onOpenSession({
         sessionId: task.sessionId,
@@ -1243,14 +1246,14 @@ export function AutomationsSection({
     [onOpenSession],
   );
 
-  const handleOffPeakOpen = useCallback((task: RobinRunOffPeakTask) => {
+  const handleOffPeakOpen = useCallback((task: RobinDoneOffPeakTask) => {
     // 有 session 的卡片主点击不能直接跳会话：会使 Settings/History
     // 无法稳定到达。卡片主路径始终进入任务详情，会话只保留为显式次级动作。
     setView({ mode: "offpeak-edit", task });
   }, []);
 
   const handleOffPeakCancel = useCallback(
-    async (task: RobinRunOffPeakTask) => {
+    async (task: RobinDoneOffPeakTask) => {
       const confirmed = await confirmDialog({
         title: intl.formatMessage({ id: "offPeak.cancel.title" }),
         description: intl.formatMessage(
@@ -1268,7 +1271,7 @@ export function AutomationsSection({
   );
 
   const handleOffPeakDelete = useCallback(
-    async (task: RobinRunOffPeakTask) => {
+    async (task: RobinDoneOffPeakTask) => {
       const confirmed = await confirmDialog({
         confirmVariant: "destructive",
         title: intl.formatMessage({ id: "offPeak.delete.title" }),
@@ -1289,7 +1292,7 @@ export function AutomationsSection({
   );
 
   const handleOffPeakDeleteHistory = useCallback(
-    async (task: RobinRunOffPeakTask) => {
+    async (task: RobinDoneOffPeakTask) => {
       await offPeakDeleteHistory(task.offPeakTaskId, offPeakTaskService);
       const message = useOffPeakTaskStore.getState().error;
       if (message) toast(message);
@@ -1437,11 +1440,11 @@ export function AutomationsSection({
           runsEntry={view.mode === "edit" ? runsCache[view.automation.automationId] : undefined}
           onLoadRuns={() => {
             if (view.mode === "edit")
-              void loadRuns(view.automation.automationId, robinrunAgentService, true);
+              void loadRuns(view.automation.automationId, robindoneAgentService, true);
           }}
           onDeleteRun={(runId) => {
             if (view.mode === "edit") {
-              void deleteRun(view.automation.automationId, runId, robinrunAgentService);
+              void deleteRun(view.automation.automationId, runId, robindoneAgentService);
             }
           }}
           onOpenSession={

@@ -3,24 +3,24 @@ import type {
   IPlatformService,
   WebRemoteControlRendererActionRequest,
   WebRemoteControlRendererActionResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { resolveRemoteWorkspaceSessionIdForTarget } from "@/hooks/useResolvedRemoteWorkspaceSessionId.js";
 import { mutateProjectTask } from "@/project-sidebar/task-mutation.js";
 import type {
   IProjectService,
   IWindowControllerService,
-  IRobinRunTaskService,
+  IRobinDoneTaskService,
 } from "@/project-sidebar/contract.js";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { logger } from "@/logger.js";
 
 export interface WebRemoteControlRendererActionPorts {
   services: {
-    robinrunTaskService: IRobinRunTaskService;
+    robindoneTaskService: IRobinDoneTaskService;
     windowControllerService?: IWindowControllerService;
-    /** 只用桌面 scratch workspace 的目录创建能力（~/RobinRunProject/<name>）。 */
+    /** 只用桌面 scratch workspace 的目录创建能力（~/RobinDoneProject/<name>）。 */
     fileService: { createScratchWorkspace(params: { name: string }): Promise<{ path: string }> };
     projectService?: IProjectService;
   };
@@ -35,7 +35,7 @@ async function createLocalProject(
   ports: WebRemoteControlRendererActionPorts,
   name: string,
 ): Promise<{ workspacePath: string; projectId?: string; hostId?: string }> {
-  // 目录与校验复用桌面 scratch workspace：~/RobinRunProject/<name>，同名目录幂等复用。
+  // 目录与校验复用桌面 scratch workspace：~/RobinDoneProject/<name>，同名目录幂等复用。
   const { path: workspacePath } = await ports.services.fileService.createScratchWorkspace({ name });
   const projectService = ports.services.projectService;
   if (!projectService) return { workspacePath };
@@ -78,7 +78,7 @@ export async function executeWebRemoteControlRendererAction(
     ...(request.workspaceIdentity ? { workspaceIdentity: request.workspaceIdentity } : {}),
   };
   const taskPorts = {
-    service: ports.services.robinrunTaskService,
+    service: ports.services.robindoneTaskService,
     controller: ports.services.windowControllerService,
   };
   const remoteSessionId = ports.resolveRemoteSessionId(target);
@@ -119,7 +119,8 @@ export function useWebRemoteControlRendererActions(platform: IPlatformService): 
               workspaceIdentity: target.workspaceIdentity,
               state: useRemoteWorkspaceSessionStore.getState(),
             }),
-          removeTaskState: (...args) => useRobinRunSessionStore.getState().removeTaskState(...args),
+          removeTaskState: (...args) =>
+            useRobinDoneSessionStore.getState().removeTaskState(...args),
         });
       } catch (error) {
         logger.warn("[web-remote-control] 手机动作执行失败", { kind: request.kind, error });

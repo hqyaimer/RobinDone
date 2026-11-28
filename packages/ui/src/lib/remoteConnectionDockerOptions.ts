@@ -1,4 +1,4 @@
-import type { DockerContainerInfo, IPlatformService } from "@robinrun/shared";
+import type { DockerContainerInfo, IPlatformService } from "@robindone/shared";
 
 type DockerOptionsPlatform = Pick<IPlatformService, "isDockerAvailable" | "listDockerContainers">;
 

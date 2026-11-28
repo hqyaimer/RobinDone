@@ -4,7 +4,7 @@ import {
   resolveRoutingForSessionKey,
   sessionKeyForTrigger,
   type TriggerEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import {
   appendAudit,
@@ -42,7 +42,7 @@ import { TriggerScriptSupervisor, type ScriptWorkspaceSnapshot } from "./script-
 /**
  * 触发器引擎主体（2026-11-19 设计定稿，docs/trigger-system.md；2026-11-21 常驻脚本修订）。
  *
- * 职责：轮询各项目 `.robinrun/triggers/triggers.json`（5s，避免 fs.watch 的 inode 换名
+ * 职责：轮询各项目 `.robindone/triggers/triggers.json`（5s，避免 fs.watch 的 inode 换名
  * 问题——workers.json 的原子写换 inode 会永久关闭旧 watcher，轮询没有这类生命周期 bug），
  * 调度 cron/interval 到点 fire；script 型 = 常驻事件源进程（ScriptSupervisor 托管生命
  * 周期，随轮询 reconcile）；事件按会话 key 聚合去抖后经 dispatch 端口投递（忙时合并，
@@ -119,7 +119,7 @@ export interface TriggerEngineHandle {
 }
 
 function triggersRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers");
+  return join(workspacePath, ".robindone", "triggers");
 }
 
 export function createTriggerEngineService(

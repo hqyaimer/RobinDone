@@ -1,4 +1,4 @@
-import type { FeedbackTicketEvent, FeedbackTicketStatus } from "@robinrun/shared";
+import type { FeedbackTicketEvent, FeedbackTicketStatus } from "@robindone/shared";
 import { FEEDBACK_STATUS_MESSAGE_IDS, formatFeedbackStatusLabel } from "@/feedback/feedbackMeta.js";
 
 type MessageFormatter = (descriptor: { id: string }, values?: Record<string, string>) => string;

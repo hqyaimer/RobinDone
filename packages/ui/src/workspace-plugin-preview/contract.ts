@@ -1,4 +1,4 @@
-import type { ComposerMentionPrefill } from "@/store/robinrunSessionStoreTypes.js";
+import type { ComposerMentionPrefill } from "@/store/robindoneSessionStoreTypes.js";
 
 /** Workspace catalog preview; selection emits a canonical mention without installing plugins. */
 export interface WorkspacePluginPreviewProps {

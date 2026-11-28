@@ -1,12 +1,12 @@
 import {
   WEB_REMOTE_CONTROL_RPC_TRANSPORT_LIMITS,
   type WebRemoteControlFailure,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   parseWebRemoteControlRelayV2IncomingMessage,
   type WebRemoteControlRelayV2IncomingMessage,
   type WebRemoteControlRelayV2OutgoingMessage,
-} from "@robinrun/shared/web-remote-relay";
+} from "@robindone/shared/web-remote-relay";
 
 export async function readWebSocketData(data: unknown): Promise<string | null> {
   if (typeof data === "string") {
@@ -72,7 +72,7 @@ export function safePayloadMetadata(payload: unknown): Record<string, string | u
   }
   const record = payload as Record<string, unknown>;
   return {
-    robinrun_type: typeof record.robinrun_type === "string" ? record.robinrun_type : undefined,
+    robindone_type: typeof record.robindone_type === "string" ? record.robindone_type : undefined,
     requestId: typeof record.requestId === "string" ? record.requestId : undefined,
     bridgeSessionId:
       typeof record.bridgeSessionId === "string" ? record.bridgeSessionId : undefined,
@@ -81,7 +81,7 @@ export function safePayloadMetadata(payload: unknown): Record<string, string | u
 
 export function isRawTransportCandidate(payload: unknown): boolean {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return false;
-  const type = (payload as { robinrun_type?: unknown }).robinrun_type;
+  const type = (payload as { robindone_type?: unknown }).robindone_type;
   return type === "rpc-frame" || type === "rpc-frame-ack";
 }
 

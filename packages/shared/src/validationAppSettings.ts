@@ -9,9 +9,9 @@ import type { AppSettings } from "./protocol.js";
 import { REMOTE_ASSET_INSTALL_MODES } from "./remoteAssetInstallMode.js";
 import { isKnownRemoteResourcePackageId } from "./remoteResourcePackages.js";
 import { wslUserSchema } from "./wslUserValidation.js";
-import { ROBINRUN_ENABLED_AGENT_PROVIDERS } from "./robinrun-agent-policy.js";
+import { ROBINDONE_ENABLED_AGENT_PROVIDERS } from "./robindone-agent-policy.js";
 import { DYNAMIC_WORKFLOW_MODES } from "./dynamic-workflow-feature.js";
-import { normalizeRobinRunEndpointOrigin } from "./robinrunEndpoint.js";
+import { normalizeRobinDoneEndpointOrigin } from "./robindoneEndpoint.js";
 import {
   DEFAULT_EMBEDDED_BROWSER_VIEWPORT_PREFERENCE,
   embeddedBrowserViewportPreferenceSchema,
@@ -46,7 +46,7 @@ const nonEmptyStringSchema = z.string().trim().min(1);
 
 export const localeSchema = z.enum(["zh-CN", "en-US"]);
 export const localePreferenceSchema = z.enum(["system", "zh-CN", "en-US"]);
-const robinrunInteractionBehaviorSchema = z.enum(["queue", "guide"]);
+const robindoneInteractionBehaviorSchema = z.enum(["queue", "guide"]);
 // launch.md「The user's choice」：读文件时未知取值（降级后读到新版本写的值）按「跟随」处理，
 // 不能让一个偏好字段把整份设置读坏。
 const dynamicWorkflowModeSettingSchema = z.enum(DYNAMIC_WORKFLOW_MODES).optional().catch(undefined);
@@ -70,9 +70,9 @@ export const integratedTerminalShellSelectionSchema = z.discriminatedUnion("mode
   }),
 ]);
 const enabledBuiltinAgentCliProvidersSchema = z
-  // 兼容旧 settings：历史列表可能残留三方 CLI provider，解析后统一归一为 RobinRun Agent。
+  // 兼容旧 settings：历史列表可能残留三方 CLI provider，解析后统一归一为 RobinDone Agent。
   .array(z.enum(["claude", "opencode", "gemini", "codex", "glm"]))
-  .transform(() => [...ROBINRUN_ENABLED_AGENT_PROVIDERS]);
+  .transform(() => [...ROBINDONE_ENABLED_AGENT_PROVIDERS]);
 const providerFamilyDomainSchema = z.enum(["zai", "bigmodel"]);
 
 export const postUpdateReleaseNotesPayloadSchema = z.object({
@@ -169,7 +169,7 @@ const webRemoteControlLastEnabledContextSchema = z.object({
   workspaceIdentity: nonEmptyStringSchema.optional(),
   initialTaskId: nonEmptyStringSchema.optional(),
 });
-const robinrunEndpointOriginSchema = z.preprocess((value) => {
+const robindoneEndpointOriginSchema = z.preprocess((value) => {
   if (typeof value !== "string") {
     return undefined;
   }
@@ -178,25 +178,25 @@ const robinrunEndpointOriginSchema = z.preprocess((value) => {
     return undefined;
   }
   try {
-    return normalizeRobinRunEndpointOrigin(trimmed);
+    return normalizeRobinDoneEndpointOrigin(trimmed);
   } catch {
     return undefined;
   }
 }, z.string().optional());
 
-function sanitizeRobinRunEndpointOrigin(value: unknown): unknown {
+function sanitizeRobinDoneEndpointOrigin(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return value;
   }
   const raw = value as Record<string, unknown>;
-  if (!("robinrunEndpointOrigin" in raw)) {
+  if (!("robindoneEndpointOrigin" in raw)) {
     return value;
   }
-  const parsed = robinrunEndpointOriginSchema.safeParse(raw.robinrunEndpointOrigin);
+  const parsed = robindoneEndpointOriginSchema.safeParse(raw.robindoneEndpointOrigin);
   if (parsed.success && typeof parsed.data === "string") {
-    return { ...raw, robinrunEndpointOrigin: parsed.data };
+    return { ...raw, robindoneEndpointOrigin: parsed.data };
   }
-  const { robinrunEndpointOrigin: _robinrunEndpointOrigin, ...next } = raw;
+  const { robindoneEndpointOrigin: _robindoneEndpointOrigin, ...next } = raw;
   // 非生产 endpoint override 是开发辅助字段，坏值只丢弃该字段，不能拖垮整个 settings 读取。
   return next;
 }
@@ -338,12 +338,12 @@ function migrateLegacyBuiltinAgentCliProviders(value: unknown): unknown {
     enabledBuiltinAgentCliProviders?: unknown;
   };
 
-  // Bugfix: 单 RobinRun Agent 迁移后，旧 setting.json 可能还保存已移除的第三方 CLI provider
+  // Bugfix: 单 RobinDone Agent 迁移后，旧 setting.json 可能还保存已移除的第三方 CLI provider
   // 的启用状态。若这些值继续进入 UI / bot 的 provider 选项，会和 server 侧唯一 glm 状态打架。
-  // 这里在 schema 入口统一归一到 RobinRun Agent，让核心 provider 状态只有一个事实源。
+  // 这里在 schema 入口统一归一到 RobinDone Agent，让核心 provider 状态只有一个事实源。
   return {
     ...raw,
-    enabledBuiltinAgentCliProviders: [...ROBINRUN_ENABLED_AGENT_PROVIDERS],
+    enabledBuiltinAgentCliProviders: [...ROBINDONE_ENABLED_AGENT_PROVIDERS],
   };
 }
 
@@ -507,10 +507,10 @@ function migrateLegacyWorkspaceSession(value: unknown): unknown {
 }
 
 /**
- * RobinRun 项目登记条目 schema：launcher（项目启动台）注册表的运行时校验。
- * 类型权威定义在 protocol.ts 的 RobinRunProjectEntry；此处用编译期守卫防两处形状漂移。
+ * RobinDone 项目登记条目 schema：launcher（项目启动台）注册表的运行时校验。
+ * 类型权威定义在 protocol.ts 的 RobinDoneProjectEntry；此处用编译期守卫防两处形状漂移。
  */
-const robinrunProjectEntrySchema = z.object({
+const robindoneProjectEntrySchema = z.object({
   id: nonEmptyStringSchema,
   name: nonEmptyStringSchema,
   path: nonEmptyStringSchema,
@@ -519,20 +519,20 @@ const robinrunProjectEntrySchema = z.object({
   fullAccessConfirmedAt: z.number().int().nonnegative().optional(),
 });
 
-type RobinRunProjectEntryFromSchema = z.infer<typeof robinrunProjectEntrySchema>;
-type RobinRunProjectEntryFromProtocol = NonNullable<AppSettings["robinrunProjects"]>[number];
+type RobinDoneProjectEntryFromSchema = z.infer<typeof robindoneProjectEntrySchema>;
+type RobinDoneProjectEntryFromProtocol = NonNullable<AppSettings["robindoneProjects"]>[number];
 // 双向可赋值即视为一致；任一侧字段名/类型漂移会让这条赋值在 typecheck 失败。
-const _robinrunProjectEntryShapeGuard: [RobinRunProjectEntryFromSchema] extends [
-  RobinRunProjectEntryFromProtocol,
+const _robindoneProjectEntryShapeGuard: [RobinDoneProjectEntryFromSchema] extends [
+  RobinDoneProjectEntryFromProtocol,
 ]
-  ? [RobinRunProjectEntryFromProtocol] extends [RobinRunProjectEntryFromSchema]
+  ? [RobinDoneProjectEntryFromProtocol] extends [RobinDoneProjectEntryFromSchema]
     ? true
     : false
   : false = true;
-void _robinrunProjectEntryShapeGuard;
+void _robindoneProjectEntryShapeGuard;
 
 /**
- * 全局权限模式缺省（2026-11-22 升格）：值域与 protocol.ts 的 RobinRunGlobalComposerMode
+ * 全局权限模式缺省（2026-11-22 升格）：值域与 protocol.ts 的 RobinDoneGlobalComposerMode
  * 一致（排除 plan——写入侧已归一 build）。类型权威在 protocol.ts。
  */
 const globalComposerModeSchema = z.enum(["build", "edit", "guarded", "yolo"]);
@@ -573,12 +573,12 @@ const appSettingsObjectSchema = z.object({
   toolGroupingExploreEnabled: z.boolean().default(true),
   toolGroupingTerminalEnabled: z.boolean().default(true),
   toolGroupingChangesEnabled: z.boolean().default(false),
-  robinrunInteractionBehavior: robinrunInteractionBehaviorSchema.default("queue"),
+  robindoneInteractionBehavior: robindoneInteractionBehaviorSchema.default("queue"),
   askUserQuestionAutoResolutionEnabled: z.boolean().default(true),
   modelIoFullRetentionEnabled: z.boolean().default(false),
   dynamicWorkflowMode: dynamicWorkflowModeSettingSchema,
   enabledBuiltinAgentCliProviders: enabledBuiltinAgentCliProvidersSchema.default([
-    ...ROBINRUN_ENABLED_AGENT_PROVIDERS,
+    ...ROBINDONE_ENABLED_AGENT_PROVIDERS,
   ]),
   startPlanRecommendationDismissed: z.boolean().default(false),
   providerFamilyConnectionSelections: providerFamilyConnectionSelectionSettingsSchema.default({}),
@@ -615,8 +615,8 @@ const appSettingsObjectSchema = z.object({
   webRemoteControlRelayV2Device: webRemoteControlRelayV2DeviceSchema.optional(),
   webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),
   webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
-  robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
-  robinrunProjects: z.array(robinrunProjectEntrySchema).default([]),
+  robindoneEndpointOrigin: robindoneEndpointOriginSchema.optional(),
+  robindoneProjects: z.array(robindoneProjectEntrySchema).default([]),
   globalComposerMode: globalComposerModeSchema.optional(),
   // 常驻脚本触发器并发配额（2026-11-25 可配置化裁决）：默认值单一来源见 protocol.ts 常量。
   triggerScriptResidentPerWorkspace: z
@@ -640,7 +640,7 @@ export const appSettingsSchema = z.preprocess(
         migrateMessageStreamShowReasoningDefault(
           migrateCloseToTrayOnWindowsDefault(
             migrateLegacyLocalePreference(
-              sanitizeRobinRunEndpointOrigin(
+              sanitizeRobinDoneEndpointOrigin(
                 migrateLegacyWorkspaceSession(
                   migrateLegacyBuiltinAgentCliProviders(
                     migrateRemoteBoundaryIntroAcknowledgement(migrateTaskAutoArchiveReset(value)),
@@ -684,7 +684,7 @@ export const appSettingsPatchSchema = z.object({
   toolGroupingExploreEnabled: z.boolean().optional(),
   toolGroupingTerminalEnabled: z.boolean().optional(),
   toolGroupingChangesEnabled: z.boolean().optional(),
-  robinrunInteractionBehavior: robinrunInteractionBehaviorSchema.optional(),
+  robindoneInteractionBehavior: robindoneInteractionBehaviorSchema.optional(),
   askUserQuestionAutoResolutionEnabled: z.boolean().optional(),
   modelIoFullRetentionEnabled: z.boolean().optional(),
   // 空串是「删除选择、回到跟随」的哨兵：RPC 会吞掉 undefined，normalizeSettingsPatch 把它归一成删除。
@@ -719,7 +719,7 @@ export const appSettingsPatchSchema = z.object({
   memoryEnabled: z.boolean().optional(),
   lastWorkspaceSession: z.array(appWorkspaceSessionEntrySchema).optional(),
   lastActiveWorkspace: appWorkspaceSessionEntrySchema.nullable().optional(),
-  robinrunProjects: z.array(robinrunProjectEntrySchema).optional(),
+  robindoneProjects: z.array(robindoneProjectEntrySchema).optional(),
   remoteConversationWorkspaceBySourceServerId: z
     .record(nonEmptyStringSchema, remoteConversationWorkspaceRecordSchema)
     .optional(),
@@ -743,7 +743,7 @@ export const appSettingsPatchSchema = z.object({
   webRemoteControlRelayV2Device: webRemoteControlRelayV2DeviceSchema.optional(),
   webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),
   webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
-  robinrunEndpointOrigin: robinrunEndpointOriginSchema.optional(),
+  robindoneEndpointOrigin: robindoneEndpointOriginSchema.optional(),
   globalComposerMode: globalComposerModeSchema.optional(),
   // 常驻脚本触发器并发配额：完整 schema 与 patch schema 必须同步声明（见上方 597-599 行
   // bug 注释——只在 patch 声明的字段会在合并后完整 schema parse 时被剥离，重启即回默认）。

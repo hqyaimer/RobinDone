@@ -15,11 +15,11 @@ import { DatabaseSync } from "node:sqlite";
  * 1. tasks-index 投影（含 tombstone，清空过任务列表的存量用户不失去资格）；
  * 2. agent 会话库——只查**可确定性镜像**的定位结果（评审三轮 CR-01：不复制 CLI
  *    解析规则，无法确定按"未知"跳过）：
- *    - env ROBINRUN_SESSION_DB_PATH / ROBINRUN_SESSION_DB（双别名并存时按 env 键序取
+ *    - env ROBINDONE_SESSION_DB_PATH / ROBINDONE_SESSION_DB（双别名并存时按 env 键序取
  *      后者，与 CLI env adapter 的赋值顺序一致）；
- *    - ~/.robinrun/cli/config.json 的 storage.sessionDbPath（CLI createConfig 默认
+ *    - ~/.robindone/cli/config.json 的 storage.sessionDbPath（CLI createConfig 默认
  *      位置在 home，不随 App dataBaseDir 迁移）；
- *    - 默认 ~/.robinrun/cli/db/db.sqlite（homedir 展开）。
+ *    - 默认 ~/.robindone/cli/db/db.sqlite（homedir 展开）。
  *    值为相对路径时按未知跳过本证据源（CLI 按各工作区 cwd 解析，host 无法镜像）；
  *    project 级配置覆盖同样视为未知（已知限制，spec §4）。
  *    只读查询 session 表至少一行。
@@ -30,7 +30,7 @@ import { DatabaseSync } from "node:sqlite";
  * 一律上抛由 UI 保守判不弹——读不了 ≠ 没有。
  */
 
-const DEFAULT_SESSION_DB_PATH = "~/.robinrun/cli/db/db.sqlite";
+const DEFAULT_SESSION_DB_PATH = "~/.robindone/cli/db/db.sqlite";
 
 /** 目录非空。仅 ENOENT 视为"无证据"；其他异常上抛，由 UI 侧保守判不弹。 */
 async function hasDirEntry(dir: string): Promise<boolean> {
@@ -57,7 +57,7 @@ function pickEnvSessionDbPath(env: NodeJS.ProcessEnv): string | undefined {
   let picked: string | undefined;
   for (const [key, value] of Object.entries(env)) {
     if (
-      (key === "ROBINRUN_SESSION_DB_PATH" || key === "ROBINRUN_SESSION_DB") &&
+      (key === "ROBINDONE_SESSION_DB_PATH" || key === "ROBINDONE_SESSION_DB") &&
       value !== undefined
     ) {
       picked = value;
@@ -71,7 +71,7 @@ export interface ResolveAgentSessionDbPathOptions {
   env?: NodeJS.ProcessEnv;
   /** 默认 os.homedir()。 */
   homedirPath?: string;
-  /** 默认 ~/.robinrun/cli/config.json（CLI createConfig 的默认 user config 位置）。 */
+  /** 默认 ~/.robindone/cli/config.json（CLI createConfig 的默认 user config 位置）。 */
   userConfigPath?: string;
   readConfigFile?: (path: string) => Promise<string>;
 }
@@ -92,9 +92,9 @@ export async function resolveAgentSessionDbPath(
   const fromEnv = pickEnvSessionDbPath(env);
   if (fromEnv) return resolveMirroredSessionDbPath(fromEnv, home);
 
-  // CLI createConfig 的默认 user config 位置在 home（~/.robinrun/cli/config.json），
-  // 与 App dataBaseDir 无关（评审三轮 CR-01 第 1 条，robinrun-protocol-entrypoint 实证）。
-  const userConfigPath = options.userConfigPath ?? join(home, ".robinrun", "cli", "config.json");
+  // CLI createConfig 的默认 user config 位置在 home（~/.robindone/cli/config.json），
+  // 与 App dataBaseDir 无关（评审三轮 CR-01 第 1 条，robindone-protocol-entrypoint 实证）。
+  const userConfigPath = options.userConfigPath ?? join(home, ".robindone", "cli", "config.json");
   let raw: string;
   try {
     raw = await readConfigFile(userConfigPath);
@@ -149,7 +149,7 @@ export interface CreateHasExistingLocalTaskOptions {
   listIndexTasks: () => Promise<unknown[]>;
   /** agent 会话库行查询（组合 resolveAgentSessionDbPath + hasAnyAgentSessionRow）；惰性调用。 */
   hasAgentSessionRow: () => Promise<boolean>;
-  /** 旧版任务快照目录（{dataBaseDir}/.robinrun/v2/sessions，含 .deleted.json）；惰性解析。 */
+  /** 旧版任务快照目录（{dataBaseDir}/.robindone/v2/sessions，含 .deleted.json）；惰性解析。 */
   resolveLegacyTaskSessionsDir: () => string;
 }
 

@@ -1,4 +1,4 @@
-import type { EditorInfo } from "@robinrun/shared";
+import type { EditorInfo } from "@robindone/shared";
 
 const PINNED_OPEN_WITH_EDITOR_IDS = ["finder", "qspace", "qspace-pro", "explorer"] as const;
 

@@ -1,10 +1,10 @@
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 import { formatTaskChangedFileLabel } from "@/lib/taskChangeSummary.js";
 
 type TaskFindScope = "conversation" | "changes";
 
 interface TaskFindEntry {
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   searchText: string;
 }
 
@@ -19,7 +19,7 @@ function normalizeTaskFindText(value: string): string {
   return value.trim().toLocaleLowerCase();
 }
 
-function getTaskChangeSearchText(task: RobinRunTaskMeta): string {
+function getTaskChangeSearchText(task: RobinDoneTaskMeta): string {
   const summary = task.changeSummary;
   if (!summary || summary.files.length === 0) {
     return "";
@@ -31,7 +31,7 @@ function getTaskChangeSearchText(task: RobinRunTaskMeta): string {
 }
 
 export function createTaskFindEntries(
-  tasks: readonly RobinRunTaskMeta[],
+  tasks: readonly RobinDoneTaskMeta[],
   scope: TaskFindScope,
 ): TaskFindEntry[] {
   return tasks.map((task) => ({

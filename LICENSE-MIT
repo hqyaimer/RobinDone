@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 RobinRun contributors
+Copyright (c) 2026 RobinDone contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,14 @@ SOFTWARE.
 
 适用范围说明（Scope notice）：
 
-本 MIT 许可仅覆盖 RobinRun 项目在 fork 之后新增的原创代码与文档（例如项目
-启动台、智能体侧栏改造、RobinRun 专属模块等）。
+本 MIT 许可仅覆盖 RobinDone 项目在 fork 之后新增的原创代码与文档（例如项目
+启动台、智能体侧栏改造、RobinDone 专属模块等）。
 
 源自上游 ZCode（https://github.com/zai-org/ZCode）的代码及其衍生部分仍遵循
 Apache License 2.0（见 LICENSE 文件），无法改为 MIT。整体分发时两份许可
 同时生效，各自覆盖对应部分。
 
 This MIT license applies only to original code and documentation added by the
-RobinRun project after the fork. Code derived from upstream ZCode remains
+RobinDone project after the fork. Code derived from upstream ZCode remains
 under Apache License 2.0 (see the LICENSE file) and cannot be relicensed.
 Both licenses apply in parallel to their respective portions on distribution.

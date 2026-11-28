@@ -4,7 +4,7 @@ import {
   ModelOptionSpecsConfig,
   type ModelSelection,
   type ProviderRegistryServiceSnapshot,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import { legacyReasoningLevelRenames as renames } from "./legacy-reasoning-level-renames.js";
 
 const oldRulesCache = new WeakMap<ModelConfigRules, ModelConfigRules>();
@@ -29,7 +29,7 @@ export function resolveLegacyReasoningLevel(
     return undefined;
   const provider = snapshot.resolution.effectiveProviders.get(selection.providerId);
   if (!provider) return undefined;
-  const builtin = snapshot.config.robinrunBuiltinModelRules;
+  const builtin = snapshot.config.robindoneBuiltinModelRules;
   let oldRules = oldRulesCache.get(builtin);
   if (!oldRules) {
     oldRules = new ModelConfigRules(

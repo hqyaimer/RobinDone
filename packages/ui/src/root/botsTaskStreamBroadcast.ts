@@ -1,18 +1,18 @@
 import {
   BOT_TASK_STREAM_BROADCAST_CHANNEL,
-  type RobinRunStreamEvent,
+  type RobinDoneStreamEvent,
   type BotTaskStreamBroadcastPayload,
-} from "@robinrun/shared";
-import type { BroadcastMessage } from "@robinrun/services";
+} from "@robindone/shared";
+import type { BroadcastMessage } from "@robindone/services";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
 import type { WindowTabState } from "@/store/tabStore.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 
-function isRobinRunStreamEvent(value: unknown): value is RobinRunStreamEvent {
+function isRobinDoneStreamEvent(value: unknown): value is RobinDoneStreamEvent {
   if (typeof value !== "object" || value === null) {
     return false;
   }
-  const event = value as Partial<RobinRunStreamEvent>;
+  const event = value as Partial<RobinDoneStreamEvent>;
   return typeof event.type === "string" && typeof event.taskId === "string";
 }
 
@@ -28,7 +28,7 @@ function isBotTaskStreamBroadcastPayload(
     typeof value.taskId === "string" &&
     typeof value.updatedAt === "number" &&
     (value.workspaceIdentity === undefined || typeof value.workspaceIdentity === "string") &&
-    isRobinRunStreamEvent(value.event) &&
+    isRobinDoneStreamEvent(value.event) &&
     value.event.taskId === value.taskId
   );
 }

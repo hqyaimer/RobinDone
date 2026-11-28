@@ -1,4 +1,4 @@
-import type { GitRepositorySummary } from "@robinrun/shared";
+import type { GitRepositorySummary } from "@robindone/shared";
 
 type GitActionMenuPrimaryActionId = "commit" | "push";
 

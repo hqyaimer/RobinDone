@@ -15,7 +15,7 @@ import { dirname, join } from "node:path";
  * 返回 401。外部平台 webhook（公网入口）依赖后端，不在本服务范围。
  *
  * python 脚本 emit 端点（2026-11-22 python 主运行时改造，docs/trigger-python-runtime.md
- * §3.4）：`POST __robinrun/emit/<trg-id>`，python 脚本经注入的 robinrun.py 助手上报事件。
+ * §3.4）：`POST __robindone/emit/<trg-id>`，python 脚本经注入的 robindone.py 助手上报事件。
  * 无 token（用户裁决）：路由只解析到 supervisor 运行注册表里**正在运行**的引擎托管脚本，
  * 本地进程既难知存活触发器 id、也无法给未运行触发器投事件；响应统一 200 + `{ok, error?}`
  * （契约校验同步完成后才响应，python 获得与 node IPC 对等的 ack 语义）。
@@ -24,14 +24,14 @@ import { dirname, join } from "node:path";
 /** 本地 webhook 服务首选端口：固定默认值，用户侧地址跨重启稳定。 */
 export const TRIGGER_WEBHOOK_DEFAULT_PORT = 43110;
 
-/** python 脚本 emit 端点路径前缀（`__robinrun/emit/<trg-id>`；内部保留段，webhook
+/** python 脚本 emit 端点路径前缀（`__robindone/emit/<trg-id>`；内部保留段，webhook
  * 触发器的 path schema 不允许下划线开头，不会与用户路由冲突）。 */
-export const TRIGGER_EMIT_ROUTE_PREFIX = "__robinrun/emit/" as const;
+export const TRIGGER_EMIT_ROUTE_PREFIX = "__robindone/emit/" as const;
 
-/** 脚本暂停/登录失败端点路径前缀（`__robinrun/pause/<trg-id>`；2026-11-25 登录闭环，
+/** 脚本暂停/登录失败端点路径前缀（`__robindone/pause/<trg-id>`；2026-11-25 登录闭环，
  * specs/trigger-browser-hosting.md §3.4：脚本自含登录检测失败时上报，引擎停用触发器 +
  * 唤醒订阅者。同一保留段约定，不与用户路由冲突）。 */
-export const TRIGGER_PAUSE_ROUTE_PREFIX = "__robinrun/pause/" as const;
+export const TRIGGER_PAUSE_ROUTE_PREFIX = "__robindone/pause/" as const;
 
 /**
  * 把 webhook 服务的 loopback 基址持久化到工作区 `state/webhook.json`（2026-11-19
@@ -221,7 +221,8 @@ export class LocalWebhookServer {
       );
       return;
     }
-    const token = request.headers["x-robinrun-token"] ?? url.searchParams.get("token") ?? undefined;
+    const token =
+      request.headers["x-robindone-token"] ?? url.searchParams.get("token") ?? undefined;
     const resolution = this.options.resolveRoute(
       pathname,
       typeof token === "string" ? token : undefined,
@@ -279,7 +280,7 @@ export class LocalWebhookServer {
       respondJson(response, 404, { ok: false, error: "no running script for this trigger" });
       return;
     }
-    // 统一 200 + {ok, error?}：契约违例对脚本是业务结果（robinrun.py 会 raise），不是 HTTP 错误。
+    // 统一 200 + {ok, error?}：契约违例对脚本是业务结果（robindone.py 会 raise），不是 HTTP 错误。
     respondJson(response, 200, result);
   }
 

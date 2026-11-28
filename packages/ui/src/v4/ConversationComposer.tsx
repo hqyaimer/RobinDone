@@ -1,4 +1,4 @@
-import type { SessionLifecycleSnapshot } from "@robinrun/shared";
+import type { SessionLifecycleSnapshot } from "@robindone/shared";
 import {
   WorkspaceHookPendingIndicator,
   WorkspaceMcpPendingIndicator,
@@ -46,8 +46,8 @@ import { useHighspeedComposerEntrance } from "@/highspeed/useHighspeedComposerEn
 import {
   type HighspeedCardSnapshot,
   type PlanIdentitySnapshot,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  type RobinDoneProvider,
+} from "@robindone/shared";
 import {
   TID_CHAT_ATTACHMENT_BUTTON,
   TID_CHAT_ATTACHMENT_MENU_ITEM,
@@ -62,12 +62,12 @@ import {
   TID_V4_ATTACHMENT_UPLOAD_RETRY,
   TID_V4_STOP,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import type {
   AttachmentRef,
   ConversationSnapshot,
   SessionConfigState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import {
   ArrowUpIcon,
   ClipboardPenLineIcon,
@@ -108,14 +108,14 @@ import {
 import type { LexicalChatInputHandle } from "@/LexicalChatInput.js";
 import { ChatPromptEditor } from "@/prompt-editor/ChatPromptEditor.js";
 import { usePromptEditorDragState } from "@/prompt-editor/usePromptEditorDragState.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { advanceComposerDraftRevision } from "@/v4/composer/composerDraftRevision.js";
 import type { AppSlashCommand } from "@/slashCommandHelpers.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 import { runUserAction, startUserAction } from "@/lib/userActionTelemetry.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import type { ComposerMentionPrefill } from "@/store/robinrunSessionStoreTypes.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import type { ComposerMentionPrefill } from "@/store/robindoneSessionStoreTypes.js";
 import { FileDisplayIcon, resolveFileDisplayDescriptor } from "@/lib/fileDisplay.js";
 import {
   isImageChatComposerAttachment,
@@ -143,12 +143,12 @@ import {
 } from "@/lib/workspaceFileDrag.js";
 import { appendWorkspaceFileMentionToComposer } from "@/lib/workspaceFileComposer.js";
 import { resolveProviderBaseURL } from "@/lib/registryProviderView.js";
-import type { ModelSelectionView } from "@robinrun/services";
+import type { ModelSelectionView } from "@robindone/services";
 import type {
   ModelSelectionState,
   ModelSelectionRefreshResult,
 } from "@/hooks/useModelSelectionView.js";
-import type { RobinRunUiError } from "@/lib/robinrunUiError.js";
+import type { RobinDoneUiError } from "@/lib/robindoneUiError.js";
 import {
   resolveComposerAutoFocus,
   type ComposerAutoFocusOptions,
@@ -230,7 +230,7 @@ export interface ConversationComposerSendOptions {
   attachments?: AttachmentRef[];
   /** Prompt 文本内携带的上下文附件数量；用于阻止 /goal 等本地命令误消费。 */
   contextAttachmentCount?: number;
-  conversationQuotes?: import("@robinrun/shared").ConversationSelectionText[];
+  conversationQuotes?: import("@robindone/shared").ConversationSelectionText[];
   /** renderer-only：ACK accepted 后由 SessionPane 绑定真实 commandId/sessionId。 */
   telemetrySeed?: ConversationPromptTelemetrySeed;
   /** 本次 busy input 的一次性投递覆盖，不改 session 偏好。 */
@@ -239,7 +239,7 @@ export interface ConversationComposerSendOptions {
   onCommandCreated?: (commandId: string) => void;
   sharedContextRefs?: Array<{ kind: "shared_context_import"; context_id: string }>;
   /** 插件 UI 代发：随 sendText 持久化，用户消息卡片显示"来自插件 X"。 */
-  source?: import("@robinrun/shared/robinrun-protocol-v4").ConversationInputSource;
+  source?: import("@robindone/shared/robindone-protocol-v4").ConversationInputSource;
 }
 
 export type ConversationComposerSendResult = "sent" | "blocked" | "confirmationRequired";
@@ -503,7 +503,7 @@ export interface ConversationComposerProps {
   onRuntimeRestart?: (listener: () => void) => () => void;
   /** 承载 transport 暴露 runtime 存活态时优先用它，替代 onRuntimeRestart。 */
   onRuntimeLifecycle?: (listener: (state: "available" | "unavailable") => void) => () => void;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   /** 宿主 pane 与 workspace 遮罩共同裁决的真实可见性，仅用于 visible-only telemetry。 */
   telemetryVisible?: boolean;
   /** 点击发送时读取套餐身份；二次确认会继续复用同一份冻结 seed。 */
@@ -543,7 +543,7 @@ export interface ConversationComposerProps {
   /** context usage 面板的 /compact 入口（宿主走 v4 compact 命令）。 */
   onSendCompressionCommand?: (command: string) => void;
   /** v4 会话级错误（snapshot.control.lastError），展示在输入框上方。 */
-  error?: RobinRunUiError | null;
+  error?: RobinDoneUiError | null;
   onDismissError?: () => void;
   /** 无可用模型横幅的恢复动作；由 SessionPane 注入壳层导航，组件不直接操作 tab。 */
   onOpenModelSettings?: () => void;
@@ -675,7 +675,7 @@ function ConversationComposerImpl({
     setTargetSelectionPending(pending);
   }, []);
   const disabled = disabledProp || !remoteAvailable || targetSelectionPending;
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const services = useOptionalServices();
   const conversationTelemetry = useScopedConversationTelemetrySupervisor({
     workspacePath,
@@ -1049,7 +1049,7 @@ function ConversationComposerImpl({
   // 触发源：startDraft 递增的 draftFocusVersion（覆盖 Cmd/Ctrl+N 与所有「新建任务」入口）、
   // sessionId→draftScopeId 变化（切会话/切草稿）、以及挂载。三者置位聚焦意图；因切到需
   // 连接的会话时 composer 短暂 disabled，聚焦意图暂存，待可编辑时兑现一次。
-  const draftFocusVersion = useRobinRunSessionStore(
+  const draftFocusVersion = useRobinDoneSessionStore(
     (state) => state.getWorkspaceState(workspacePath, workspaceIdentity).draftFocusVersion,
   );
   useEffect(() => {
@@ -2780,10 +2780,10 @@ function ConversationComposerImpl({
             onRetry={onRetryError}
             onDismiss={onDismissError}
             onOpenModelSettings={onOpenModelSettings}
-            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「错误横幅升级按钮」——升级弹窗 Provider 已摘除，
+            // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「错误横幅升级按钮」——升级弹窗 Provider 已摘除，
             // ChatErrorBanner 由 prop 存在性门控自动隐藏按钮。恢复时取消下行注释
             // onOpenUpgrade={onOpenModelUpgrade}
-            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+            // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
             modelConfigTarget={modelConfigTarget}
           />
         </div>

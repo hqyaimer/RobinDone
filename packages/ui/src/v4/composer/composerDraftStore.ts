@@ -1,6 +1,6 @@
 // composer parity：v4 composer 的 per-session 草稿持久化（新做，轻量 localStorage）。
 //
-// 旧草稿面（robinrunSessionStore composerDraftByScopeId + chatComposerDraftStorage 写路径）
+// 旧草稿面（robindoneSessionStore composerDraftByScopeId + chatComposerDraftStorage 写路径）
 // 已随 store 收尾删除；本模块是 v4 侧替代——键空间独立（v4 前缀），不与旧键互写，
 // 旧键清理仍归 chatComposerDraftStorage 的 janitor。
 // 语义：scope = sessionId（draft 态 = "__draft__"）；保存 text + editorStateJson，外部预填在
@@ -13,9 +13,9 @@ import {
   modelSelectionSchema,
   remoteHostIdFromWorkspaceIdentity,
   type ModelSelection,
-} from "@robinrun/shared";
-import { submissionModeSchema, type SubmissionMode } from "@robinrun/shared/robinrun-protocol-v4";
-import type { ComposerMentionPrefill } from "@/store/robinrunSessionStoreTypes.js";
+} from "@robindone/shared";
+import { submissionModeSchema, type SubmissionMode } from "@robindone/shared/robindone-protocol-v4";
+import type { ComposerMentionPrefill } from "@/store/robindoneSessionStoreTypes.js";
 
 export interface V4ComposerDraft {
   text: string;
@@ -37,7 +37,7 @@ interface V4DraftFile {
   scopes: Record<string, V4ComposerDraft>;
 }
 
-const STORAGE_KEY_PREFIX = "robinrun-v4-composer-drafts:v1:";
+const STORAGE_KEY_PREFIX = "robindone-v4-composer-drafts:v1:";
 export interface ComposerScope {
   clientNamespace: string;
   hostId: string;
@@ -56,7 +56,7 @@ export interface PendingTaskDraft {
 }
 
 function pendingTaskKey(scope: ComposerScope): string {
-  return `robinrun-pending-task-draft:v1:${composerScopeKey(scope)}`;
+  return `robindone-pending-task-draft:v1:${composerScopeKey(scope)}`;
 }
 export function readPendingTaskDraft(scope: ComposerScope): PendingTaskDraft | null {
   try {
@@ -141,7 +141,7 @@ function workspaceScopeKey(
   identity: string | undefined,
   clientNamespace: string,
 ): string {
-  return `robinrun-composer-workspace-scope:v1:${JSON.stringify([clientNamespace, identity?.trim() || path])}`;
+  return `robindone-composer-workspace-scope:v1:${JSON.stringify([clientNamespace, identity?.trim() || path])}`;
 }
 export function rememberComposerWorkspaceScope(
   path: string,
@@ -185,7 +185,7 @@ function draftStorageKey(
 ): string {
   // 同目录可以属于多个项目；新建草稿按组织归属隔离，正式 session 仍按工作区隔离。
   return scopeId === V4_DRAFT_SCOPE_ROOT && scope
-    ? `robinrun-v4-composer-project-drafts:v1:${composerScopeKey(scope)}`
+    ? `robindone-v4-composer-project-drafts:v1:${composerScopeKey(scope)}`
     : getV4ComposerDraftStorageKey(path, identity);
 }
 export const V4_DRAFT_SCOPE_ROOT = "__draft__";

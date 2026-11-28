@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAgentTreeLayout } from "@/project-sidebar/grouped/model.js";
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import type { ProjectTask, TaskGroup, VirtualProject } from "@/project-sidebar/contract.js";
-import type { RobinRunGroupedTaskView } from "@/project-sidebar/grouped/types.js";
+import type { RobinDoneGroupedTaskView } from "@/project-sidebar/grouped/types.js";
 
 function project(id: string, name: string): VirtualProject {
   return {
@@ -23,7 +23,7 @@ function group(id: string, projectId: string | null): TaskGroup {
   return { id, title: id, color: "gray", projectId, createdAt: 0, updatedAt: 0 };
 }
 
-function view(groups: Array<[id: string, projectId: string | null]>): RobinRunGroupedTaskView {
+function view(groups: Array<[id: string, projectId: string | null]>): RobinDoneGroupedTaskView {
   return {
     nodes: groups.map(([id, projectId]) => ({
       type: "group" as const,

@@ -1,4 +1,4 @@
-import { ApiError, type ApiClient, type ApiRequestInit } from "@robinrun/shared";
+import { ApiError, type ApiClient, type ApiRequestInit } from "@robindone/shared";
 
 const DIAGNOSTIC_RESPONSE_HEADER_NAMES = ["x-request-id", "x-trace-id", "x-span-id"] as const;
 

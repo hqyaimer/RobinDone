@@ -8,12 +8,12 @@
   ],
   "fileFixtures": [
     {
-      "path": ".robinrun/hooks-full-e2e-recorder.mjs",
+      "path": ".robindone/hooks-full-e2e-recorder.mjs",
       "source": "created-by-spec",
       "description": "Recorder shared by process and command Hooks across all four scenarios."
     },
     {
-      "path": ".robinrun/config.json",
+      "path": ".robindone/config.json",
       "source": "created-by-spec",
       "description": "Project Hook configuration installed before each new session snapshot."
     }

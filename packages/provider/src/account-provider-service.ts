@@ -155,9 +155,9 @@ export class AccountProviderService implements ProviderSource<AccountProviderCon
       let config: ProviderConfigSnapshot | undefined;
       try {
         config = await this.#configSource.read();
-        const configuredProviders = config.robinrunBuiltinProviders;
+        const configuredProviders = config.robindoneBuiltinProviders;
         const { providers, states } = await this.#resolve({
-          configRevision: config.robinrunBuiltinRevision,
+          configRevision: config.robindoneBuiltinRevision,
           configuredProviders,
           previousProviders: latest?.providers ?? ProviderConfigMap.empty(),
           previousStates: latest?.states,
@@ -172,14 +172,14 @@ export class AccountProviderService implements ProviderSource<AccountProviderCon
         this.#assertNotDisposed();
         if (
           this.#pendingReasons.size > 0 ||
-          currentConfig.robinrunBuiltinRevision !== config.robinrunBuiltinRevision
+          currentConfig.robindoneBuiltinRevision !== config.robindoneBuiltinRevision
         ) {
           this.#pendingReasons.add("superseded-resolution");
           continue;
         }
-        const basedOnRobinRunBuiltinRevision = config.robinrunBuiltinRevision;
+        const basedOnRobinDoneBuiltinRevision = config.robindoneBuiltinRevision;
         const next = createAccountProviderConfigSnapshot(
-          basedOnRobinRunBuiltinRevision,
+          basedOnRobinDoneBuiltinRevision,
           providers,
           states,
         );

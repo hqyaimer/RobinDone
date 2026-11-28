@@ -22,8 +22,8 @@ import type {
   McpUiAppCapabilities,
   McpUiHostContext,
 } from "@modelcontextprotocol/ext-apps/app-bridge";
-import type { PluginSandboxHandle } from "@robinrun/shared/mcp-apps";
-import { buildPluginSandboxScopeId } from "@robinrun/shared/mcp-apps";
+import type { PluginSandboxHandle } from "@robindone/shared/mcp-apps";
+import { buildPluginSandboxScopeId } from "@robindone/shared/mcp-apps";
 import { clearPluginUiSurfaceFeed } from "../app/pluginUiSurfaceFeedStore.js";
 import {
   PLUGIN_UI_CARD_DEFAULT_HEIGHT_PX,
@@ -37,8 +37,8 @@ import {
 } from "@/plugin-ui/domain/buildPluginUiHostContext.js";
 
 import { acquireWorkspaceConnection } from "@/v4/workspaceConnectionRegistry.js";
-import type { IServiceAccessor } from "@robinrun/services";
-import type { IPlatformService } from "@robinrun/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import type { IPlatformService } from "@robindone/shared";
 import { buildPluginUiSessionKey } from "../contract.js";
 import type { Page, UsePluginUiHostInput, UsePluginUiHostResult } from "./pluginUiHostTypes.js";
 import { createPluginUiPagePlane } from "./pluginUiPagePlane.js";
@@ -214,7 +214,7 @@ export function createPage(
       // 页面独立持有已有 workspace 连接租约；卡片或 pane 退出不会让后台页面失联。
       const connection = acquireWorkspaceConnection(
         latest.current.scope,
-        services.robinrunAgentService,
+        services.robindoneAgentService,
         platform.createLocalMediaPreviewUrl,
       );
       releaseLease = () => connection.release();
@@ -378,7 +378,7 @@ export function createPage(
     controller.start();
   }
   const task = buildPluginUiSessionKey(input.scope);
-  const workspaceEvents = services.robinrunTaskService.onDynamicWorkspaceEvent({
+  const workspaceEvents = services.robindoneTaskService.onDynamicWorkspaceEvent({
     workspacePath: input.scope.workspacePath,
     workspaceIdentity: input.scope.workspaceIdentity,
   })((event) => {

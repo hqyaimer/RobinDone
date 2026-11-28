@@ -10,7 +10,7 @@ import type {
   TaskRunLeaseTarget,
   TaskStreamMirrorPublishOp,
   TaskStreamMirrorTarget,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface SessionRealtimePort {
   readonly hostId: string;

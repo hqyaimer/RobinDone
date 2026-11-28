@@ -1,9 +1,9 @@
-import type { PipSessionEvent } from "@robinrun/robinrun-cua/pip-session";
+import type { PipSessionEvent } from "@robindone/robindone-cua/pip-session";
 import {
   createPipSessionClient,
   type PipSessionClient,
   type PipSessionClientOptions,
-} from "@robinrun/robinrun-cua/pip-session/node";
+} from "@robindone/robindone-cua/pip-session/node";
 import { createServiceLogger, type ServiceLogger } from "../logger/serviceLogger.js";
 import type { CuaPipSessionService } from "./cuaPipSession.js";
 

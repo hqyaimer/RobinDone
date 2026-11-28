@@ -10,7 +10,11 @@ import {
 } from "@/web-remote-control/domain/presentation.js";
 import { memo, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { DesktopCommandIds, type BotProvider, type WebRemoteControlStatus } from "@robinrun/shared";
+import {
+  DesktopCommandIds,
+  type BotProvider,
+  type WebRemoteControlStatus,
+} from "@robindone/shared";
 import {
   Bot as BotIcon,
   CopyIcon,
@@ -32,10 +36,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useOAuth } from "@/hooks/useOAuth.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { getBotProviderRegionTagLabelId } from "@/botsUi.js";
 
@@ -51,9 +55,9 @@ const REMOTE_CONTROL_BOT_ENTRIES: Array<{
 ];
 
 function WebRemoteControlLoginButton({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-  const { intl } = useRobinRunIntl();
-  const hasUser = useRobinRunStore((state) => Boolean(state.user));
-  const requestLoginEntry = useRobinRunStore((state) => state.requestLoginEntry);
+  const { intl } = useRobinDoneIntl();
+  const hasUser = useRobinDoneStore((state) => Boolean(state.user));
+  const requestLoginEntry = useRobinDoneStore((state) => state.requestLoginEntry);
   const { activeProvider, loadingProviders, refreshProviders } = useOAuth();
 
   return (
@@ -94,7 +98,7 @@ export const WebRemoteControlDialog = memo(function WebRemoteControlDialogCompon
   initialTaskId?: string;
 }) {
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [status, setStatus] = useState<WebRemoteControlStatus>({
     status: "idle",
   });

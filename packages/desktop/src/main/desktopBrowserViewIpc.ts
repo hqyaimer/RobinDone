@@ -10,7 +10,7 @@ import {
   type BrowserViewRestoreTabsRequest,
   type BrowserViewportSize,
   type BrowserViewScreenshotSurfaceReadyPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { registerBrowserDataIpcHandlers } from "./desktopBrowserDataIpc.js";
 
 export type AttachBrowserGuest = (

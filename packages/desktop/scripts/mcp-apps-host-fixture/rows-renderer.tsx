@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
-import type { ToolCallRow } from "@robinrun/shared/robinrun-protocol-v4";
-import { RobinRunIntlProvider } from "../../../ui/src/i18n/IntlProvider.js";
+import type { ToolCallRow } from "@robindone/shared/robindone-protocol-v4";
+import { RobinDoneIntlProvider } from "../../../ui/src/i18n/IntlProvider.js";
 import { TabStoreProvider } from "../../../ui/src/store/TabStoreProvider.js";
 import { ConversationTimeline } from "../../../ui/src/v4/ConversationTimeline.js";
 import { DEFAULT_CODE_PREVIEW_SETTINGS } from "../../../ui/src/lib/codePreviewSettings.js";
@@ -135,7 +135,7 @@ export function RowsFixture({ config, ready }: { config: any; ready: () => void 
     ready();
   }, [config, opens, tab, ready]);
   return (
-    <RobinRunIntlProvider initialLocale="en-US">
+    <RobinDoneIntlProvider initialLocale="en-US">
       <TabStoreProvider>
         <PluginUiWorkspaceProvider onOpenSidePane={open}>
           <PluginUiSessionProvider
@@ -168,6 +168,6 @@ export function RowsFixture({ config, ready }: { config: any; ready: () => void 
           </PluginUiSessionProvider>
         </PluginUiWorkspaceProvider>
       </TabStoreProvider>
-    </RobinRunIntlProvider>
+    </RobinDoneIntlProvider>
   );
 }

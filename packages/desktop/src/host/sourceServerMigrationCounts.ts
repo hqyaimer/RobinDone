@@ -1,7 +1,7 @@
 import {
   sourceServerManagementSnapshotSchema,
   type SourceServerManagementSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { ManagedSourceServerConnection } from "./sourceServerConnectionManager.js";
 import type { SourceServerDirectorySnapshot } from "./sourceServerDirectory.js";
 

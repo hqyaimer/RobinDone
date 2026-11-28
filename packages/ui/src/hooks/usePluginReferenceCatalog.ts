@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
-  RobinRunPluginReferenceCatalogEntry,
-  RobinRunPluginsReferenceCatalogResult,
-} from "@robinrun/shared";
+  RobinDonePluginReferenceCatalogEntry,
+  RobinDonePluginsReferenceCatalogResult,
+} from "@robindone/shared";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
 
 export interface PluginReferenceCatalogState {
-  entries: RobinRunPluginReferenceCatalogEntry[];
+  entries: RobinDonePluginReferenceCatalogEntry[];
   authority: "session" | "workspace" | null;
   loading: boolean;
   error: string | null;
@@ -41,7 +41,7 @@ export interface PluginReferenceCatalogOptions {
 
 let sessionCatalogRequests = new WeakMap<
   object,
-  Map<string, Promise<RobinRunPluginsReferenceCatalogResult>>
+  Map<string, Promise<RobinDonePluginsReferenceCatalogResult>>
 >();
 
 export function clearPluginReferenceCatalogCacheForTest(): void {
@@ -50,9 +50,9 @@ export function clearPluginReferenceCatalogCacheForTest(): void {
 
 function releaseSessionCatalogRequest(
   services: object,
-  serviceCache: Map<string, Promise<RobinRunPluginsReferenceCatalogResult>>,
+  serviceCache: Map<string, Promise<RobinDonePluginsReferenceCatalogResult>>,
   requestKey: string,
-  request: Promise<RobinRunPluginsReferenceCatalogResult>,
+  request: Promise<RobinDonePluginsReferenceCatalogResult>,
 ): void {
   // 成功 Promise 曾永久驻留，并在 Agent runtime 换代后继续冒充新
   // runtime 的 Session authority。缓存只能做挂载期的 in-flight 单飞；旧请求
@@ -66,9 +66,9 @@ function releaseSessionCatalogRequest(
 
 function releaseSessionCatalogRequestWhenSettled(
   services: object,
-  serviceCache: Map<string, Promise<RobinRunPluginsReferenceCatalogResult>>,
+  serviceCache: Map<string, Promise<RobinDonePluginsReferenceCatalogResult>>,
   requestKey: string,
-  request: Promise<RobinRunPluginsReferenceCatalogResult>,
+  request: Promise<RobinDonePluginsReferenceCatalogResult>,
 ): void {
   const release = () => releaseSessionCatalogRequest(services, serviceCache, requestKey, request);
   void request.then(release, release);
@@ -109,7 +109,7 @@ export function usePluginReferenceCatalog(
 
   useEffect(() => {
     if (!enabled || !workspacePath || !sessionId || !rpcReady) return;
-    const subscription = services.robinrunAgentService.onAgentRuntimeRestarted((event) => {
+    const subscription = services.robindoneAgentService.onAgentRuntimeRestarted((event) => {
       if (event.workspaceKey !== workspaceKey) return;
       // Runtime restart 后 workspace/session/attachment 都可能保持不变；显式推进代次，
       // 让旧 authority 首帧失效并保证新 runtime 必须重新执行 RPC。
@@ -141,9 +141,9 @@ export function usePluginReferenceCatalog(
       ...(remoteSessionId ? { remoteSessionId } : {}),
       ...(sessionId ? { sessionId } : {}),
     };
-    let request: Promise<RobinRunPluginsReferenceCatalogResult>;
+    let request: Promise<RobinDonePluginsReferenceCatalogResult>;
     let requestServiceCache:
-      | Map<string, Promise<RobinRunPluginsReferenceCatalogResult>>
+      | Map<string, Promise<RobinDonePluginsReferenceCatalogResult>>
       | undefined;
     if (options?.dedupeSessionRequest && sessionId) {
       let serviceCache = sessionCatalogRequests.get(services);

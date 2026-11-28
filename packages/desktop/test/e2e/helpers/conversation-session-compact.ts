@@ -6,7 +6,7 @@ import {
   TID_CHAT_COMPACT_MARKER,
   TID_CHAT_USER_MESSAGE,
   TID_CHAT_VIEW,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 
 export interface CompactMarkerSnapshot {
   attempt: number | null;
@@ -155,7 +155,7 @@ function getCompactMarkerDiagnostics() {
       }));
       const input = document.querySelector<
         HTMLElement & {
-          __robinrunLexicalInputE2E?: { getText?: () => string };
+          __robindoneLexicalInputE2E?: { getText?: () => string };
         }
       >(`[data-testid="${inputTestId}"]`);
 
@@ -171,7 +171,7 @@ function getCompactMarkerDiagnostics() {
         },
         compactMarkers: [...legacyCompactMarkers, ...v4CompactMarkers],
         composer: {
-          bridgeText: input?.__robinrunLexicalInputE2E?.getText?.() ?? null,
+          bridgeText: input?.__robindoneLexicalInputE2E?.getText?.() ?? null,
           domText: (input?.innerText || input?.textContent || "").replace(/\u00a0/g, " ").trim(),
         },
         historyMarkerCount: document.querySelectorAll(

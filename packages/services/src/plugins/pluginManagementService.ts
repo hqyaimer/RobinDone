@@ -2,19 +2,19 @@ import {
   collectTelemetryRendererContext,
   resolveWorkspaceTelemetryDetail,
   type RendererTelemetryEventPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 // 设置页插件管理薄服务实现——plugins/* 旧协议词的唯一 host 侧消费点。
-// 插件安装/市场/启停的事实源在 robinrun-cli 进程（读写 ~/.robinrun 插件目录并热更新
+// 插件安装/市场/启停的事实源在 robindone-cli 进程（读写 ~/.robindone 插件目录并热更新
 // 运行态），host 无副本，故实现保持 agent 协议往返；收敛价值在 UI 层不再直触
-// IRobinRunAgentService，词表消费面从 UI 散点收拢到本文件一处。
-import type { IRobinRunAgentService } from "../robinrun-agent/robinrunAgent.js";
+// IRobinDoneAgentService，词表消费面从 UI 散点收拢到本文件一处。
+import type { IRobinDoneAgentService } from "../robindone-agent/robindoneAgent.js";
 import type { IPluginManagementService } from "./pluginManagement.js";
 
 export interface PluginManagementServiceDependencies {
   reportTelemetryEvent?: (event: RendererTelemetryEventPayload) => void | Promise<void>;
   now?: () => number;
-  robinrunAgentService: Pick<
-    IRobinRunAgentService,
+  robindoneAgentService: Pick<
+    IRobinDoneAgentService,
     | "listPlugins"
     | "getPluginReferenceCatalog"
     | "resolveSuggestedPluginReference"
@@ -39,10 +39,10 @@ export interface PluginManagementServiceDependencies {
 export function createPluginManagementService(
   dependencies: PluginManagementServiceDependencies,
 ): IPluginManagementService {
-  const agent = dependencies.robinrunAgentService;
+  const agent = dependencies.robindoneAgentService;
   const now = dependencies.now ?? Date.now;
   type Params =
-    import("../robinrun-agent/robinrunAgentPluginParams.js").RobinRunAgentPluginMutationTarget & {
+    import("../robindone-agent/robindoneAgentPluginParams.js").RobinDoneAgentPluginMutationTarget & {
       pluginId?: string;
       pluginName?: string;
       marketplace?: string;

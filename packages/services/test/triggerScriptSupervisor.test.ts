@@ -1,6 +1,6 @@
 // 常驻脚本触发器托管回归（2026-11-21 常驻模型裁决，docs/trigger-system.md
 // 「触发器类型 → 脚本」修订节）：
-//  - active 即拉起（真实 spawn node + 引擎生成桥接模块注入 robinrun.emit）；
+//  - active 即拉起（真实 spawn node + 引擎生成桥接模块注入 robindone.emit）；
 //  - 事件上报：emit → 引擎契约校验 → ack → script-result 事件投递（计数清零）；
 //  - 契约违例：nack + script-error 事件（进程不因此终止）；
 //  - exit 0 → completed 终态（一次性脚本的自然完成）；
@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry } from "@robindone/shared";
 import {
   TriggerScriptSupervisor,
   type ScriptSupervisorCallbacks,
@@ -26,7 +26,7 @@ const TRIGGER_ID = "trg-bbb22222";
 let workspace = "";
 
 async function writeScriptEntry(source: string): Promise<void> {
-  const scriptDir = join(workspace, ".robinrun", "triggers", TRIGGER_ID, "script");
+  const scriptDir = join(workspace, ".robindone", "triggers", TRIGGER_ID, "script");
   await mkdir(scriptDir, { recursive: true });
   await writeFile(join(scriptDir, "index.mjs"), source, "utf8");
 }
@@ -101,7 +101,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
   let fixture: Fixture | undefined;
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-script-"));
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-script-"));
   });
 
   afterEach(async () => {
@@ -123,7 +123,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
   it("拉起 active 脚本：emit → ack → script-result 投递，exit 0 → completed 终态", async () => {
     fixture = makeFixture();
     await writeScriptEntry(
-      `const seen = await globalThis.robinrun.emit({ summary: "hello", data: { hello: true } });
+      `const seen = await globalThis.robindone.emit({ summary: "hello", data: { hello: true } });
        process.exit(0);`,
     );
     await fixture.reconcile();
@@ -155,7 +155,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     });
     await writeScriptEntry(
       `try {
-         await globalThis.robinrun.emit({ summary: "bad payload", data: { other: 1 } });
+         await globalThis.robindone.emit({ summary: "bad payload", data: { other: 1 } });
        } catch (error) {
          globalThis.__violation = String(error && error.message || error);
        }
@@ -191,7 +191,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     fixture = makeFixture();
     // 常驻型脚本：先上报一条事件，然后驻留不退出（等待引擎的 shutdown 通知）。
     await writeScriptEntry(
-      `await globalThis.robinrun.emit({ summary: "resident", data: { live: true } });
+      `await globalThis.robindone.emit({ summary: "resident", data: { live: true } });
        await new Promise((resolve) => setTimeout(resolve, 30_000));`,
     );
     await fixture.reconcile();
@@ -222,7 +222,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     const entries = [makeEntry({ id: "trg-aaaaaaaa" }), makeEntry({ id: "trg-bbbbbbbb" })];
     const longRunningSource = `setInterval(() => {}, 1_000);`;
     for (const entry of entries) {
-      const scriptDir = join(workspace, ".robinrun", "triggers", entry.id, "script");
+      const scriptDir = join(workspace, ".robindone", "triggers", entry.id, "script");
       await mkdir(scriptDir, { recursive: true });
       await writeFile(join(scriptDir, "index.mjs"), longRunningSource, "utf8");
     }
@@ -272,7 +272,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     quotas.globalMax = 1;
     const third = makeEntry({ id: "trg-cccccccc" });
     entries.push(third);
-    const scriptDir = join(workspace, ".robinrun", "triggers", third.id, "script");
+    const scriptDir = join(workspace, ".robindone", "triggers", third.id, "script");
     await mkdir(scriptDir, { recursive: true });
     await writeFile(join(scriptDir, "index.mjs"), longRunningSource, "utf8");
     await fixture.reconcile();
@@ -286,7 +286,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     quotas.globalMax = 1;
     const fourth = makeEntry({ id: "trg-dddddddd" });
     entries.push(fourth);
-    const fourthScriptDir = join(workspace, ".robinrun", "triggers", fourth.id, "script");
+    const fourthScriptDir = join(workspace, ".robindone", "triggers", fourth.id, "script");
     await mkdir(fourthScriptDir, { recursive: true });
     await writeFile(join(fourthScriptDir, "index.mjs"), longRunningSource, "utf8");
     const failingSupervisor = new TriggerScriptSupervisor(
@@ -329,7 +329,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
   });
 
   // ---------------------------------------------------------------------------
-  // 幽灵计数回归（2026-11-25 真机缺陷报告复现：RobinRunOps 目验，配额 1/1 下 scheduled
+  // 幽灵计数回归（2026-11-25 真机缺陷报告复现：RobinDoneOps 目验，配额 1/1 下 scheduled
   // 趟结束后 A+B 同时永久 deferred，而实际常驻进程数为 0）。设计不变量：oneshot 趟不占
   // 常驻配额（runningCount 只数 resident），趟结束（exit 0 → handleExit 删条目）后配额
   // 占用回到 fire 前状态——A 仍占位在跑、B 继续 defer，不出现"幽灵占位"。
@@ -353,10 +353,10 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
       },
     });
     const longRunningSource = `setInterval(() => {}, 1_000);`;
-    const oneshotSource = `await globalThis.robinrun.emit({ summary: "one pass", data: {} });
+    const oneshotSource = `await globalThis.robindone.emit({ summary: "one pass", data: {} });
        process.exit(0);`;
     for (const entry of [residentA, residentB, scheduledC]) {
-      const scriptDir = join(workspace, ".robinrun", "triggers", entry.id, "script");
+      const scriptDir = join(workspace, ".robindone", "triggers", entry.id, "script");
       await mkdir(scriptDir, { recursive: true });
       await writeFile(
         join(scriptDir, "index.mjs"),
@@ -443,7 +443,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     const residentB = makeEntry({ id: "trg-bbbbbbbb" });
     const longRunningSource = `setInterval(() => {}, 1_000);`;
     for (const entry of [residentA, residentB]) {
-      const scriptDir = join(workspace, ".robinrun", "triggers", entry.id, "script");
+      const scriptDir = join(workspace, ".robindone", "triggers", entry.id, "script");
       await mkdir(scriptDir, { recursive: true });
       await writeFile(join(scriptDir, "index.mjs"), longRunningSource, "utf8");
     }
@@ -518,7 +518,7 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
   it("scheduled 一趟运行：emit → exit 0 → 状态保持 active，不置 completed", async () => {
     fixture = makeFixture();
     await writeScriptEntry(
-      `await globalThis.robinrun.emit({ summary: "one pass", data: { pass: true } });
+      `await globalThis.robindone.emit({ summary: "one pass", data: { pass: true } });
        process.exit(0);`,
     );
     await fixture.supervisor.spawnScheduledRun(fixture.snapshot(), fixture.entry);
@@ -609,13 +609,13 @@ describe("TriggerScriptSupervisor（常驻脚本托管）", () => {
     const entry = makeEntry({
       config: { kind: "script", runtime: "node", entry: "index.mjs", profile: "shop-main" },
     });
-    // env 注入的可观测断言：脚本校验 ROBINRUN_CDP_ENDPOINT / ROBINRUN_TRIGGER_PROFILE，
+    // env 注入的可观测断言：脚本校验 ROBINDONE_CDP_ENDPOINT / ROBINDONE_TRIGGER_PROFILE，
     // 缺任一即 exit 7（可从崩溃计数观测）；注入成功则 emit 事件后正常退出。
     await writeScriptEntry(
-      `const cdp = process.env.ROBINRUN_CDP_ENDPOINT;
-       const profile = process.env.ROBINRUN_TRIGGER_PROFILE;
+      `const cdp = process.env.ROBINDONE_CDP_ENDPOINT;
+       const profile = process.env.ROBINDONE_TRIGGER_PROFILE;
        if (!cdp || cdp.indexOf("ws://") !== 0 || profile !== "shop-main") process.exit(7);
-       await globalThis.robinrun.emit({ summary: "cdp ok", data: { via: cdp } });
+       await globalThis.robindone.emit({ summary: "cdp ok", data: { via: cdp } });
        process.exit(0);`,
     );
     const released: string[] = [];

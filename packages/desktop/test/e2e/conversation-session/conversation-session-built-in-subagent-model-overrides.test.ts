@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@robinrun/shared";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@robindone/shared";
 import {
   TID_CHAT_MODEL_SELECT_ITEM,
   TID_CHAT_MODEL_SELECT_GROUP,
@@ -16,7 +16,7 @@ import {
   TID_TASK_SETTINGS_BUTTON,
   TID_V4_SUBAGENT_OPEN_SIDE_PANE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,

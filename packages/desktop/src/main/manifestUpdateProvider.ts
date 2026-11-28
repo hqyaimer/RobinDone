@@ -1,10 +1,10 @@
 import { posix } from "node:path";
 import type { CustomPublishOptions, PackageFileInfo } from "builder-util-runtime";
 import {
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-  normalizeRobinRunEndpointOrigin,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
+  normalizeRobinDoneEndpointOrigin,
   type ElectronReleaseChannel,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   Provider,
   AppImageUpdater,
@@ -27,7 +27,7 @@ export interface ManifestUpdateProviderOptions extends CustomPublishOptions {
   endpointOrigin?: string;
   manifestUrl?: string;
   /**
-   * 静态更新源 base（RobinRun 发布工程方案，见 docs/desktop/robinrun-release-updates.md）。
+   * 静态更新源 base（RobinDone 发布工程方案，见 docs/desktop/robindone-release-updates.md）。
    * 非空时清单地址固定为 "{base}/{releasePlatform}/latest.yml"，不再拼接 manifest API
    * 路径与查询参数；清单内的 files[].url 必须是绝对 URL（指向 Release 附件）。
    * 与调试态 manifestUrl 的区别：该值来自构建期 define，随安装包钉死，运行期不可被
@@ -83,7 +83,7 @@ export function getElectronReleasePlatform(
 }
 
 /**
- * 解析静态更新源 base。不能用 normalizeRobinRunEndpointOrigin：它会把 URL 归一成裸 origin
+ * 解析静态更新源 base。不能用 normalizeRobinDoneEndpointOrigin：它会把 URL 归一成裸 origin
  * （剥掉 pathname），而静态 base 需要保留路径段（如 GitHub raw 的 /<owner>/<repo>/updates/<branch>）。
  */
 export function resolveStaticManifestBase(rawBase: string): URL {
@@ -112,7 +112,7 @@ export function buildElectronManifestUrl(options: {
   }
   const url = options.manifestUrl?.trim()
     ? new URL(options.manifestUrl.trim())
-    : new URL(ELECTRON_MANIFEST_API_PATH, normalizeRobinRunEndpointOrigin(options.endpointOrigin));
+    : new URL(ELECTRON_MANIFEST_API_PATH, normalizeRobinDoneEndpointOrigin(options.endpointOrigin));
   url.searchParams.set("platform", options.platform);
   if (options.deviceMid?.trim()) {
     url.searchParams.set("device_mid", options.deviceMid.trim());
@@ -211,7 +211,7 @@ export class ManifestUpdateProvider extends Provider<UpdateInfo> {
   private readonly options: ManifestUpdateProviderOptions;
   private readonly releasePlatform: string;
   private readonly linuxExtensions: readonly string[] | null;
-  private resolveBaseUrl = new URL(DEFAULT_ROBINRUN_ENDPOINT_ORIGIN);
+  private resolveBaseUrl = new URL(DEFAULT_ROBINDONE_ENDPOINT_ORIGIN);
 
   constructor(
     options: ManifestUpdateProviderOptions,
@@ -223,7 +223,7 @@ export class ManifestUpdateProvider extends Provider<UpdateInfo> {
     this.linuxExtensions = getLinuxUpdateExtensions(updater);
     this.releasePlatform = options.releasePlatform?.trim() || getElectronReleasePlatform();
     this.resolveBaseUrl = new URL(
-      normalizeRobinRunEndpointOrigin(options.endpointOrigin ?? DEFAULT_ROBINRUN_ENDPOINT_ORIGIN),
+      normalizeRobinDoneEndpointOrigin(options.endpointOrigin ?? DEFAULT_ROBINDONE_ENDPOINT_ORIGIN),
     );
   }
 
@@ -265,7 +265,7 @@ export class ManifestUpdateProvider extends Provider<UpdateInfo> {
       // Bugfix: preview/stable 切换时旧 manifest 请求可能晚于新请求返回。
       // electron-updater 的 update-available 事件默认不带请求通道，main 进程无法识别过期结果；
       // 这里把本次请求通道随 UpdateInfo 带回去，避免旧通道覆盖更新弹窗内容。
-      robinrunReleaseChannel: releaseChannel,
+      robindoneReleaseChannel: releaseChannel,
     } as UpdateInfo;
   }
 
@@ -277,8 +277,8 @@ export class ManifestUpdateProvider extends Provider<UpdateInfo> {
     const resolved =
       (await this.options.resolveEndpointOrigin?.()) ??
       this.options.endpointOrigin ??
-      DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
-    return normalizeRobinRunEndpointOrigin(resolved);
+      DEFAULT_ROBINDONE_ENDPOINT_ORIGIN;
+    return normalizeRobinDoneEndpointOrigin(resolved);
   }
 
   private async resolveReleaseChannel(): Promise<ElectronReleaseChannel> {

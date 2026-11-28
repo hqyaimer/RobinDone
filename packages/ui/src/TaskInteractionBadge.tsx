@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import type { RobinRunTaskPendingInteraction } from "@robinrun/shared";
+import type { RobinDoneTaskPendingInteraction } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 
 interface TaskInteractionBadgeProps {
-  interaction?: RobinRunTaskPendingInteraction;
+  interaction?: RobinDoneTaskPendingInteraction;
   legacyPending?: boolean;
   className?: string;
   /** fake-clock / SSR 注入；生产缺省使用当前绝对时间。 */
@@ -19,7 +19,7 @@ export interface TaskInteractionBadgePresentation {
 }
 
 export function isAskUserQuestionInteraction(
-  interaction: RobinRunTaskPendingInteraction | undefined,
+  interaction: RobinDoneTaskPendingInteraction | undefined,
 ): boolean {
   if (!interaction || interaction.kind !== "userInput") return false;
   // 旧 sessions-index 摘要没有 toolName；autoResolution 只属于普通 AskUserQuestion，
@@ -31,7 +31,7 @@ export function isAskUserQuestionInteraction(
 }
 
 export function getTaskInteractionBadgePresentation(
-  interaction: RobinRunTaskPendingInteraction | undefined,
+  interaction: RobinDoneTaskPendingInteraction | undefined,
   legacyPending: boolean,
   now: number,
 ): TaskInteractionBadgePresentation | null {
@@ -107,8 +107,8 @@ export function TaskInteractionBadge({
   const style =
     progress !== undefined
       ? ({
-          "--robinrun-interaction-progress": String(progress),
-          "--robinrun-interaction-remaining-ms": `${remainingMs}ms`,
+          "--robindone-interaction-progress": String(progress),
+          "--robindone-interaction-remaining-ms": `${remainingMs}ms`,
         } as CSSProperties)
       : undefined;
   const canSnooze = presentation.canSnooze && Boolean(interaction) && Boolean(onSnoozeCountdown);
@@ -141,7 +141,7 @@ export function TaskInteractionBadge({
       {progress !== undefined ? (
         <span
           aria-hidden="true"
-          className="robinrun-task-interaction-countdown-fill absolute inset-0 origin-left bg-interaction-ask-fill transition-opacity group-hover/interaction-badge:opacity-0 group-focus-visible/interaction-badge:opacity-0 motion-reduce:transition-none"
+          className="robindone-task-interaction-countdown-fill absolute inset-0 origin-left bg-interaction-ask-fill transition-opacity group-hover/interaction-badge:opacity-0 group-focus-visible/interaction-badge:opacity-0 motion-reduce:transition-none"
         />
       ) : null}
       {canSnooze ? (

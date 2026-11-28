@@ -1,6 +1,10 @@
-import type { RobinRunConfigOption, RobinRunProvider, RobinRunTaskMode } from "@robinrun/shared";
+import type {
+  RobinDoneConfigOption,
+  RobinDoneProvider,
+  RobinDoneTaskMode,
+} from "@robindone/shared";
 
-const CANONICAL_SESSION_MODES = new Set<RobinRunTaskMode>([
+const CANONICAL_SESSION_MODES = new Set<RobinDoneTaskMode>([
   "default",
   "yolo",
   "guarded",
@@ -24,22 +28,22 @@ function readTrimmedString(value: unknown): string | undefined {
 }
 
 function getModeConfigOption(
-  options: readonly RobinRunConfigOption[],
-): RobinRunConfigOption | undefined {
+  options: readonly RobinDoneConfigOption[],
+): RobinDoneConfigOption | undefined {
   return options.find((option) => option.category === "mode" && option.type === "select");
 }
 
 function normalizePersistedSessionMode(
   modeId: string | null | undefined,
-  _provider?: RobinRunProvider,
-): RobinRunTaskMode | undefined {
+  _provider?: RobinDoneProvider,
+): RobinDoneTaskMode | undefined {
   const trimmedModeId = readTrimmedString(modeId);
   if (!trimmedModeId) {
     return undefined;
   }
 
-  if (CANONICAL_SESSION_MODES.has(trimmedModeId as RobinRunTaskMode)) {
-    return trimmedModeId as RobinRunTaskMode;
+  if (CANONICAL_SESSION_MODES.has(trimmedModeId as RobinDoneTaskMode)) {
+    return trimmedModeId as RobinDoneTaskMode;
   }
 
   switch (trimmedModeId) {
@@ -71,9 +75,9 @@ function normalizePersistedSessionMode(
 }
 
 export function resolveProviderModeIdFromConfigOptions(params: {
-  configOptions: readonly RobinRunConfigOption[];
+  configOptions: readonly RobinDoneConfigOption[];
   modeId: string | null | undefined;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
 }): string | undefined {
   const requestedMode = readTrimmedString(params.modeId);
   if (!requestedMode) {

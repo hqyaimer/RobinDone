@@ -7,7 +7,7 @@ import {
   ServiceChannels,
   type SourceServerManagementSnapshot,
   parseRemoteWorkspaceIdentity,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   TID_CONFIRM_DIALOG_CONFIRM,
   TID_REMOTE_KIND_SSH,
@@ -24,7 +24,7 @@ import {
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clickTestIdByDom,
   clickTestIdByWebDriver,
@@ -170,17 +170,17 @@ export async function createFirstConnectionStallingSSHProxy(
 }
 
 export function readSSHRuntimeConfig(caseMarker: string): SSHRuntimeConfig {
-  const host = requireSecretEnv("ROBINRUN_E2E_SSH_HOST", caseMarker);
-  const username = requireSecretEnv("ROBINRUN_E2E_SSH_USERNAME", caseMarker);
-  const password = requireSecretEnv("ROBINRUN_E2E_SSH_PASSWORD", caseMarker);
-  const portText = process.env.ROBINRUN_E2E_SSH_PORT?.trim() || "22";
+  const host = requireSecretEnv("ROBINDONE_E2E_SSH_HOST", caseMarker);
+  const username = requireSecretEnv("ROBINDONE_E2E_SSH_USERNAME", caseMarker);
+  const password = requireSecretEnv("ROBINDONE_E2E_SSH_PASSWORD", caseMarker);
+  const portText = process.env.ROBINDONE_E2E_SSH_PORT?.trim() || "22";
   const port = Number.parseInt(portText, 10);
   if (!Number.isSafeInteger(port) || port < 1 || port > 65_535) {
-    throw new Error(`${caseMarker}: ROBINRUN_E2E_SSH_PORT 必须是 1..65535 的整数`);
+    throw new Error(`${caseMarker}: ROBINDONE_E2E_SSH_PORT 必须是 1..65535 的整数`);
   }
 
   const workspacePaths = (
-    process.env.ROBINRUN_E2E_SSH_WORKSPACE_PATHS?.split(",") ?? ["/root", "/home"]
+    process.env.ROBINDONE_E2E_SSH_WORKSPACE_PATHS?.split(",") ?? ["/root", "/home"]
   )
     .map((value) => value.trim())
     .filter(Boolean);
@@ -189,7 +189,7 @@ export function readSSHRuntimeConfig(caseMarker: string): SSHRuntimeConfig {
     workspacePaths.some((value) => !value.startsWith("/")) ||
     workspacePaths[0] === workspacePaths[1]
   ) {
-    throw new Error(`${caseMarker}: ROBINRUN_E2E_SSH_WORKSPACE_PATHS 必须是两个不同的绝对路径`);
+    throw new Error(`${caseMarker}: ROBINDONE_E2E_SSH_WORKSPACE_PATHS 必须是两个不同的绝对路径`);
   }
 
   return {
@@ -204,38 +204,38 @@ export function readSSHRuntimeConfig(caseMarker: string): SSHRuntimeConfig {
 export function readSingleSSHWorkspaceRuntimeConfig(
   caseMarker: string,
 ): SingleSSHWorkspaceRuntimeConfig {
-  const host = requireSecretEnv("ROBINRUN_E2E_SSH_HOST", caseMarker);
-  const username = requireSecretEnv("ROBINRUN_E2E_SSH_USERNAME", caseMarker);
-  const password = requireSecretEnv("ROBINRUN_E2E_SSH_PASSWORD", caseMarker);
+  const host = requireSecretEnv("ROBINDONE_E2E_SSH_HOST", caseMarker);
+  const username = requireSecretEnv("ROBINDONE_E2E_SSH_USERNAME", caseMarker);
+  const password = requireSecretEnv("ROBINDONE_E2E_SSH_PASSWORD", caseMarker);
   const port = parseSSHPort(
-    process.env.ROBINRUN_E2E_SSH_PORT?.trim() || "22",
-    `${caseMarker}: ROBINRUN_E2E_SSH_PORT`,
+    process.env.ROBINDONE_E2E_SSH_PORT?.trim() || "22",
+    `${caseMarker}: ROBINDONE_E2E_SSH_PORT`,
   );
   const workspacePath =
-    process.env.ROBINRUN_E2E_SSH_WORKSPACE_PATH?.trim() ||
-    process.env.ROBINRUN_E2E_SSH_SHARED_WORKSPACE_PATH?.trim() ||
+    process.env.ROBINDONE_E2E_SSH_WORKSPACE_PATH?.trim() ||
+    process.env.ROBINDONE_E2E_SSH_SHARED_WORKSPACE_PATH?.trim() ||
     "/root/workspace";
   if (!workspacePath.startsWith("/")) {
-    throw new Error(`${caseMarker}: ROBINRUN_E2E_SSH_WORKSPACE_PATH 必须是绝对路径`);
+    throw new Error(`${caseMarker}: ROBINDONE_E2E_SSH_WORKSPACE_PATH 必须是绝对路径`);
   }
 
   return { host, password, port, username, workspacePath };
 }
 
 export function readDualSSHRuntimeConfig(caseMarker: string): DualSSHRuntimeConfig {
-  const commonHost = process.env.ROBINRUN_E2E_SSH_HOST?.trim();
-  const commonUsername = process.env.ROBINRUN_E2E_SSH_USERNAME?.trim();
-  const commonPassword = process.env.ROBINRUN_E2E_SSH_PASSWORD?.trim();
-  const workspacePath = process.env.ROBINRUN_E2E_SSH_SHARED_WORKSPACE_PATH?.trim() || "/workspace";
+  const commonHost = process.env.ROBINDONE_E2E_SSH_HOST?.trim();
+  const commonUsername = process.env.ROBINDONE_E2E_SSH_USERNAME?.trim();
+  const commonPassword = process.env.ROBINDONE_E2E_SSH_PASSWORD?.trim();
+  const workspacePath = process.env.ROBINDONE_E2E_SSH_SHARED_WORKSPACE_PATH?.trim() || "/workspace";
   if (!workspacePath.startsWith("/")) {
-    throw new Error(`${caseMarker}: ROBINRUN_E2E_SSH_SHARED_WORKSPACE_PATH 必须是绝对路径`);
+    throw new Error(`${caseMarker}: ROBINDONE_E2E_SSH_SHARED_WORKSPACE_PATH 必须是绝对路径`);
   }
 
   const readTarget = (suffix: "A" | "B"): SSHConnectionConfig => {
-    const host = process.env[`ROBINRUN_E2E_SSH_${suffix}_HOST`]?.trim() || commonHost;
-    const username = process.env[`ROBINRUN_E2E_SSH_${suffix}_USERNAME`]?.trim() || commonUsername;
-    const password = process.env[`ROBINRUN_E2E_SSH_${suffix}_PASSWORD`]?.trim() || commonPassword;
-    const portText = process.env[`ROBINRUN_E2E_SSH_${suffix}_PORT`]?.trim();
+    const host = process.env[`ROBINDONE_E2E_SSH_${suffix}_HOST`]?.trim() || commonHost;
+    const username = process.env[`ROBINDONE_E2E_SSH_${suffix}_USERNAME`]?.trim() || commonUsername;
+    const password = process.env[`ROBINDONE_E2E_SSH_${suffix}_PASSWORD`]?.trim() || commonPassword;
+    const portText = process.env[`ROBINDONE_E2E_SSH_${suffix}_PORT`]?.trim();
     if (!host || !username || !password || !portText) {
       throw new Error(`${caseMarker}: dual SSH target ${suffix} 缺少 host/username/password/port`);
     }
@@ -801,7 +801,7 @@ export function readRemoteTabSnapshot(
       };
       const store = (
         window as Window & {
-          __robinrunTabStoreE2E?: {
+          __robindoneTabStoreE2E?: {
             getState?: () => {
               activeWorkspaceIdentity?: string | null;
               activeWorkspacePath?: string | null;
@@ -809,7 +809,7 @@ export function readRemoteTabSnapshot(
             };
           };
         }
-      ).__robinrunTabStoreE2E;
+      ).__robindoneTabStoreE2E;
       const state = store?.getState?.();
       const candidates =
         state?.tabs?.filter((candidate) =>
@@ -845,7 +845,7 @@ export function readRemoteTabSnapshot(
   );
 }
 
-/** 等待 SSH Source 的 conversation workspace（~/.robinrun/workspace/default）进入可用状态。 */
+/** 等待 SSH Source 的 conversation workspace（~/.robindone/workspace/default）进入可用状态。 */
 export async function waitForSSHConversation(
   config: SSHConnectionConfig,
   caseMarker: string,
@@ -863,7 +863,7 @@ export async function waitForSSHConversation(
           };
           const store = (
             window as Window & {
-              __robinrunTabStoreE2E?: {
+              __robindoneTabStoreE2E?: {
                 getState?: () => {
                   activeWorkspaceIdentity?: string | null;
                   activeWorkspacePath?: string | null;
@@ -871,17 +871,17 @@ export async function waitForSSHConversation(
                 };
               };
             }
-          ).__robinrunTabStoreE2E;
+          ).__robindoneTabStoreE2E;
           const state = store?.getState?.();
           // dual target 场景下,先连接的设备在表单提交时也会自动打开自己的设备级
-          // conversation(路径同为 ~/.robinrun/workspace/default)。只按路径匹配会把 A 的
+          // conversation(路径同为 ~/.robindone/workspace/default)。只按路径匹配会把 A 的
           // conversation 错认成 B 的(entry-attribution 实锤:sourceB 被解析成 A 的
           // sourceServerId)。必须同时校验 tab 的连接 target(host+port)。
           const tab = state?.tabs?.find((candidate) => {
             if (
               !candidate.workspacePath
                 ?.replace(/\\/gu, "/")
-                .endsWith("/.robinrun/workspace/default")
+                .endsWith("/.robindone/workspace/default")
             ) {
               return false;
             }
@@ -928,7 +928,7 @@ export async function readHostProcesses(): Promise<Array<{ name: string; pid: nu
       hosts = await browser.electron.execute((electron) =>
         electron.app
           .getAppMetrics()
-          .filter((metric) => metric.name?.startsWith("robinrun-host-"))
+          .filter((metric) => metric.name?.startsWith("robindone-host-"))
           .map((metric) => ({ name: metric.name!, pid: metric.pid }))
           .sort((a, b) => a.pid - b.pid),
       );

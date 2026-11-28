@@ -5,7 +5,7 @@ import {
 } from "@/ControlHintTooltip.js";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { GroupedTaskRow } from "@/project-sidebar/grouped/task-row.js";
 import {
@@ -102,9 +102,9 @@ function Fixture() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale="en-US">
+  <RobinDoneIntlProvider initialLocale="en-US">
     <TooltipProvider>
       <Fixture />
     </TooltipProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

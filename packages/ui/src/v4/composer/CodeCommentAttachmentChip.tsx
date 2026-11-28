@@ -1,7 +1,7 @@
 import { Code2Icon, MessageSquareTextIcon, Trash2Icon } from "lucide-react";
 import type { AttachmentHoverCardContentProps } from "@/components/ai-elements/attachments.js";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { CodeCommentComposerAttachment } from "@/lib/codeCommentContext.js";
 import { ContextAttachmentPill } from "@/v4/composer/ContextAttachmentPill.js";
 
@@ -20,7 +20,7 @@ export function CodeCommentAttachmentChip({
   onRemove?: (comment: CodeCommentComposerAttachment) => void;
   onRemoveAll?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (comments.length === 0) return null;
 
   const label = intl.formatMessage(

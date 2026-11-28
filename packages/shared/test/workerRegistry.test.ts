@@ -60,7 +60,7 @@ describe("buildWorkerProfile", () => {
         modelSelection: { providerId: "builtin:zai-coding-plan", modelId: "glm-4.6" },
       }),
       agentsMd: "worker rules",
-      defineMdPath: "/ws/.robinrun/agents/wkr-test0001/define.md",
+      defineMdPath: "/ws/.robindone/agents/wkr-test0001/define.md",
     });
     expect(profile).toMatchObject({
       name: "wkr-test0001",
@@ -70,7 +70,7 @@ describe("buildWorkerProfile", () => {
       tools: ["Read", "Bash"],
       modelSelection: { providerId: "builtin:zai-coding-plan", modelId: "glm-4.6" },
       injectAgentsMd: true,
-      path: "/ws/.robinrun/agents/wkr-test0001/define.md",
+      path: "/ws/.robindone/agents/wkr-test0001/define.md",
       worker: {
         workerId: "wkr-test0001",
         workerName: "dev",
@@ -81,7 +81,7 @@ describe("buildWorkerProfile", () => {
   it("falls back to an empty systemPrompt when agents.md is missing (caller decides skip)", () => {
     const profile = buildWorkerProfile({
       entry: entry(),
-      defineMdPath: "/ws/.robinrun/agents/wkr-test0001/define.md",
+      defineMdPath: "/ws/.robindone/agents/wkr-test0001/define.md",
     });
     expect(profile.systemPrompt).toBe("");
   });

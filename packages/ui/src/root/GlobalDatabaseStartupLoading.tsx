@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { canRetryDatabaseStartup, type DatabaseStartupState } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { canRetryDatabaseStartup, type DatabaseStartupState } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { Button } from "@/components/ui/button.js";
 import { RootStartupLoading } from "@/root/RootStartupLoading.js";
 
@@ -15,7 +15,7 @@ export function GlobalDatabaseStartupLoading({
   onCopy: (details: string) => Promise<void>;
   onExit: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [now, setNow] = useState(Date.now);
   const [copyStatus, setCopyStatus] = useState<"copied" | "copyFailed" | null>(null);
   const failed = state?.phase === "failed";

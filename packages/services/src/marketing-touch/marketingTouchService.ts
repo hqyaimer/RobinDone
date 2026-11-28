@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { parseMarketingTouchResponse, type ApiClient } from "@robinrun/shared";
+import { parseMarketingTouchResponse, type ApiClient } from "@robindone/shared";
 import { readApiJson } from "#src/providers/api/apiJson.js";
 import type { IMarketingTouchService } from "#src/marketing-touch/marketingTouch.js";
 
@@ -36,7 +36,7 @@ export function createMarketingTouchService(options: {
       headers: {
         "X-Device-Mid": device,
         "X-Client-Language": localeSchema.parse(locale),
-        "X-RobinRun-App-Version": options.appVersion,
+        "X-RobinDone-App-Version": options.appVersion,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     };

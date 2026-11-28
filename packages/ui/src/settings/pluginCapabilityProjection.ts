@@ -4,12 +4,12 @@ import {
 } from "@/settings/pluginStoreListing.js";
 import type {
   SkillSummary,
-  RobinRunCommand,
-  RobinRunInstalledPluginSummary,
-  RobinRunPluginInfo,
-  RobinRunPluginScope,
-} from "@robinrun/shared";
-import { compareDocumentPluginPriority, isPluginCommand, isUserCommand } from "@robinrun/shared";
+  RobinDoneCommand,
+  RobinDoneInstalledPluginSummary,
+  RobinDonePluginInfo,
+  RobinDonePluginScope,
+} from "@robindone/shared";
+import { compareDocumentPluginPriority, isPluginCommand, isUserCommand } from "@robindone/shared";
 import { pluginSearchMatches } from "@/settings/pluginSearch.js";
 
 function canonicalPluginName(value: string): string {
@@ -23,16 +23,16 @@ export function needsMcpAttention(resource: {
 }
 
 export function selectBuiltInPlugins(
-  plugins: readonly RobinRunPluginInfo[],
-  installedPlugins: readonly RobinRunInstalledPluginSummary[],
-): RobinRunPluginInfo[] {
+  plugins: readonly RobinDonePluginInfo[],
+  installedPlugins: readonly RobinDoneInstalledPluginSummary[],
+): RobinDonePluginInfo[] {
   const installedIds = new Set(installedPlugins.map((plugin) => plugin.id));
   return plugins.filter((plugin) => plugin.source === "official" && !installedIds.has(plugin.id));
 }
 
 export interface PluginSettingsGroups {
-  installed: RobinRunPluginInfo[];
-  builtIn: RobinRunPluginInfo[];
+  installed: RobinDonePluginInfo[];
+  builtIn: RobinDonePluginInfo[];
 }
 
 /**
@@ -40,7 +40,7 @@ export interface PluginSettingsGroups {
  * 进入 Installed / Built-in，否则会出现“已安装分组 + 未安装状态”的矛盾行。
  */
 export function partitionPluginsForSettings(
-  plugins: readonly RobinRunPluginInfo[],
+  plugins: readonly RobinDonePluginInfo[],
   builtInPluginIds: ReadonlySet<string>,
 ): PluginSettingsGroups {
   const materializedPlugins = plugins.filter((plugin) => plugin.packageStatus !== "missing");
@@ -53,11 +53,11 @@ export function partitionPluginsForSettings(
 }
 
 export function filterPluginsByQuery(
-  plugins: readonly RobinRunPluginInfo[],
+  plugins: readonly RobinDonePluginInfo[],
   query: string,
   itemsById?: ReadonlyMap<string, StorePluginItem>,
   locale = "en-US",
-): RobinRunPluginInfo[] {
+): RobinDonePluginInfo[] {
   const normalizedQuery = query.trim().toLocaleLowerCase();
   if (!normalizedQuery) return [...plugins];
   return plugins.filter((plugin) => {
@@ -77,10 +77,10 @@ export function filterPluginsByQuery(
 }
 
 export function selectPluginsForScope(
-  plugins: readonly RobinRunPluginInfo[],
-  _installedPlugins: readonly RobinRunInstalledPluginSummary[],
-  _scope: RobinRunPluginScope,
-): RobinRunPluginInfo[] {
+  plugins: readonly RobinDonePluginInfo[],
+  _installedPlugins: readonly RobinDoneInstalledPluginSummary[],
+  _scope: RobinDonePluginScope,
+): RobinDonePluginInfo[] {
   // User / Workspace 已经由 plugins/list(configScope) 返回各自的配置投影。
   // 这里不能再按 enabledSource/rootSource 做“归属”过滤，否则 Workspace 会丢掉继承 User
   // 的 Host inventory，User 也会被当前 Workspace override 污染后的来源字段误删。
@@ -89,8 +89,8 @@ export function selectPluginsForScope(
 
 export function selectSkillsForScope(
   skills: readonly SkillSummary[],
-  scopedPlugins: readonly Pick<RobinRunPluginInfo, "id" | "name" | "enabled">[],
-  scope: RobinRunPluginScope,
+  scopedPlugins: readonly Pick<RobinDonePluginInfo, "id" | "name" | "enabled">[],
+  scope: RobinDonePluginScope,
 ): SkillSummary[] {
   const enabledPlugins = scopedPlugins.filter((plugin) => plugin.enabled);
   const scopedPluginIds = new Set(enabledPlugins.map((plugin) => plugin.id));
@@ -113,10 +113,10 @@ export function selectSkillsForScope(
 }
 
 export function selectCommandsForScope(
-  commands: readonly RobinRunCommand[],
-  scopedPlugins: readonly Pick<RobinRunPluginInfo, "id" | "name" | "enabled">[],
-  scope: RobinRunPluginScope,
-): RobinRunCommand[] {
+  commands: readonly RobinDoneCommand[],
+  scopedPlugins: readonly Pick<RobinDonePluginInfo, "id" | "name" | "enabled">[],
+  scope: RobinDonePluginScope,
+): RobinDoneCommand[] {
   const enabledPlugins = scopedPlugins.filter((plugin) => plugin.enabled);
   const scopedPluginIds = new Set(enabledPlugins.map((plugin) => plugin.id));
   const scopedPluginIdsByName = new Map<string, string[]>();

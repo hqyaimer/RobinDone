@@ -3,9 +3,9 @@ import {
   type AppSettings,
   type Locale,
   type ProviderFamilyDomain,
-} from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/services";
-import { encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+} from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/services";
+import { encodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 
 export type ApiKeyProviderChoice = "zai" | "bigmodel";
 

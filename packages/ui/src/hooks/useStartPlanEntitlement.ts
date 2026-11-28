@@ -1,4 +1,4 @@
-import type { IUsageStatsService } from "@robinrun/services";
+import type { IUsageStatsService } from "@robindone/services";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useUsageEntitlementWithService } from "@/hooks/useUsageEntitlement.js";
 import { buildStartPlanEntitlementOptions } from "@/lib/startPlanEntitlementOptions.js";

@@ -3,7 +3,7 @@ export type CodingPlanResetType = "FIVE_HOUR" | "WEEK";
 export interface CodingPlanResetScopeRequest {
   preferredProviderId: string;
   /** Registry 静态访问类别，或调用边界已解析的 Team scope。 */
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
 }
 
 export interface CodingPlanResetOpportunitySnapshot {
@@ -40,6 +40,6 @@ export interface CodingPlanResetUseResult {
   used: true;
 }
 import type {
-  RobinRunAccountAccess,
-  RobinRunProviderAccountAccess,
-} from "./robinrun-protocol/index.js";
+  RobinDoneAccountAccess,
+  RobinDoneProviderAccountAccess,
+} from "./robindone-protocol/index.js";

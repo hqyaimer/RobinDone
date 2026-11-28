@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { PlatformChannels } from "@robinrun/shared";
+import { PlatformChannels } from "@robindone/shared";
 import { installPluginSandboxHostBridge } from "../../src/preload/pluginSandbox/hostBridge.js";
 installPluginSandboxHostBridge();
 contextBridge.exposeInMainWorld("harness", {

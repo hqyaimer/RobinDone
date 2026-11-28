@@ -1,11 +1,11 @@
 /* eslint-disable max-lines -- Bot bot reply formatter 集中维护第三方消息的文本颗粒度、工具摘要和权限摘要，避免 provider 间文案分叉。 */
 import type {
-  RobinRunPermissionRequest,
-  RobinRunStreamEvent,
-  RobinRunTaskChangeSummary,
+  RobinDonePermissionRequest,
+  RobinDoneStreamEvent,
+  RobinDoneTaskChangeSummary,
   Locale,
-} from "@robinrun/shared";
-import { getCompactToolCallSummary, getPermissionRequestPreview } from "@robinrun/shared";
+} from "@robindone/shared";
+import { getCompactToolCallSummary, getPermissionRequestPreview } from "@robindone/shared";
 import { normalizeBotMessageLocale } from "./messages.js";
 
 export interface BotReplyToolCallState {
@@ -36,7 +36,7 @@ export type BotAssistantReplyBlock =
     }
   | {
       type: "change-summary";
-      changeSummary: RobinRunTaskChangeSummary;
+      changeSummary: RobinDoneTaskChangeSummary;
     };
 
 const MAX_TOOL_SUMMARY_ITEMS = 10;
@@ -184,7 +184,7 @@ function formatBotDiffCount(changeStat: { added: number; removed: number }): str
 }
 
 function formatPermissionRequestHeader(
-  request: Pick<RobinRunPermissionRequest, "title" | "description" | "kind" | "raw">,
+  request: Pick<RobinDonePermissionRequest, "title" | "description" | "kind" | "raw">,
   options?: BotReplyFormatOptions,
 ): string {
   const preview = getPermissionRequestPreview(request);
@@ -192,7 +192,7 @@ function formatPermissionRequestHeader(
 }
 
 function formatPermissionRequestTitle(
-  request: Pick<RobinRunPermissionRequest, "title" | "description" | "kind" | "raw">,
+  request: Pick<RobinDonePermissionRequest, "title" | "description" | "kind" | "raw">,
   preview: ReturnType<typeof getPermissionRequestPreview>,
   options?: BotReplyFormatOptions,
 ): string {
@@ -214,7 +214,7 @@ function formatPermissionRequestTitle(
 }
 
 function formatEditPermissionKindLabel(
-  request: Pick<RobinRunPermissionRequest, "title" | "description" | "kind" | "raw">,
+  request: Pick<RobinDonePermissionRequest, "title" | "description" | "kind" | "raw">,
   preview: ReturnType<typeof getPermissionRequestPreview>,
   locale?: Locale,
 ): string {
@@ -241,7 +241,7 @@ function formatEditPermissionKindLabel(
   if (/\b(update|updating|updated)\b/u.test(normalizedText)) {
     return t(locale, "editUpdating");
   }
-  // Bugfix: edit 权限标题直接透传 RobinRun Agent 的 "Edit <path>" 时，第三方消息无法像 UI kindLabel 一样区分写入/更新/删除。
+  // Bugfix: edit 权限标题直接透传 RobinDone Agent 的 "Edit <path>" 时，第三方消息无法像 UI kindLabel 一样区分写入/更新/删除。
   // 这里至少把泛化的 Edit 换成 edit kind label，具体操作能从 raw/fileChange 推断时再细分。
   return t(locale, "editEditing");
 }
@@ -318,7 +318,7 @@ export function formatBotToolCallReply(
 }
 
 export function formatBotPermissionRequestSummary(
-  request: Pick<RobinRunPermissionRequest, "title" | "description" | "kind" | "raw">,
+  request: Pick<RobinDonePermissionRequest, "title" | "description" | "kind" | "raw">,
   options?: BotReplyFormatOptions,
 ): string {
   const preview = getPermissionRequestPreview(request);
@@ -348,7 +348,7 @@ export function isBotToolCallReplyTerminal(status?: BotReplyToolCallState["statu
 }
 
 function formatBotChangeSummary(
-  changeSummary?: RobinRunTaskChangeSummary | null,
+  changeSummary?: RobinDoneTaskChangeSummary | null,
   options?: Pick<BotReplyFormatOptions, "locale">,
 ): string {
   if (!changeSummary || changeSummary.fileCount <= 0 || changeSummary.files.length === 0) {
@@ -372,7 +372,7 @@ function formatBotChangeSummary(
 
 export function updateBotReplyToolCalls(
   toolCalls: Map<string, BotReplyToolCallState>,
-  event: RobinRunStreamEvent,
+  event: RobinDoneStreamEvent,
 ): void {
   if (event.type === "tool_call") {
     toolCalls.set(event.toolId, {

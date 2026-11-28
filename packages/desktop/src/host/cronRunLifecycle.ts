@@ -1,4 +1,4 @@
-import type { RobinRunAutomationRunOutcome, RobinRunAutomationTrigger } from "@robinrun/shared";
+import type { RobinDoneAutomationRunOutcome, RobinDoneAutomationTrigger } from "@robindone/shared";
 
 export interface CronRunLifecycleRepo {
   ensureRunClaimed(params: {
@@ -6,11 +6,11 @@ export interface CronRunLifecycleRepo {
     automationId: string;
     workspaceKey: string;
     scheduledAt: number | null;
-    trigger: RobinRunAutomationTrigger;
+    trigger: RobinDoneAutomationTrigger;
   }): Promise<void>;
   markRunOutcome(
     runId: string,
-    outcome: RobinRunAutomationRunOutcome,
+    outcome: RobinDoneAutomationRunOutcome,
     error?: string,
   ): Promise<void>;
   markRunDispatch(params: {
@@ -27,7 +27,7 @@ export interface CronRunLifecycleIdentity {
   automationId: string;
   workspaceKey: string;
   scheduledAt: number | null;
-  trigger: RobinRunAutomationTrigger;
+  trigger: RobinDoneAutomationTrigger;
 }
 
 type LogWarn = (message: string, error: unknown) => void;
@@ -57,7 +57,7 @@ export function startManualClaimHeartbeat(
 export async function recordCronRunOutcomeBestEffort(
   params: CronRunLifecycleIdentity & {
     repo: CronRunLifecycleRepo;
-    outcome: RobinRunAutomationRunOutcome;
+    outcome: RobinDoneAutomationRunOutcome;
     error?: string;
     logWarn: LogWarn;
   },
@@ -120,7 +120,7 @@ export async function settleManualDispatchFailureBestEffort(
 export async function settleCronRunTerminalOutcome(
   params: CronRunLifecycleIdentity & {
     repo: CronRunLifecycleRepo;
-    outcome: Exclude<RobinRunAutomationRunOutcome, "running">;
+    outcome: Exclude<RobinDoneAutomationRunOutcome, "running">;
     error?: string;
     logWarn: LogWarn;
   },

@@ -1,8 +1,8 @@
-import type { ProviderConfigObject } from "@robinrun/provider";
+import type { ProviderConfigObject } from "@robindone/provider";
 import { PackageIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { resolveTheme, type ResolvedTheme } from "@/useTheme.js";
 import alibabaModelStudioLogo from "@/assets/provider-icons/model-provider-alibaba-cloud.png";
 import anthropicLogo from "@/assets/provider-icons/model-provider-anthropic.png";
@@ -72,7 +72,7 @@ export function ProviderLogo({
   className?: string;
 }) {
   // 兜底值与全局默认主题保持一致（useTheme/store 均默认 zai-light，2026-11-26 用户裁决）。
-  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-light");
+  const theme = useRobinDoneStoreWithDefault((state) => state.theme, "zai-light");
   const src = resolveBuiltinProviderLogoAsset(logo, resolveTheme(theme));
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (!src || failedSrc === src) {

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { TriggerContract } from "@robinrun/shared";
+import type { TriggerContract } from "@robindone/shared";
 
 /**
  * 脚本触发器的纯助手（2026-11-21 常驻模型修订；2026-11-22 python 主运行时改造）。

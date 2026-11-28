@@ -110,18 +110,18 @@ export async function checkStandalone(root: string) {
       await frame.executeJavaScript("Boolean(document.querySelector('viz-calendar').shadowRoot)"),
       true,
     );
-    assert.equal(await frame.executeJavaScript("window.robinrun.statePersistence"), "local");
+    assert.equal(await frame.executeJavaScript("window.robindone.statePersistence"), "local");
     await frame.executeJavaScript(
-      "window.robinrun.setWidgetState({privateContent:{count:7},modelContent:'count:7'})",
+      "window.robindone.setWidgetState({privateContent:{count:7},modelContent:'count:7'})",
     );
     frame = await load();
     assert.equal(await frame.executeJavaScript("window.initialCount"), 7);
     assert.equal(await frame.executeJavaScript("d3.version"), "7.9.0");
-    assert.equal(await frame.executeJavaScript("window.robinrun.stateModelContext"), "none");
+    assert.equal(await frame.executeJavaScript("window.robindone.stateModelContext"), "none");
     assert.equal(await frame.executeJavaScript("typeof globalThis.Tweak"), "undefined");
     assert.equal(
       await frame.executeJavaScript(
-        "window.robinrun.sendFollowUpMessage({prompt:'test'}).then(()=>true)",
+        "window.robindone.sendFollowUpMessage({prompt:'test'}).then(()=>true)",
       ),
       true,
     );

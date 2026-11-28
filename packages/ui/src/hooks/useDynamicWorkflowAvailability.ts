@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import type { ICodingPlanSubscriptionService, IRobinRunAgentService } from "@robinrun/services";
-import type { DynamicWorkflowMode } from "@robinrun/shared";
+import type { ICodingPlanSubscriptionService, IRobinDoneAgentService } from "@robindone/services";
+import type { DynamicWorkflowMode } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import {
   useDynamicWorkflowAvailabilityStore,
@@ -44,10 +44,10 @@ export function useDynamicWorkflowAvailabilityLoader(
 export function useDynamicWorkflowUserModeSync(params: {
   settingsLoaded: boolean;
   userMode: DynamicWorkflowMode | undefined;
-  robinrunAgentService: Pick<IRobinRunAgentService, "syncDynamicWorkflowUserMode">;
+  robindoneAgentService: Pick<IRobinDoneAgentService, "syncDynamicWorkflowUserMode">;
   codingPlanSubscriptionService: ICodingPlanSubscriptionService;
 }): void {
-  const { settingsLoaded, userMode, robinrunAgentService, codingPlanSubscriptionService } = params;
+  const { settingsLoaded, userMode, robindoneAgentService, codingPlanSubscriptionService } = params;
   const reload = useDynamicWorkflowAvailabilityStore((state) => state.reload);
   const observedRef = useRef<{ userMode: DynamicWorkflowMode | undefined } | null>(null);
   const chainRef = useRef<Promise<void>>(Promise.resolve());
@@ -58,7 +58,7 @@ export function useDynamicWorkflowUserModeSync(params: {
     if (observed === null || observed.userMode === userMode) return;
     chainRef.current = chainRef.current.then(async () => {
       try {
-        await robinrunAgentService.syncDynamicWorkflowUserMode(userMode ? { mode: userMode } : {});
+        await robindoneAgentService.syncDynamicWorkflowUserMode(userMode ? { mode: userMode } : {});
       } catch (error) {
         logger.warn("[dynamic-workflow] 用户选择同步到 Host 失败", {
           error: error instanceof Error ? error.message : String(error),
@@ -66,5 +66,5 @@ export function useDynamicWorkflowUserModeSync(params: {
       }
       await reload(codingPlanSubscriptionService);
     });
-  }, [codingPlanSubscriptionService, reload, settingsLoaded, userMode, robinrunAgentService]);
+  }, [codingPlanSubscriptionService, reload, settingsLoaded, userMode, robindoneAgentService]);
 }

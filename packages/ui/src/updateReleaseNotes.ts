@@ -1,4 +1,4 @@
-import type { Locale, PostUpdateReleaseNotesPayload } from "@robinrun/shared";
+import type { Locale, PostUpdateReleaseNotesPayload } from "@robindone/shared";
 
 export type LocalizedUpdateReleaseNotes = {
   title: string;

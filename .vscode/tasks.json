@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "robinrun: tsup watch (debug)",
+      "label": "robindone: tsup watch (debug)",
       "type": "process",
       "command": "node",
       "args": ["${workspaceFolder}/.vscode/tsup-watch.mjs"],
@@ -13,7 +13,7 @@
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "robinrun-debug"
+        "group": "robindone-debug"
       },
       "problemMatcher": {
         "owner": "custom",
@@ -29,7 +29,7 @@
       }
     },
     {
-      "label": "robinrun: vite dev",
+      "label": "robindone: vite dev",
       "type": "process",
       "command": "node",
       "args": ["${workspaceFolder}/.vscode/vite-dev.mjs"],
@@ -40,7 +40,7 @@
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "robinrun-debug"
+        "group": "robindone-debug"
       },
       "problemMatcher": {
         "owner": "custom",
@@ -56,12 +56,12 @@
       }
     },
     {
-      "label": "robinrun: prepare desktop debug",
-      "dependsOn": ["robinrun: tsup watch (debug)", "robinrun: vite dev"],
+      "label": "robindone: prepare desktop debug",
+      "dependsOn": ["robindone: tsup watch (debug)", "robindone: vite dev"],
       "dependsOrder": "parallel"
     },
     {
-      "label": "robinrun: start electron (debug)",
+      "label": "robindone: start electron (debug)",
       "type": "process",
       "command": "node",
       "args": ["${workspaceFolder}/.vscode/start-electron.mjs"],
@@ -69,11 +69,11 @@
         "cwd": "${workspaceFolder}"
       },
       "isBackground": true,
-      "dependsOn": ["robinrun: prepare desktop debug"],
+      "dependsOn": ["robindone: prepare desktop debug"],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "robinrun-debug"
+        "group": "robindone-debug"
       },
       "problemMatcher": {
         "owner": "custom",
@@ -89,7 +89,7 @@
       }
     },
     {
-      "label": "robinrun: start electron (debug with host inspect)",
+      "label": "robindone: start electron (debug with host inspect)",
       "type": "process",
       "command": "node",
       "args": ["${workspaceFolder}/.vscode/start-electron.mjs", "--host-inspect"],
@@ -97,11 +97,11 @@
         "cwd": "${workspaceFolder}"
       },
       "isBackground": true,
-      "dependsOn": ["robinrun: prepare desktop debug"],
+      "dependsOn": ["robindone: prepare desktop debug"],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "robinrun-debug"
+        "group": "robindone-debug"
       },
       "problemMatcher": {
         "owner": "custom",

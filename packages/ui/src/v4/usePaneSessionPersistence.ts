@@ -9,7 +9,7 @@ import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js"
 import { logger } from "@/logger.js";
 import { isRendererReloadNavigation } from "@/lib/rendererNavigation.js";
 
-const STORAGE_PREFIX = "robinrun-v4-last-session:v1:";
+const STORAGE_PREFIX = "robindone-v4-last-session:v1:";
 
 function storageKey(workspaceKey: string): string {
   return `${STORAGE_PREFIX}${workspaceKey}`;
@@ -48,7 +48,7 @@ export function useRemotePaneSessionLookup(
   );
   const lookup = useCallback(
     async (taskId: string) => {
-      const meta = await resolution.services.robinrunTaskService.getTaskMeta({
+      const meta = await resolution.services.robindoneTaskService.getTaskMeta({
         workspacePath,
         workspaceIdentity,
         taskId,

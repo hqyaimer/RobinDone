@@ -3,13 +3,13 @@ import { join } from "node:path";
 import {
   DEV_HELPER_APP_NAME,
   HELPER_APP_NAME,
-} from "@robinrun/robinrun-cua/broker/helperConstants";
+} from "@robindone/robindone-cua/broker/helperConstants";
 import {
   isCuaLocalDevelopmentRuntime,
   resolveCuaHelperInstallRoot,
   resolveHelperAppName,
   standaloneHelperCandidatePaths,
-} from "@robinrun/robinrun-cua/broker/server";
+} from "@robindone/robindone-cua/broker/server";
 
 export function resolveStandaloneStatusLaunchCandidates(
   env: NodeJS.ProcessEnv = process.env,

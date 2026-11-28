@@ -23,11 +23,11 @@ import {
 import {
   hostTarget,
   outputBinaryName,
-} from "../apps/robinrun-cli/packages/cli/scripts/sea-targets.mjs";
+} from "../apps/robindone-cli/packages/cli/scripts/sea-targets.mjs";
 import { resolveSpawnRuntimeOptions } from "./spawn-command.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const cliWorkspace = join(repoRoot, "apps", "robinrun-cli");
+const cliWorkspace = join(repoRoot, "apps", "robindone-cli");
 const cliPackageRoot = join(cliWorkspace, "packages", "cli");
 
 function execute(command, args, { cwd = repoRoot, env = process.env, stdio = "inherit" } = {}) {
@@ -70,10 +70,10 @@ function runtimeToolFixtures(releasePlan) {
       binaryName,
       envVar:
         toolId === "bfs"
-          ? "ROBINRUN_BFS_BINARY"
+          ? "ROBINDONE_BFS_BINARY"
           : toolId === "ugrep"
-            ? "ROBINRUN_UGREP_BINARY"
-            : "ROBINRUN_RG_BINARY",
+            ? "ROBINDONE_UGREP_BINARY"
+            : "ROBINDONE_RG_BINARY",
       id: toolId,
       sha256: sha256(sourcePath),
       sourcePath,
@@ -101,14 +101,14 @@ function main() {
     "--dir",
     cliWorkspace,
     "--filter",
-    "@robinrun/cli",
+    "@robindone/cli",
     "sea",
     "--",
     "--target",
     target,
   ]);
 
-  const e2eRoot = mkdtempSync(join(tmpdir(), "robinrun-sea-runtime-tools-e2e-"));
+  const e2eRoot = mkdtempSync(join(tmpdir(), "robindone-sea-runtime-tools-e2e-"));
   try {
     const isolatedBinary = join(e2eRoot, basename(outputBinaryName(target)));
     copyFileSync(join(cliPackageRoot, "dist", outputBinaryName(target)), isolatedBinary);
@@ -117,11 +117,11 @@ function main() {
     const storageRoot = join(e2eRoot, "storage");
     const seaEnv = {
       ...process.env,
-      ROBINRUN_STORAGE_DIR: storageRoot,
+      ROBINDONE_STORAGE_DIR: storageRoot,
     };
-    delete seaEnv.ROBINRUN_BFS_BINARY;
-    delete seaEnv.ROBINRUN_RG_BINARY;
-    delete seaEnv.ROBINRUN_UGREP_BINARY;
+    delete seaEnv.ROBINDONE_BFS_BINARY;
+    delete seaEnv.ROBINDONE_RG_BINARY;
+    delete seaEnv.ROBINDONE_UGREP_BINARY;
 
     execute(isolatedBinary, ["--version"], {
       cwd: e2eRoot,

@@ -1,4 +1,4 @@
-import type { RobinRunProvider, RobinRunError } from "@robinrun/shared";
+import type { RobinDoneProvider, RobinDoneError } from "@robindone/shared";
 import { buildWorkspacePrepareUiError } from "@/lib/chatPrepareError.js";
 
 export const WORKSPACE_SESSION_RELOAD_DEBOUNCE_MS = 1200;
@@ -10,7 +10,7 @@ interface WorkspaceSessionReloadPlan {
 
 interface WorkspaceSessionReloadDraftErrorContext {
   workspacePath: string;
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
 }
 
 export function buildWorkspaceSessionReloadPlan(
@@ -34,7 +34,7 @@ export function buildWorkspaceSessionReloadPlan(
 export function buildWorkspaceSessionReloadDraftError(
   err: unknown,
   context: WorkspaceSessionReloadDraftErrorContext,
-): RobinRunError & { detail?: string } {
+): RobinDoneError & { detail?: string } {
   return buildWorkspacePrepareUiError(err, {
     workspacePath: context.workspacePath,
     provider: context.provider,

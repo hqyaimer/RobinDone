@@ -12,7 +12,7 @@ import {
   type SubagentRuntimeConfig,
   type SubagentRuntimeState,
   type WorkerRegistry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import {
   createSubagentConfigScope,
@@ -49,7 +49,7 @@ async function readTextIfExists(path: string): Promise<string | undefined> {
 }
 
 /**
- * worker 注册表加载（2026-11-15 裁决）：`.robinrun/agents/workers.json` 是编制唯一事实源，
+ * worker 注册表加载（2026-11-15 裁决）：`.robindone/agents/workers.json` 是编制唯一事实源，
  * active worker 的双规则文件（裁决 10，2026-11-20）为 `<id>/define.md`（职责定义，master
  * 维护）+ `<id>/agents.md`（worker 自维护）。
  * 注册表损坏/缺失 fail-safe 为空编制并告警，不做文件夹扫描兜底——避免已停用 worker 复活。
@@ -312,7 +312,7 @@ export function createSubagentRuntimeConfigCache(reader: ConfigReader) {
         const workspaceKey = key(workspace);
         workspaces.get(workspaceKey)?.dispose();
         const project = documentScope(
-          join(workspace.workspacePath, ".robinrun", "agents"),
+          join(workspace.workspacePath, ".robindone", "agents"),
           "project",
         );
         workspaces.set(workspaceKey, project);

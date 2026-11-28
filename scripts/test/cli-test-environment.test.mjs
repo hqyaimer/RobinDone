@@ -4,18 +4,18 @@ import test from "node:test";
 
 test("CUA producer checkout 参与 CLI 测试缓存键并由 Turbo 传入", async () => {
   const config = JSON.parse(
-    await readFile(new URL("../../apps/robinrun-cli/turbo.json", import.meta.url), "utf8"),
+    await readFile(new URL("../../apps/robindone-cli/turbo.json", import.meta.url), "utf8"),
   );
-  assert.ok(config.tasks.test.env.includes("ROBINRUN_CUA_REPO"));
+  assert.ok(config.tasks.test.env.includes("ROBINDONE_CUA_REPO"));
   assert.ok(config.tasks.test.env.includes("VITEST_MAX_WORKERS"));
 });
 
 test("CLI 全量测试先准备跨 workspace 的模型映射构建产物", async () => {
   const manifest = JSON.parse(
-    await readFile(new URL("../../apps/robinrun-cli/package.json", import.meta.url), "utf8"),
+    await readFile(new URL("../../apps/robindone-cli/package.json", import.meta.url), "utf8"),
   );
   assert.equal(
     manifest.scripts.pretest,
-    "pnpm --dir ../.. --filter @robinrun/model-option-map build",
+    "pnpm --dir ../.. --filter @robindone/model-option-map build",
   );
 });

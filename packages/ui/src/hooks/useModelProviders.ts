@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
-import type { ModelConnectivityResult } from "@robinrun/shared";
-import type { ProviderSettingsView } from "@robinrun/services";
+import type { ModelConnectivityResult } from "@robindone/shared";
+import type { ProviderSettingsView } from "@robindone/services";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 import { useProviderSettingsServiceView } from "@/hooks/useProviderSettingsView.js";

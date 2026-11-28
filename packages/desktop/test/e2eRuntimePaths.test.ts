@@ -20,7 +20,7 @@ describe("Desktop E2E runtime paths", () => {
     const e2eHomeDir = resolve("root", "isolated-e2e-home");
 
     expect(resolveE2ERuntimeRoot(e2eHomeDir)).toBe(
-      join(e2eHomeDir, "RobinRunProject", ".robinrun-e2e"),
+      join(e2eHomeDir, "RobinDoneProject", ".robindone-e2e"),
     );
     expect(resolveE2ERuntimePath("bg25", "release-child-bash")).toBe(
       join(resolveE2ERuntimeRoot(), "bg25", "release-child-bash"),
@@ -32,9 +32,9 @@ describe("Desktop E2E runtime paths", () => {
       resolveE2ERuntimePath("bg25", "continued-work.txt").replaceAll("\\", "/"),
     );
     expect(resolveE2EShellPath("bg25", "release-child-bash")).toBe(
-      ".robinrun-e2e/bg25/release-child-bash",
+      ".robindone-e2e/bg25/release-child-bash",
     );
-    expect(E2E_RUNTIME_RELATIVE_ROOT).toBe(".robinrun-e2e");
+    expect(E2E_RUNTIME_RELATIVE_ROOT).toBe(".robindone-e2e");
     expect(E2E_RUNTIME_ROOT_REPLAY_TOKEN).toBe("{{e2eRuntimeRoot}}");
     expect(createE2EReplayFixtureVariables(resolve("root", "fixture-home"))).toEqual({
       e2eRuntimeRoot: resolveE2ERuntimeRoot(resolve("root", "fixture-home")).replaceAll("\\", "/"),
@@ -45,24 +45,24 @@ describe("Desktop E2E runtime paths", () => {
     expect(
       resolveE2EHomeDir({
         cwd: resolve("root", "desktop"),
-        env: { ROBINRUN_DATA_BASE_DIR: resolve("root", "data-base") },
+        env: { ROBINDONE_DATA_BASE_DIR: resolve("root", "data-base") },
       }),
     ).toBe(resolve("root", "data-base"));
     expect(
       resolveE2EHomeDir({
         cwd: resolve("root", "desktop"),
         env: {
-          ROBINRUN_DATA_BASE_DIR: resolve("root", "data-base"),
-          ROBINRUN_E2E_HOME_DIR: resolve("root", "explicit-home"),
+          ROBINDONE_DATA_BASE_DIR: resolve("root", "data-base"),
+          ROBINDONE_E2E_HOME_DIR: resolve("root", "explicit-home"),
         },
       }),
     ).toBe(resolve("root", "explicit-home"));
   });
 
-  it("keeps the E2E CLI storage under the legacy .robinrun directory", () => {
+  it("keeps the E2E CLI storage under the legacy .robindone directory", () => {
     const homeDir = resolve("root", "isolated-e2e-home");
 
-    expect(resolveE2EStorageRoot(homeDir)).toBe(join(homeDir, ".robinrun"));
+    expect(resolveE2EStorageRoot(homeDir)).toBe(join(homeDir, ".robindone"));
   });
 });
 
@@ -78,12 +78,12 @@ it("Bash 输出查找按 session/tool 隔离，区分清理完成与多个实际
     return path;
   };
   try {
-    await create("robinrun-bash-other", "session_other");
+    await create("robindone-bash-other", "session_other");
     const options = { tempRoot: root, storageRoot };
     expect(await findE2EBashOutputPath(sessionId, toolCallId, options)).toBeNull();
-    const path = await create("robinrun-bash-current");
+    const path = await create("robindone-bash-current");
     expect(await findE2EBashOutputPath(sessionId, toolCallId, options)).toBe(path);
-    await create("robinrun-bash-duplicate");
+    await create("robindone-bash-duplicate");
     await expect(findE2EBashOutputPath(sessionId, toolCallId, options)).rejects.toThrow("没有唯一");
   } finally {
     await rm(root, { recursive: true, force: true });

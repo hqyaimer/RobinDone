@@ -1,14 +1,14 @@
 import { basename, join } from "node:path";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 
-import type { ApiClient, FeedbackDeviceInfo } from "@robinrun/shared";
+import type { ApiClient, FeedbackDeviceInfo } from "@robindone/shared";
 import {
-  buildRuntimeRobinRunApiUrl,
-  ROBINRUN_BUILD_TIME,
-  ROBINRUN_COMMIT,
-  ROBINRUN_VERSION,
-} from "@robinrun/shared";
-import { Emitter } from "@robinrun/rpc";
+  buildRuntimeRobinDoneApiUrl,
+  ROBINDONE_BUILD_TIME,
+  ROBINDONE_COMMIT,
+  ROBINDONE_VERSION,
+} from "@robindone/shared";
+import { Emitter } from "@robindone/rpc";
 import { arch, platform, release, type as osType } from "node:os";
 
 import type { ICredentialService } from "../credential/credential.js";
@@ -19,7 +19,7 @@ import { cleanupLogArchive, prepareCompactLogArchive } from "./compactLogArchive
 import { getFeedbackAttachmentDir } from "../paths.js";
 import { FeedbackLocalTicketStore } from "#src/feedback/feedbackLocalTicketStore.js";
 
-const ROBINRUN_JWT_TOKEN_KEY = "robinrunjwttoken";
+const ROBINDONE_JWT_TOKEN_KEY = "robindonejwttoken";
 
 export interface CreateFeedbackServiceOptions {
   credentialService: ICredentialService;
@@ -39,16 +39,16 @@ export interface CreateFeedbackServiceOptions {
 function resolveApiBaseUrl(explicit?: string): string {
   return (
     explicit?.trim() ||
-    process.env.ROBINRUN_FEEDBACK_API_BASE?.trim() ||
-    buildRuntimeRobinRunApiUrl(process.env, "/api/v1")
+    process.env.ROBINDONE_FEEDBACK_API_BASE?.trim() ||
+    buildRuntimeRobinDoneApiUrl(process.env, "/api/v1")
   );
 }
 
 function buildDeviceSnapshot(): FeedbackDeviceInfo {
   return {
-    appVersion: ROBINRUN_VERSION,
-    buildCommitId: ROBINRUN_COMMIT,
-    buildTime: ROBINRUN_BUILD_TIME,
+    appVersion: ROBINDONE_VERSION,
+    buildCommitId: ROBINDONE_COMMIT,
+    buildTime: ROBINDONE_BUILD_TIME,
     nodeVersion: process.version,
     osType: osType(),
     osPlatform: platform(),
@@ -73,12 +73,12 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
     return deviceMid;
   }
 
-  async function getRobinrunJwtToken(): Promise<string | undefined> {
-    return (await options.credentialService.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() || undefined;
+  async function getRobindoneJwtToken(): Promise<string | undefined> {
+    return (await options.credentialService.load(ROBINDONE_JWT_TOKEN_KEY))?.trim() || undefined;
   }
 
-  async function hasRobinrunJwtToken(): Promise<boolean> {
-    return Boolean(await getRobinrunJwtToken());
+  async function hasRobindoneJwtToken(): Promise<boolean> {
+    return Boolean(await getRobindoneJwtToken());
   }
 
   const httpClient = new FeedbackHttpClient({
@@ -92,7 +92,7 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
       if (deviceMid) {
         headers["X-Device-Mid"] = deviceMid;
       }
-      const jwtToken = await getRobinrunJwtToken();
+      const jwtToken = await getRobindoneJwtToken();
       if (jwtToken) {
         headers.Authorization = `Bearer ${jwtToken}`;
       }
@@ -138,7 +138,7 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
             signal: controller.signal,
           },
         );
-        if (!(await hasRobinrunJwtToken())) {
+        if (!(await hasRobindoneJwtToken())) {
           await localTicketStore.upsert(requireHostDeviceMid(), ticket);
         }
         return ticket;
@@ -154,7 +154,7 @@ export function createFeedbackService(options: CreateFeedbackServiceOptions): IF
       activeCreateControllers.get(key)?.abort();
     },
     list: async (query) => {
-      if (await hasRobinrunJwtToken()) {
+      if (await hasRobindoneJwtToken()) {
         return httpClient.list(query);
       }
       const items = await localTicketStore.list(requireHostDeviceMid(), query);

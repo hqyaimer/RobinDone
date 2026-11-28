@@ -3,24 +3,24 @@ import {
   GHOST_SUPPLIER_KEY_PREFIX,
   buildNativeSupplierKey,
   resolveSupplierKeyFromModelDisplayValue,
-  type RobinRunConfigOption,
-  type RobinRunProvider,
-  type RobinRunTaskMeta,
-} from "@robinrun/shared";
-import { decodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+  type RobinDoneConfigOption,
+  type RobinDoneProvider,
+  type RobinDoneTaskMeta,
+} from "@robindone/shared";
+import { decodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 
 interface ModelConfigSyncScope {
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
   supplierKey: string;
 }
 
 export interface ModelConfigSyncWorkspaceSnapshot {
   activeTaskId: string | null;
-  selectedProvider: RobinRunProvider;
+  selectedProvider: RobinDoneProvider;
   selectedSupplierKey: string;
-  configOptions: RobinRunConfigOption[] | null;
-  optimisticTaskListByTaskId: Record<string, Pick<RobinRunTaskMeta, "provider">>;
-  taskListCache: RobinRunTaskMeta[] | null;
+  configOptions: RobinDoneConfigOption[] | null;
+  optimisticTaskListByTaskId: Record<string, Pick<RobinDoneTaskMeta, "provider">>;
+  taskListCache: RobinDoneTaskMeta[] | null;
 }
 
 export function parseCustomProviderIdFromSupplierKey(supplierKey: string): string | null {
@@ -70,8 +70,8 @@ function isCustomSupplierKey(supplierKey: string): boolean {
 }
 
 function resolveModelSupplierKeyFromConfigOptions(
-  configOptions: RobinRunConfigOption[] | null,
-  provider: RobinRunProvider,
+  configOptions: RobinDoneConfigOption[] | null,
+  provider: RobinDoneProvider,
 ): string | null {
   const modelValue = resolveModelValueFromConfigOptions(configOptions);
   if (!modelValue) {
@@ -83,7 +83,7 @@ function resolveModelSupplierKeyFromConfigOptions(
 
 function resolveActiveTaskProvider(
   snapshot: ModelConfigSyncWorkspaceSnapshot,
-): RobinRunProvider | null {
+): RobinDoneProvider | null {
   const activeTaskId = snapshot.activeTaskId?.trim();
   if (!activeTaskId) {
     return null;
@@ -120,7 +120,7 @@ export function resolveWorkspaceModelConfigSyncScope(
   }
 
   if (activeTaskProvider === snapshot.selectedProvider) {
-    // Bugfix: 自定义供应商运行中的 RobinRun Agent 回包经常只带纯模型名（如 glm-5.1），
+    // Bugfix: 自定义供应商运行中的 RobinDone Agent 回包经常只带纯模型名（如 glm-5.1），
     // 直接按模型值推导会误判成 native supplier，导致设置页保存后刷新到错误的 scope。
     // 当前 provider 与 selectedProvider 一致时，纯模型名不能证明 supplier 已变化，所以继续沿用 selectedSupplierKey。
     return {
@@ -143,7 +143,7 @@ export function resolveWorkspaceModelConfigSyncScope(
 }
 
 function resolveModelValueFromConfigOptions(
-  configOptions: RobinRunConfigOption[] | null,
+  configOptions: RobinDoneConfigOption[] | null,
 ): string | null {
   const modelOption = configOptions?.find(
     (option) => option.category === "model" && option.type === "select",
@@ -161,8 +161,8 @@ function resolveModelValueFromConfigOptions(
 }
 
 export function resolveModelNameForConfigSync(params: {
-  configOptions: RobinRunConfigOption[] | null;
-  selectedProvider: RobinRunProvider;
+  configOptions: RobinDoneConfigOption[] | null;
+  selectedProvider: RobinDoneProvider;
   providerId: string;
   providerModels: string[];
 }): string | undefined {

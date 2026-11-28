@@ -12,12 +12,12 @@ import { stageDevCuaPluginRuntime } from "../../../scripts/stage-dev-cua-plugin-
 const roots: string[] = [];
 
 function createWorkspace(cuaManifest: Record<string, unknown> | null) {
-  const root = mkdtempSync(join(tmpdir(), "robinrun-cua-producer-"));
+  const root = mkdtempSync(join(tmpdir(), "robindone-cua-producer-"));
   roots.push(root);
   const desktopRoot = join(root, "packages", "desktop");
   mkdirSync(desktopRoot, { recursive: true });
   if (cuaManifest) {
-    const cuaDir = join(root, "node_modules", "@robinrun", "robinrun-cua");
+    const cuaDir = join(root, "node_modules", "@robindone", "robindone-cua");
     mkdirSync(cuaDir, { recursive: true });
     writeFileSync(join(cuaDir, "package.json"), JSON.stringify(cuaManifest));
   }
@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe("Computer Use producer detection", () => {
   it("真实 producer：已安装且未声明占位", () => {
-    const desktopRoot = createWorkspace({ name: "@robinrun/robinrun-cua", version: "0.6.4" });
+    const desktopRoot = createWorkspace({ name: "@robindone/robindone-cua", version: "0.6.4" });
     expect(readComputerUseProducer({ desktopPackageRoot: desktopRoot })).toMatchObject({
       installed: true,
       placeholder: false,
@@ -38,10 +38,10 @@ describe("Computer Use producer detection", () => {
     expect(isRealComputerUseProducerInstalled({ desktopPackageRoot: desktopRoot })).toBe(true);
   });
 
-  it("开源占位包：声明 robinrunCuaPlaceholder 时不算真实 producer", () => {
+  it("开源占位包：声明 robindoneCuaPlaceholder 时不算真实 producer", () => {
     const desktopRoot = createWorkspace({
-      name: "@robinrun/robinrun-cua",
-      robinrunCuaPlaceholder: true,
+      name: "@robindone/robindone-cua",
+      robindoneCuaPlaceholder: true,
     });
     expect(readComputerUseProducer({ desktopPackageRoot: desktopRoot })).toMatchObject({
       installed: true,
@@ -58,12 +58,12 @@ describe("Computer Use producer detection", () => {
 
   it("占位包下 dev 插件运行时暂存直接跳过，不要求 sharp 与插件清单", () => {
     const desktopRoot = createWorkspace({
-      name: "@robinrun/robinrun-cua",
-      robinrunCuaPlaceholder: true,
+      name: "@robindone/robindone-cua",
+      robindoneCuaPlaceholder: true,
     });
     expect(
       stageDevCuaPluginRuntime({
-        env: { ROBINRUN_CUA_DEV_MODE: "1" },
+        env: { ROBINDONE_CUA_DEV_MODE: "1" },
         desktopPackageRoot: desktopRoot,
         pluginRoot: join(desktopRoot, "missing-plugin"),
       }),

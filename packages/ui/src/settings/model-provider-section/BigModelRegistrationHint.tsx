@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function BigModelRegistrationHint({
   onOpenRegistration,
 }: {
   onOpenRegistration?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-ui-base text-foreground-subtle">

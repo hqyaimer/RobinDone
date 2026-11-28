@@ -1,7 +1,7 @@
 import {
   parseRemoteWorkspaceIdentity,
   type SourceServerWorkspaceHistoryEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { WorkspaceTabState } from "@/store/tabStore.js";
 
 interface WorkspaceSourceResolutionOptions {

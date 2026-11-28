@@ -2,13 +2,13 @@
 // 纯函数：把 frontmatter 的 args 声明铺成可编辑字段，再把字段收回成实参袋 / 声明；
 // 校验规则与 CLI 的 validateWorkflowArgs 同源（required、按类型解析、default 回填由服务端做）。
 import type {
-  RobinRunSavedWorkflowArgType,
-  RobinRunSavedWorkflowArgsDeclaration,
-} from "@robinrun/shared";
+  RobinDoneSavedWorkflowArgType,
+  RobinDoneSavedWorkflowArgsDeclaration,
+} from "@robindone/shared";
 
 export interface SavedWorkflowArgField {
   name: string;
-  type: RobinRunSavedWorkflowArgType;
+  type: RobinDoneSavedWorkflowArgType;
   description?: string;
   required: boolean;
   hasDefault: boolean;
@@ -20,7 +20,7 @@ export type SavedWorkflowArgFieldError = "required" | "invalid_number" | "invali
 
 /** 把一个默认值 / 已有值按类型转成编辑器文本。 */
 export function formatSavedWorkflowArgValue(
-  type: RobinRunSavedWorkflowArgType,
+  type: RobinDoneSavedWorkflowArgType,
   value: unknown,
 ): string {
   if (value === undefined) return type === "boolean" ? "false" : "";
@@ -43,7 +43,7 @@ export function formatSavedWorkflowArgValue(
  * 一份旧实参不该凭空长出字段。
  */
 export function buildSavedWorkflowArgFields(
-  declaration: RobinRunSavedWorkflowArgsDeclaration | undefined,
+  declaration: RobinDoneSavedWorkflowArgsDeclaration | undefined,
   initialArgs?: Record<string, unknown>,
 ): SavedWorkflowArgField[] {
   if (!declaration) return [];
@@ -124,7 +124,7 @@ export interface SavedWorkflowArgRow {
   /** 行的稳定身份（新增行也要有，名字可空）。 */
   key: string;
   name: string;
-  type: RobinRunSavedWorkflowArgType;
+  type: RobinDoneSavedWorkflowArgType;
   required: boolean;
   /** 默认值的编辑文本；空即无默认值（boolean 用 "" / "true" / "false"）。 */
   defaultText: string;
@@ -134,7 +134,7 @@ export interface SavedWorkflowArgRow {
 export type SavedWorkflowArgRowError = "empty_name" | "duplicate_name" | "invalid_default";
 
 export function argsDeclarationToRows(
-  declaration: RobinRunSavedWorkflowArgsDeclaration | undefined,
+  declaration: RobinDoneSavedWorkflowArgsDeclaration | undefined,
 ): SavedWorkflowArgRow[] {
   if (!declaration) return [];
   return Object.entries(declaration).map(([name, spec], index) => ({
@@ -155,7 +155,7 @@ export function argsDeclarationToRows(
 }
 
 function parseDefaultText(
-  type: RobinRunSavedWorkflowArgType,
+  type: RobinDoneSavedWorkflowArgType,
   text: string,
 ): { ok: true; value?: unknown } | { ok: false } {
   if (text.trim().length === 0) return { ok: true };
@@ -180,7 +180,7 @@ function parseDefaultText(
 }
 
 type SavedWorkflowArgRowsCollect =
-  | { ok: true; args: RobinRunSavedWorkflowArgsDeclaration | undefined }
+  | { ok: true; args: RobinDoneSavedWorkflowArgsDeclaration | undefined }
   | { ok: false; errors: Record<string, SavedWorkflowArgRowError> };
 
 /**
@@ -192,7 +192,7 @@ export function rowsToArgsDeclaration(
 ): SavedWorkflowArgRowsCollect {
   const errors: Record<string, SavedWorkflowArgRowError> = {};
   const seen = new Set<string>();
-  const args: RobinRunSavedWorkflowArgsDeclaration = {};
+  const args: RobinDoneSavedWorkflowArgsDeclaration = {};
   for (const row of rows) {
     const name = row.name.trim();
     if (name.length === 0) {

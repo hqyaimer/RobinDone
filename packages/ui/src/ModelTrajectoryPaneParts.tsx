@@ -1,12 +1,12 @@
 import type {
-  RobinRunModelTrajectoryMessage,
-  RobinRunModelTrajectoryRecord,
-  RobinRunModelTrajectoryUsage,
-} from "@robinrun/services";
+  RobinDoneModelTrajectoryMessage,
+  RobinDoneModelTrajectoryRecord,
+  RobinDoneModelTrajectoryUsage,
+} from "@robindone/services";
 import { Fragment } from "react";
 import { cn } from "@/components/lib/utils.js";
 import { Badge } from "@/components/ui/badge.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ContentPartView, EmptyState, summarizeRecords } from "@/ModelTrajectoryPaneDetails.js";
 import { ExpandableTrajectoryMessage } from "@/ModelTrajectoryExpandableMessage.js";
 import { ModelTrajectoryErrorBlock } from "@/ModelTrajectoryErrorBlock.js";
@@ -20,7 +20,7 @@ import { TrajectorySectionTitle } from "@/ModelTrajectorySectionTitle.js";
 
 export { EmptyState, summarizeRecords } from "@/ModelTrajectoryPaneDetails.js";
 
-export type IntlShape = ReturnType<typeof useRobinRunIntl>["intl"];
+export type IntlShape = ReturnType<typeof useRobinDoneIntl>["intl"];
 
 export function CallCard({
   record,
@@ -29,9 +29,9 @@ export function CallCard({
   expansionKeyPrefix,
   intl,
 }: {
-  record: RobinRunModelTrajectoryRecord;
+  record: RobinDoneModelTrajectoryRecord;
   index: number;
-  inputMessages: RobinRunModelTrajectoryMessage[];
+  inputMessages: RobinDoneModelTrajectoryMessage[];
   expansionKeyPrefix?: string;
   intl: IntlShape;
 }) {
@@ -113,8 +113,14 @@ export function CallCard({
   );
 }
 
-function SourceTitle({ record, intl }: { record: RobinRunModelTrajectoryRecord; intl: IntlShape }) {
-  const callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]> =
+function SourceTitle({
+  record,
+  intl,
+}: {
+  record: RobinDoneModelTrajectoryRecord;
+  intl: IntlShape;
+}) {
+  const callSource: NonNullable<RobinDoneModelTrajectoryRecord["callSource"]> =
     record.callSource ?? {
       kind: "main",
     };
@@ -135,7 +141,7 @@ function SourceTitle({ record, intl }: { record: RobinRunModelTrajectoryRecord; 
 }
 
 function sourceLabelId(
-  callSource: NonNullable<RobinRunModelTrajectoryRecord["callSource"]>,
+  callSource: NonNullable<RobinDoneModelTrajectoryRecord["callSource"]>,
 ): string {
   switch (callSource.querySource) {
     case "main_turn":
@@ -176,7 +182,7 @@ function MessageBlock({
   expansionKey,
   intl,
 }: {
-  message: RobinRunModelTrajectoryMessage;
+  message: RobinDoneModelTrajectoryMessage;
   callStartedAt: string;
   callDurationMs?: number;
   isAlt: boolean;
@@ -259,7 +265,7 @@ function ResponseBlock({
   expansionKeyPrefix,
   intl,
 }: {
-  response: NonNullable<RobinRunModelTrajectoryRecord["response"]>;
+  response: NonNullable<RobinDoneModelTrajectoryRecord["response"]>;
   callStartedAt: string;
   callDurationMs?: number;
   startRowIndex: number;
@@ -274,7 +280,7 @@ function ResponseBlock({
   }
 
   const rows: Array<{
-    message: RobinRunModelTrajectoryMessage;
+    message: RobinDoneModelTrajectoryMessage;
     roleLabel: string;
     key: string;
     visualRole?: "reasoning";
@@ -347,7 +353,7 @@ function ResponseMessageRow({
   expansionKey,
   intl,
 }: {
-  message: RobinRunModelTrajectoryMessage;
+  message: RobinDoneModelTrajectoryMessage;
   roleLabel: string;
   visualRole?: "reasoning";
   callStartedAt: string;
@@ -378,8 +384,8 @@ function CallMetadata({
   record,
   usage,
 }: {
-  record: RobinRunModelTrajectoryRecord;
-  usage?: RobinRunModelTrajectoryUsage;
+  record: RobinDoneModelTrajectoryRecord;
+  usage?: RobinDoneModelTrajectoryUsage;
 }) {
   const items: Array<{ text: string; title?: string }> = [];
   if (typeof usage?.inputTokens === "number") {

@@ -1,8 +1,8 @@
-import type { RobinRunEnv } from "@robinrun/shared";
+import type { RobinDoneEnv } from "@robindone/shared";
 
 export function resolveMarketingTouchPollIntervalMs(
   isProductionBuild: boolean,
-  env: RobinRunEnv,
+  env: RobinDoneEnv,
 ): number {
   return isProductionBuild && env === "production" ? 10 * 60_000 : 30_000;
 }

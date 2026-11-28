@@ -145,14 +145,14 @@ for (const [width, locale, theme] of [
       // 配置先到、市场目录仍在途，也不能闪现空态。
       assert.equal(await page.getByTestId("side-pane-ui-empty").count(), 0);
       assert.equal(await page.getByTestId("side-pane-ui-loading").count(), 1);
-      const loadingArtifacts = join(tmpdir(), "robinrun-side-pane-plugin-menu");
+      const loadingArtifacts = join(tmpdir(), "robindone-side-pane-plugin-menu");
       await mkdir(loadingArtifacts, { recursive: true });
       await page.screenshot({ path: join(loadingArtifacts, `loading-${width}-${theme}.png`) });
       catalogGate.resolve();
       await page.locator(launcherItems).first().waitFor();
       assert.equal(await page.locator(launcherItems).count(), 2);
       assert.equal(await page.getByTestId("side-pane-plugin-market").count(), 1);
-      const artifacts = join(tmpdir(), "robinrun-side-pane-plugin-menu");
+      const artifacts = join(tmpdir(), "robindone-side-pane-plugin-menu");
       await mkdir(artifacts, { recursive: true });
       // 空态启动页与原型对照：横向行、短分割线、UI 插件区。
       await page.screenshot({ path: join(artifacts, `launcher-${width}-${locale}-${theme}.png`) });
@@ -331,20 +331,20 @@ for (const [width, locale, theme] of [
   });
 }
 
-if (process.env.ROBINRUN_UI_RECOMMENDATIONS_LIVE_CONFIG_URL) {
+if (process.env.ROBINDONE_UI_RECOMMENDATIONS_LIVE_CONFIG_URL) {
   test("staging client config drives side pane recommendations", async () => {
     const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
     page.setDefaultTimeout(15000);
     try {
       const response = await page.request.get(
-        process.env.ROBINRUN_UI_RECOMMENDATIONS_LIVE_CONFIG_URL,
+        process.env.ROBINDONE_UI_RECOMMENDATIONS_LIVE_CONFIG_URL,
       );
       assert.equal(response.status(), 200);
       const envelope = await response.json();
       assert.equal(envelope.code, 0);
       const entries = envelope.data.configs.uiPluginRecommendations;
       assert.ok(entries.length > 0);
-      assert.ok(entries.every((entry) => entry.pluginId.endsWith("@robinrun-plugins-official")));
+      assert.ok(entries.every((entry) => entry.pluginId.endsWith("@robindone-plugins-official")));
       await page.route("**/client-config", (route) => route.fulfill({ json: envelope }));
       await page.route("**/catalog", (route) =>
         route.fulfill({
@@ -370,7 +370,7 @@ if (process.env.ROBINRUN_UI_RECOMMENDATIONS_LIVE_CONFIG_URL) {
       await page.locator(launcherItems).first().waitFor();
       assert.equal(await page.locator(launcherItems).count(), entries.length);
       await page.screenshot({
-        path: join(tmpdir(), "robinrun-side-pane-plugin-menu", "staging-recommendations.png"),
+        path: join(tmpdir(), "robindone-side-pane-plugin-menu", "staging-recommendations.png"),
       });
       await page.locator(launcherItems).first().click();
       await page.waitForFunction(
@@ -595,7 +595,7 @@ for (const [width, locale, theme] of [
           await item(1).click();
           await assertProgress(1);
           assert.equal(attempts.length, 2);
-          const artifacts = join(tmpdir(), "robinrun-side-pane-plugin-menu");
+          const artifacts = join(tmpdir(), "robindone-side-pane-plugin-menu");
           await mkdir(artifacts, { recursive: true });
           await page.screenshot({
             path: join(artifacts, `progress-${operation}-${existing}-${width}-${theme}.png`),
@@ -710,7 +710,7 @@ for (const [width, locale, theme] of [
         );
         assert.equal(await item(0).isDisabled(), true);
         assert.equal(await item(0).getByTestId("side-pane-plugin-progress").count(), 1);
-        const artifacts = join(tmpdir(), "robinrun-side-pane-plugin-menu");
+        const artifacts = join(tmpdir(), "robindone-side-pane-plugin-menu");
         await mkdir(artifacts, { recursive: true });
         await page.screenshot({
           path: join(artifacts, `concurrent-${existing}-${width}-${theme}.png`),
@@ -747,7 +747,7 @@ for (const [width, locale, theme] of [
       ...surfaces[0],
       id: name,
       pluginName: name,
-      pluginId: `${name}@${name === "personal" ? "example" : "robinrun-plugins-official"}`,
+      pluginId: `${name}@${name === "personal" ? "example" : "robindone-plugins-official"}`,
       title: { en: name, "zh-CN": name },
     }));
     const snapshot = catalog(entries);
@@ -799,7 +799,7 @@ for (const [width, locale, theme] of [
       const badgeBox = await badge.boundingBox();
       const descriptionBox = await description.boundingBox();
       assert.ok(badgeBox.x + badgeBox.width <= descriptionBox.x);
-      const artifacts = join(tmpdir(), "robinrun-side-pane-plugin-menu");
+      const artifacts = join(tmpdir(), "robindone-side-pane-plugin-menu");
       await mkdir(artifacts, { recursive: true });
       await page.screenshot({ path: join(artifacts, `community-${width}-${locale}-${theme}.png`) });
     } finally {

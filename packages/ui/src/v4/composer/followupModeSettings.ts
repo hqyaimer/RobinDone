@@ -1,11 +1,11 @@
-import type { AppSettings } from "@robinrun/shared";
-import type { InputRouting, SessionConfigState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { AppSettings } from "@robindone/shared";
+import type { InputRouting, SessionConfigState } from "@robindone/shared/robindone-protocol-v4";
 
 export function resolveAppFollowupMode(
   settings: AppSettings | null | undefined,
 ): SessionConfigState["followupMode"] | null {
   if (!settings) return null;
-  return settings.robinrunInteractionBehavior === "guide" ? "guide" : "queue";
+  return settings.robindoneInteractionBehavior === "guide" ? "guide" : "queue";
 }
 
 export function resolveOppositeFollowupDelivery(

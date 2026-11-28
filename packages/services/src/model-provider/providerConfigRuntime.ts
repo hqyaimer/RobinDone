@@ -4,17 +4,17 @@ import {
   PERSONAL_PROVIDER_CONFIG_FILE_NAME,
   type PersonalProviderConfigRecoveryEvent,
   type NodeProviderConfigRuntimeOptions,
-} from "@robinrun/provider-node";
+} from "@robindone/provider-node";
 import type { ModelProviderConfig } from "./legacyModelProviderSerialized.js";
 import { getAppConfigDir } from "../paths.js";
 import { importLegacyPersonalProviderConfig } from "./legacyPersonalProviderConfigImporter.js";
 
 export interface ProviderConfigRuntimeOptions {
-  readonly robinrunBuiltinFilePath: string;
-  readonly robinrunBuiltinActiveFilePath?: string;
-  readonly robinrunBuiltinRemote?: NodeProviderConfigRuntimeOptions["robinrunBuiltinRemote"];
-  readonly robinrunBuiltinEnvironment?: NodeProviderConfigRuntimeOptions["robinrunBuiltinEnvironment"];
-  readonly onRobinRunBuiltinRefreshError?: (error: unknown) => void;
+  readonly robindoneBuiltinFilePath: string;
+  readonly robindoneBuiltinActiveFilePath?: string;
+  readonly robindoneBuiltinRemote?: NodeProviderConfigRuntimeOptions["robindoneBuiltinRemote"];
+  readonly robindoneBuiltinEnvironment?: NodeProviderConfigRuntimeOptions["robindoneBuiltinEnvironment"];
+  readonly onRobinDoneBuiltinRefreshError?: (error: unknown) => void;
   readonly onPersonalConfigRecovery?: (event: PersonalProviderConfigRecoveryEvent) => void;
   readonly onPersonalConfigPollingError?: (error: unknown) => void;
   readonly personalFilePath?: string;
@@ -25,7 +25,7 @@ export interface ProviderConfigRuntimeOptions {
 
 /**
  * Services 装配层：提供 App 配置目录和已发布旧配置的一次性迁移入口。
- * 配置迁移保留 RobinRun 用户的供应商数据，文件运行时由 @robinrun/provider-node 唯一实现。
+ * 配置迁移保留 RobinDone 用户的供应商数据，文件运行时由 @robindone/provider-node 唯一实现。
  */
 export class ProviderConfigRuntime {
   readonly configService: NodeProviderConfigRuntime["configService"];
@@ -33,11 +33,11 @@ export class ProviderConfigRuntime {
 
   constructor(options: ProviderConfigRuntimeOptions) {
     const runtimeOptions: NodeProviderConfigRuntimeOptions = {
-      robinrunBuiltinFilePath: options.robinrunBuiltinFilePath,
-      robinrunBuiltinActiveFilePath: options.robinrunBuiltinActiveFilePath,
-      robinrunBuiltinRemote: options.robinrunBuiltinRemote,
-      robinrunBuiltinEnvironment: options.robinrunBuiltinEnvironment,
-      onRobinRunBuiltinRefreshError: options.onRobinRunBuiltinRefreshError,
+      robindoneBuiltinFilePath: options.robindoneBuiltinFilePath,
+      robindoneBuiltinActiveFilePath: options.robindoneBuiltinActiveFilePath,
+      robindoneBuiltinRemote: options.robindoneBuiltinRemote,
+      robindoneBuiltinEnvironment: options.robindoneBuiltinEnvironment,
+      onRobinDoneBuiltinRefreshError: options.onRobinDoneBuiltinRefreshError,
       onPersonalConfigRecovery: options.onPersonalConfigRecovery,
       onPersonalConfigPollingError: options.onPersonalConfigPollingError,
       personalFilePath:
@@ -65,16 +65,16 @@ export class ProviderConfigRuntime {
     return this.#runtime.personalRepository;
   }
 
-  resolveRobinRunBuiltinActiveFilePath(): Promise<string> {
-    return this.#runtime.resolveRobinRunBuiltinActiveFilePath();
+  resolveRobinDoneBuiltinActiveFilePath(): Promise<string> {
+    return this.#runtime.resolveRobinDoneBuiltinActiveFilePath();
   }
 
-  refreshRobinRunBuiltin(options?: { readonly force?: boolean }) {
-    return this.#runtime.refreshRobinRunBuiltin(options);
+  refreshRobinDoneBuiltin(options?: { readonly force?: boolean }) {
+    return this.#runtime.refreshRobinDoneBuiltin(options);
   }
 
-  onDidCheckRobinRunBuiltin(listener: () => Promise<void>): () => void {
-    return this.#runtime.onDidCheckRobinRunBuiltin(listener);
+  onDidCheckRobinDoneBuiltin(listener: () => Promise<void>): () => void {
+    return this.#runtime.onDidCheckRobinDoneBuiltin(listener);
   }
 
   dispose(): void {

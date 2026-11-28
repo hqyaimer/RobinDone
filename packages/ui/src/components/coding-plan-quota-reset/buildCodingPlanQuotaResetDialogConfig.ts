@@ -1,4 +1,4 @@
-import type { CodingPlanResetType } from "@robinrun/shared";
+import type { CodingPlanResetType } from "@robindone/shared";
 import type {
   CodingPlanQuotaResetDialogConfig,
   CodingPlanQuotaResetDialogResetItem,

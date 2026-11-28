@@ -9,7 +9,7 @@ import {
   GitBranch,
   Zap,
 } from "lucide-react";
-import type { TriggerStatus } from "@robinrun/shared";
+import type { TriggerStatus } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 import { Badge } from "@/components/ui/badge.js";
 import {
@@ -19,7 +19,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatTaskRelativeTime } from "@/lib/taskListItemPresentation.js";
 import type { TriggerSidebarEntry } from "@/project-sidebar/useTriggerSnapshots.js";
 import {
@@ -46,7 +46,7 @@ interface TriggerStatusAction {
 
 /** 熔断徽章（2026-11-20 起唯一保留的文字状态：启用/停用由闪电图标色承载）。 */
 function TriggerErrorPausedBadge() {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Badge className="border-transparent bg-destructive-surface text-destructive-surface-foreground">
       <AlertTriangle aria-hidden="true" data-icon="inline-start" />
@@ -62,7 +62,7 @@ function TriggerErrorPausedBadge() {
  * 的文字徽章）。
  */
 function TriggerDispatcherBadge() {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Badge className="border-transparent bg-surface-active text-foreground-subtle">
       <GitBranch aria-hidden="true" data-icon="inline-start" />
@@ -99,7 +99,7 @@ function TriggerEntryRow({
   onResetSession: (sessionKey: string) => void;
   onDeleteTrigger: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // 完整 webhook 地址先算成局部常量：闭包里的 entry.webhook 窄化会被 TS 丢弃。
   const webhookUrl =
     entry.webhook !== undefined && webhookBaseUrl !== undefined
@@ -318,7 +318,7 @@ export function AgentTriggerSection({
   /** 伪删除直连触发器（组条目不出现删除项；UI 确认后调用）。 */
   onDeleteTrigger: (triggerId: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [expanded, setExpanded] = useState(false);
   const boundTaskIdOf = useMemo(
     () => new Map(entries.map((entry) => [entry.id, sessionBindings[entry.sessionKey]])),

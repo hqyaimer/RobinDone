@@ -1,8 +1,8 @@
-import type { ConversationShareFailureIssue } from "@robinrun/services";
+import type { ConversationShareFailureIssue } from "@robindone/services";
 import {
   conversationShareRejectionSchema,
   type ConversationShareRejection,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface ConversationShareErrorDetails {
   name: string;

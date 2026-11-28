@@ -1,25 +1,25 @@
 import {
-  ROBINRUN_AGENT_PROVIDER,
-  ROBINRUN_COMMAND_AGENT_SOURCES,
-  type RobinRunProvider,
+  ROBINDONE_AGENT_PROVIDER,
+  ROBINDONE_COMMAND_AGENT_SOURCES,
+  type RobinDoneProvider,
   type CommandAgentSource,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export const COMMAND_AGENT_SOURCES = [
-  ...ROBINRUN_COMMAND_AGENT_SOURCES,
+  ...ROBINDONE_COMMAND_AGENT_SOURCES,
 ] as const satisfies readonly CommandAgentSource[];
 
 export const COMMAND_AGENT_SOURCE_META: Record<
   CommandAgentSource,
   {
     labelId: string;
-    provider: RobinRunProvider;
+    provider: RobinDoneProvider;
     pathHint: string;
   }
 > = {
-  robinrunAgent: {
-    labelId: "settings.commands.source.robinrunAgent",
-    pathHint: "~/.robinrun/commands",
-    provider: ROBINRUN_AGENT_PROVIDER,
+  robindoneAgent: {
+    labelId: "settings.commands.source.robindoneAgent",
+    pathHint: "~/.robindone/commands",
+    provider: ROBINDONE_AGENT_PROVIDER,
   },
 };

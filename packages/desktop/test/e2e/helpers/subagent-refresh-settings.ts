@@ -2,7 +2,7 @@ import { subagentSettingsReadyCursor, subagentUpdateCursor } from "./subagent-sn
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import { Key } from "webdriverio";
-import { encodeCustomModelValue } from "@robinrun/shared";
+import { encodeCustomModelValue } from "@robindone/shared";
 import {
   TID_CHAT_MODEL_SELECT_GROUP,
   TID_CHAT_MODEL_SELECT_ITEM,
@@ -16,7 +16,7 @@ import {
   TID_SUBAGENT_BUILT_IN_MODEL_TRIGGER,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clickTestIdByDom,
   waitForTestIdByDom,
@@ -173,7 +173,7 @@ async function selectProfileModel(profile: Pick<RefreshProfile, "provider" | "mo
 
 async function submitProfile(name: string, previousName?: string, workspacePath?: string) {
   const root = workspacePath
-    ? join(workspacePath, ".robinrun", "agents")
+    ? join(workspacePath, ".robindone", "agents")
     : join(getE2EAppDataPaths().storageRoot, "agents");
   const exists = await stat(root).then(
     () => true,

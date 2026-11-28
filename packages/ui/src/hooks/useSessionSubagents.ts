@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
-  RobinRunSessionEndedSubagent,
-  RobinRunSessionSubagentsResult,
-} from "@robinrun/shared";
+  RobinDoneSessionEndedSubagent,
+  RobinDoneSessionSubagentsResult,
+} from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 
@@ -11,7 +11,7 @@ const MAX_PAGE_SIZE = 100;
 
 export interface SessionSubagentsViewState {
   revision: number;
-  ended: RobinRunSessionSubagentsResult["ended"];
+  ended: RobinDoneSessionSubagentsResult["ended"];
   error: string | null;
   loading: boolean;
 }
@@ -26,9 +26,9 @@ function emptyState(): SessionSubagentsViewState {
 }
 
 export function mergeEndedSubagentPages(
-  current: readonly RobinRunSessionEndedSubagent[],
-  incoming: readonly RobinRunSessionEndedSubagent[],
-): RobinRunSessionEndedSubagent[] {
+  current: readonly RobinDoneSessionEndedSubagent[],
+  incoming: readonly RobinDoneSessionEndedSubagent[],
+): RobinDoneSessionEndedSubagent[] {
   const currentIds = new Set(current.map((item) => item.childSessionId));
   return [...current, ...incoming.filter((item) => !currentIds.has(item.childSessionId))];
 }
@@ -52,7 +52,7 @@ export function useSessionSubagents(options: {
   workspacePath: string;
 }) {
   const services = useServices();
-  const robinrunAgentService = services.robinrunAgentService;
+  const robindoneAgentService = services.robindoneAgentService;
   const [state, setState] = useState<SessionSubagentsViewState>(emptyState);
   const requestVersionRef = useRef(0);
   const requestInFlightRef = useRef(false);
@@ -62,9 +62,9 @@ export function useSessionSubagents(options: {
   const enabled = options.enabled !== false && Boolean(options.sessionId);
 
   const requestPage = useCallback(
-    (endedLimit: number, endedCursor?: string): Promise<RobinRunSessionSubagentsResult> => {
+    (endedLimit: number, endedCursor?: string): Promise<RobinDoneSessionSubagentsResult> => {
       if (!options.sessionId) return Promise.reject(new Error("session_id_missing"));
-      if (typeof robinrunAgentService?.listSessionSubagents !== "function") {
+      if (typeof robindoneAgentService?.listSessionSubagents !== "function") {
         return Promise.resolve({
           revision: 0,
           childSessionIds: [],
@@ -72,7 +72,7 @@ export function useSessionSubagents(options: {
           ended: { total: 0, items: [] },
         });
       }
-      return robinrunAgentService.listSessionSubagents({
+      return robindoneAgentService.listSessionSubagents({
         workspacePath: options.workspacePath,
         ...(options.workspaceIdentity ? { workspaceIdentity: options.workspaceIdentity } : {}),
         ...(options.remoteSessionId ? { remoteSessionId: options.remoteSessionId } : {}),
@@ -86,7 +86,7 @@ export function useSessionSubagents(options: {
       options.sessionId,
       options.workspaceIdentity,
       options.workspacePath,
-      robinrunAgentService,
+      robindoneAgentService,
     ],
   );
 

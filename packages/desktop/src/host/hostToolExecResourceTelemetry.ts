@@ -1,9 +1,9 @@
-import type { IDisposable } from "@robinrun/rpc";
-import type { IRobinRunAgentService } from "@robinrun/services";
-import { HostResponseTypes, type ProcessResourceRuntimeSurface } from "@robinrun/shared";
+import type { IDisposable } from "@robindone/rpc";
+import type { IRobinDoneAgentService } from "@robindone/services";
+import { HostResponseTypes, type ProcessResourceRuntimeSurface } from "@robindone/shared";
 
 export function registerHostToolExecResourceTelemetry(options: {
-  agentService: Pick<IRobinRunAgentService, "onDynamicToolExecResource">;
+  agentService: Pick<IRobinDoneAgentService, "onDynamicToolExecResource">;
   postMessage(message: unknown): void;
   runtimeSurface: ProcessResourceRuntimeSurface;
 }): IDisposable {

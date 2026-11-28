@@ -5,7 +5,7 @@ const { syncBuiltinESMExports } = require("node:module");
 const { StringDecoder } = require("node:string_decoder");
 const childProcess = require("node:child_process");
 const logPath = join(
-  process.env.ROBINRUN_E2E_HOST_FAULT_ROOT,
+  process.env.ROBINDONE_E2E_HOST_FAULT_ROOT,
   `host-boundary-${process.pid}.jsonl`,
 );
 let logWrites = Promise.resolve();

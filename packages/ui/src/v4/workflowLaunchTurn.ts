@@ -3,7 +3,7 @@ import type {
   TurnHeaderRow,
   UserInputRow,
   WorkflowLaunchMeta,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 /**
  * 中枢直接启动轮在转写里的规则。

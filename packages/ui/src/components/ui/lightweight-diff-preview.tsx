@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   getPatchPreviewLineContent,
   parseTruncatedMarkerOmittedLineCount,
@@ -117,7 +117,7 @@ export function LightweightDiffPreview({
   renderLineContent,
   ...props
 }: LightweightDiffPreviewProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div

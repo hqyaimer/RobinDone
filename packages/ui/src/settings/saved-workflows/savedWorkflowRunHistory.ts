@@ -1,12 +1,12 @@
 // 运行历史的归组与呈现。
 // 归属只按 `dwf_run.name === 工作流名`；模型另起名字的 run 不归任何工作流，而不是猜。
-import type { RobinRunSavedWorkflowRun, RobinRunSavedWorkflowRunStatus } from "@robinrun/shared";
+import type { RobinDoneSavedWorkflowRun, RobinDoneSavedWorkflowRunStatus } from "@robindone/shared";
 
 /** 每个名字下 `updatedAt` 最新的一行（服务端按 time_updated 倒序，这里只取首见）。 */
 export function lastRunByWorkflowName(
-  runs: readonly RobinRunSavedWorkflowRun[],
-): Map<string, RobinRunSavedWorkflowRun> {
-  const byName = new Map<string, RobinRunSavedWorkflowRun>();
+  runs: readonly RobinDoneSavedWorkflowRun[],
+): Map<string, RobinDoneSavedWorkflowRun> {
+  const byName = new Map<string, RobinDoneSavedWorkflowRun>();
   const sorted = [...runs].sort((left, right) => right.updatedAt - left.updatedAt);
   for (const run of sorted) {
     if (run.name === undefined || byName.has(run.name)) continue;
@@ -24,7 +24,7 @@ type SavedWorkflowRunBadgeKind = "completed" | "errored" | "running" | "stopped"
  */
 export function savedWorkflowRunBadgeKind(
   status:
-    | RobinRunSavedWorkflowRunStatus
+    | RobinDoneSavedWorkflowRunStatus
     | "errored"
     | "stopped"
     | "failed"
@@ -57,7 +57,7 @@ export function formatSavedWorkflowRunArgs(args: Record<string, unknown> | undef
 }
 
 /** 一次 run 的时长（毫秒）；非终态按 now 计。 */
-export function savedWorkflowRunDurationMs(run: RobinRunSavedWorkflowRun, now: number): number {
+export function savedWorkflowRunDurationMs(run: RobinDoneSavedWorkflowRun, now: number): number {
   const end = run.status === "pending" || run.status === "running" ? now : run.updatedAt;
   return Math.max(0, end - run.createdAt);
 }

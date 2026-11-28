@@ -4,9 +4,9 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
-  type RobinRunAccountAccess,
-  type RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
+  type RobinDoneAccountAccess,
+  type RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
 import {
   resolveEnterpriseCodingPlanProductFamily,
   type EnterpriseCodingPlanProductDisplay,
@@ -21,7 +21,7 @@ export interface CodingPlanUsageSource {
   id: SidebarUsageCodingPlanSourceId;
   providerId: SidebarUsageCodingPlanProviderId;
   label: string;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
 }
 
 export function buildPersonalCodingPlanUsageSource({
@@ -30,7 +30,7 @@ export function buildPersonalCodingPlanUsageSource({
   label,
 }: {
   providerId: SidebarUsageCodingPlanProviderId;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   label?: string | null;
 }): CodingPlanUsageSource {
   const normalizedLabel = label?.trim();
@@ -51,7 +51,7 @@ export type CurrentSidebarCodingPlanUsageSource =
       audience: "individual";
       providerId: SidebarUsageCodingPlanProviderId;
       sourceId: SidebarUsageCodingPlanSourceId;
-      accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+      accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
       teamSource?: never;
     }
   | {
@@ -68,7 +68,7 @@ export function buildCodingPlanUsageSources({
   accountAccesses,
   subscribedTeamProducts,
 }: {
-  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinRunProviderAccountAccess>>;
+  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinDoneProviderAccountAccess>>;
   subscribedTeamProducts: EnterpriseCodingPlanProductDisplay[];
 }): CodingPlanUsageSource[] {
   return buildTeamCodingPlanUsageSources(subscribedTeamProducts, accountAccesses);
@@ -76,7 +76,7 @@ export function buildCodingPlanUsageSources({
 
 function buildTeamCodingPlanUsageSources(
   subscribedTeamProducts: EnterpriseCodingPlanProductDisplay[],
-  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinRunProviderAccountAccess>>,
+  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinDoneProviderAccountAccess>>,
 ): CodingPlanUsageSource[] {
   const seen = new Set<string>();
   return subscribedTeamProducts.flatMap((product) => {
@@ -154,7 +154,7 @@ export function resolveSidebarCurrentCodingPlanUsageSource({
 }: {
   selections?: ProviderFamilyConnectionSelectionSettings | null;
   selectedProviderId: string | null;
-  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinRunProviderAccountAccess>>;
+  accountAccesses: Partial<Record<ProviderFamilyDomain, RobinDoneProviderAccountAccess>>;
   teamSources: CodingPlanUsageSource[];
 }): CurrentSidebarCodingPlanUsageSource | null {
   const family = selectedProviderId

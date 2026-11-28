@@ -1,4 +1,4 @@
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { clearAppData, waitForWorkspaceApp } from "../../../helpers/desktop-app.js";
 import { prepareV4ConversationE2E } from "../../../helpers/v4-conversation.js";
 import {

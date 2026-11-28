@@ -1,9 +1,9 @@
 import type {
   PluginScope,
   PluginsOverviewResult,
-  RobinRunPluginsMarketplaceMutationResult,
-} from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+  RobinDonePluginsMarketplaceMutationResult,
+} from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface IPluginsService {
@@ -25,7 +25,7 @@ export interface IPluginsService {
     workspacePath: string;
     workspaceIdentity?: string;
     marketplace?: string;
-  }): Promise<RobinRunPluginsMarketplaceMutationResult | void>;
+  }): Promise<RobinDonePluginsMarketplaceMutationResult | void>;
   installPlugin(params: {
     workspacePath: string;
     workspaceIdentity?: string;

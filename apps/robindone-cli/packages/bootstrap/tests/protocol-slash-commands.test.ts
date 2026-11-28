@@ -1,0 +1,214 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { resolveRobinDoneBuiltinPromptCommand } from "../src/builtin-prompt-command.js";
+import { resolveRobinDoneCustomCommandPrompt } from "../src/custom-command-prompt.js";
+
+describe("protocol slash command surface", () => {
+  it("expands prompt custom commands without taking over reserved builtins", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "robindone-custom-command-prompt-"));
+    const workspace = join(tempRoot, "workspace");
+    const home = join(tempRoot, "home");
+    const userCommands = join(home, ".robindone", "commands");
+
+    try {
+      await mkdir(workspace, { recursive: true });
+      await mkdir(userCommands, { recursive: true });
+      await writeCommand(userCommands, "review", "Review changes", "Review $ARGUMENTS.");
+      await writeCommand(userCommands, "init", "Custom init", "Should not expand.");
+      await writeCommand(userCommands, "model", "Reserved model", "Should not expand.");
+      await writeCommand(userCommands, "plan", "Reserved Plan action", "Should not expand.");
+
+      const options = {
+        env: { ROBINDONE_ENV: "test" },
+        homeDirectory: home,
+        skipUserConfig: true,
+        workingDirectory: workspace,
+      };
+      const prompt = await resolveRobinDoneCustomCommandPrompt("/review src packages", options);
+
+      expect(prompt).toContain("Run custom command /review.");
+      expect(prompt).toContain("Command source: user/robindone.");
+      expect(prompt).toContain("Review src packages.");
+      await expect(resolveRobinDoneCustomCommandPrompt("/model glm-5", options)).resolves.toBe(
+        undefined,
+      );
+      await expect(resolveRobinDoneCustomCommandPrompt("/plan task", options)).resolves.toBe(undefined);
+      expect(resolveRobinDoneBuiltinPromptCommand("/plan task", { workingDirectory: workspace })).toBe(
+        undefined,
+      );
+      await expect(resolveRobinDoneCustomCommandPrompt("/init", options)).resolves.toBe(undefined);
+      await expect(resolveRobinDoneCustomCommandPrompt("please /review", options)).resolves.toBe(
+        undefined,
+      );
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  // DWG-03：灰度关闭时 `/workflow` 不得展开。目录侧已经剃掉了它，但用户仍可手打命令名，
+  // 两条路径必须给出同一个结论；同时 `workflow` 是保留名，自定义命令解析对它一律不展开，
+  // 用户或插件的同名命令既顶替不了内置语义，也绕不过灰度门。
+  it("expands builtin /workflow through the builtin resolver only, gated by the feature flag", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "robindone-builtin-workflow-"));
+    const workspace = join(tempRoot, "workspace");
+    const home = join(tempRoot, "home");
+    const userCommands = join(home, ".robindone", "commands");
+    try {
+      await mkdir(workspace, { recursive: true });
+      await mkdir(userCommands, { recursive: true });
+      await writeCommand(userCommands, "workflow", "Shadowing workflow", "Should not expand.");
+      const options = {
+        env: { ROBINDONE_ENV: "test" },
+        homeDirectory: home,
+        skipUserConfig: true,
+        workingDirectory: workspace,
+      };
+
+      const expanded = resolveRobinDoneBuiltinPromptCommand("/workflow ship it", {
+        dynamicWorkflowEnabled: true,
+        workingDirectory: workspace,
+      });
+      expect(expanded).toContain("Required skills: `dynamic-workflows`.");
+      expect(expanded).toContain("ship it");
+      expect(expanded).not.toContain("Should not expand.");
+      // 缺席（TUI / headless）等于开启；显式 false 才挡下。
+      expect(
+        resolveRobinDoneBuiltinPromptCommand("/workflow ship it", { workingDirectory: workspace }),
+      ).toContain("ship it");
+      expect(
+        resolveRobinDoneBuiltinPromptCommand("/workflow ship it", {
+          dynamicWorkflowEnabled: false,
+          workingDirectory: workspace,
+        }),
+      ).toBe(undefined);
+      await expect(resolveRobinDoneCustomCommandPrompt("/workflow ship it", options)).resolves.toBe(
+        undefined,
+      );
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("expands builtin /init into the workspace AGENTS.md prompt", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "robindone-builtin-init-"));
+    const workspace = join(tempRoot, "workspace");
+
+    try {
+      await mkdir(workspace, { recursive: true });
+      const prompt = resolveRobinDoneBuiltinPromptCommand("/init include pnpm scripts", {
+        workingDirectory: workspace,
+      });
+
+      expect(prompt).toContain("built-in /init command");
+      expect(prompt).toContain("AGENTS.md");
+      expect(prompt).toContain(join(workspace, "AGENTS.md"));
+      // 2026-11-19 /init 裁决（docs/init-flow.md）：三步初始化（项目说明 → 编制 → master
+      // agents.md）+ 分步 guard，废除「既有指令文件即整体中止」。
+      // 裁决 10（2026-11-20）：智能体侧文件回小写——worker 职责定义 define.md（master 维护）
+      // + 自维护 agents.md，master 单文件 agents.md。
+      expect(prompt).toContain(join(workspace, ".robindone", "agents", "master", "agents.md"));
+      expect(prompt).toContain("a project briefing, not a constitution");
+      expect(prompt).toContain("Step 1 — Project briefing");
+      expect(prompt).toContain("Step 2 — Worker roster");
+      expect(prompt).toContain("Step 3 — Master agents.md");
+      expect(prompt).not.toContain("they already have an instructions file");
+      expect(prompt).not.toContain("Do not create CLAUDE.md or AGENTS.md");
+      expect(prompt).toContain("include pnpm scripts");
+      // /init 扩展（2026-11-15 worker 编制裁决）：AGENTS.md 之后经 ManageWorkers 脚手架 worker 编制。
+      // 2026-11-15 定位修订：最少编制只剩主智能体，开发/运营是示例配置（锁定新措辞）。
+      // 2026-11-19 裁决：编制直接建，不再逐步征求用户确认。
+      // 裁决 10：ManageWorkers create 的 prompt 即 worker 的 define.md 职责声明
+      // （负责什么/不负责什么/边界外 ContactAgent 主智能体）；agents.md 是 worker 自维护骨架。
+      expect(prompt).toContain(join(workspace, ".robindone", "agents", "workers.json"));
+      expect(prompt).toContain("ManageWorkers");
+      expect(prompt).toContain("common examples, not a required minimum");
+      expect(prompt).toContain("without asking the user for confirmation");
+      expect(prompt).toContain("ContactAgent");
+      expect(prompt).toContain("define.md");
+      expect(resolveRobinDoneBuiltinPromptCommand("/review", { workingDirectory: workspace })).toBe(
+        undefined,
+      );
+      expect(
+        resolveRobinDoneBuiltinPromptCommand("please /init", { workingDirectory: workspace }),
+      ).toBe(undefined);
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("hands plugin shell blocks to the model with the plugin root resolved", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "robindone-plugin-command-shell-"));
+    const workspace = join(tempRoot, "workspace");
+    const pluginRoot = join(tempRoot, "ralph-loop");
+    const commandsRoot = join(pluginRoot, "commands");
+    const pluginDataRoot = join(tempRoot, "plugins");
+    const configPath = join(tempRoot, "config.json");
+
+    try {
+      await mkdir(commandsRoot, { recursive: true });
+      await mkdir(join(pluginRoot, ".claude-plugin"), { recursive: true });
+      await writeFile(
+        join(pluginRoot, ".claude-plugin", "plugin.json"),
+        JSON.stringify({ name: "ralph-loop", version: "1.0.0" }),
+      );
+      await writeCommand(
+        commandsRoot,
+        "ralph-loop",
+        "Start Ralph",
+        [
+          "Before",
+          "```!",
+          'echo "${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph-loop.sh" "$ARGUMENTS" "$CLAUDE_PROJECT_DIR"',
+          "```",
+          "After",
+        ].join("\n"),
+      );
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          plugins: {
+            dirs: [pluginRoot],
+            enabled: true,
+          },
+          storage: {
+            dir: pluginDataRoot,
+          },
+        }),
+      );
+
+      // 项目配置会剥离 plugins.dirs（工作区不能引入插件根目录），测试插件只能经用户配置加载；
+      // homeDirectory 指向临时目录，不读本机用户命令。
+      const prompt = await resolveRobinDoneCustomCommandPrompt("/ralph-loop build demo", {
+        env: { ROBINDONE_ENV: "test" },
+        homeDirectory: join(tempRoot, "home"),
+        userConfigPath: configPath,
+        workingDirectory: workspace,
+      });
+
+      expect(prompt).not.toContain("```!");
+      expect(prompt).toContain(`the /ralph-loop command file (user/plugin), not from RobinDone.`);
+      // 命令文本自带 "/scripts/..."，期望值不能用 join() 拼平台分隔符；工作区变量由 Bash 环境提供，保持原文。
+      // Windows 上插件路径改写成正斜杠，期望值按同一规则换算；POSIX 路径不受影响。
+      expect(prompt).toContain(
+        `\`\`\`bash\necho "${pluginRoot.replaceAll("\\", "/")}/scripts/setup-ralph-loop.sh" "build demo" "$CLAUDE_PROJECT_DIR"\n\`\`\`\n`,
+      );
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+});
+
+async function writeCommand(
+  directory: string,
+  name: string,
+  description: string,
+  body: string,
+  extraFrontmatter: string[] = [],
+): Promise<void> {
+  await writeFile(
+    join(directory, `${name}.md`),
+    ["---", `description: ${description}`, ...extraFrontmatter, "---", "", body].join("\n"),
+  );
+}

@@ -4,7 +4,7 @@ import type {
   McpAppsHostTitleBar,
   McpAppsToolResultPayload,
   PluginSandboxHandle,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 import type {
   PluginUiHostControllerDeps,
   PluginUiHostPhase,

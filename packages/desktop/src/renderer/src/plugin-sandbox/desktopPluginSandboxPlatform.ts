@@ -1,24 +1,24 @@
-import { InternalChannels } from "@robinrun/shared";
+import { InternalChannels } from "@robindone/shared";
 import type {
   PluginSandboxPlatformPort,
   PluginSandboxPortsEvent,
   PluginSandboxTransportPort,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 
 /**
  * 桌面 renderer 的插件沙箱平台端口：原生操作委托 preload 命名空间，那条 JSON-RPC 端口从 preload 经
  * window.postMessage transfer 到来（MessagePort 不能过 contextBridge，同 remoteWorkspaceServicePortBridge）。
- * 旧 preload 没有 robinrunPluginSandbox 时返回 undefined，UI 按"不支持插件 UI"回退。
+ * 旧 preload 没有 robindonePluginSandbox 时返回 undefined，UI 按"不支持插件 UI"回退。
  */
 export function createDesktopPluginSandboxPlatform(): PluginSandboxPlatformPort | undefined {
-  const bridge = window.robinrunPluginSandbox;
+  const bridge = window.robindonePluginSandbox;
   if (!bridge) return undefined;
   return {
     supportsRetainedMove: bridge.supportsRetainedMove,
     ...(bridge.setExecutionActive ? { setExecutionActive: bridge.setExecutionActive } : {}),
     ...(bridge.copyImage
       ? {
-          copyImage: (input: import("@robinrun/shared/mcp-apps").PluginSandboxCaptureRequest) =>
+          copyImage: (input: import("@robindone/shared/mcp-apps").PluginSandboxCaptureRequest) =>
             bridge.copyImage!(input),
         }
       : {}),

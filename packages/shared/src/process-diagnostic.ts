@@ -1,40 +1,40 @@
 import { z } from "zod";
 
 // 启动早期或协议故障时 stdout 尚不可用，进程诊断使用独立的 stderr 单行契约。
-export const ROBINRUN_PROCESS_DIAGNOSTIC_PREFIX = "[robinrun-process-exception] ";
-export const ROBINRUN_PROCESS_DIAGNOSTIC_NAME_MAX_CHARS = 128;
-export const ROBINRUN_PROCESS_DIAGNOSTIC_MESSAGE_MAX_CHARS = 4_000;
-export const ROBINRUN_PROCESS_DIAGNOSTIC_STACK_MAX_CHARS = 16_000;
-export const ROBINRUN_PROCESS_DIAGNOSTIC_MAX_LINE_CHARS = 128 * 1024;
-export const ROBINRUN_AGENT_LIFECYCLE_LOG_MARKER = "[robinrun-agent-lifecycle-reported]";
+export const ROBINDONE_PROCESS_DIAGNOSTIC_PREFIX = "[robindone-process-exception] ";
+export const ROBINDONE_PROCESS_DIAGNOSTIC_NAME_MAX_CHARS = 128;
+export const ROBINDONE_PROCESS_DIAGNOSTIC_MESSAGE_MAX_CHARS = 4_000;
+export const ROBINDONE_PROCESS_DIAGNOSTIC_STACK_MAX_CHARS = 16_000;
+export const ROBINDONE_PROCESS_DIAGNOSTIC_MAX_LINE_CHARS = 128 * 1024;
+export const ROBINDONE_AGENT_LIFECYCLE_LOG_MARKER = "[robindone-agent-lifecycle-reported]";
 
 const processErrorKindSchema = z.enum(["uncaughtException", "unhandledRejection"]);
-export const robinrunProcessDiagnosticSchema = z
+export const robindoneProcessDiagnosticSchema = z
   .object({
     version: z.literal(1),
     errorId: z.uuid(),
     kind: processErrorKindSchema,
     origin: processErrorKindSchema,
-    name: z.string().min(1).max(ROBINRUN_PROCESS_DIAGNOSTIC_NAME_MAX_CHARS),
-    message: z.string().max(ROBINRUN_PROCESS_DIAGNOSTIC_MESSAGE_MAX_CHARS),
-    stack: z.string().max(ROBINRUN_PROCESS_DIAGNOSTIC_STACK_MAX_CHARS).optional(),
+    name: z.string().min(1).max(ROBINDONE_PROCESS_DIAGNOSTIC_NAME_MAX_CHARS),
+    message: z.string().max(ROBINDONE_PROCESS_DIAGNOSTIC_MESSAGE_MAX_CHARS),
+    stack: z.string().max(ROBINDONE_PROCESS_DIAGNOSTIC_STACK_MAX_CHARS).optional(),
     occurredAt: z.number().int().nonnegative(),
   })
   .strict();
-export type RobinRunProcessDiagnostic = z.infer<typeof robinrunProcessDiagnosticSchema>;
+export type RobinDoneProcessDiagnostic = z.infer<typeof robindoneProcessDiagnosticSchema>;
 
-export function parseRobinRunProcessDiagnostic(
+export function parseRobinDoneProcessDiagnostic(
   line: string,
-): RobinRunProcessDiagnostic | undefined {
+): RobinDoneProcessDiagnostic | undefined {
   if (
-    !line.startsWith(ROBINRUN_PROCESS_DIAGNOSTIC_PREFIX) ||
-    line.length > ROBINRUN_PROCESS_DIAGNOSTIC_MAX_LINE_CHARS
+    !line.startsWith(ROBINDONE_PROCESS_DIAGNOSTIC_PREFIX) ||
+    line.length > ROBINDONE_PROCESS_DIAGNOSTIC_MAX_LINE_CHARS
   ) {
     return undefined;
   }
   try {
-    const result = robinrunProcessDiagnosticSchema.safeParse(
-      JSON.parse(line.slice(ROBINRUN_PROCESS_DIAGNOSTIC_PREFIX.length)),
+    const result = robindoneProcessDiagnosticSchema.safeParse(
+      JSON.parse(line.slice(ROBINDONE_PROCESS_DIAGNOSTIC_PREFIX.length)),
     );
     return result.success ? result.data : undefined;
   } catch {

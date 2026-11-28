@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { Ban, ChevronRight, CircleCheck, Loader2, TriangleAlert } from "lucide-react";
-import { TID_WORKFLOW_RUN_ROW, type RobinRunSavedWorkflowRun } from "@robinrun/shared";
-import { testId } from "@robinrun/shared/test-ids";
+import { TID_WORKFLOW_RUN_ROW, type RobinDoneSavedWorkflowRun } from "@robindone/shared";
+import { testId } from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatDateTime } from "@/settings/automationFormat.js";
 import { SavedWorkflowArtifactChips } from "@/settings/saved-workflows/SavedWorkflowArtifactChips.js";
 import {
@@ -32,19 +32,19 @@ export function SavedWorkflowRunHistory({
   onOpenArtifact,
   resolveRunProject,
 }: {
-  runs: readonly RobinRunSavedWorkflowRun[];
+  runs: readonly RobinDoneSavedWorkflowRun[];
   now: number;
   canOpenRun: boolean;
-  onOpenRun: (run: RobinRunSavedWorkflowRun) => void;
+  onOpenRun: (run: RobinDoneSavedWorkflowRun) => void;
   /**
    * 产物 chip → `workflow-artifact` tab。
    * 缺席即 chips 只读。门比「查看实例」松一格：产物不需要 `toolCallId`。
    */
-  onOpenArtifact?: (run: RobinRunSavedWorkflowRun, artifactId: string) => void;
+  onOpenArtifact?: (run: RobinDoneSavedWorkflowRun, artifactId: string) => void;
   /** 传入即在每行渲染项目列（全局工作流跨项目历史）；「查看实例」还要该行 canOpen。 */
-  resolveRunProject?: (run: RobinRunSavedWorkflowRun) => SavedWorkflowRunProject | null;
+  resolveRunProject?: (run: RobinDoneSavedWorkflowRun) => SavedWorkflowRunProject | null;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (runs.length === 0) {
     return (
       <p className="text-ui-base text-foreground-subtlest">

@@ -1,9 +1,9 @@
-import type { RobinRunMessageWithParts } from "./robinrun-protocol-legacy-types.js";
-import { textFromRobinRunMessageParts } from "./robinrun-protocol-legacy-types.js";
-import type { RobinRunStreamEvent } from "./robinrun-task-types-core.js";
-import { subagentResultMetaSchema } from "./robinrun-protocol-v4/workflow-row-meta.js";
+import type { RobinDoneMessageWithParts } from "./robindone-protocol-legacy-types.js";
+import { textFromRobinDoneMessageParts } from "./robindone-protocol-legacy-types.js";
+import type { RobinDoneStreamEvent } from "./robindone-task-types-core.js";
+import { subagentResultMetaSchema } from "./robindone-protocol-v4/workflow-row-meta.js";
 
-export interface RobinRunBackgroundTaskNotificationInfo {
+export interface RobinDoneBackgroundTaskNotificationInfo {
   error?: string;
   outputFile?: string;
   result?: string;
@@ -15,8 +15,8 @@ export interface RobinRunBackgroundTaskNotificationInfo {
 const TASK_NOTIFICATION_OPEN = "<task-notification>";
 const TASK_NOTIFICATION_CLOSE = "</task-notification>";
 
-export interface RobinRunParsedBackgroundTaskNotification {
-  notification: RobinRunBackgroundTaskNotificationInfo;
+export interface RobinDoneParsedBackgroundTaskNotification {
+  notification: RobinDoneBackgroundTaskNotificationInfo;
   toolUseId: string;
 }
 
@@ -28,10 +28,10 @@ export interface RobinRunParsedBackgroundTaskNotification {
  * `subagentResult` 为准，通知正文不带 <error>；它只描述单条通知，所以只在只有一个块时使用。
  * 旧会话和合并轮没有它，读块内的 <status> / <error>。不解析 summary 文本：产品数据不依赖模型可见文案。
  */
-export function parseRobinRunBackgroundTaskNotifications(
+export function parseRobinDoneBackgroundTaskNotifications(
   text: string | undefined,
   originMeta?: unknown,
-): RobinRunParsedBackgroundTaskNotification[] {
+): RobinDoneParsedBackgroundTaskNotification[] {
   const trimmed = text?.trim();
   if (!trimmed?.startsWith(TASK_NOTIFICATION_OPEN)) {
     return [];
@@ -65,16 +65,16 @@ export function parseRobinRunBackgroundTaskNotifications(
   });
 }
 
-export function collectRobinRunBackgroundTaskNotificationsByToolUseId(
-  messages: readonly RobinRunMessageWithParts[],
-): Map<string, RobinRunBackgroundTaskNotificationInfo> {
-  const notifications = new Map<string, RobinRunBackgroundTaskNotificationInfo>();
+export function collectRobinDoneBackgroundTaskNotificationsByToolUseId(
+  messages: readonly RobinDoneMessageWithParts[],
+): Map<string, RobinDoneBackgroundTaskNotificationInfo> {
+  const notifications = new Map<string, RobinDoneBackgroundTaskNotificationInfo>();
   for (const message of messages) {
     if (message.info.role !== "user") {
       continue;
     }
-    for (const parsed of parseRobinRunBackgroundTaskNotifications(
-      textFromRobinRunMessageParts(message.parts),
+    for (const parsed of parseRobinDoneBackgroundTaskNotifications(
+      textFromRobinDoneMessageParts(message.parts),
       message.info.metadata?.originMeta,
     )) {
       notifications.set(parsed.toolUseId, parsed.notification);
@@ -87,16 +87,16 @@ export function collectRobinRunBackgroundTaskNotificationsByToolUseId(
  * 失败通知在 App 上展示的原因：优先用结构化结果或 <error> 原文；合并轮两者都没有时，
  * 用这条通知自己的 result / summary 整句（与 V4 投影相同），不从 summary 里截取原因。
  */
-export function robinrunBackgroundTaskNotificationFailureText(
-  notification: RobinRunBackgroundTaskNotificationInfo,
+export function robindoneBackgroundTaskNotificationFailureText(
+  notification: RobinDoneBackgroundTaskNotificationInfo,
 ): string | undefined {
   return notification.error ?? notification.result ?? notification.summary;
 }
 
-export function robinrunBackgroundTaskNotificationToolUpdateStatus(
+export function robindoneBackgroundTaskNotificationToolUpdateStatus(
   status: string | undefined,
 ): Extract<
-  Extract<RobinRunStreamEvent, { type: "tool_call_update" }>["status"],
+  Extract<RobinDoneStreamEvent, { type: "tool_call_update" }>["status"],
   "completed" | "failed" | "stopped"
 > {
   if (status === "failed" || status === "lost") {
@@ -109,22 +109,22 @@ export function robinrunBackgroundTaskNotificationToolUpdateStatus(
   return "completed";
 }
 
-export function attachRobinRunBackgroundTaskNotificationToRaw(
+export function attachRobinDoneBackgroundTaskNotificationToRaw(
   raw: unknown,
-  notification: RobinRunBackgroundTaskNotificationInfo | undefined,
+  notification: RobinDoneBackgroundTaskNotificationInfo | undefined,
 ): unknown {
   if (!notification) {
     return raw;
   }
   const record = asPlainRecord(raw);
   const meta = asPlainRecord(record._meta);
-  const robinrun = asPlainRecord(meta.robinrun);
+  const robindone = asPlainRecord(meta.robindone);
   return {
     ...record,
     _meta: {
       ...meta,
-      robinrun: {
-        ...robinrun,
+      robindone: {
+        ...robindone,
         taskNotification: notification,
       },
     },

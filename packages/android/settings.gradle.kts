@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "robinrun-android"
+rootProject.name = "robindone-android"
 include(":app")

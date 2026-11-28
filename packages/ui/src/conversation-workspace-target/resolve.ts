@@ -1,4 +1,4 @@
-import { resolveWorkspaceKey } from "@robinrun/shared";
+import { resolveWorkspaceKey } from "@robindone/shared";
 import type {
   ConversationWorkspaceTab,
   ConversationWorkspaceTarget,

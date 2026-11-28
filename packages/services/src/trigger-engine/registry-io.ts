@@ -7,7 +7,7 @@ import {
   triggerRegistrySchema,
   TRIGGER_REGISTRY_VERSION,
   type TriggerRegistry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 
 /**
@@ -23,7 +23,7 @@ export interface RegistryWritableState {
   raw: string;
   registry: TriggerRegistry | null;
   corrupt: boolean;
-  /** 会话 key → 绑定 taskId（`.robinrun/triggers/state/sessions.json`）。 */
+  /** 会话 key → 绑定 taskId（`.robindone/triggers/state/sessions.json`）。 */
   sessionBindings: Record<string, string>;
   /** 注册表写串行链（poll 写与 UI set_status 写互不交叠）。 */
   writeChain: Promise<void>;
@@ -152,5 +152,5 @@ export async function appendAudit(
 const serviceLog = createServiceLogger("trigger-engine");
 
 function triggersRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers");
+  return join(workspacePath, ".robindone", "triggers");
 }

@@ -1,11 +1,11 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
 import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
 import {
   ServiceChannels,
   InternalChannels,
   buildRemoteHostWorkspaceIdentity,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   TID_VIRTUAL_PROJECT_CREATE_TASK,
   TID_TASK_SETTINGS_BUTTON,
@@ -13,8 +13,8 @@ import {
   TID_SETTINGS_BACK_BUTTON,
   TID_REMOTE_KIND_SSH,
   testId,
-} from "@robinrun/shared/test-ids";
-import type { RemoteProjectDirectory, ProjectTree, VirtualProject } from "@robinrun/services";
+} from "@robindone/shared/test-ids";
+import type { RemoteProjectDirectory, ProjectTree, VirtualProject } from "@robindone/services";
 import { clickTestIdByDom, clearAppData } from "#e2e/helpers/desktop-app";
 import { prepareV4ConversationE2E, selectV4TaskById } from "#e2e/helpers/v4-conversation";
 import {
@@ -116,7 +116,7 @@ async function releaseList() {
 describe(marker, () => {
   afterEach(async function () {
     if (this.currentTest?.state !== "failed") return;
-    const artifacts = process.env.ROBINRUN_E2E_ARTIFACT_DIR!;
+    const artifacts = process.env.ROBINDONE_E2E_ARTIFACT_DIR!;
     await browser.saveScreenshot(join(artifacts, "failure.png"));
     const state = await browser.execute(() => ({
       dialogs: Array.from(document.querySelectorAll('[role="dialog"]')).map((item) => ({
@@ -247,7 +247,7 @@ describe(marker, () => {
     await $(`[role="option"][data-device-id="${host.id}"]`).click();
     await openList();
     await pick.waitForDisplayed();
-    const artifacts = process.env.ROBINRUN_E2E_ARTIFACT_DIR!;
+    const artifacts = process.env.ROBINDONE_E2E_ARTIFACT_DIR!;
     for (const locale of ["zh-CN", "en-US"])
       for (const theme of ["light", "dark"]) {
         await browser.execute(
@@ -409,7 +409,7 @@ async function createHistoryTask(
   // 空 createSession 是草稿，正式任务前置走公开历史导入，不发送模型请求。
   const call = remote ? callRemoteFixture : callHandoffHost;
   const snapshot = await call<{ session: { sessionId: string } }>(
-    ServiceChannels.RobinRunAgent,
+    ServiceChannels.RobinDoneAgent,
     "createSession",
     [
       {
@@ -427,7 +427,7 @@ async function createHistoryTask(
     ],
   );
   const taskId = snapshot.session.sessionId;
-  await call(ServiceChannels.RobinRunTask, "resumeTask", [
+  await call(ServiceChannels.RobinDoneTask, "resumeTask", [
     {
       taskId,
       workspacePath: target.workspacePath,

@@ -1,6 +1,6 @@
 import { rm } from "node:fs/promises";
 import { isAbsolute, resolve, sep } from "node:path";
-import type { GitCheckpointDiff, GitCheckpointFileDiff } from "@robinrun/shared";
+import type { GitCheckpointDiff, GitCheckpointFileDiff } from "@robindone/shared";
 import { normalizeGitPath, toWorkspaceRelativeGitPath } from "../config.js";
 import { getWorkspaceHash } from "../../paths.js";
 
@@ -27,7 +27,7 @@ export function getWorkspacePathspec(workspaceInRepoPath: string): string {
 
 export function getCheckpointRefName(workspacePath: string, checkpointId: string): string {
   const workspaceHash = getWorkspaceHash(workspacePath);
-  return `refs/robinrun/checkpoints/${workspaceHash}/${checkpointId}`;
+  return `refs/robindone/checkpoints/${workspaceHash}/${checkpointId}`;
 }
 
 function mapNameStatusKind(status: string): GitCheckpointFileDiff["kind"] {
@@ -184,10 +184,10 @@ export function buildAffectedRepoPaths(files: GitCheckpointFileDiff[]): string[]
 export function buildCheckpointEnv(tempIndexPath: string): NodeJS.ProcessEnv {
   return {
     GIT_INDEX_FILE: tempIndexPath,
-    GIT_AUTHOR_NAME: "RobinRun Checkpoint",
-    GIT_AUTHOR_EMAIL: "checkpoint@robinrun.local",
-    GIT_COMMITTER_NAME: "RobinRun Checkpoint",
-    GIT_COMMITTER_EMAIL: "checkpoint@robinrun.local",
+    GIT_AUTHOR_NAME: "RobinDone Checkpoint",
+    GIT_AUTHOR_EMAIL: "checkpoint@robindone.local",
+    GIT_COMMITTER_NAME: "RobinDone Checkpoint",
+    GIT_COMMITTER_EMAIL: "checkpoint@robindone.local",
   };
 }
 

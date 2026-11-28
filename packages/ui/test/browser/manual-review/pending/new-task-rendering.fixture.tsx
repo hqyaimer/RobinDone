@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Event, ProxyChannel } from "@robinrun/rpc";
+import { Event, ProxyChannel } from "@robindone/rpc";
 import { useRemoteWorkspaceHistory } from "@/root/useRemoteWorkspaceHistory.js";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { ChatLoading } from "@/components/ai-elements/chat-loading.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import {
@@ -13,9 +13,9 @@ import {
   ProjectComposerMenu,
 } from "@/project-sidebar/index.js";
 import { useRootWorkspaceActions } from "@/root/useRootWorkspaceActions.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import type { ProjectTree, ProjectSidebarProps } from "@/project-sidebar/contract.js";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { attachTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 import "@/styles.css";
 
@@ -90,7 +90,7 @@ const activityStore = {
       items: [
         attachTaskListRowActivity(tree.tasks[0]!, {
           phase: complete ? "completedSuccess" : "running",
-          lastActivityAt: activitySnapshot.items[0]!.__robinrunSessionActivity.lastActivityAt + 1,
+          lastActivityAt: activitySnapshot.items[0]!.__robindoneSessionActivity.lastActivityAt + 1,
           hasBackgroundWork: false,
         }),
       ],
@@ -124,10 +124,10 @@ const services = {
   },
   remoteProjectService: { readDirectory: async () => ({ hosts: [], entries: [] }) },
   broadcastService: { onMessage: dispose },
-  robinrunTaskService: { onDynamicWorkspaceEvent: () => dispose },
+  robindoneTaskService: { onDynamicWorkspaceEvent: () => dispose },
 } as unknown as IServiceAccessor;
 Object.assign(window, { __renderFixture: { services, tabStore, activityStore } });
-useRobinRunSessionStore.getState().setActiveTaskId("/example", "old-session");
+useRobinDoneSessionStore.getState().setActiveTaskId("/example", "old-session");
 const common = {
   workspacePath: "/example",
   theme,
@@ -168,7 +168,7 @@ const actions = {
     : ("desktop-continuous" as const),
   // 手机 bridge 只模拟导航完成；Renderer 仍走实际 replayable 分支。
   openMobileProjectDraft: async () => {
-    useRobinRunSessionStore.getState().startDraft("/example");
+    useRobinDoneSessionStore.getState().startDraft("/example");
   },
 };
 function Controls() {
@@ -176,7 +176,7 @@ function Controls() {
   const [refreshes, setRefreshes] = useState(0);
   const taskActivity = (
     directory.tree.tasks[0] as (typeof activitySnapshot.items)[number] | undefined
-  )?.__robinrunSessionActivity;
+  )?.__robindoneSessionActivity;
   return (
     <>
       {activity && (
@@ -188,7 +188,7 @@ function Controls() {
           <button
             data-testid="activate-task"
             onClick={() =>
-              useRobinRunSessionStore.getState().setActiveTaskId("/example", "running-task")
+              useRobinDoneSessionStore.getState().setActiveTaskId("/example", "running-task")
             }
           >
             Activate task
@@ -211,7 +211,7 @@ function Controls() {
           <output data-testid="activity-version">
             {
               (directory.tree.tasks[0] as (typeof activitySnapshot.items)[number])
-                ?.__robinrunSessionActivity?.lastActivityAt
+                ?.__robindoneSessionActivity?.lastActivityAt
             }
           </output>
         </>
@@ -244,7 +244,7 @@ function DirectoryCommandConsumer() {
 }
 function Fixture() {
   const [revision, setRevision] = useState(0);
-  const task = useRobinRunSessionStore((state) => state.workspaces["/example"]?.activeTaskId);
+  const task = useRobinDoneSessionStore((state) => state.workspaces["/example"]?.activeTaskId);
   // 模拟 Root 每轮装配导航实现；执行和侧栏均使用真实生产 hook/组件。
   const remote = useRemoteWorkspaceHistory({
     intl: actions.intl,
@@ -295,9 +295,9 @@ function Fixture() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+  <RobinDoneIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
     <TooltipProvider>
       <Fixture />
     </TooltipProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

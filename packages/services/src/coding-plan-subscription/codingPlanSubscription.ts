@@ -42,15 +42,15 @@ import type {
   EnterpriseCodingPlanPricingRequest,
   EnterpriseCodingPlanPricingResponse,
   StartPlanPreviewConfig,
-  RobinRunModelContextBudgetStrategy,
+  RobinDoneModelContextBudgetStrategy,
   ForceUpdateConfig,
   ManualClaimPlanPreviewSnapshot,
   ManualClaimPlanClaimRequest,
   ManualClaimPlanClaimResult,
   DynamicWorkflowClientConfig,
-} from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/provider";
-import { ServiceChannels } from "@robinrun/shared";
+} from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/provider";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface OffPeakClientConfig {
@@ -77,7 +77,7 @@ export interface ICodingPlanSubscriptionService {
     forceRefresh?: boolean;
   }): Promise<DynamicWorkflowClientConfig>;
   /** 兼容接口：固定返回 preflight-v1，不读取远端配置或缓存。 */
-  getModelContextBudgetStrategy(): Promise<RobinRunModelContextBudgetStrategy>;
+  getModelContextBudgetStrategy(): Promise<RobinDoneModelContextBudgetStrategy>;
   getBillingDiscount(): Promise<CodingPlanBillingDiscountConfig | undefined>;
   getRequestVerificationConfig(): Promise<RequestVerificationConfig | null>;
   getForceUpdateConfig(): Promise<ForceUpdateConfig | null>;

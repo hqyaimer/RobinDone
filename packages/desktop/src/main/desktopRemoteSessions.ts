@@ -1,4 +1,4 @@
-import { sanitizeRemoteConnectionLog, remoteConnectionFailureLogLevel } from "@robinrun/shared";
+import { sanitizeRemoteConnectionLog, remoteConnectionFailureLogLevel } from "@robindone/shared";
 /* eslint-disable max-lines -- Main 的完整薄转发契约集中维护请求与端口关联。 */
 import { randomUUID } from "node:crypto";
 import { BrowserWindow, MessageChannelMain } from "electron";
@@ -25,7 +25,7 @@ import {
   type WebRemoteControlFailure,
   type HostPreparedProjectWorkspace,
   type HostProjectWorkspaceNavigationInput,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   RemoteConnectionStats,
   RemoteDisconnectReason,

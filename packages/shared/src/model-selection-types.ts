@@ -1,5 +1,6 @@
-export const ROBINRUN_AGENT_PROVIDER_NOT_READY_CODE = "ROBINRUN_AGENT_PROVIDER_NOT_READY" as const;
-export const ROBINRUN_AGENT_PROVIDER_NOT_READY_REASON = "provider_not_ready" as const;
+export const ROBINDONE_AGENT_PROVIDER_NOT_READY_CODE =
+  "ROBINDONE_AGENT_PROVIDER_NOT_READY" as const;
+export const ROBINDONE_AGENT_PROVIDER_NOT_READY_REASON = "provider_not_ready" as const;
 
 export type ModelSelectionGhostReason =
   | "mismatch"

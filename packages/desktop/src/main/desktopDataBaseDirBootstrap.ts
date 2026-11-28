@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { setDataBaseDir } from "@robinrun/services/node";
+import { setDataBaseDir } from "@robindone/services/node";
 
 export function resolveBootstrapSettingsFile(homePath: string = homedir()): string {
-  return join(homePath, ".robinrun", "v2", "setting.json");
+  return join(homePath, ".robindone", "v2", "setting.json");
 }
 
 export function extractBootstrapDataBaseDir(rawValue: unknown): string | null {

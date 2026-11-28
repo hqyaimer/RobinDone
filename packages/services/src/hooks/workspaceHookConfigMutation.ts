@@ -3,4 +3,4 @@ export {
   writeWorkspaceHookConfiguredToggle,
   WorkspaceHookMutationError,
   type AtomicWorkspaceHookConfigWriteOptions,
-} from "@robinrun/shared/workspace-hook-mutation";
+} from "@robindone/shared/workspace-hook-mutation";

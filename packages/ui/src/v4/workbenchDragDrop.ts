@@ -1,7 +1,7 @@
-export const WORKBENCH_SESSION_DRAG_MIME = "application/x-robinrun-session";
+export const WORKBENCH_SESSION_DRAG_MIME = "application/x-robindone-session";
 
 export interface WorkbenchSessionDragPayload {
-  readonly kind: "robinrun/session";
+  readonly kind: "robindone/session";
   readonly workspacePath: string;
   readonly workspaceIdentity?: string;
   readonly remoteSessionId?: string;
@@ -49,14 +49,14 @@ export function parseWorkbenchSessionDragPayload(
     const parsed = JSON.parse(raw);
     if (
       !isRecord(parsed) ||
-      parsed.kind !== "robinrun/session" ||
+      parsed.kind !== "robindone/session" ||
       typeof parsed.workspacePath !== "string" ||
       typeof parsed.sessionId !== "string"
     ) {
       return null;
     }
     return {
-      kind: "robinrun/session",
+      kind: "robindone/session",
       workspacePath: parsed.workspacePath,
       workspaceIdentity:
         typeof parsed.workspaceIdentity === "string" ? parsed.workspaceIdentity : undefined,

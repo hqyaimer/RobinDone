@@ -1,4 +1,4 @@
-import type { RobinRunSlashCommand } from "@robinrun/shared";
+import type { RobinDoneSlashCommand } from "@robindone/shared";
 
 const WHITESPACE_RE = /\s/;
 
@@ -52,9 +52,9 @@ export function extractActiveSlashQuery(textBeforeCursor: string): string | null
 }
 
 export function filterSlashCommands(
-  commands: RobinRunSlashCommand[],
+  commands: RobinDoneSlashCommand[],
   query: string | null,
-): RobinRunSlashCommand[] {
+): RobinDoneSlashCommand[] {
   if (query === null) {
     return [];
   }
@@ -81,7 +81,7 @@ export function filterSlashCommands(
 
       return { command, score: bestScore };
     })
-    .filter((item): item is { command: RobinRunSlashCommand; score: number } => item !== null)
+    .filter((item): item is { command: RobinDoneSlashCommand; score: number } => item !== null)
     .sort((left, right) => {
       if (left.score !== right.score) {
         return left.score - right.score;

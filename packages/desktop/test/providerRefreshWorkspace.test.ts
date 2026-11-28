@@ -4,7 +4,7 @@ import { refreshSeededOpenAIProvidersThroughSettings } from "#e2e/helpers/custom
 import { waitForWorkspaceApp } from "#e2e/helpers/desktop-app";
 
 vi.mock("#e2e/helpers/desktop-app", () => ({
-  DEFAULT_WORKSPACE: "/fixture/RobinRunProject",
+  DEFAULT_WORKSPACE: "/fixture/RobinDoneProject",
   clickTestIdByDom: vi.fn(),
   waitForWorkspaceApp: vi.fn(),
 }));
@@ -30,7 +30,7 @@ function install() {
     ],
   };
   const window = {
-    __robinrunTabStoreE2E: { getState: () => ({ activeWorkspacePath: "/fixture/unclassified" }) },
+    __robindoneTabStoreE2E: { getState: () => ({ activeWorkspacePath: "/fixture/unclassified" }) },
   };
   vi.stubGlobal("$", () => ({ waitForDisplayed: vi.fn() }));
   vi.stubGlobal("browser", {

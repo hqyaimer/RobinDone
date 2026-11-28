@@ -1,5 +1,5 @@
-const TASK_NOTIFICATION_ENABLED_STORAGE_KEY = "robinrun-notification-enabled";
-const TASK_NOTIFICATION_SOUND_ENABLED_STORAGE_KEY = "robinrun-notification-sound-enabled";
+const TASK_NOTIFICATION_ENABLED_STORAGE_KEY = "robindone-notification-enabled";
+const TASK_NOTIFICATION_SOUND_ENABLED_STORAGE_KEY = "robindone-notification-sound-enabled";
 
 function readStoredBoolean(key: string, defaultValue: boolean): boolean {
   try {

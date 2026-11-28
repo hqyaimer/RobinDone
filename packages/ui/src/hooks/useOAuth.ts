@@ -5,17 +5,17 @@
  * OAuth 回调监听在 Root/App 常驻层，不在此 hook 中。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { OAuthProviderId, OAuthProviderMeta } from "@robinrun/shared";
+import type { OAuthProviderId, OAuthProviderMeta } from "@robindone/shared";
 import {
   BIGMODEL_PROVIDER_ID,
   isCredentialDecryptError,
   resolveSafeTelemetryHostname,
   ZAI_PROVIDER_ID,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { LoginEntryPurpose } from "@/store/index.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { logger } from "../logger.js";
 import { usePlatform } from "./usePlatform.js";
 import { useServices } from "./useServices.js";
@@ -25,7 +25,7 @@ type OAuthStatus = "idle" | "waiting" | "error";
 export function useOAuth() {
   const { oauthService } = useServices();
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [status, setStatus] = useState<OAuthStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [providers, setProviders] = useState<OAuthProviderMeta[]>([]);
@@ -34,7 +34,7 @@ export function useOAuth() {
   const [pendingProvider, setPendingProvider] = useState<OAuthProviderId | null>(null);
   const [authorizeUrl, setAuthorizeUrl] = useState<string | null>(null);
   const loginAttemptRef = useRef(0);
-  const setOAuthPollingActive = useRobinRunStore((state) => state.setOAuthPollingActive);
+  const setOAuthPollingActive = useRobinDoneStore((state) => state.setOAuthPollingActive);
 
   const refreshProviders = useCallback(async () => {
     try {

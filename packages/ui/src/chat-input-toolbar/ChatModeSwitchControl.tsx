@@ -1,8 +1,8 @@
 import type { RefObject } from "react";
-import type { RobinRunConfigOption, RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneConfigOption, RobinDoneProvider } from "@robindone/shared";
 import { SlidersHorizontalIcon } from "lucide-react";
 import { ConfigSelect } from "@/chat-input-toolbar/display.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function ChatModeSwitchControl({
   compactIconOnly = false,
@@ -22,16 +22,16 @@ export function ChatModeSwitchControl({
   compactIconOnly?: boolean;
   disabled?: boolean;
   disabledReason?: string;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   labelVisibilityClassName?: string;
-  modeOption: RobinRunConfigOption;
+  modeOption: RobinDoneConfigOption;
   modeShortcutLabel: string;
   modeTriggerRef: RefObject<HTMLSpanElement | null>;
-  onConfigValueChange: (option: RobinRunConfigOption, value: string) => void;
+  onConfigValueChange: (option: RobinDoneConfigOption, value: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   restoreFocusSelector?: string | null;
-  selectedProvider: RobinRunProvider;
+  selectedProvider: RobinDoneProvider;
 }) {
   return (
     <ConfigSelect

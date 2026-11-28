@@ -5,11 +5,11 @@ import type {
   WorkflowBlockedMeta,
   WorkflowNotificationMeta,
   WorkflowRunHole,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { CodeBlock, CodeBlockHeader } from "@/components/ai-elements/code-block.js";
 import { WorkflowNotificationHoleRow } from "@/v4/WorkflowNotificationHoleRow.js";
 import { ToolLayout } from "@/ToolCallBlocks/ToolLayout.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { Theme } from "@/useTheme.js";
 import { workflowRunQuestionWaitedLabel } from "@/app-shell/workflowRunQuestions.js";
 import { WorkflowNotificationArtifactChips } from "@/v4/WorkflowNotificationArtifactChips.js";
@@ -170,7 +170,7 @@ function WorkflowNotificationBaseRow({
 }: WorkflowNotificationToolRowProps & {
   notification: Exclude<WorkflowRowNotification, { kind: "hole" }>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   // 等待时长要在没有事件流时也照走（停驻的 run 恰恰不发事件），按固定间隔喂新的"现在"。
   const [now, setNow] = useState(() => Date.now());

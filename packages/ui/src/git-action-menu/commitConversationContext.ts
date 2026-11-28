@@ -1,4 +1,4 @@
-import type { GitCommitMessageConversationContext } from "@robinrun/shared";
+import type { GitCommitMessageConversationContext } from "@robindone/shared";
 
 const MAX_COMMIT_CONVERSATION_MESSAGES = 12;
 const MAX_COMMIT_CONVERSATION_MESSAGE_CHARS = 600;

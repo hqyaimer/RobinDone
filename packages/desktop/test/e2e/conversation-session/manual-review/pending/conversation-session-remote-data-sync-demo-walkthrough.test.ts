@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import {
   TID_PROMPT_SUGGESTION_PANEL,
   TID_SETTINGS_BACK_BUTTON,
@@ -14,7 +14,7 @@ import {
   TID_VIRTUAL_PROJECT_MENU,
   testId,
   virtualProjectActionTestId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   getE2EAppDataPaths,
@@ -59,12 +59,12 @@ import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
  */
 const MARKER = "E2E_DSYNC_DEMO_WALKTHROUGH";
 const artifact = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/data-sync-demo",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/data-sync-demo",
   "data-sync-demo",
 );
 const run = promisify(execFile);
-const FFMPEG = process.env.ROBINRUN_E2E_FFMPEG_PATH?.trim() || "ffmpeg";
-const FFPROBE = process.env.ROBINRUN_E2E_FFPROBE_PATH?.trim() || "ffprobe";
+const FFMPEG = process.env.ROBINDONE_E2E_FFMPEG_PATH?.trim() || "ffmpeg";
+const FFPROBE = process.env.ROBINDONE_E2E_FFPROBE_PATH?.trim() || "ffprobe";
 const WINDOW = { width: 1440, height: 900 };
 const NARROW_WIDTH = 720;
 const FRAME_INTERVAL_MS = 200;
@@ -72,7 +72,7 @@ const BEAT_MS = 2_200;
 const LONG_BEAT_MS = 3_200;
 const CLICK_LEAD_MS = 700;
 const REMOTE_HOME = "/home/dev";
-const REMOTE_CLI_CONFIG = `${REMOTE_HOME}/.robinrun/cli/config.json`;
+const REMOTE_CLI_CONFIG = `${REMOTE_HOME}/.robindone/cli/config.json`;
 const SCOPE_TRIGGER = '[data-plugin-scope-trigger="true"]';
 const DIALOG = '[data-testid="remote-sync-dialog"]';
 const DIALOG_CLOSE = `${DIALOG} [data-slot="dialog-close"]`;
@@ -194,7 +194,7 @@ async function offCamera<T>(fn: () => Promise<T>): Promise<T> {
 
 async function caption(text: string | null): Promise<void> {
   await browser.execute((value) => {
-    const id = "robinrun-demo-caption";
+    const id = "robindone-demo-caption";
     let node = document.getElementById(id);
     if (!value) {
       node?.remove();
@@ -229,9 +229,9 @@ async function caption(text: string | null): Promise<void> {
 async function titleCard(title: string, bullets: readonly string[], ms = 4_200): Promise<void> {
   await browser.execute(
     (heading, items) => {
-      document.getElementById("robinrun-demo-title")?.remove();
+      document.getElementById("robindone-demo-title")?.remove();
       const node = document.createElement("div");
-      node.id = "robinrun-demo-title";
+      node.id = "robindone-demo-title";
       Object.assign(node.style, {
         position: "fixed",
         inset: "0",
@@ -273,7 +273,7 @@ async function titleCard(title: string, bullets: readonly string[], ms = 4_200):
     [...bullets],
   );
   await browser.pause(ms);
-  await browser.execute(() => document.getElementById("robinrun-demo-title")?.remove());
+  await browser.execute(() => document.getElementById("robindone-demo-title")?.remove());
 }
 
 type LocateAction = "ring" | "ring-enabled" | "click";
@@ -286,7 +286,11 @@ type LocateAction = "ring" | "ring-enabled" | "click";
 async function locate(selector: string, match: string | undefined, action: LocateAction) {
   return await browser.execute(
     (query, text, mode) => {
-      const overlays = ["robinrun-demo-caption", "robinrun-demo-title", "robinrun-demo-spotlight"]
+      const overlays = [
+        "robindone-demo-caption",
+        "robindone-demo-title",
+        "robindone-demo-spotlight",
+      ]
         .map((id) => document.getElementById(id))
         .filter((node): node is HTMLElement => Boolean(node));
       const area = (element: Element) => {
@@ -317,7 +321,7 @@ async function locate(selector: string, match: string | undefined, action: Locat
         );
         if (row && area(row) < (window.innerWidth * window.innerHeight) / 6) target = row;
       }
-      document.getElementById("robinrun-demo-spotlight")?.remove();
+      document.getElementById("robindone-demo-spotlight")?.remove();
       if (mode === "click") {
         target.click();
         return true;
@@ -325,7 +329,7 @@ async function locate(selector: string, match: string | undefined, action: Locat
       target.scrollIntoView({ block: "nearest", inline: "nearest" });
       const rect = target.getBoundingClientRect();
       const ring = document.createElement("div");
-      ring.id = "robinrun-demo-spotlight";
+      ring.id = "robindone-demo-spotlight";
       Object.assign(ring.style, {
         position: "fixed",
         left: `${rect.left - 5}px`,
@@ -352,7 +356,7 @@ async function spotlight(selector: string, match?: string): Promise<boolean> {
 }
 
 async function clearSpotlight(): Promise<void> {
-  await browser.execute(() => document.getElementById("robinrun-demo-spotlight")?.remove());
+  await browser.execute(() => document.getElementById("robindone-demo-spotlight")?.remove());
 }
 
 async function beat(ms = BEAT_MS): Promise<void> {
@@ -768,8 +772,8 @@ async function readJson(path: string): Promise<Record<string, unknown>> {
 
 /** 本机六类内容：每类都有「推送」项，另配「更新 / 差异 / 已同步 / 不能同步」所需的对照项。 */
 async function writeLocalContent(home: string): Promise<void> {
-  const robinrun = join(home, ".robinrun");
-  const skills = join(robinrun, "skills");
+  const robindone = join(home, ".robindone");
+  const skills = join(robindone, "skills");
   await writeText(
     join(skills, SKILL.push, "SKILL.md"),
     skillMarkdown(
@@ -805,20 +809,20 @@ async function writeLocalContent(home: string): Promise<void> {
   await symlink("SKILL.md", join(blocked, "linked.md"));
 
   await writeText(
-    join(robinrun, "agents", `${AGENT.push}.md`),
+    join(robindone, "agents", `${AGENT.push}.md`),
     agentMarkdown(
       AGENT.push,
       ["tools: [Read, Grep, Glob]", `skills: [${SKILL.push}]`, `mcpServers: [${MCP.push}]`],
       "Review the change against the team checklist.",
     ),
   );
-  await writeText(join(robinrun, "agents", `${AGENT.synced}.md`), PLANNER);
+  await writeText(join(robindone, "agents", `${AGENT.synced}.md`), PLANNER);
 
   await writeText(
-    join(robinrun, "commands", "demo", "commit.md"),
+    join(robindone, "commands", "demo", "commit.md"),
     "---\ndescription: Write a commit message\n---\nWrite a commit message for the staged diff.\n",
   );
-  await writeText(join(robinrun, "commands", "demo-standup.md"), STANDUP);
+  await writeText(join(robindone, "commands", "demo-standup.md"), STANDUP);
   await writeText(
     join(home, ".agents", "commands", "demo-review.md"),
     "---\ndescription: Review the diff (compat directory)\n---\nReview the diff.\n",
@@ -829,13 +833,13 @@ async function writeLocalContent(home: string): Promise<void> {
     [PLUGIN.update, "1.1.0"],
     [PLUGIN.older, "1.0.0"],
   ] as const) {
-    const dir = join(robinrun, "plugins", name);
-    await writeText(join(dir, ".robinrun-plugin", "plugin.json"), pluginManifest(name, version));
+    const dir = join(robindone, "plugins", name);
+    await writeText(join(dir, ".robindone-plugin", "plugin.json"), pluginManifest(name, version));
     await writeText(join(dir, "README.md"), `${name} ${version}\n`);
     pluginDirs.push(dir);
   }
 
-  const configPath = join(robinrun, "cli", "config.json");
+  const configPath = join(robindone, "cli", "config.json");
   const config = await readJson(configPath);
   const plugins = (config.plugins ?? {}) as Record<string, unknown>;
   const mcp = (config.mcp ?? {}) as Record<string, unknown>;
@@ -885,38 +889,38 @@ async function seedRemote(container: string): Promise<void> {
   const write = (path: string, content: string) =>
     writeRemoteContainerFile(container, `${REMOTE_HOME}/${path}`, content);
   await write(
-    `.robinrun/skills/${SKILL.update}/SKILL.md`,
+    `.robindone/skills/${SKILL.update}/SKILL.md`,
     skillMarkdown(SKILL.update, "API design rules", "Use nouns for resources. v1.1"),
   );
-  await write(`.robinrun/skills/${SKILL.update}/_meta.json`, '{ "version": "1.1.0" }\n');
+  await write(`.robindone/skills/${SKILL.update}/_meta.json`, '{ "version": "1.1.0" }\n');
   await write(
-    `.robinrun/skills/${SKILL.older}/SKILL.md`,
+    `.robindone/skills/${SKILL.older}/SKILL.md`,
     skillMarkdown(SKILL.older, "Legacy migration tips", "Newer tips on the remote."),
   );
-  await write(`.robinrun/skills/${SKILL.older}/_meta.json`, '{ "version": "2.0.0" }\n');
+  await write(`.robindone/skills/${SKILL.older}/_meta.json`, '{ "version": "2.0.0" }\n');
   await write(
-    `.robinrun/skills/${SKILL.differs}/SKILL.md`,
+    `.robindone/skills/${SKILL.differs}/SKILL.md`,
     skillMarkdown(SKILL.differs, "Release notes format", "Remote release notes format."),
   );
-  await write(`.robinrun/skills/${SKILL.synced}/SKILL.md`, STYLE_GUIDE);
+  await write(`.robindone/skills/${SKILL.synced}/SKILL.md`, STYLE_GUIDE);
   await write(
-    `.robinrun/skills/${SKILL.remoteOnly}/SKILL.md`,
+    `.robindone/skills/${SKILL.remoteOnly}/SKILL.md`,
     skillMarkdown(SKILL.remoteOnly, "Notes that only exist on the remote", "Remote only."),
   );
-  await write(`.robinrun/agents/${AGENT.synced}.md`, PLANNER);
-  await write(".robinrun/commands/demo-standup.md", STANDUP);
+  await write(`.robindone/agents/${AGENT.synced}.md`, PLANNER);
+  await write(".robindone/commands/demo-standup.md", STANDUP);
   const remotePluginDirs: string[] = [];
   for (const [name, version] of [
     [PLUGIN.update, "1.0.0"],
     [PLUGIN.older, "2.0.0"],
   ] as const) {
     await write(
-      `.robinrun/plugins/${name}/.robinrun-plugin/plugin.json`,
+      `.robindone/plugins/${name}/.robindone-plugin/plugin.json`,
       pluginManifest(name, version),
     );
-    await write(`.robinrun/plugins/${name}/README.md`, `${name} ${version}\n`);
-    await write(`.robinrun/plugins/${name}/data/state.json`, '{ "remote": true }\n');
-    remotePluginDirs.push(`${REMOTE_HOME}/.robinrun/plugins/${name}`);
+    await write(`.robindone/plugins/${name}/README.md`, `${name} ${version}\n`);
+    await write(`.robindone/plugins/${name}/data/state.json`, '{ "remote": true }\n');
+    remotePluginDirs.push(`${REMOTE_HOME}/.robindone/plugins/${name}`);
   }
   const config = (await remoteContainerPathExists(container, REMOTE_CLI_CONFIG))
     ? (JSON.parse(await readRemoteContainerFile(container, REMOTE_CLI_CONFIG)) as Record<
@@ -1047,7 +1051,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
     if (offlineTarget)
       await bringRemoteDeviceOnline(container, offlineTarget).catch(() => undefined);
     if (providerDirLocked)
-      await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robinrun/v2`).catch(
+      await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robindone/v2`).catch(
         () => undefined,
       );
     await browser.electron.restoreAllMocks();
@@ -1081,7 +1085,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
 
     await chapter({
       key: "intro",
-      title: "RobinRun 数据同步 · 功能演示",
+      title: "RobinDone 数据同步 · 功能演示",
       bullets: [
         "把本机的用户级配置推送到远端设备（SSH / WSL / Docker）",
         "六类内容：子智能体、插件、MCP 服务器、技能、命令、钩子；模型提供商只读",
@@ -1211,7 +1215,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
         await point(rowSelector(SKILL.push), "绿色「推送」：只在本机，默认勾选");
         await point(
           rowSelector(SKILL.agentsDir),
-          "兼容目录 ~/.agents/skills 的技能也会同步，统一写入远端 ~/.robinrun/skills",
+          "兼容目录 ~/.agents/skills 的技能也会同步，统一写入远端 ~/.robindone/skills",
         );
         await point(
           rowSelector(SKILL.update),
@@ -1302,7 +1306,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
         await point(rowSelector(COMMAND.nested), "命令按相对路径对齐，子目录结构保持不变");
         await point(
           rowSelector(COMMAND.agentsDir),
-          "兼容目录 ~/.agents/commands 的命令统一写入远端 ~/.robinrun/commands",
+          "兼容目录 ~/.agents/commands 的命令统一写入远端 ~/.robindone/commands",
         );
         await openTab("hooks", "切到「钩子」");
         await browser.waitUntil(async () => await spotlight(ANY_ROW, HOOK.push), {
@@ -1388,7 +1392,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
       ],
       setup: async () => {
         await writeText(
-          join(homeDir, ".robinrun", "skills", SKILL.conflict, "SKILL.md"),
+          join(homeDir, ".robindone", "skills", SKILL.conflict, "SKILL.md"),
           skillMarkdown(SKILL.conflict, "Skill created on this machine", "Local version."),
         );
         await closeDataSyncDialog();
@@ -1402,7 +1406,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
         await caption("列表加载之后，远端另一处也写入了同名技能");
         await writeRemoteContainerFile(
           container,
-          `${REMOTE_HOME}/.robinrun/skills/${SKILL.conflict}/SKILL.md`,
+          `${REMOTE_HOME}/.robindone/skills/${SKILL.conflict}/SKILL.md`,
           skillMarkdown(SKILL.conflict, "Skill created on the remote", "Remote version."),
         );
         await beat();
@@ -1455,7 +1459,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
       ],
       setup: async () => {
         // 远端模型配置目录只读：本机新增提供商后自动下发失败（与 DSYNC-13 相同的故障注入）。
-        await chmodRemoteContainerPath(container, "a-w", `${REMOTE_HOME}/.robinrun/v2`);
+        await chmodRemoteContainerPath(container, "a-w", `${REMOTE_HOME}/.robindone/v2`);
         providerDirLocked = true;
         await openSettingsSection("modelProvider");
         await createAndConfigurePersonalProvider(SECOND_PROVIDER);
@@ -1490,7 +1494,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
           "显示上次自动同步的时间和失败原因，并提供「重试」",
           { ms: LONG_BEAT_MS },
         );
-        await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robinrun/v2`);
+        await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robindone/v2`);
         providerDirLocked = false;
         await caption("远端恢复可写后点「重试」");
         await demoClick(tid("remote-sync-providers-retry"));
@@ -1509,7 +1513,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
       },
       cleanup: async () => {
         if (providerDirLocked) {
-          await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robinrun/v2`);
+          await chmodRemoteContainerPath(container, "u+w", `${REMOTE_HOME}/.robindone/v2`);
           providerDirLocked = false;
         }
       },
@@ -1605,7 +1609,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
       bullets: [
         "「本机」下是用户和本机项目；每台在线远端设备下是用户和该设备的项目",
         "触发器显示「设备 · 用户」或「设备 · 项目」",
-        "不打开远程项目也能直接编辑远端 ~/.robinrun；插件、MCP、技能、子智能体、命令、钩子同一规则",
+        "不打开远程项目也能直接编辑远端 ~/.robindone；插件、MCP、技能、子智能体、命令、钩子同一规则",
       ],
       setup: async () => {
         await openSettingsSection("skill");
@@ -1627,7 +1631,7 @@ describe(`${MARKER}: 数据同步功能演示走查`, () => {
         await browser.keys("Escape");
         await point(
           "*",
-          "列表就是远端 ~/.robinrun/skills：远端独有的 remote-only-notes 仍在，推送从不删除远端条目",
+          "列表就是远端 ~/.robindone/skills：远端独有的 remote-only-notes 仍在，推送从不删除远端条目",
           { match: SKILL.remoteOnly, ms: LONG_BEAT_MS },
         );
         await caption("切到「本机 · 用户」");

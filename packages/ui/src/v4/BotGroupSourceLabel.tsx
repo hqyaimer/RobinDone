@@ -1,11 +1,11 @@
 import { useContext } from "react";
 import { BotGroupMemberNamesContext } from "@/v4/BotGroupMemberNamesContext.js";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.js";
-import type { BotGroupInputSource } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { BotGroupInputSource } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function BotGroupSourceLabel({ source }: { source?: BotGroupInputSource }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const members = useContext(BotGroupMemberNamesContext);
   if (!source) return null;
   const provider =

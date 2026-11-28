@@ -1,5 +1,5 @@
-import { decodeCustomModelValue } from "@robinrun/shared";
-import type { RobinRunConfigOption } from "@robinrun/shared";
+import { decodeCustomModelValue } from "@robindone/shared";
+import type { RobinDoneConfigOption } from "@robindone/shared";
 
 const FEEDBACK_MODEL_OPTIONS_PREVIEW_LIMIT = 12;
 
@@ -11,7 +11,7 @@ export interface FeedbackAgentModelContext {
 }
 
 export function readCurrentAgentModelContext(
-  configOptions?: readonly RobinRunConfigOption[] | null,
+  configOptions?: readonly RobinDoneConfigOption[] | null,
 ): FeedbackAgentModelContext {
   const modelOption = configOptions?.find(
     (option) => option.category === "model" && option.type === "select",

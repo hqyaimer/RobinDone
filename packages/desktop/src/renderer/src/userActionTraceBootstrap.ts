@@ -1,12 +1,12 @@
 import {
   DISABLED_RENDERER_ACTION_TRACE_CONFIG,
   RENDERER_ACTION_TRACE_SERVICE_NAME,
-  ROBINRUN_ENV,
-  ROBINRUN_VERSION,
+  ROBINDONE_ENV,
+  ROBINDONE_VERSION,
   type IPlatformService,
   type RendererActionTraceConfigV1,
-} from "@robinrun/shared";
-import { RendererUserActionTelemetry, setUserActionTelemetry } from "@robinrun/ui";
+} from "@robindone/shared";
+import { RendererUserActionTelemetry, setUserActionTelemetry } from "@robindone/ui";
 
 export function initializeDesktopUserActionTrace(options: {
   platform: IPlatformService;
@@ -24,8 +24,8 @@ export function initializeDesktopUserActionTrace(options: {
     config: DISABLED_RENDERER_ACTION_TRACE_CONFIG,
     resource: {
       serviceName: RENDERER_ACTION_TRACE_SERVICE_NAME,
-      serviceVersion: ROBINRUN_VERSION || "unknown",
-      deploymentEnvironment: options.isLocalDevelopmentRuntime ? "development" : ROBINRUN_ENV,
+      serviceVersion: ROBINDONE_VERSION || "unknown",
+      deploymentEnvironment: options.isLocalDevelopmentRuntime ? "development" : ROBINDONE_ENV,
       rendererInstanceId,
     },
     sendBatch: (batch) => sendBatch(batch),

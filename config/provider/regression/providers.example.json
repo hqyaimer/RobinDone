@@ -1,5 +1,5 @@
 {
-  "builtinFile": "../robinrun-builtin.json",
+  "builtinFile": "../robindone-builtin.json",
   "providerRules": [
     {
       "providerId": "test-minimax-api",

@@ -3,7 +3,7 @@ import type {
   BrowserViewScreenshotSurfacePreparePayload,
   BrowserViewScreenshotSurfaceReleasePayload,
   BrowserViewSurfaceScaleMode,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 const VIEWPORT_TOLERANCE_PX = 1;
 

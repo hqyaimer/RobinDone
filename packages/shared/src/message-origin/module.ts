@@ -5,7 +5,7 @@
  */
 export const messageOriginModule = {
   id: "message-origin",
-  requires: ["shared", "robinrun-cli"],
+  requires: ["shared", "robindone-cli"],
   provides: ["message-origin"],
   publicEntrypoints: ["index.ts", "contract.ts"],
 } as const;

@@ -1,4 +1,4 @@
-import { type AppToolSearchMode } from "@robinrun/shared";
+import { type AppToolSearchMode } from "@robindone/shared";
 import {
   TID_SETTINGS_BACK_BUTTON,
   TID_SETTINGS_SECTION_NAV,
@@ -7,7 +7,7 @@ import {
   TID_TASK_SETTINGS_BUTTON,
   TID_TOOL_SUMMARY_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,

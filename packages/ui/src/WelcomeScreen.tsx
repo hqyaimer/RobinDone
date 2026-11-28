@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Loader2Icon, LoaderIcon, TriangleAlertIcon } from "lucide-react";
-import { type OAuthProviderMeta, BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robinrun/shared";
+import { type OAuthProviderMeta, BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robindone/shared";
 import {
   TID_LOGIN_USE_API_KEY_BUTTON,
   TID_OAUTH_CANCEL,
@@ -14,16 +14,16 @@ import {
   TID_OAUTH_ERROR,
   TID_OAUTH_LOGIN_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { Alert, AlertDescription } from "./components/ui/alert.js";
 import { Button } from "./components/ui/button.js";
-import { RobinRunAboutLogo } from "@/components/ui/RobinRunAboutLogo.js";
+import { RobinDoneAboutLogo } from "@/components/ui/RobinDoneAboutLogo.js";
 import { useOAuth } from "./hooks/useOAuth.js";
-import { useRobinRunIntl } from "./i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "./i18n/IntlProvider.js";
 import { LoginApiKeyForm } from "./login/LoginApiKeyForm.js";
 import { renderOAuthProviderIcon } from "./lib/oauthProviderIcon.js";
 import { ThemeHeroVisual } from "./openWorkspacePageThemeHero.js";
-import { useRobinRunStore } from "./store/StoreProvider.js";
+import { useRobinDoneStore } from "./store/StoreProvider.js";
 import { DesktopOverlayWindowControls } from "@/DesktopOverlayWindowControls.js";
 import { toast } from "@/components/ui/toast.js";
 
@@ -72,7 +72,7 @@ export function shouldCompleteLoginFromExistingUser(params: {
 }
 
 export function LoginPanel({ active, onComplete }: LoginPanelProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const {
     startLogin,
     cancel,
@@ -85,14 +85,14 @@ export function LoginPanel({ active, onComplete }: LoginPanelProps) {
     authorizeUrl,
     refreshProviders,
   } = useOAuth();
-  const user = useRobinRunStore((s) => s.user);
-  const oauthError = useRobinRunStore((s) => s.oauthError);
-  const setOAuthError = useRobinRunStore((s) => s.setOAuthError);
-  const oauthSuccessSeq = useRobinRunStore((s) => s.oauthSuccessSeq);
-  const lastOAuthSuccessProvider = useRobinRunStore((s) => s.lastOAuthSuccessProvider);
-  const loginEntryRequest = useRobinRunStore((s) => s.loginEntryRequest);
-  const clearLoginEntryRequest = useRobinRunStore((s) => s.clearLoginEntryRequest);
-  const markLoginEntryAttemptStatus = useRobinRunStore((s) => s.markLoginEntryAttemptStatus);
+  const user = useRobinDoneStore((s) => s.user);
+  const oauthError = useRobinDoneStore((s) => s.oauthError);
+  const setOAuthError = useRobinDoneStore((s) => s.setOAuthError);
+  const oauthSuccessSeq = useRobinDoneStore((s) => s.oauthSuccessSeq);
+  const lastOAuthSuccessProvider = useRobinDoneStore((s) => s.lastOAuthSuccessProvider);
+  const loginEntryRequest = useRobinDoneStore((s) => s.loginEntryRequest);
+  const clearLoginEntryRequest = useRobinDoneStore((s) => s.clearLoginEntryRequest);
+  const markLoginEntryAttemptStatus = useRobinDoneStore((s) => s.markLoginEntryAttemptStatus);
   const [loginMode, setLoginMode] = useState<"providers" | "apiKey">("providers");
   const wasActiveRef = useRef(active);
   const consumedLoginRequestRef = useRef<number | null>(null);
@@ -508,10 +508,10 @@ function LoginPanelLogo() {
     // 登录 logo 壳是固定深色底，边框不能跟随浅色主题 token，否则浅色主题下边框过重。
     <div
       className="relative mb-1 flex size-16 items-center justify-center rounded-2xl bg-[linear-gradient(180deg,#000000_0%,#151718_100%)] text-[#ffffff] shadow-lg/20 before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:border before:border-[rgba(255,255,255,0.1)]"
-      aria-label="RobinRun"
+      aria-label="RobinDone"
       role="img"
     >
-      <RobinRunAboutLogo className="h-auto w-10" />
+      <RobinDoneAboutLogo className="h-auto w-10" />
     </div>
   );
 }
@@ -539,7 +539,7 @@ function getLoginOAuthRegionTagMessageId(providerId: string): string | null {
 }
 
 function LoginOAuthRegionTag({ providerId }: { providerId: string }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const messageId = getLoginOAuthRegionTagMessageId(providerId);
 
   if (!messageId) {

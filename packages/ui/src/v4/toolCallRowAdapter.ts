@@ -1,8 +1,8 @@
 // v4 ToolCallRow → 旧 ToolCallBlocks 输入形态（TaskChatToolCallTreeNode）适配。
-// 纯函数：ToolCallBlock 及其 renderers（execute/read/edit/...）吃的是旧 RobinRun Agent 的
+// 纯函数：ToolCallBlock 及其 renderers（execute/read/edit/...）吃的是旧 RobinDone Agent 的
 // TaskChatToolCall 形态；v4 row 自包含，字段一一映射即可，不需要看别的行。
-import { buildRobinRunStreamingToolInputPreview } from "@robinrun/shared";
-import type { ToolCallRow } from "@robinrun/shared/robinrun-protocol-v4";
+import { buildRobinDoneStreamingToolInputPreview } from "@robindone/shared";
+import type { ToolCallRow } from "@robindone/shared/robindone-protocol-v4";
 import type { TaskChatToolCallTreeNode } from "@/lib/toolCallTree.js";
 import { normalizeWrappedErrorText } from "@/lib/toolError.js";
 
@@ -45,7 +45,7 @@ function resolveToolInputPreview(row: ToolCallRow): ResolvedToolInputPreview {
   if (!row.inputText) {
     return { input: undefined };
   }
-  const preview = buildRobinRunStreamingToolInputPreview(row.inputText);
+  const preview = buildRobinDoneStreamingToolInputPreview(row.inputText);
   return {
     input: isEmptyPlainRecord(preview.input) ? undefined : preview.input,
     inputPreviewComplete: preview.complete,
@@ -93,7 +93,7 @@ export function toolCallRowToLegacyNode(row: ToolCallRow): TaskChatToolCallTreeN
     toolCall: {
       toolId: row.toolCallId,
       toolName: row.toolName,
-      // kind 兼容旧聚合分类：v4 下没有旧 RobinRun Agent 快照形态，直接用固定工具名。
+      // kind 兼容旧聚合分类：v4 下没有旧 RobinDone Agent 快照形态，直接用固定工具名。
       kind: row.toolName,
       input: inputPreview.input,
       status: legacyStatus,

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { AppSettings } from "@robinrun/shared";
+import type { AppSettings } from "@robindone/shared";
 import type {
   IServiceAccessor,
   IProviderSettingsService,
   ProviderSettingsView,
-} from "@robinrun/services";
+} from "@robindone/services";
 import { ServiceProvider } from "@/hooks/useServices.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useOffPeakEligibility } from "@/hooks/useOffPeakEligibility.js";

@@ -1,5 +1,8 @@
-import { ServiceChannels } from "@robinrun/shared";
-import type { McpAppsAppToolCallResult, McpAppsAppToolDescriptor } from "@robinrun/shared/mcp-apps";
+import { ServiceChannels } from "@robindone/shared";
+import type {
+  McpAppsAppToolCallResult,
+  McpAppsAppToolDescriptor,
+} from "@robindone/shared/mcp-apps";
 import { createServiceDescriptor } from "../descriptors.js";
 import type { PluginUiPluginScope } from "./contract.js";
 

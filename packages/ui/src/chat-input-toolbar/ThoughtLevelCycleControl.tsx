@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { type RobinRunConfigOption, type RobinRunProvider } from "@robinrun/shared";
+import { type RobinDoneConfigOption, type RobinDoneProvider } from "@robindone/shared";
 import {
   TID_CHAT_THOUGHT_LEVEL_SELECT_ITEM,
   TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   isCoarseTouchDevice,
   shouldRestoreChatInputFocusAfterPickerClose,
@@ -49,10 +49,10 @@ export function ThoughtLevelCycleControl({
   composerCollapsePriority?: number;
   interactionMode?: ThoughtLevelInteractionMode;
   indicatorClassName?: string;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   labelVisibilityClassName?: string;
-  option: RobinRunConfigOption;
-  provider?: RobinRunProvider;
+  option: RobinDoneConfigOption;
+  provider?: RobinDoneProvider;
   showInvalidCurrentValue?: boolean;
   restoreFocusSelector?: string | null;
   shortcutLabel?: string;

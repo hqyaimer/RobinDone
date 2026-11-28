@@ -1,4 +1,4 @@
-import type { RobinRunTaskPersistStatus, RobinRunTaskRuntimeStatus } from "@robinrun/shared";
+import type { RobinDoneTaskPersistStatus, RobinDoneTaskRuntimeStatus } from "@robindone/shared";
 
 interface TaskRestoreTimestampedMessageLike {
   role: "user" | "assistant";
@@ -6,7 +6,7 @@ interface TaskRestoreTimestampedMessageLike {
 }
 
 interface ResolveTaskRuntimeStatusAfterRestoreOptions {
-  persistedStatus?: RobinRunTaskPersistStatus;
+  persistedStatus?: RobinDoneTaskPersistStatus;
   persistedUpdatedAt?: number;
   latestUserMessageTimestamp?: number | null;
   runtimeMainActive?: boolean;
@@ -18,7 +18,7 @@ interface ShouldShowTaskConfigLoadingOnSwitchParams {
 }
 
 export function shouldKeepTaskStreamingDuringRestore(
-  taskStatus: RobinRunTaskRuntimeStatus,
+  taskStatus: RobinDoneTaskRuntimeStatus,
 ): boolean {
   // Bugfix: 任务切到后台后再切回来时，如果这条 task 其实还在持续输出，
   // 恢复链路不能把它先打回 restoring/ready。
@@ -55,7 +55,7 @@ export function getLatestTaskUserMessageTimestamp(
   return latestTimestamp;
 }
 
-function toTerminalRuntimeStatus(status: RobinRunTaskPersistStatus): RobinRunTaskRuntimeStatus {
+function toTerminalRuntimeStatus(status: RobinDoneTaskPersistStatus): RobinDoneTaskRuntimeStatus {
   if (status === "running") {
     return "streaming";
   }
@@ -63,10 +63,10 @@ function toTerminalRuntimeStatus(status: RobinRunTaskPersistStatus): RobinRunTas
 }
 
 export function resolveTaskRuntimeStatusAfterRestore(
-  taskStatus: RobinRunTaskRuntimeStatus,
+  taskStatus: RobinDoneTaskRuntimeStatus,
   hasRestoredSession: boolean,
   options?: ResolveTaskRuntimeStatusAfterRestoreOptions,
-): RobinRunTaskRuntimeStatus {
+): RobinDoneTaskRuntimeStatus {
   if (!hasRestoredSession) {
     return "notReady";
   }

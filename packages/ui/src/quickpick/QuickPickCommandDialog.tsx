@@ -10,7 +10,7 @@ import {
   CommandShortcut,
 } from "@/components/ui/command.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { QUICK_PICK_SECTION_ORDER, type QuickPickCommand } from "@/quickpick/quickPickCommands.js";
 import { QUICK_PICK_ICON_BY_KIND } from "@/quickpick/quickPickCommandIcons.js";
@@ -32,7 +32,7 @@ export function QuickPickCommandDialog({
   commands: QuickPickCommand[];
   onOpenChange: (open: boolean) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const groupedCommands = useMemo(
     () =>
       QUICK_PICK_SECTION_ORDER.map((sectionId) => ({

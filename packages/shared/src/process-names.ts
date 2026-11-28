@@ -1,4 +1,4 @@
-const ROBINRUN_PROCESS_PREFIX = "robinrun";
+const ROBINDONE_PROCESS_PREFIX = "robindone";
 const MAX_PROCESS_NAME_SEGMENT_LENGTH = 24;
 
 function sanitizeProcessNameSegment(value: string | null | undefined): string | null {
@@ -18,11 +18,11 @@ function sanitizeProcessNameSegment(value: string | null | undefined): string | 
   return normalized.slice(0, MAX_PROCESS_NAME_SEGMENT_LENGTH);
 }
 
-function joinRobinRunProcessName(...segments: Array<string | null | undefined>): string {
+function joinRobinDoneProcessName(...segments: Array<string | null | undefined>): string {
   const sanitizedSegments = segments
     .map((segment) => sanitizeProcessNameSegment(segment))
     .filter((segment): segment is string => Boolean(segment));
-  return [ROBINRUN_PROCESS_PREFIX, ...sanitizedSegments].join("-");
+  return [ROBINDONE_PROCESS_PREFIX, ...sanitizedSegments].join("-");
 }
 
 function pickWorkspaceTag(workspacePath: string | null | undefined): string | undefined {
@@ -35,44 +35,44 @@ function pickWorkspaceTag(workspacePath: string | null | undefined): string | un
   return parts.at(-1) ?? trimmedPath;
 }
 
-export function formatRobinRunMainProcessName(): string {
-  return joinRobinRunProcessName("main");
+export function formatRobinDoneMainProcessName(): string {
+  return joinRobinDoneProcessName("main");
 }
 
-export function formatRobinRunGpuProcessName(): string {
-  return joinRobinRunProcessName("gpu");
+export function formatRobinDoneGpuProcessName(): string {
+  return joinRobinDoneProcessName("gpu");
 }
 
-export function formatRobinRunHostProcessName(label?: string): string {
-  return joinRobinRunProcessName("host", label);
+export function formatRobinDoneHostProcessName(label?: string): string {
+  return joinRobinDoneProcessName("host", label);
 }
 
-export function formatRobinRunRendererProcessName(windowTitle?: string): string {
+export function formatRobinDoneRendererProcessName(windowTitle?: string): string {
   const normalizedTitle = windowTitle?.trim();
-  if (!normalizedTitle || normalizedTitle === "RobinRun") {
-    return joinRobinRunProcessName("renderer", "main");
+  if (!normalizedTitle || normalizedTitle === "RobinDone") {
+    return joinRobinDoneProcessName("renderer", "main");
   }
 
   if (normalizedTitle === "Resource Manager") {
-    return joinRobinRunProcessName("renderer", "resource-manager");
+    return joinRobinDoneProcessName("renderer", "resource-manager");
   }
 
-  const remoteWindowPrefix = "RobinRun - ";
+  const remoteWindowPrefix = "RobinDone - ";
   if (normalizedTitle.startsWith(remoteWindowPrefix)) {
-    return joinRobinRunProcessName(
+    return joinRobinDoneProcessName(
       "renderer",
       "remote",
       normalizedTitle.slice(remoteWindowPrefix.length),
     );
   }
 
-  return joinRobinRunProcessName("renderer", normalizedTitle);
+  return joinRobinDoneProcessName("renderer", normalizedTitle);
 }
 
-export function formatRobinRunAgentProcessName(provider: string, workspacePath?: string): string {
-  return joinRobinRunProcessName("agent", provider, pickWorkspaceTag(workspacePath));
+export function formatRobinDoneAgentProcessName(provider: string, workspacePath?: string): string {
+  return joinRobinDoneProcessName("agent", provider, pickWorkspaceTag(workspacePath));
 }
 
-export function formatRobinRunUtilityProcessName(name?: string, type = "utility"): string {
-  return joinRobinRunProcessName(type, name);
+export function formatRobinDoneUtilityProcessName(name?: string, type = "utility"): string {
+  return joinRobinDoneProcessName(type, name);
 }

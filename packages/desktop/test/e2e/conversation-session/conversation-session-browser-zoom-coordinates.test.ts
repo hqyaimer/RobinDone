@@ -2,14 +2,14 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { PlatformChannels } from "@robinrun/shared";
+import { PlatformChannels } from "@robindone/shared";
 import {
   TID_BROWSER_RESPONSIVE_BUTTON,
   TID_SIDE_PANE_TOGGLE,
   TID_BROWSER_RESPONSIVE_VIEWPORT,
   TID_BROWSER_RESPONSIVE_ZOOM_OPTION,
   TID_BROWSER_RESPONSIVE_ZOOM_SELECT,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByWebDriver } from "../helpers/desktop-app.js";
 import {
   prepareV4ConversationE2E,
@@ -179,9 +179,9 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
       const appliedZoom = await browser.execute(async () => {
         return (
           window as unknown as {
-            robinrun: { getDesktopZoomLevel(): Promise<{ zoomLevel: number }> };
+            robindone: { getDesktopZoomLevel(): Promise<{ zoomLevel: number }> };
           }
-        ).robinrun.getDesktopZoomLevel();
+        ).robindone.getDesktopZoomLevel();
       });
       expect(appliedZoom.zoomLevel).toBe(zoomLevel);
       if (round > 0) {
@@ -228,7 +228,7 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
         { timeout: 90_000, timeoutMsg: `第 ${round} 轮未收到真实工具结果` },
       );
       const result = results.get(round)!;
-      const artifactDir = join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "zoom-coordinates");
+      const artifactDir = join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "zoom-coordinates");
       await mkdir(artifactDir, { recursive: true });
       // Windows 曾出现尺寸和点击均正确但图片内容偏移；断言前保存失败轮证据。
       await writeFile(join(artifactDir, `round-${round}.png`), Buffer.from(result.png, "base64"));
@@ -572,7 +572,7 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
       url: string;
       expectedUrl: string;
     };
-    const artifactDir = join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "zoom-coordinates");
+    const artifactDir = join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "zoom-coordinates");
     const { png: _png, ...facts } = result;
     await writeFile(join(artifactDir, "normal-background.json"), JSON.stringify(facts, null, 2));
     expect(result.error).toBeUndefined();
@@ -659,7 +659,7 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
       { timeout: 90_000, timeoutMsg: "未收到自然 viewport 的真实工具结果" },
     );
     const result = naturalResult!;
-    const artifactDir = join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "zoom-coordinates");
+    const artifactDir = join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "zoom-coordinates");
     await writeFile(join(artifactDir, "natural.png"), Buffer.from(result.png, "base64"));
     const { png: _png, ...facts } = result;
     await writeFile(join(artifactDir, "natural.json"), JSON.stringify(facts, null, 2));
@@ -769,7 +769,7 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
         { timeout: 90_000, timeoutMsg: "未收到换代前真实后台截图" },
       );
       const prepared = recoveryPrepared!;
-      const artifactDir = join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "zoom-coordinates");
+      const artifactDir = join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "zoom-coordinates");
       await writeFile(join(artifactDir, "guest-recovery.png"), Buffer.from(prepared.png, "base64"));
       expect(prepared.before.dpr).toBeGreaterThan(1);
       expect(prepared.tabId).toBe(naturalResult!.tabId);
@@ -832,8 +832,8 @@ describe("ZCT-2096856609784438784：缩放后的截图坐标与真实点击一�
 async function desktopCommand(command: string): Promise<void> {
   await browser.execute(async (value) => {
     await (
-      window as unknown as { robinrun: { executeDesktopCommand(command: string): Promise<void> } }
-    ).robinrun.executeDesktopCommand(value);
+      window as unknown as { robindone: { executeDesktopCommand(command: string): Promise<void> } }
+    ).robindone.executeDesktopCommand(value);
   }, command);
 }
 

@@ -1,4 +1,4 @@
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 import { isTaskListRowActive } from "@/v4/taskListRowActivity.js";
 
 export type TaskListTimeSortBy = "created" | "updated";
@@ -62,9 +62,9 @@ export function compareTaskListItemsWithRunningFirst<T extends TaskListSortableI
   return compareTaskListItemsByTime(left, right, sortBy);
 }
 
-export function compareRobinRunTaskListItems(
-  left: RobinRunTaskMeta,
-  right: RobinRunTaskMeta,
+export function compareRobinDoneTaskListItems(
+  left: RobinDoneTaskMeta,
+  right: RobinDoneTaskMeta,
   sortBy: TaskListTimeSortBy,
 ): number {
   return compareTaskListItemsWithRunningFirst(left, right, sortBy, isTaskListRowActive);

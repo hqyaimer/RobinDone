@@ -1,7 +1,7 @@
 import type {
   TurnHeaderRow,
   WorkflowNotificationMeta,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { WorkflowRunCardSummary } from "@/ToolCallBlocks/fileSummaryTypes.js";
 
 /**

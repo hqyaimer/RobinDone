@@ -1,5 +1,5 @@
 import type { SettingsDirectoryLocation } from "./settings-source.js";
-import type { WorkspaceHookReviewTrustState } from "./robinrun-protocol-v4/workspace-hook-review.js";
+import type { WorkspaceHookReviewTrustState } from "./robindone-protocol-v4/workspace-hook-review.js";
 
 export type HookEvent =
   | "SessionStart"
@@ -81,7 +81,7 @@ export interface ToolCallHookMeta {
   hookFeedback?: string;
   hookStderr?: string;
   /** Skill-related metadata */
-  "robinrun/isSkill"?: boolean;
-  "robinrun/skillName"?: string;
+  "robindone/isSkill"?: boolean;
+  "robindone/skillName"?: string;
   [key: string]: unknown;
 }

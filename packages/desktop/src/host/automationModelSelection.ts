@@ -1,5 +1,5 @@
-import type { ModelSelection } from "@robinrun/shared";
-import type { IModelSelectionService } from "@robinrun/services";
+import type { ModelSelection } from "@robindone/shared";
+import type { IModelSelectionService } from "@robindone/services";
 
 /** 在 Automation Select 转为一次 Submission 的边界固定模型身份。 */
 export async function resolveAutomationSubmissionModelSelection(params: {

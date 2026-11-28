@@ -1,8 +1,8 @@
 import { Blocks, ClipboardList } from "lucide-react";
-import { TID_OPS_PANEL_OPEN } from "@robinrun/shared/test-ids";
+import { TID_OPS_PANEL_OPEN } from "@robindone/shared/test-ids";
 import type { ProjectSidebarProps } from "@/project-sidebar/contract.js";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { WebRemoteControlDeviceHeader } from "@/web-remote-control/WebRemoteControlDeviceHeader.js";
 
 /**
@@ -29,7 +29,7 @@ export function ProjectSidebarNavigation({
   /** 项目智能体页（已点开项目）= true；项目列表页 = false。 */
   agentPageMode: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const deviceNavigation = props.webRemoteControlWorkspaceSwitcher?.deviceNavigation;
   return (
     <div

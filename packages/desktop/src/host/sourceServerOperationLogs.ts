@@ -1,4 +1,4 @@
-import { Emitter } from "@robinrun/rpc";
+import { Emitter } from "@robindone/rpc";
 import {
   normalizeRemoteConnectionError,
   remoteConnectionFailureLogLevel,
@@ -7,8 +7,8 @@ import {
   type ConnectionProfile,
   type RemoteTarget,
   type SourceServerOperationLog,
-} from "@robinrun/shared";
-import type { TransportContext } from "@robinrun/server/source-server";
+} from "@robindone/shared";
+import type { TransportContext } from "@robindone/server/source-server";
 
 type Operation = { sequence: number; logs: SourceServerOperationLog[] };
 

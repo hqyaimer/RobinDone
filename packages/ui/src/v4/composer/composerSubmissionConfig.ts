@@ -1,7 +1,7 @@
-import { resolveExecutionState, type ModelSelection } from "@robinrun/shared";
-import { submissionModeSchema, type SubmissionMode } from "@robinrun/shared/robinrun-protocol-v4";
-import type { ModelSelectionView } from "@robinrun/services";
-import { validateModelSelectionOptions } from "@robinrun/provider";
+import { resolveExecutionState, type ModelSelection } from "@robindone/shared";
+import { submissionModeSchema, type SubmissionMode } from "@robindone/shared/robindone-protocol-v4";
+import type { ModelSelectionView } from "@robindone/services";
+import { validateModelSelectionOptions } from "@robindone/provider";
 
 export interface ComposerSubmissionConfig {
   modelSelection: ModelSelection;

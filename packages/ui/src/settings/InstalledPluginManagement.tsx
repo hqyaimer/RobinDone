@@ -2,24 +2,24 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, Cable, ChevronRight, Trash2 } from "lucide-react";
 import type {
-  RobinRunPluginDiagnostic,
-  RobinRunPluginInfo,
-  RobinRunPluginScope,
-  RobinRunPluginUserConfigOption,
-} from "@robinrun/shared";
+  RobinDonePluginDiagnostic,
+  RobinDonePluginInfo,
+  RobinDonePluginScope,
+  RobinDonePluginUserConfigOption,
+} from "@robindone/shared";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { PluginConfigControls } from "@/settings/PluginConfigControls.js";
 import { PluginComponentGroups } from "@/settings/PluginComponentGroups.js";
 import { buildInstalledPluginDisplayGroups } from "@/settings/pluginManagedResourceGroups.js";
 import { isPluginUpdatePending } from "@/settings/pluginStoreListing.js";
 
 export type PluginOptionValueGetter = (
-  plugin: RobinRunPluginInfo,
+  plugin: RobinDonePluginInfo,
   key: string,
-  option: RobinRunPluginUserConfigOption,
+  option: RobinDonePluginUserConfigOption,
 ) => string | number | boolean;
 
 export function InstalledPluginDetailDialog({
@@ -41,19 +41,19 @@ export function InstalledPluginDetailDialog({
   updateStatus,
 }: {
   /** 插件管理 store 聚合的 list/overview 诊断；透传给面板展示当前插件自身的 warning。 */
-  diagnostics?: RobinRunPluginDiagnostic[];
+  diagnostics?: RobinDonePluginDiagnostic[];
   getPluginOptionValue: PluginOptionValueGetter;
-  configScope: RobinRunPluginScope;
+  configScope: RobinDonePluginScope;
   installedAt?: string;
   latestVersion?: string;
   onOpenChange: (open: boolean) => void;
   onRequestUninstall?: (pluginId: string) => void;
   onRequestUpdate?: (pluginId: string) => void;
-  onSavePluginOptions: (plugin: RobinRunPluginInfo) => void;
+  onSavePluginOptions: (plugin: RobinDonePluginInfo) => void;
   open: boolean;
   activeOperations: ReadonlyArray<{ id: string }>;
-  plugin: RobinRunPluginInfo | null;
-  renderPluginSource: (plugin: RobinRunPluginInfo) => string;
+  plugin: RobinDonePluginInfo | null;
+  renderPluginSource: (plugin: RobinDonePluginInfo) => string;
   setPluginOptionDraft: (pluginId: string, key: string, value: string | number | boolean) => void;
   uninstallable?: boolean;
   updateStatus?: "none" | "update-available" | "version-changed";
@@ -104,22 +104,22 @@ export function InstalledPluginDetailPanel({
   updateStatus,
 }: {
   /** 插件管理 store 聚合的 list/overview 诊断；面板只展示当前插件自身的 warning。 */
-  diagnostics?: RobinRunPluginDiagnostic[];
+  diagnostics?: RobinDonePluginDiagnostic[];
   getPluginOptionValue: PluginOptionValueGetter;
-  configScope: RobinRunPluginScope;
+  configScope: RobinDonePluginScope;
   installedAt?: string;
   latestVersion?: string;
   onRequestUninstall?: (pluginId: string) => void;
   onRequestUpdate?: (pluginId: string) => void;
-  onSavePluginOptions: (plugin: RobinRunPluginInfo) => void;
+  onSavePluginOptions: (plugin: RobinDonePluginInfo) => void;
   activeOperations: ReadonlyArray<{ id: string }>;
-  plugin: RobinRunPluginInfo | null;
-  renderPluginSource: (plugin: RobinRunPluginInfo) => string;
+  plugin: RobinDonePluginInfo | null;
+  renderPluginSource: (plugin: RobinDonePluginInfo) => string;
   setPluginOptionDraft: (pluginId: string, key: string, value: string | number | boolean) => void;
   uninstallable?: boolean;
   updateStatus?: "none" | "update-available" | "version-changed";
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (!plugin) {
     return (
       <div className="px-5 py-4 text-ui-base text-foreground-subtle">
@@ -310,7 +310,7 @@ function DetailSection({ title, children }: { title: string; children: ReactNode
  * 只写 diagnostics 的话 UI 无渲染位置，用户无从排查。message 由 CLI 下发并包含
  * 具体路径（协议 wire 不携带 path 字段），因此正文直出 message 即可。
  */
-export function PluginWarningList({ warnings }: { warnings: RobinRunPluginDiagnostic[] }) {
+export function PluginWarningList({ warnings }: { warnings: RobinDonePluginDiagnostic[] }) {
   return (
     <ul className="space-y-2">
       {warnings.map((diagnostic, index) => (
@@ -329,9 +329,9 @@ export function PluginWarningList({ warnings }: { warnings: RobinRunPluginDiagno
 export function PluginHookDetails({
   hooks,
 }: {
-  hooks: NonNullable<RobinRunPluginInfo["hookDetails"]>;
+  hooks: NonNullable<RobinDonePluginInfo["hookDetails"]>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div>
       <div className="mb-2 text-ui-xs font-medium text-foreground">
@@ -439,7 +439,7 @@ function PluginDetailInlineValue({ label, value }: { label: string; value: strin
   );
 }
 
-function formatHookCommand(hook: NonNullable<RobinRunPluginInfo["hookDetails"]>[number]): string {
+function formatHookCommand(hook: NonNullable<RobinDonePluginInfo["hookDetails"]>[number]): string {
   if (!hook.args || hook.args.length === 0) return hook.command;
   return `${hook.command} ${hook.args.join(" ")}`;
 }

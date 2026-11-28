@@ -1,11 +1,14 @@
 import { parentPort, workerData } from "node:worker_threads";
 import { tasksStorageWorkerDataSchema } from "./contract.js";
-import { prepareTasksIndexStorage, createSettingService } from "@robinrun/services/storage-startup";
+import {
+  prepareTasksIndexStorage,
+  createSettingService,
+} from "@robindone/services/storage-startup";
 import {
   classifyDatabaseStartupError,
   databaseStartupErrorDetails,
   databaseMigrationFactsSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 const data = tasksStorageWorkerDataSchema.parse(workerData);
 try {

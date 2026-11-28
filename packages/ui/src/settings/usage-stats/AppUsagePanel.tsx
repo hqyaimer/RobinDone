@@ -1,10 +1,10 @@
 import { RefreshCcw } from "lucide-react";
 import { Fragment, lazy, useState } from "react";
-import { APP_USAGE_RANGES } from "@robinrun/shared";
-import type { AppUsageRange, AppUsageSnapshot } from "@robinrun/shared";
+import { APP_USAGE_RANGES } from "@robindone/shared";
+import type { AppUsageRange, AppUsageSnapshot } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useAppUsageStats } from "@/hooks/useUsageStats.js";
 import { UsageChartLoadBoundary } from "@/settings/usage-stats/UsageChartLoadBoundary.js";
 import { UsageHeatmap } from "@/settings/usage-stats/UsageHeatmap.js";
@@ -32,7 +32,7 @@ const AppUsageModelUsagePieChart = lazy(() =>
 );
 
 export function AppUsagePanel() {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [range, setRange] = useState<AppUsageRange>("7d");
   const { snapshot: lifetimeSnapshot, refresh: refreshLifetime } = useAppUsageStats("all");
   const { snapshot, loading, error, refresh } = useAppUsageStats(range);
@@ -131,7 +131,7 @@ export function AppUsagePanel() {
 }
 
 export function AppUsageLifetimeSummaryStrip({ snapshot }: { snapshot: AppUsageSnapshot | null }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const items = [
     {
       label: intl.formatMessage({ id: "settings.usage.lifetimeTotalTokens" }),
@@ -176,7 +176,7 @@ export function AppUsageLifetimeSummaryStrip({ snapshot }: { snapshot: AppUsageS
 
 function formatAppUsageDays(
   days: number,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
   locale: string,
 ): string {
   return `${formatCompactNumber(locale, days)} ${intl.formatMessage({
@@ -186,7 +186,7 @@ function formatAppUsageDays(
 
 export function formatAppUsageDuration(
   durationMs: number,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
 ): string {
   const totalMinutes = Math.max(0, Math.floor(durationMs / 60_000));
   const days = Math.floor(totalMinutes / (24 * 60));
@@ -212,7 +212,7 @@ function AppUsageRangeTabs({
   range: AppUsageRange;
   onRangeChange: (range: AppUsageRange) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Tabs
       value={range}

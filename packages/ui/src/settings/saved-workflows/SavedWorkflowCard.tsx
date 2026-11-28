@@ -6,10 +6,10 @@ import {
   TID_WORKFLOW_CARD_RUN,
   TID_WORKFLOW_ACTION_DELETE,
   TID_WORKFLOW_ACTION_MOVE,
-  type RobinRunSavedWorkflowEntry,
-  type RobinRunSavedWorkflowRun,
-} from "@robinrun/shared";
-import { testId } from "@robinrun/shared/test-ids";
+  type RobinDoneSavedWorkflowEntry,
+  type RobinDoneSavedWorkflowRun,
+} from "@robindone/shared";
+import { testId } from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import {
   DropdownMenu,
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   AutomationMoreHorizontalIcon,
   AutomationRunNowIcon,
@@ -35,10 +35,10 @@ export function SavedWorkflowLastRunBadge({
   run,
   now,
 }: {
-  run: RobinRunSavedWorkflowRun | undefined;
+  run: RobinDoneSavedWorkflowRun | undefined;
   now: number;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const kind = savedWorkflowRunBadgeKind(run?.status);
   if (kind === "never" || !run) {
     return (
@@ -86,17 +86,17 @@ export function SavedWorkflowLastRunBadge({
 }
 
 interface SavedWorkflowCardProps {
-  entry: RobinRunSavedWorkflowEntry;
-  lastRun: RobinRunSavedWorkflowRun | undefined;
+  entry: RobinDoneSavedWorkflowEntry;
+  lastRun: RobinDoneSavedWorkflowRun | undefined;
   now: number;
   busy?: boolean;
-  onOpen: (entry: RobinRunSavedWorkflowEntry) => void;
-  onRun: (entry: RobinRunSavedWorkflowEntry) => void;
-  onRevise: (entry: RobinRunSavedWorkflowEntry) => void;
-  onCopyPath: (entry: RobinRunSavedWorkflowEntry) => void;
+  onOpen: (entry: RobinDoneSavedWorkflowEntry) => void;
+  onRun: (entry: RobinDoneSavedWorkflowEntry) => void;
+  onRevise: (entry: RobinDoneSavedWorkflowEntry) => void;
+  onCopyPath: (entry: RobinDoneSavedWorkflowEntry) => void;
   /** 作用域动作：项目档「提升为全局」（AI 概括）/ 全局档「移到项目…」；仅在传入时出现。 */
-  onMove?: (entry: RobinRunSavedWorkflowEntry) => void;
-  onDelete: (entry: RobinRunSavedWorkflowEntry) => void;
+  onMove?: (entry: RobinDoneSavedWorkflowEntry) => void;
+  onDelete: (entry: RobinDoneSavedWorkflowEntry) => void;
 }
 
 /**
@@ -115,7 +115,7 @@ export const SavedWorkflowCard = memo(function SavedWorkflowCard({
   onMove,
   onDelete,
 }: SavedWorkflowCardProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const argNames = Object.keys(entry.args ?? {});
   const visibleArgs = argNames.slice(0, MAX_ARG_CHIPS);
   const hiddenArgCount = argNames.length - visibleArgs.length;

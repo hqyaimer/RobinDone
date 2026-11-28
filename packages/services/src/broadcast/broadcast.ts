@@ -1,5 +1,5 @@
-import type { Event } from "@robinrun/rpc";
-import { ServiceChannels } from "@robinrun/shared";
+import type { Event } from "@robindone/rpc";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 /**

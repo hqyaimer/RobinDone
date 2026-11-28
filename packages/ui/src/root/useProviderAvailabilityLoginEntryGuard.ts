@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UserInfo } from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/services";
+import type { UserInfo } from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/services";
 import { resolveProviderAvailabilityState } from "@/lib/modelProviderAvailability.js";
 import { logger } from "@/logger.js";
 

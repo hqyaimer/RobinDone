@@ -1,5 +1,5 @@
 import { useCallback, type ReactNode } from "react";
-import type { RemoteTarget } from "@robinrun/shared";
+import type { RemoteTarget } from "@robindone/shared";
 import { isDataSyncEntryRemoteTarget } from "@/data-sync/domain/entry.js";
 import {
   useDataSyncDeviceOnline,

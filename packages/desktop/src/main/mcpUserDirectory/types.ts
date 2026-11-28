@@ -2,12 +2,12 @@
  * MCP 用户目录模块 - 类型和常量定义
  */
 
-import type { CliMcpSource, McpFileFormat } from "@robinrun/shared";
+import type { CliMcpSource, McpFileFormat } from "@robindone/shared";
 
 /**
  * MCP 配置键名类型
  * - mcpServers: 通用 JSON 目录格式（.agents/mcp.json）
- * - mcp.servers: robinrun CLI config.json 格式
+ * - mcp.servers: robindone CLI config.json 格式
  */
 export type McpConfigKeyName = "mcpServers" | "mcp" | "mcp_servers" | "mcp.servers";
 
@@ -36,8 +36,8 @@ export interface McpSourceDescriptor {
 
 export const MCP_SOURCE_DESCRIPTORS: McpSourceDescriptor[] = [
   {
-    source: "robinrunagentmcp",
-    configDirSegments: [".robinrun", "cli"],
+    source: "robindoneagentmcp",
+    configDirSegments: [".robindone", "cli"],
     fileName: "config.json",
     format: "json",
     configKeyName: "mcp.servers",

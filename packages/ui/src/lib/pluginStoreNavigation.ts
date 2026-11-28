@@ -1,4 +1,4 @@
-const OPEN_PLUGIN_STORE_EVENT = "robinrun:open-plugin-store";
+const OPEN_PLUGIN_STORE_EVENT = "robindone:open-plugin-store";
 
 export interface PluginStoreOpenTarget {
   pluginId?: string;

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RobinRunPluginInfo } from "@robinrun/shared";
+import type { RobinDonePluginInfo } from "@robindone/shared";
 import { clearAppData, getE2EAppDataPaths } from "../../../helpers/desktop-app.js";
 import {
   capturePluginManualReview,
@@ -14,7 +14,7 @@ import {
   waitForPluginCard,
 } from "../../../helpers/plugin-management-lifecycle.js";
 
-const OFFICIAL_CDN_MARKETPLACE_ID = "robinrun-plugins-official";
+const OFFICIAL_CDN_MARKETPLACE_ID = "robindone-plugins-official";
 const OFFICIAL_CDN_PLUGIN_NAME = "example-plugin";
 const OFFICIAL_CDN_PLUGIN_ID = `${OFFICIAL_CDN_PLUGIN_NAME}@${OFFICIAL_CDN_MARKETPLACE_ID}`;
 const OFFICIAL_CDN_SMOKE_TIMEOUT_MS = 240000;
@@ -50,7 +50,7 @@ describe("PLM-LC-007b Desktop real official CDN ZIP smoke", () => {
 
     const cacheRoot = join(
       getE2EAppDataPaths().homeDir,
-      ".robinrun",
+      ".robindone",
       "cli",
       "plugins",
       "cache",
@@ -61,7 +61,13 @@ describe("PLM-LC-007b Desktop real official CDN ZIP smoke", () => {
     expect(existsSync(join(cacheRoot, ".claude-plugin", "plugin.json"))).toBe(true);
     const installedState = JSON.parse(
       readFileSync(
-        join(getE2EAppDataPaths().homeDir, ".robinrun", "cli", "plugins", "installed_plugins.json"),
+        join(
+          getE2EAppDataPaths().homeDir,
+          ".robindone",
+          "cli",
+          "plugins",
+          "installed_plugins.json",
+        ),
         "utf-8",
       ),
     ) as {
@@ -92,7 +98,7 @@ describe("PLM-LC-007b Desktop real official CDN ZIP smoke", () => {
 });
 
 function componentNames(
-  plugin: RobinRunPluginInfo | undefined,
+  plugin: RobinDonePluginInfo | undefined,
   kind: "command" | "skill",
 ): string[] {
   return (

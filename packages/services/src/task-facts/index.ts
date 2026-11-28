@@ -1,10 +1,10 @@
 import {
   generateTraceId,
   resolveWorkspaceKey,
-  ROBINRUN_AGENT_PROVIDER,
-  type RobinRunTaskMeta,
-} from "@robinrun/shared";
-import type { SessionsIndexReconcileResult } from "@robinrun/shared/robinrun-protocol-v4";
+  ROBINDONE_AGENT_PROVIDER,
+  type RobinDoneTaskMeta,
+} from "@robindone/shared";
+import type { SessionsIndexReconcileResult } from "@robindone/shared/robindone-protocol-v4";
 import type {
   TaskFactChange,
   TaskFactSource,
@@ -58,7 +58,7 @@ export function createTaskFacts(options: {
           createdAt: fact.createdAt,
           updatedAt: fact.updatedAt,
           mode: "default",
-          provider: ROBINRUN_AGENT_PROVIDER,
+          provider: ROBINDONE_AGENT_PROVIDER,
         },
         titleSource: fact.titleSource,
         lastOutcome: fact.lastOutcome,
@@ -84,7 +84,7 @@ export function createTaskFacts(options: {
     async ingest(target, summary) {
       refreshes.delete(key({ ...target, taskId: summary.sessionId }));
       const lastOutcome = summary.lastOutcome;
-      const meta: RobinRunTaskMeta = {
+      const meta: RobinDoneTaskMeta = {
         taskId: summary.sessionId,
         traceId: generateTraceId(summary.sessionId),
         title: summary.title,
@@ -93,7 +93,7 @@ export function createTaskFacts(options: {
         createdAt: summary.createdAt,
         updatedAt: summary.lastActivityAt,
         mode: "default",
-        provider: ROBINRUN_AGENT_PROVIDER,
+        provider: ROBINDONE_AGENT_PROVIDER,
         ...(summary.parentSessionId ? { forkedFromTaskId: summary.parentSessionId } : {}),
         // worker 会话身份（2026-11-16 隔离裁决）：随 meta_json 持久化（UI 跨重启判定
         // 只读）；worker_child 专属字段，一次性 subagent 的 summary 没有该字段不受影响。

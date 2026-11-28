@@ -1,7 +1,7 @@
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import type {
   ProjectTaskRef,
-  IRobinRunTaskService,
+  IRobinDoneTaskService,
   IWindowControllerService,
   WindowHostControllerMutation,
   WindowHostTaskAddress,
@@ -11,7 +11,7 @@ export type ProjectTaskMutation = Exclude<
   { kind: "open" | "resume" }
 >;
 interface ProjectTaskPorts {
-  service: IRobinRunTaskService;
+  service: IRobinDoneTaskService;
   controller?: IWindowControllerService;
 }
 function taskAddress(task: ProjectTaskRef, remoteSessionId?: string | null): WindowHostTaskAddress {

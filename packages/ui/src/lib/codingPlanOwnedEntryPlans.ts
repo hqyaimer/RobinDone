@@ -1,4 +1,4 @@
-import { BUILTIN_MODEL_PROVIDER_IDS, type UsageEntitlementSnapshot } from "@robinrun/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS, type UsageEntitlementSnapshot } from "@robindone/shared";
 
 const startIds: readonly string[] = [
   BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,

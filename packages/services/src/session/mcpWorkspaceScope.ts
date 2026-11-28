@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { normalize } from "node:path";
-import type { RobinRunAgentMcpServer } from "@robinrun/shared";
+import type { RobinDoneAgentMcpServer } from "@robindone/shared";
 
 function normalizePathForCompare(value: string): string {
   const normalized = normalize(value.trim()).replace(/[\\/]+$/, "");
@@ -8,8 +8,8 @@ function normalizePathForCompare(value: string): string {
 }
 
 function isFilesystemServer(
-  server: RobinRunAgentMcpServer,
-): server is Extract<RobinRunAgentMcpServer, { command: string }> {
+  server: RobinDoneAgentMcpServer,
+): server is Extract<RobinDoneAgentMcpServer, { command: string }> {
   return (
     "command" in server &&
     server.name === "filesystem" &&
@@ -18,9 +18,9 @@ function isFilesystemServer(
 }
 
 export function appendWorkspaceToFilesystemMcpServers(
-  mcpServers: RobinRunAgentMcpServer[] | undefined,
+  mcpServers: RobinDoneAgentMcpServer[] | undefined,
   workspacePath: string,
-): RobinRunAgentMcpServer[] | undefined {
+): RobinDoneAgentMcpServer[] | undefined {
   if (!mcpServers || mcpServers.length === 0) {
     return mcpServers;
   }

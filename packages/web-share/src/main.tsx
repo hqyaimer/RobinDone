@@ -26,7 +26,7 @@ const root = createRoot(document.getElementById("root")!);
 const webAuthService = createWebAuthService();
 
 function resolveThemePreference(): Theme {
-  const saved = localStorage.getItem("robinrun-theme");
+  const saved = localStorage.getItem("robindone-theme");
   return resolveWebRemoteControlInitialTheme({ storedTheme: saved, defaultTheme: "zai-light" });
 }
 
@@ -58,7 +58,7 @@ function renderCallback(): void {
 async function renderShare(): Promise<void> {
   const locale = resolveConversationShareRouteLocale(window.location.pathname);
   document.documentElement.lang = locale;
-  document.title = locale === "zh-CN" ? "RobinRun 会话分享" : "RobinRun Conversation Share";
+  document.title = locale === "zh-CN" ? "RobinDone 会话分享" : "RobinDone Conversation Share";
 
   const shareCode = resolveConversationShareCodeFromPath(window.location.pathname);
   if (!shareCode) {
@@ -72,7 +72,7 @@ async function renderShare(): Promise<void> {
   }
 
   const endpointOrigin =
-    import.meta.env.VITE_ROBINRUN_BASE_URL?.trim().replace(/\/+$/u, "") || window.location.origin;
+    import.meta.env.VITE_ROBINDONE_BASE_URL?.trim().replace(/\/+$/u, "") || window.location.origin;
   const mockMode =
     import.meta.env.DEV && import.meta.env.VITE_CONVERSATION_SHARE_PREVIEW_MOCK === "true";
   const client = mockMode
@@ -81,7 +81,7 @@ async function renderShare(): Promise<void> {
       ).MockConversationSharePreviewClient()
     : new ConversationSharePreviewClient({ baseUrl: `${endpointOrigin}/api/v1` });
   const getMockToken = () =>
-    mockMode && window.sessionStorage.getItem("robinrun:share:mock-auth") === "owner"
+    mockMode && window.sessionStorage.getItem("robindone:share:mock-auth") === "owner"
       ? "mock-owner-token"
       : null;
 
@@ -89,10 +89,10 @@ async function renderShare(): Promise<void> {
     <ConversationShareLandingLoader
       shareCode={shareCode}
       client={client}
-      getAccessToken={() => getMockToken() ?? webAuthService.getRobinRunJwtToken()}
+      getAccessToken={() => getMockToken() ?? webAuthService.getRobinDoneJwtToken()}
       onLogin={(provider) => {
         if (mockMode) {
-          window.sessionStorage.setItem("robinrun:share:mock-auth", "owner");
+          window.sessionStorage.setItem("robindone:share:mock-auth", "owner");
           window.location.reload();
           return;
         }
@@ -104,7 +104,7 @@ async function renderShare(): Promise<void> {
         });
       }}
       onLogout={() => {
-        if (mockMode) window.sessionStorage.removeItem("robinrun:share:mock-auth");
+        if (mockMode) window.sessionStorage.removeItem("robindone:share:mock-auth");
         void webAuthService.logout();
         window.location.reload();
       }}

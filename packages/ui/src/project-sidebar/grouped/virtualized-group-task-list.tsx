@@ -1,5 +1,5 @@
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
-import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
+import type { ProjectTask as RobinDoneTaskMeta } from "@/project-sidebar/contract.js";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
@@ -61,22 +61,22 @@ export function VirtualizedGroupedTaskList({
   activeDragTaskKey,
   tooltipsDisabled,
 }: {
-  tasks: RobinRunTaskMeta[];
+  tasks: RobinDoneTaskMeta[];
   groupId: string;
   groups: TaskGroupMenuItem[];
   activeWorkspacePath: string;
   activeWorkspaceIdentity?: string;
   activeTaskId: string | null;
   mobileActiveTaskKey?: string | null;
-  getTaskRemoteSessionId: (task: RobinRunTaskMeta) => string | undefined;
-  getTaskWorkspaceLabel: (task: RobinRunTaskMeta) => string;
+  getTaskRemoteSessionId: (task: RobinDoneTaskMeta) => string | undefined;
+  getTaskWorkspaceLabel: (task: RobinDoneTaskMeta) => string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
-  onCloseTask: (task: RobinRunTaskMeta) => void;
-  onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
-  onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
-  onStartRenameTask: (task: RobinRunTaskMeta) => void;
-  onArchiveTask: (task: RobinRunTaskMeta) => void;
-  onMarkTaskAsUnread: (task: RobinRunTaskMeta) => void;
+  onCloseTask: (task: RobinDoneTaskMeta) => void;
+  onMoveTaskToGroup: (task: RobinDoneTaskMeta, groupId: string | null) => void;
+  onMoveTaskToTop: (task: RobinDoneTaskMeta) => void;
+  onStartRenameTask: (task: RobinDoneTaskMeta) => void;
+  onArchiveTask: (task: RobinDoneTaskMeta) => void;
+  onMarkTaskAsUnread: (task: RobinDoneTaskMeta) => void;
   activeDragTaskKey?: string | null;
   tooltipsDisabled?: boolean;
 }) {
@@ -151,7 +151,7 @@ export function VirtualizedGroupedTaskList({
   const measureElement = rowVirtualizer.measureElement;
 
   const renderTask = useCallback(
-    (task: RobinRunTaskMeta) => (
+    (task: RobinDoneTaskMeta) => (
       <GroupedTaskItem
         key={taskKey(task)}
         task={task}

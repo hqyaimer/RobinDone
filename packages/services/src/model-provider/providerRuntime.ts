@@ -1,7 +1,7 @@
 import {
   NodeModelSelectionConfigRepository,
   createNodeModelSelectionFacade,
-} from "@robinrun/provider-node";
+} from "@robindone/provider-node";
 import {
   ProviderRegistryService,
   ProviderSettingsFacade,
@@ -10,7 +10,7 @@ import {
   type ProviderConfigSnapshot,
   type ProviderSettingsMutationTarget,
   type ProviderSource,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import {
   createProviderConfigRuntime,
   type ProviderConfigRuntime,
@@ -84,14 +84,14 @@ export class ProviderRuntime {
     this.configService = this.#configRuntime.configService;
     const accountSource: RefreshableProviderSource<AccountProviderConfigSnapshot> =
       dependencies.accountSource ?? new EmptyAccountProviderConfigSource(this.configService);
-    this.#disposeBuiltinRecovery = this.#configRuntime.onDidCheckRobinRunBuiltin(async () => {
+    this.#disposeBuiltinRecovery = this.#configRuntime.onDidCheckRobinDoneBuiltin(async () => {
       const [config, account] = await Promise.all([
         this.configService.read(),
         accountSource.read(),
       ]);
       if (
         !this.#disposed &&
-        config.robinrunBuiltinRevision !== account.basedOnRobinRunBuiltinRevision
+        config.robindoneBuiltinRevision !== account.basedOnRobinDoneBuiltinRevision
       ) {
         await accountSource.refresh?.("builtin-account-recovery");
       }
@@ -186,7 +186,7 @@ function createSettingsMutationTarget(
     refresh: (reason) => registryService.refresh(reason),
     refreshSources: async (reason) => {
       const [builtinResult, accountResult] = await Promise.allSettled([
-        configRuntime.refreshRobinRunBuiltin({ force: true }),
+        configRuntime.refreshRobinDoneBuiltin({ force: true }),
         accountSource.refresh?.(reason) ?? Promise.resolve(),
       ]);
       // 远端更新失败不代表本地配置不可用；此前统一抛错会让套餐切换回滚，

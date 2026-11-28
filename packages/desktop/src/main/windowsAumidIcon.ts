@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { win32 } from "node:path";
-import type { ApplicationIconInfo } from "@robinrun/shared";
+import type { ApplicationIconInfo } from "@robindone/shared";
 import { createEncodedPowerShellArgs } from "../../scripts/powershell-command.mjs";
 
 const SAFE_AUMID = /^[^\\/\s!]+![^\\/\s!]+$/u;
@@ -17,7 +17,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 
-public static class RobinRunAumidIcon {
+public static class RobinDoneAumidIcon {
   [StructLayout(LayoutKind.Sequential)]
   private struct SIZE { public int cx; public int cy; }
 
@@ -64,8 +64,8 @@ public static class RobinRunAumidIcon {
   }
 }
 '@;
-$robinrunIconBytes=[RobinRunAumidIcon]::Read($robinrunArg0);
-[Console]::Out.Write([Convert]::ToBase64String($robinrunIconBytes));
+$robindoneIconBytes=[RobinDoneAumidIcon]::Read($robindoneArg0);
+[Console]::Out.Write([Convert]::ToBase64String($robindoneIconBytes));
 `;
 
 interface WindowsAumidIconDependencies {

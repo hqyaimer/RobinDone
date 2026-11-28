@@ -1,4 +1,4 @@
-import type { McpAppInstance } from "@robinrun/shared/mcp-apps";
+import type { McpAppInstance } from "@robindone/shared/mcp-apps";
 import { createHash } from "node:crypto";
 import type { PluginUiPluginScope, PluginUiPrepareSandboxParams } from "./contract.js";
 

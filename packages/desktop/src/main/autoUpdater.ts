@@ -1,26 +1,26 @@
 /* eslint-disable max-lines -- autoUpdater 需要集中维护 Electron 事件、菜单状态与 IPC 交互，过度拆分会让更新状态流更难追踪 */
 import { app, BrowserWindow, ipcMain, Menu } from "electron";
-import type { ISettingService } from "@robinrun/services";
+import type { ISettingService } from "@robindone/services";
 import pkg, { CancellationToken } from "electron-updater";
 import semver from "semver";
 const { autoUpdater } = pkg;
 import {
   DEFAULT_LOCALE,
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-  TEST_ROBINRUN_ENDPOINT_ORIGIN,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
+  TEST_ROBINDONE_ENDPOINT_ORIGIN,
   PlatformChannels,
-  ROBINRUN_VERSION,
-  ROBINRUN_UPDATE_FEED_BASE,
+  ROBINDONE_VERSION,
+  ROBINDONE_UPDATE_FEED_BASE,
   desktopMenuMessageIds,
   formatDesktopMenuMessage,
   getDesktopMenuMessage,
-  resolveRuntimeRobinRunEndpointOrigin,
+  resolveRuntimeRobinDoneEndpointOrigin,
   type ElectronReleaseChannel,
   type Locale,
   type PostUpdateReleaseNotesPayload,
   type UpdateCheckResultPayload,
   type UpdateStatePayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logger } from "./logger.js";
 import { verifyWindowsAuthenticodeSignature } from "../../scripts/powershell-command.mjs";
 import { ManifestUpdateProvider, getElectronReleasePlatform } from "./manifestUpdateProvider.js";
@@ -28,12 +28,12 @@ import { ManifestUpdateProvider, getElectronReleasePlatform } from "./manifestUp
 export const CHECK_FOR_UPDATE_MENU_ID = "check-for-update";
 const AUTO_UPDATE_POLL_INTERVAL_MS = 15 * 60 * 1000;
 const AUTO_UPDATE_VISIBLE_POLL_INTERVAL_MS = 2 * 60 * 1000;
-const UPDATE_FEED_URL_ENV = "ROBINRUN_UPDATE_FEED_URL";
-const UPDATE_FEED_URL_SWITCH = "--robinrun-update-feed-url";
-const DEV_AUTO_UPDATE_ENV = "ROBINRUN_AUTO_UPDATE_DEV";
-const DEV_AUTO_UPDATE_SWITCH = "--robinrun-auto-update-dev";
-const DEV_AUTO_UPDATE_VERSION_ENV = "ROBINRUN_AUTO_UPDATE_DEV_VERSION";
-const DEV_AUTO_UPDATE_VERSION_SWITCH = "--robinrun-auto-update-dev-version";
+const UPDATE_FEED_URL_ENV = "ROBINDONE_UPDATE_FEED_URL";
+const UPDATE_FEED_URL_SWITCH = "--robindone-update-feed-url";
+const DEV_AUTO_UPDATE_ENV = "ROBINDONE_AUTO_UPDATE_DEV";
+const DEV_AUTO_UPDATE_SWITCH = "--robindone-auto-update-dev";
+const DEV_AUTO_UPDATE_VERSION_ENV = "ROBINDONE_AUTO_UPDATE_DEV_VERSION";
+const DEV_AUTO_UPDATE_VERSION_SWITCH = "--robindone-auto-update-dev-version";
 let readyUpdateVersion: string | null = null;
 let readyUpdateReleaseNotes: PostUpdateReleaseNotesPayload | null = null;
 let readyUpdateRestoredFromPendingReleaseNotes = false;
@@ -82,7 +82,7 @@ type UpdateDownloadedInfoLike = {
   path?: string | null;
   files?: Array<{ url?: string | null; size?: number } | null> | null;
   packages?: Record<string, { path?: string | null } | null> | null;
-  robinrunReleaseChannel?: ElectronReleaseChannel | null;
+  robindoneReleaseChannel?: ElectronReleaseChannel | null;
   releaseName?: string | null;
   releaseNotes?: string | ReleaseNoteInfoLike[] | null;
   releaseDate?: string | Date | null;
@@ -201,7 +201,7 @@ function resolveDevAutoUpdateVersion(): string | null {
   const configuredVersion =
     process.env[DEV_AUTO_UPDATE_VERSION_ENV]?.trim() ||
     readCommandLineSwitchValue(DEV_AUTO_UPDATE_VERSION_SWITCH)?.trim() ||
-    ROBINRUN_VERSION;
+    ROBINDONE_VERSION;
   const parsed = semver.parse(configuredVersion);
   if (!parsed) {
     logger.warn(`[auto-update] ignore invalid dev update version=${configuredVersion}`);
@@ -287,8 +287,8 @@ function getAutoUpdaterReleaseChannelForCurrentState(): ElectronReleaseChannel {
 function readUpdateInfoReleaseChannel(
   info: UpdateDownloadedInfoLike,
 ): ElectronReleaseChannel | null {
-  return info.robinrunReleaseChannel === "preview" || info.robinrunReleaseChannel === "stable"
-    ? info.robinrunReleaseChannel
+  return info.robindoneReleaseChannel === "preview" || info.robindoneReleaseChannel === "stable"
+    ? info.robindoneReleaseChannel
     : null;
 }
 
@@ -892,13 +892,13 @@ async function syncAutoUpdateCheckChannelFromSettings(
 function applyManifestUpdateProvider(options: InitAutoUpdaterOptions): void {
   // 在更新器装配边界再次约束，避免内部调用绕过启动配置解析。
   const manifestUrl = app.isPackaged ? undefined : options.updateFeedSource?.url.trim();
-  // RobinRun 发布工程静态 feed：构建期钉死的 base（打包态专用），与调试态 manifestUrl
+  // RobinDone 发布工程静态 feed：构建期钉死的 base（打包态专用），与调试态 manifestUrl
   // 互斥——前者随安装包发布不受启动输入接管，后者仍只在开发态生效。
-  const staticManifestBase = app.isPackaged ? ROBINRUN_UPDATE_FEED_BASE.trim() : "";
+  const staticManifestBase = app.isPackaged ? ROBINDONE_UPDATE_FEED_BASE.trim() : "";
   autoUpdater.setFeedURL({
     provider: "custom",
     updateProvider: ManifestUpdateProvider,
-    endpointOrigin: DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+    endpointOrigin: DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
     ...(staticManifestBase ? { staticManifestBase } : {}),
     ...(manifestUrl ? { manifestUrl } : {}),
     releasePlatform: getElectronReleasePlatform(),
@@ -907,15 +907,15 @@ function applyManifestUpdateProvider(options: InitAutoUpdaterOptions): void {
       // 静态 feed 模式不走 endpointOrigin（buildElectronManifestUrl 直接返回静态清单地址），
       // 这里的官方入口锁定只约束 manifest API 模式，无需为静态 base 增加旁路。
       const origin = await (
-        options.resolveEndpointOrigin ?? (() => resolveRuntimeRobinRunEndpointOrigin(process.env))
+        options.resolveEndpointOrigin ?? (() => resolveRuntimeRobinDoneEndpointOrigin(process.env))
       )();
       // 通用后端覆盖不是更新发布授权；正式包只允许既有官方 HTTPS 入口。
       if (
         app.isPackaged &&
-        origin !== DEFAULT_ROBINRUN_ENDPOINT_ORIGIN &&
-        origin !== TEST_ROBINRUN_ENDPOINT_ORIGIN
+        origin !== DEFAULT_ROBINDONE_ENDPOINT_ORIGIN &&
+        origin !== TEST_ROBINDONE_ENDPOINT_ORIGIN
       ) {
-        return DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
+        return DEFAULT_ROBINDONE_ENDPOINT_ORIGIN;
       }
       return origin;
     },

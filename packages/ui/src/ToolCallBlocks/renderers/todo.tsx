@@ -1,23 +1,23 @@
 import { ArrowRightIcon, CircleCheckIcon, CircleIcon, ListTodoIcon } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { extractPlanStepsFromToolInput, extractPlanStepsFromToolOutput } from "@robinrun/shared";
-import type { RobinRunPlanStep } from "@robinrun/shared";
+import { extractPlanStepsFromToolInput, extractPlanStepsFromToolOutput } from "@robindone/shared";
+import type { RobinDonePlanStep } from "@robindone/shared";
 import { ToolCallBody } from "@/ToolCallBlocks/ToolCallBody.js";
 import { ToolSnapshotFieldNotice } from "@/ToolCallBlocks/ToolSnapshotFieldNotice.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { cn } from "@/components/lib/utils.js";
 import { ToolLayout } from "../ToolLayout.js";
 import type { ToolCallBlockRenderContext } from "../shared.js";
 
 const TODO_TOOL_ICON = <ListTodoIcon className="size-4 shrink-0 text-foreground-subtle" />;
 
-const todoTextClasses: Record<RobinRunPlanStep["status"], string> = {
+const todoTextClasses: Record<RobinDonePlanStep["status"], string> = {
   pending: "text-foreground-subtle",
   in_progress: "text-foreground",
   completed: "text-foreground-subtlest line-through",
 };
 
-function readTodoPlan(context: ToolCallBlockRenderContext): RobinRunPlanStep[] | null {
+function readTodoPlan(context: ToolCallBlockRenderContext): RobinDonePlanStep[] | null {
   const { toolCall } = context.toolCallNode;
   return (
     extractPlanStepsFromToolOutput({
@@ -33,7 +33,7 @@ function readTodoPlan(context: ToolCallBlockRenderContext): RobinRunPlanStep[] |
   );
 }
 
-function TodoStatusIcon({ status }: { status: RobinRunPlanStep["status"] }) {
+function TodoStatusIcon({ status }: { status: RobinDonePlanStep["status"] }) {
   if (status === "completed") {
     return <CircleCheckIcon className="size-3.5 shrink-0 text-success" />;
   }
@@ -46,7 +46,7 @@ function TodoStatusIcon({ status }: { status: RobinRunPlanStep["status"] }) {
 }
 
 export function TodoToolCallBlock(context: ToolCallBlockRenderContext) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { toolCall } = context.toolCallNode;
   const plan = readTodoPlan(context);
   const completedCount = plan?.filter((step) => step.status === "completed").length ?? 0;

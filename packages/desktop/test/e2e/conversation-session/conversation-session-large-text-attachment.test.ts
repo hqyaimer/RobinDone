@@ -3,7 +3,7 @@ import { join } from "node:path";
 import {
   TID_CHAT_ATTACHMENT_BUTTON,
   TID_CHAT_ATTACHMENT_MENU_ITEM,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "#e2e/helpers/desktop-app";
 import { resolveE2ERuntimePath } from "#e2e/helpers/e2e-runtime-paths";
 import {

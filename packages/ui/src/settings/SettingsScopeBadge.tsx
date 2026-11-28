@@ -1,6 +1,6 @@
 import { CircleDashed, Folder, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function SettingsScopeBadge({
   scope,
@@ -11,7 +11,7 @@ export function SettingsScopeBadge({
   label?: string;
   includeMcpTestAttribute?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Badge
       variant="secondary"

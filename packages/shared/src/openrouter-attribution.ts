@@ -1,5 +1,5 @@
 export const OPENROUTER_ATTRIBUTION_HEADERS = {
-  "X-OpenRouter-Title": "RobinRun",
+  "X-OpenRouter-Title": "RobinDone",
   "X-OpenRouter-Categories": "programming-app",
 } as const;
 

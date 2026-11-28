@@ -23,13 +23,13 @@ import {
   TID_V4_QUEUE_PAUSED_BANNER,
   TID_V4_QUEUE_RESUME,
   testId,
-} from "@robinrun/shared/test-ids";
-import type { QueueState } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/test-ids";
+import type { QueueState } from "@robindone/shared/robindone-protocol-v4";
 import { ArrowUpFromLine, GripVertical, PencilIcon, Trash2Icon } from "lucide-react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 
 export interface ConversationQueuePanelProps {
@@ -116,7 +116,7 @@ const restrictQueueDragToPanel: Modifier = ({
 interface QueueRowProps {
   item: QueueItem;
   index: number;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   sortable: boolean;
   onDeleteItem?: (queueItemId: string) => void;
   onEditItem?: (queueItemId: string) => Promise<void> | void;
@@ -316,7 +316,7 @@ function ConversationQueuePanelImpl({
   onMoveItem,
   onResume,
 }: ConversationQueuePanelProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [resumePending, setResumePending] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, {

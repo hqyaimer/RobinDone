@@ -2,13 +2,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLinkIcon, RefreshCwIcon } from "lucide-react";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { RENDERER_ROBINRUN_ENDPOINT_URLS } from "@/lib/rendererRobinRunEndpoint.js";
+import { RENDERER_ROBINDONE_ENDPOINT_URLS } from "@/lib/rendererRobinDoneEndpoint.js";
 import { logger } from "@/logger.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { EmbeddedWebsiteHeader } from "@/components/EmbeddedWebsiteHeader.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { normalizeThemePreference, resolveTheme } from "@/useTheme.js";
 import type { CodingPlanProviderId } from "@/settings/model-provider-section/constants.js";
 import type { CodingPlanFunnelContext } from "@/lib/codingPlanFunnelTelemetry.js";
@@ -31,9 +31,9 @@ import {
 import {
   CodingPlanWebviewChannels,
   type CodingPlanPurchaseCompletePayload,
-  ROBINRUN_ENV,
-  ROBINRUN_VERSION,
-} from "@robinrun/shared";
+  ROBINDONE_ENV,
+  ROBINDONE_VERSION,
+} from "@robindone/shared";
 
 interface CodingPlanEmbeddedWebviewDialogProps {
   credentialService: {
@@ -49,8 +49,8 @@ interface CodingPlanEmbeddedWebviewDialogProps {
   /**
    * 官网页购买成功后的回调。
    *
-   * 官网页通过 preload 注入的 window.robinrunBridge.notifyPurchaseComplete({ provider })
-   * 发送 robinrun:coding-plan-purchase-complete 频道消息，本组件在 webview 的
+   * 官网页通过 preload 注入的 window.robindoneBridge.notifyPurchaseComplete({ provider })
+   * 发送 robindone:coding-plan-purchase-complete 频道消息，本组件在 webview 的
    * ipc-message 事件里识别该频道并触发此回调（经 onPurchaseCompleteRef 防 stale closure）。
    * 上层（CodingPlanUpgradeDialog）在此回调里刷新 entitlements/providers 并关闭 webview。
    */
@@ -60,7 +60,7 @@ interface CodingPlanEmbeddedWebviewDialogProps {
 interface CodingPlanWebviewImportMetaEnv {
   DEV?: boolean;
   VITE_CODING_PLAN_WEBVIEW_ORIGIN?: string;
-  VITE_ROBINRUN_E2E_STORE_BRIDGE?: string;
+  VITE_ROBINDONE_E2E_STORE_BRIDGE?: string;
 }
 
 interface CodingPlanWebviewNavigationState {
@@ -85,11 +85,11 @@ export function CodingPlanEmbeddedWebviewDialog({
   onPurchaseComplete,
   onOpenResult,
 }: CodingPlanEmbeddedWebviewDialogProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const platform = usePlatform();
   // 兜底值与全局默认主题保持一致（useTheme/store 均默认 zai-light，2026-11-26 用户裁决）。
-  const theme = useRobinRunStoreWithDefault((state) => state.theme, "zai-light");
-  const userId = useRobinRunStoreWithDefault((state) => state.user?.id ?? null, null);
+  const theme = useRobinDoneStoreWithDefault((state) => state.theme, "zai-light");
+  const userId = useRobinDoneStoreWithDefault((state) => state.user?.id ?? null, null);
   const webviewRef = useRef<ElectronWebviewTag | null>(null);
   const onOpenResultRef = useRef(onOpenResult);
   onOpenResultRef.current = onOpenResult;
@@ -127,10 +127,10 @@ export function CodingPlanEmbeddedWebviewDialog({
     const env = readCodingPlanWebviewImportMetaEnv();
     const origin = resolveCodingPlanEmbeddedOrigin({
       dev: env.DEV === true,
-      endpointOrigin: RENDERER_ROBINRUN_ENDPOINT_URLS.origin,
-      e2eStoreBridgeEnabled: env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1",
+      endpointOrigin: RENDERER_ROBINDONE_ENDPOINT_URLS.origin,
+      e2eStoreBridgeEnabled: env.VITE_ROBINDONE_E2E_STORE_BRIDGE === "1",
       overrideOrigin: env.VITE_CODING_PLAN_WEBVIEW_ORIGIN,
-      robinrunEnv: ROBINRUN_ENV,
+      robindoneEnv: ROBINDONE_ENV,
     });
     // URL 带 ?lang= hint 让官网首屏就有正确语言，避免注入前的英文闪烁。
     // 同步带 ?theme= hint，避免官网 SSR 默认 dark 在 App 浅色主题下首帧闪烁。
@@ -163,7 +163,7 @@ export function CodingPlanEmbeddedWebviewDialog({
         const currentUrl = typeof webview.getURL === "function" ? webview.getURL() : "";
         if (
           !isTrustedCodingPlanEmbeddedWebviewUrl(currentUrl, {
-            e2eStoreBridgeEnabled: env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1",
+            e2eStoreBridgeEnabled: env.VITE_ROBINDONE_E2E_STORE_BRIDGE === "1",
           })
         ) {
           // dom-ready 会在后续主 frame 导航时再次触发，初始 src 可信不代表
@@ -182,19 +182,19 @@ export function CodingPlanEmbeddedWebviewDialog({
           provider === "zai"
             ? {
                 zaiAccessToken: values[0],
-                robinrunJwtToken: values[1],
+                robindoneJwtToken: values[1],
               }
             : {
                 bigmodelAccessToken: values[0],
-                // BigModel OAuth callback 同样会落盘 robinrun JWT；官网用它在
-                // robinrun-plan 域查 billing/balance 判定 Start Plan 状态。
-                robinrunJwtToken: values[1],
+                // BigModel OAuth callback 同样会落盘 robindone JWT；官网用它在
+                // robindone-plan 域查 billing/balance 判定 Start Plan 状态。
+                robindoneJwtToken: values[1],
               };
         const reportContext = buildCodingPlanEmbeddedReportContext({
           funnelContext,
           deviceMid,
           userId,
-          appVersion: ROBINRUN_VERSION,
+          appVersion: ROBINDONE_VERSION,
         });
         const script = createCodingPlanAuthInjectionScript({
           provider,
@@ -354,8 +354,8 @@ export function CodingPlanEmbeddedWebviewDialog({
         setLoadError(event.details.reason);
         onOpenResultRef.current?.(false);
       };
-      // ipc-message: 官网页通过 preload 的 window.robinrunBridge.notifyPurchaseComplete
-      // 发回购买完成信号（robinrun:coding-plan-purchase-complete）。
+      // ipc-message: 官网页通过 preload 的 window.robindoneBridge.notifyPurchaseComplete
+      // 发回购买完成信号（robindone:coding-plan-purchase-complete）。
       // 参照 useEmbeddedBrowserWheelChain.ts 的 ipc-message handler 模式。
       const handleIpcMessage = (event: ElectronWebviewIpcMessageEvent) => {
         if (event.channel !== CodingPlanWebviewChannels.PurchaseComplete) {
@@ -507,7 +507,7 @@ export function CodingPlanEmbeddedWebviewDialog({
           <webview
             ref={handleWebviewRef}
             allowpopups={"" as unknown as boolean}
-            partition="persist:robinrun-coding-plan"
+            partition="persist:robindone-coding-plan"
             src={webviewUrl}
             className={cn(
               "min-h-0 flex-1 bg-background [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",

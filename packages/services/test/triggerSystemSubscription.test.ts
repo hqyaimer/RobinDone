@@ -23,7 +23,7 @@ describe("trigger engine system subscription", () => {
   let engine: ReturnType<typeof createTriggerEngineService> | undefined;
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-sys-"));
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-sys-"));
   });
 
   afterEach(async () => {
@@ -45,7 +45,7 @@ describe("trigger engine system subscription", () => {
   }
 
   function registryPath(): string {
-    return join(workspace, ".robinrun", "triggers", "triggers.json");
+    return join(workspace, ".robindone", "triggers", "triggers.json");
   }
 
   it("播种：写入 system 条目 + README，事件与状态正确", async () => {
@@ -66,7 +66,7 @@ describe("trigger engine system subscription", () => {
     expect(registry.triggers.filter((candidate) => candidate.system === true)).toHaveLength(1);
 
     const readme = await readFile(
-      join(workspace, ".robinrun", "triggers", SUBSCRIPTION.id, "README.md"),
+      join(workspace, ".robindone", "triggers", SUBSCRIPTION.id, "README.md"),
       "utf8",
     );
     expect(readme).toContain("不可停用");
@@ -118,7 +118,7 @@ describe("trigger engine system subscription", () => {
     expect(registry.triggers[0]?.system).toBe(true);
     // README 随重播种覆盖为新文案（幂等命中时不重写，重播种路径写）。
     const readme = await readFile(
-      join(workspace, ".robinrun", "triggers", SUBSCRIPTION.id, "README.md"),
+      join(workspace, ".robindone", "triggers", SUBSCRIPTION.id, "README.md"),
       "utf8",
     );
     expect(readme).toContain("# 运营面板\n");
@@ -154,7 +154,7 @@ describe("trigger engine system subscription", () => {
       workspacePath: workspace,
       subscription: SUBSCRIPTION,
     });
-    const triggersRoot = join(workspace, ".robinrun", "triggers");
+    const triggersRoot = join(workspace, ".robindone", "triggers");
     await writeFile(
       registryPath(),
       `${JSON.stringify(
@@ -206,7 +206,7 @@ describe("trigger engine system subscription wakeup dispatch", () => {
     [];
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-wkup-"));
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-wkup-"));
     dispatched = [];
   });
 
@@ -257,7 +257,7 @@ describe("trigger engine system subscription wakeup dispatch", () => {
     const snapshot = await engine.getSnapshot({ workspacePath: workspace });
     expect(snapshot.sessionBindings[`trigger:${SUBSCRIPTION.id}`]).toBe("sess-wakeup-bound");
     const persisted = JSON.parse(
-      await readFile(join(workspace, ".robinrun", "triggers", "state", "sessions.json"), "utf8"),
+      await readFile(join(workspace, ".robindone", "triggers", "state", "sessions.json"), "utf8"),
     ) as { bindings: Record<string, string> };
     expect(persisted.bindings[`trigger:${SUBSCRIPTION.id}`]).toBe("sess-wakeup-bound");
   });

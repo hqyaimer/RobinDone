@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { FileMediaPreview, IPlatformService } from "@robinrun/shared";
+import type { FileMediaPreview, IPlatformService } from "@robindone/shared";
 import { ToolCallBody } from "@/ToolCallBlocks/ToolCallBody.js";
 import { ToolPresentationCapabilitiesProvider } from "@/ToolCallBlocks/presentationCapabilities.js";
 import { OpenSplitButton } from "@/OpenSplitButton.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
 import { TabStoreProvider, useTabStoreApi } from "@/store/TabStoreProvider.js";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { Button } from "@/components/ui/button.js";
 import "@/styles.css";
 const params = new URLSearchParams(location.search);
@@ -108,11 +108,11 @@ function Fixture() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale={params.get("locale") === "en-US" ? "en-US" : "zh-CN"}>
+  <RobinDoneIntlProvider initialLocale={params.get("locale") === "en-US" ? "en-US" : "zh-CN"}>
     <PlatformProvider platform={platform}>
       <TabStoreProvider>
         <Fixture />
       </TabStoreProvider>
     </PlatformProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

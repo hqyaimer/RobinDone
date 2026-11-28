@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { Hook, HookConfig } from "@robinrun/shared";
-import type { IHooksService } from "@robinrun/services";
+import type { Hook, HookConfig } from "@robindone/shared";
+import type { IHooksService } from "@robindone/services";
 import { getWorkspaceKey } from "@/lib/workspaceKey.js";
 
 interface HooksStoreState {
@@ -65,26 +65,26 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function buildRobinRunHookLocation(
+function buildRobinDoneHookLocation(
   workspacePath: string,
   storageLevel: "user" | "project" = "user",
 ): Hook["location"] {
   return storageLevel === "project"
     ? {
-        source: "robinrun",
+        source: "robindone",
         scope: "project",
         directoryPath: "",
         projectPath: workspacePath,
       }
     : {
-        source: "robinrun",
+        source: "robindone",
         scope: "user",
         directoryPath: "",
       };
 }
 
 function isEditableHook(hook: Hook): boolean {
-  return hook.editable ?? (!hook.location || hook.location.source === "robinrun");
+  return hook.editable ?? (!hook.location || hook.location.source === "robindone");
 }
 
 function hookFromConfig(config: HookConfig, workspacePath: string): Hook {
@@ -101,7 +101,7 @@ function hookFromConfig(config: HookConfig, workspacePath: string): Hook {
     timeout: config.timeout ?? 60,
     enabled: config.enabled ?? true,
     custom: config.custom,
-    location: buildRobinRunHookLocation(workspacePath, config.storageLevel),
+    location: buildRobinDoneHookLocation(workspacePath, config.storageLevel),
   };
 }
 
@@ -313,13 +313,13 @@ export const useHooksStore = create<HooksStoreState>((set, get) => ({
     const { hooks, workspacePath } = get();
     if (!workspacePath) throw new Error("No workspace path set");
     const source = hooks.find((hook) => hook.id === id);
-    if (!source || source.location?.source === "robinrun")
+    if (!source || source.location?.source === "robindone")
       throw new Error("Hook is not importable");
     const imported: Hook = {
       ...source,
       id: `hook-${crypto.randomUUID()}`,
       enabled: true,
-      location: buildRobinRunHookLocation(workspacePath, source.location?.scope ?? "user"),
+      location: buildRobinDoneHookLocation(workspacePath, source.location?.scope ?? "user"),
     };
     await applyHookMutation(get, set, hooksService, [...hooks, imported], id);
   },

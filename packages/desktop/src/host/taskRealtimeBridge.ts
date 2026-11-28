@@ -1,4 +1,4 @@
-import type { SessionRealtimePort } from "@robinrun/services";
+import type { SessionRealtimePort } from "@robindone/services";
 import {
   type TaskRealtimeHostDeliveryKind,
   createUuid,
@@ -10,7 +10,7 @@ import {
   HostMessageTypes,
   HostResponseTypes,
   hostIncomingMessageSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface ParentPortLike {
   postMessage(message: unknown): void;

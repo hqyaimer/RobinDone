@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { WORKER_ID_PATTERN, remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
+import { WORKER_ID_PATTERN, remoteHostIdFromWorkspaceIdentity } from "@robindone/shared";
 import type { DatabaseSync } from "node:sqlite";
 import type { GroupTaskFact, GroupTaskRef, ITaskGroupService } from "#src/task-groups/contract.js";
 import { TaskGroupRepository, groupTaskKey } from "#src/task-groups/repository.js";

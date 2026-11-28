@@ -5,7 +5,7 @@ import {
   TID_TASK_ITEM,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByDom, waitForWorkspaceApp } from "../helpers/desktop-app.js";
 import {
   getUpstreamRequestRecordCount,

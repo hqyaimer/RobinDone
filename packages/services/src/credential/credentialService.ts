@@ -1,13 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { atomicWritePrivateTextFile, backupCorruptFile, withFileLock } from "@robinrun/shared/node";
+import {
+  atomicWritePrivateTextFile,
+  backupCorruptFile,
+  withFileLock,
+} from "@robindone/shared/node";
 import {
   credentialKeySchema,
   credentialRecordSchema,
   credentialValueSchema,
   formatZodError,
   isCredentialDecryptError,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { ICredentialService } from "./credential.js";
 import {
   createCredentialCipherProvider,
@@ -49,7 +53,7 @@ async function readAll(credentialsFile = getCredentialsFile()): Promise<Record<s
     if (getErrorCode(error) === "ENOENT") {
       return {};
     }
-    throw new Error(`Unable to read RobinRun credentials: ${credentialsFile}`, { cause: error });
+    throw new Error(`Unable to read RobinDone credentials: ${credentialsFile}`, { cause: error });
   }
 
   try {
@@ -69,7 +73,7 @@ async function readAll(credentialsFile = getCredentialsFile()): Promise<Record<s
       backupPath,
       credentialsFile,
     });
-    throw new Error(`RobinRun credentials are corrupt: ${credentialsFile}`, { cause: error });
+    throw new Error(`RobinDone credentials are corrupt: ${credentialsFile}`, { cause: error });
   }
 }
 

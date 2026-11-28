@@ -1,4 +1,4 @@
-import type { ConversationRow, SessionPhase } from "@robinrun/shared/robinrun-protocol-v4";
+import type { ConversationRow, SessionPhase } from "@robindone/shared/robindone-protocol-v4";
 
 export interface AssistantPreviewPptxCompletedTurn {
   turnId: string;

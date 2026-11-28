@@ -1,4 +1,4 @@
-import type { UsageEntitlementSnapshot, UsageQuotaLimit } from "@robinrun/shared";
+import type { UsageEntitlementSnapshot, UsageQuotaLimit } from "@robindone/shared";
 
 export function normalizeQuotaModel(value: string): string {
   return value

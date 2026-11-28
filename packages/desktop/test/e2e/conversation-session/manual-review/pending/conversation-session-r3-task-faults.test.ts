@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { TID_V4_RETRY } from "@robinrun/shared/test-ids";
+import { TID_V4_RETRY } from "@robindone/shared/test-ids";
 import { clearAppData } from "../../../helpers/desktop-app.js";
 import {
   getUpstreamRequestRecordCount,
@@ -25,7 +25,7 @@ import {
 
 const CASE_MARKER = "E2E_R3_TASK_FAULTS";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-task-faults",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-task-faults",
 );
 
 async function readVisibleErrorText(): Promise<string> {

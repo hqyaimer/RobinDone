@@ -1,7 +1,7 @@
 import type {
   SessionConfigState,
   SessionModelTransition,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 export interface ModelConfigProjectionObservation {
   sessionId: string;

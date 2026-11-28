@@ -11,11 +11,11 @@ export const PERMISSION_HOOK_RACE_RESULT_CONTENT = "E2E_PERMISSION_HOOK_RACE_RES
 const BLOCKING_HOOK_SLEEP_MS = 120000;
 const BLOCKING_HOOK_TIMEOUT_MS = 130000;
 
-const WORKSPACE_ROBINRUN_DIR = join(DEFAULT_WORKSPACE, ".robinrun");
-const USER_CONFIG_DIR = join(dirname(DEFAULT_WORKSPACE), ".robinrun", "cli");
+const WORKSPACE_ROBINDONE_DIR = join(DEFAULT_WORKSPACE, ".robindone");
+const USER_CONFIG_DIR = join(dirname(DEFAULT_WORKSPACE), ".robindone", "cli");
 const CONFIG_PATH = join(USER_CONFIG_DIR, "config.json");
-const BLOCKER_PATH = join(WORKSPACE_ROBINRUN_DIR, "permission-hook-race-blocker.mjs");
-const TRACE_PATH = join(WORKSPACE_ROBINRUN_DIR, "permission-hook-race-trace.jsonl");
+const BLOCKER_PATH = join(WORKSPACE_ROBINDONE_DIR, "permission-hook-race-blocker.mjs");
+const TRACE_PATH = join(WORKSPACE_ROBINDONE_DIR, "permission-hook-race-trace.jsonl");
 
 let originalConfig: string | null = null;
 
@@ -26,7 +26,7 @@ export interface PermissionHookRaceTraceRecord extends Record<string, unknown> {
 }
 
 export async function installPermissionHookRaceFixture(): Promise<void> {
-  await mkdir(WORKSPACE_ROBINRUN_DIR, { recursive: true });
+  await mkdir(WORKSPACE_ROBINDONE_DIR, { recursive: true });
   await mkdir(USER_CONFIG_DIR, { recursive: true });
   await rm(TRACE_PATH, { force: true });
   originalConfig = await readFile(CONFIG_PATH, "utf8").catch((error: unknown) => {

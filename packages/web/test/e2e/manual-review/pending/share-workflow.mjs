@@ -103,7 +103,7 @@ try {
       for (const theme of ["zai-light", "zai-dark"]) {
         const context = await browser.newContext({ viewport: { width, height: 900 } });
         await context.addInitScript(
-          (theme) => localStorage.setItem("robinrun-theme", theme),
+          (theme) => localStorage.setItem("robindone-theme", theme),
           theme,
         );
         const page = await context.newPage();
@@ -167,7 +167,7 @@ try {
         await page.getByTestId("workflow-run-summary-line").waitFor();
         assert.ok(await page.getByText("调研工作流", { exact: false }).count());
         assert.equal(await page.locator('[data-testid="workflow-card-resume"]').count(), 0);
-        assert.equal(await page.locator('a[href^="file:"],a[href^="robinrun:"]').count(), 0);
+        assert.equal(await page.locator('a[href^="file:"],a[href^="robindone:"]').count(), 0);
         assert.equal(
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           true,

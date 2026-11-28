@@ -2,9 +2,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { WorkflowArtifactSidePane } from "@/app-shell/WorkflowArtifactSidePane.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { saveBrowserFile } from "../../../../../web/src/platform/saveBrowserFile.js";
-import type { IPlatformService } from "@robinrun/shared";
+import type { IPlatformService } from "@robindone/shared";
 import "@/styles.css";
 
 const params = new URLSearchParams(location.search);
@@ -14,7 +14,7 @@ document.documentElement.className =
 const platform = { canOpenLocalFiles: false, saveFile: saveBrowserFile } as IPlatformService;
 
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale={locale}>
+  <RobinDoneIntlProvider initialLocale={locale}>
     <PlatformProvider platform={platform}>
       <WorkflowArtifactSidePane
         tab={{
@@ -31,5 +31,5 @@ createRoot(document.getElementById("root")!).render(
         }}
       />
     </PlatformProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

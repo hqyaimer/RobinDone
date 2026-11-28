@@ -1,4 +1,4 @@
-import { type UsageEntitlementSnapshot } from "@robinrun/shared";
+import { type UsageEntitlementSnapshot } from "@robindone/shared";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
 
 export function pickCodingPlanEntitlementProvider(

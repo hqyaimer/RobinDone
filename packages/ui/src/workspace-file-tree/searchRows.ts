@@ -1,4 +1,4 @@
-import type { WorkspaceFileEntry } from "@robinrun/shared";
+import type { WorkspaceFileEntry } from "@robindone/shared";
 import {
   getWorkspaceFileAncestorDirectories,
   isWorkspaceFilePathInside,

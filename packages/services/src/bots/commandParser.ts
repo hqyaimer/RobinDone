@@ -1,4 +1,4 @@
-import type { BotCommand } from "@robinrun/shared";
+import type { BotCommand } from "@robindone/shared";
 
 function splitCommand(text: string): { name: string; rest: string } | null {
   const trimmed = text.trim();

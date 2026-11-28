@@ -1,5 +1,5 @@
-import type { IDisposable } from "@robinrun/rpc";
-import { resolveWorkspaceKey } from "@robinrun/shared";
+import type { IDisposable } from "@robindone/rpc";
+import { resolveWorkspaceKey } from "@robindone/shared";
 
 export interface HostRemoteTaskMeta {
   taskId: string;

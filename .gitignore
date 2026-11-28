@@ -1,6 +1,6 @@
 node_modules/
 dist/
-# robinrun-server-cli 发行包 staging 输出（spec §7.1），本地组装产物不入库。
+# robindone-server-cli 发行包 staging 输出（spec §7.1），本地组装产物不入库。
 dist-release/
 # Bugfix: macOS CI 按架构隔离 electron-builder 输出目录，这些仍是构建产物。
 packages/desktop/dist-*/
@@ -37,7 +37,7 @@ coverage/
 z-work/
 openclaw/
 .run-logs/
-# 旧开发目录：开发版运行时已改名为 .robinrun-runtime，老机器上残留的目录仍需忽略，避免误提交 Electron.app 副本。
+# 旧开发目录：开发版运行时已改名为 .robindone-runtime，老机器上残留的目录仍需忽略，避免误提交 Electron.app 副本。
 .codex-runtime/
 .worktrees/
 packages/stream-animate/dist-server/
@@ -74,14 +74,14 @@ packages/desktop/resources/macos-window-bounds/
 # Python 字节码（docker/plugin-eval/summarize.py 在主机上跑会生成）。
 __pycache__/
 *.pyc
-.robinrun-runtime
+.robindone-runtime
 # SQLite 迁移备份（migration-runner 按 dataRoot/backup 落盘；开发期以包目录为 cwd 运行时
-# 会把备份写进 apps/robinrun-cli/packages/adapters/backup/，含本机会话数据，不入库）。
+# 会把备份写进 apps/robindone-cli/packages/adapters/backup/，含本机会话数据，不入库）。
 **/backup/
 # 开发期运行日志（dev:desktop 重定向输出、临时调试日志；.run-logs/ 只覆盖其专用目录）。
 *.log
 
-# 2026-11-23 裁决：源码上传只保留公开可用部分，RobinRun 内部开发材料（进度/裁决/设计文档与
+# 2026-11-23 裁决：源码上传只保留公开可用部分，RobinDone 内部开发材料（进度/裁决/设计文档与
 # agent 指南）不入库。AGENTS.md 与 docs/ui/task-grouped-view.md 原被跟踪，已 git rm --cached
 # 解除跟踪（文件保留本地，agent 注入不受影响）；其余 8 篇为新设计文档，防 git add -A 误卷入。
 /AGENTS.md
@@ -94,13 +94,16 @@ __pycache__/
 /docs/worker-roster.md
 /docs/worker-session-model.md
 /docs/ui/task-grouped-view.md
-# .agents/ = 工作区 agent 技能（上游自带 + RobinRun 自建），纯开发侧工具不入库（2026-11-24 补充，
+# .agents/ = 工作区 agent 技能（上游自带 + RobinDone 自建），纯开发侧工具不入库（2026-11-24 补充，
 # 246 个文件已 git rm --cached）。注意：apps/dev-docs 的 feature-boundary 图谱消费
-# .agents/skills/feature-boundary-planner/references/robinrun-feature-graph.yaml，新 clone 缺该文件；
+# .agents/skills/feature-boundary-planner/references/robindone-feature-graph.yaml，新 clone 缺该文件；
 # 本机文件保留不受影响，若将来要恢复单一 YAML 入库需用逐级 ! 反选（父目录被禁时反选无效）。
 .agents/
 # 仓库根被用作项目工作区时的运行时状态（worker 编制、触发器状态），纯内部不入库（2026-11-24）。
+/.robindone/
+# 改名过渡（2026-11-27）：仓库自身工作区运行时目录仍为旧名，迁移/改名后可移除
 /.robinrun/
+
 # 本机临时工作文件与调试截图。
 /tmp/
 /f3-v4.png

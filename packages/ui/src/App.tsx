@@ -6,9 +6,9 @@ import {
   resolveWorkspaceKey,
   type GitChangeSourceId,
   type WorkspacePurpose,
-} from "@robinrun/shared";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
-import { getVisibleTaskMetas, useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+} from "@robindone/shared";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
+import { getVisibleTaskMetas, useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { useTaskQueryCacheStore } from "@/store/taskQueryCacheStore.js";
 import { useAppPanels } from "@/hooks/useAppPanels.js";
 import { useGitAutoRefresh } from "@/hooks/useGitAutoRefresh.js";
@@ -22,7 +22,7 @@ import { useEnsureWorkspaceMcpLoaded } from "@/hooks/useEnsureWorkspaceMcpLoaded
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceReadOnly, isWorkspaceTab } from "@/store/tabStore.js";
 import type { TaskChatMessage as TestChatMessage } from "@/lib/taskChatMessageTypes.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { getPathLeaf } from "@/lib/path.js";
 import {
@@ -53,14 +53,14 @@ import {
   type SettingsSectionId,
 } from "@/lib/settingsNavigation.js";
 import { runWorkspaceVisibleCommand } from "@/lib/workspaceVisibleCommand.js";
-import { ROBINRUN_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
+import { ROBINDONE_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
 import appLogoUrl from "@/assets/brand/robin-icon.svg";
 import { resolveTheme } from "@/useTheme.js";
 import { WorkspaceShellLayout } from "@/app-shell/WorkspaceShellLayout.js";
 import { useAppChromeState } from "@/app-shell/useAppChromeState.js";
 import { useWorkspaceSessionReload } from "@/app-shell/useWorkspaceSessionReload.js";
 import { useWorkspaceShellLifecycle } from "@/app-shell/useWorkspaceShellLifecycle.js";
-import { useWorkspaceShellRobinRunState } from "@/app-shell/useWorkspaceShellRobinRunState.js";
+import { useWorkspaceShellRobinDoneState } from "@/app-shell/useWorkspaceShellRobinDoneState.js";
 import { useWorkspaceMainViewSettingsExit } from "@/app-shell/useWorkspaceMainViewSettingsExit.js";
 import {
   useWorkspaceTaskNavigation,
@@ -148,7 +148,7 @@ export function App({
   const openWorkspaceShortcutLabel = useShortcutCommandLabel("openWorkspace");
   const isLinuxDesktop = Boolean(isDesktop && !isMacDesktop && !isWindowsDesktop);
   const supportsEmbeddedBrowser = explicitSupportsEmbeddedBrowser ?? Boolean(isDesktop);
-  const { intl, locale, setLocale } = useRobinRunIntl();
+  const { intl, locale, setLocale } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const platform = usePlatform();
   // 进程内存本地诊断日志：每窗口一个 60s 采样器，
@@ -211,15 +211,15 @@ export function App({
   const workspaceReadOnlyReason = workspaceReadOnly
     ? intl.formatMessage({ id: "workspaceSidebar.unavailableLocalDirectory" })
     : undefined;
-  const { workspaceShellRobinRunState, reloadSessionDisabled } = useWorkspaceShellRobinRunState(
+  const { workspaceShellRobinDoneState, reloadSessionDisabled } = useWorkspaceShellRobinDoneState(
     workspaceAbsPath,
     workspaceIdentity,
   );
-  const activeTaskId = workspaceShellRobinRunState.activeTaskId;
+  const activeTaskId = workspaceShellRobinDoneState.activeTaskId;
   const sidePaneOwnerId = activeTaskId;
   const [summaryPanelVariantOverride, setSummaryPanelVariantOverride] =
     useState<ChatViewSummaryPanelVariant | null>(null);
-  const draftFocusVersion = workspaceShellRobinRunState.draftFocusVersion;
+  const draftFocusVersion = workspaceShellRobinDoneState.draftFocusVersion;
   const {
     isTerminalOpen,
     setIsTerminalOpen,
@@ -285,7 +285,7 @@ export function App({
     }),
   });
   const workspaceKey = workspaceIdentity?.trim() || workspaceAbsPath;
-  const notificationEnabled = useRobinRunStore((s) => s.notificationEnabled);
+  const notificationEnabled = useRobinDoneStore((s) => s.notificationEnabled);
   useMarketingTaskCompletionRefresh({
     workspacePath: workspaceAbsPath,
     ...(workspaceIdentity ? { workspaceIdentity } : {}),
@@ -364,10 +364,10 @@ export function App({
     useState<ChatSearchResultHighlightRequest | null>(null);
   const [fileChangeFindState, setFileChangeFindState] = useState(createTaskFindNavigationState);
   const [fileChangeFindMatchCount, setFileChangeFindMatchCount] = useState(0);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测」——社群命令已隐藏且探测会拉上游
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测」——社群命令已隐藏且探测会拉上游
   // client/configs，恢复时取消本段与下方探测 effect 的注释
   // const [canOpenCommunityFromQuickPick, setCanOpenCommunityFromQuickPick] = useState(false);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const [gitSelectedSourceId, setGitSelectedSourceId] = useState<GitChangeSourceId>("unstaged");
   const [gitRefreshVersion, setGitRefreshVersion] = useState(0);
   const { browserRestoreUrls, handleBrowserUrlChange } = useTaskSidePaneMemoryBridge({
@@ -377,8 +377,8 @@ export function App({
     workspaceAbsPath,
     workspaceIdentity,
   });
-  const theme = useRobinRunStore((s) => s.theme);
-  const setTheme = useRobinRunStore((s) => s.setTheme);
+  const theme = useRobinDoneStore((s) => s.theme);
+  const setTheme = useRobinDoneStore((s) => s.setTheme);
   const {
     isMacFullscreen,
     desktopWindowChromeState,
@@ -413,7 +413,7 @@ export function App({
     activeTaskId,
     workspaceRemoteSessionId,
     workspaceIdentity,
-    selectedProvider: workspaceShellRobinRunState.selectedProvider,
+    selectedProvider: workspaceShellRobinDoneState.selectedProvider,
     intl,
   });
   const providerConfigFile = useWorkspaceProviderConfigFile(
@@ -726,7 +726,7 @@ export function App({
   }, [openFeedbackSubmit, openFeedbackTickets, platform]);
   const handleOpenCommunity = useCallback(() => platform.openCommunity(), [platform]);
   const handleOpenProductDocs = useCallback(() => {
-    platform.openExternal(ROBINRUN_PRODUCT_DOCS_URL);
+    platform.openExternal(ROBINDONE_PRODUCT_DOCS_URL);
   }, [platform]);
   const themeTarget = resolveTheme(theme) === "dark" ? "light" : "dark";
   const handleSwitchTheme = useCallback(() => {
@@ -750,9 +750,9 @@ export function App({
       targetWorkspacePath: string,
       targetWorkspaceIdentity?: string,
       targetWorkspacePurpose?: WorkspacePurpose,
-      createSource?: import("@robinrun/shared").SessionCreateSource,
+      createSource?: import("@robindone/shared").SessionCreateSource,
     ) => {
-      const store = useRobinRunSessionStore.getState();
+      const store = useRobinDoneSessionStore.getState();
       const resolvedTargetWorkspaceIdentity =
         targetWorkspaceIdentity ??
         tabs.filter(isWorkspaceTab).find((tab) => tab.workspacePath === targetWorkspacePath)
@@ -761,7 +761,7 @@ export function App({
         return;
       }
       const targetSelectedProvider = resolveWorkspaceSwitchDraftProvider({
-        currentSelectedProvider: workspaceShellRobinRunState.selectedProvider,
+        currentSelectedProvider: workspaceShellRobinDoneState.selectedProvider,
         targetWorkspacePath,
         targetWorkspaceIdentity: resolvedTargetWorkspaceIdentity,
         workspaces: store.workspaces,
@@ -816,7 +816,7 @@ export function App({
       tabs,
       workspaceAbsPath,
       workspaceIdentity,
-      workspaceShellRobinRunState.selectedProvider,
+      workspaceShellRobinDoneState.selectedProvider,
       webRemoteControlWorkspaceSwitcher,
     ],
   );
@@ -836,9 +836,9 @@ export function App({
       ...taskListE2EActions,
       sendBotMessage: (message) => services.botsService.handleInboundMessage(message),
       submitBotGroupInput: (params) => {
-        const submit = services.robinrunTaskService.submitBotGroupInput;
+        const submit = services.robindoneTaskService.submitBotGroupInput;
         if (!submit) throw new Error("Task material admission unavailable");
-        return submit.call(services.robinrunTaskService, params);
+        return submit.call(services.robindoneTaskService, params);
       },
       getTheme: () => theme,
       setTheme,
@@ -848,20 +848,20 @@ export function App({
         setTestMessages([...messages]);
       },
       getChatMessageCount: () => testMessages?.length ?? 0,
-      getPluginsOverview: (params) => services.robinrunAgentService.getPluginsOverview(params),
-      addPluginMarketplace: (params) => services.robinrunAgentService.addPluginMarketplace(params),
+      getPluginsOverview: (params) => services.robindoneAgentService.getPluginsOverview(params),
+      addPluginMarketplace: (params) => services.robindoneAgentService.addPluginMarketplace(params),
       updatePluginMarketplace: (params) =>
-        services.robinrunAgentService.updatePluginMarketplace(params),
-      installPlugin: (params) => services.robinrunAgentService.installPlugin(params),
-      listPlugins: (params) => services.robinrunAgentService.listPlugins(params),
+        services.robindoneAgentService.updatePluginMarketplace(params),
+      installPlugin: (params) => services.robindoneAgentService.installPlugin(params),
+      listPlugins: (params) => services.robindoneAgentService.listPlugins(params),
       getPluginReferenceCatalog: (params) =>
-        services.robinrunAgentService.getPluginReferenceCatalog(params),
+        services.robindoneAgentService.getPluginReferenceCatalog(params),
     }),
     [
       locale,
       services.botsService,
-      services.robinrunTaskService,
-      services.robinrunAgentService,
+      services.robindoneTaskService,
+      services.robindoneAgentService,
       setLocale,
       theme,
       setTheme,
@@ -966,7 +966,7 @@ export function App({
   const handleSelectAdjacentConversation = useCallback(
     (direction: "previous" | "next") => {
       runVisibleWorkspaceCommand(() => {
-        const sessionState = useRobinRunSessionStore.getState();
+        const sessionState = useRobinDoneSessionStore.getState();
         const workspaceState = sessionState.getWorkspaceState(workspaceAbsPath, workspaceIdentity);
         const fallbackTaskIds = getVisibleTaskMetas(workspaceState).map((task) => task.taskId);
         const taskQueryCacheState = useTaskQueryCacheStore.getState();
@@ -1036,7 +1036,7 @@ export function App({
       : null,
   });
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测 effect」——恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「社群可用性探测 effect」——恢复时取消本段注释
   // useEffect(() => {
   //   let disposed = false;
   //
@@ -1057,7 +1057,7 @@ export function App({
   //     disposed = true;
   //   };
   // }, [locale, platform]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 
   const quickPickCommands = useMemo(
     () =>
@@ -1065,9 +1065,9 @@ export function App({
         supportsTerminal: !isOfficeMode,
         supportsReview: !isOfficeMode,
         allowOpenWorkspace,
-        // RobinRun(2026-11-22): [hide-upstream-account] 社群命令已隐藏，探测已摘除，恒 false；恢复时改回 canOpenCommunityFromQuickPick
+        // RobinDone(2026-11-22): [hide-upstream-account] 社群命令已隐藏，探测已摘除，恒 false；恢复时改回 canOpenCommunityFromQuickPick
         canOpenCommunity: false,
-        // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+        // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
         isSidebarVisible,
         supportsEmbeddedBrowser,
         // quick pick 命令只关心登录态布尔值。
@@ -1109,9 +1109,9 @@ export function App({
     [
       allowOpenWorkspace,
       isOfficeMode,
-      // RobinRun(2026-11-22): [hide-upstream-account] 社群探测已隐藏；三个上游 handler 保留注入（handler 注册已注释）——恢复时取消下行注释
+      // RobinDone(2026-11-22): [hide-upstream-account] 社群探测已隐藏；三个上游 handler 保留注入（handler 注册已注释）——恢复时取消下行注释
       // canOpenCommunityFromQuickPick,
-      // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+      // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
       handleOpenCommunity,
       handleOpenFeedback,
       handleOpenProductDocs,
@@ -1245,7 +1245,7 @@ export function App({
           isDesktop={isDesktop}
           isMacDesktop={isMacDesktop}
           isWindowsDesktop={isWindowsDesktop}
-          workspaceShellRobinRunState={workspaceShellRobinRunState}
+          workspaceShellRobinDoneState={workspaceShellRobinDoneState}
           theme={theme}
           isMacFullscreen={isMacFullscreen}
           desktopWindowChromeState={desktopWindowChromeState}

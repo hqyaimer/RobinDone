@@ -20,7 +20,7 @@ export async function waitForToastContaining(
 
 export function getToastMessages() {
   return browser.execute(() => {
-    const host = document.querySelector("#robinrun-toast-host");
+    const host = document.querySelector("#robindone-toast-host");
     if (!host) {
       return [];
     }

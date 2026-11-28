@@ -17,7 +17,7 @@ function createPlan(overrides: Record<string, unknown> = {}) {
   return createWindowsE2EShardPlan({
     args: [],
     desktopDir,
-    env: { ROBINRUN_E2E_RUN_ID: "local-full", ROBINRUN_E2E_SHARD_TOTAL: "2" },
+    env: { ROBINDONE_E2E_RUN_ID: "local-full", ROBINDONE_E2E_SHARD_TOTAL: "2" },
     platform: "win32",
     repoRoot,
     ...overrides,
@@ -33,13 +33,13 @@ describe("Windows E2E shard runner", () => {
     try {
       const firstPlan = createPlan({
         // 修复原因：默认 full run 已改为单 shard；路径隔离断言必须显式进入并发分片场景。
-        env: { ROBINRUN_E2E_SHARD_TOTAL: "2" },
+        env: { ROBINDONE_E2E_SHARD_TOTAL: "2" },
         processId: 4242,
         runIdEntropy: "entropy-a",
         runIdTimestamp: timestamp,
       });
       const secondPlan = createPlan({
-        env: { ROBINRUN_E2E_SHARD_TOTAL: "2" },
+        env: { ROBINDONE_E2E_SHARD_TOTAL: "2" },
         processId: 4242,
         runIdEntropy: "entropy-b",
         runIdTimestamp: timestamp,
@@ -47,9 +47,9 @@ describe("Windows E2E shard runner", () => {
 
       expect(firstPlan.runId).not.toBe(secondPlan.runId);
       for (const key of [
-        "ROBINRUN_E2E_HOME_DIR",
-        "ROBINRUN_E2E_ARTIFACT_DIR",
-        "ROBINRUN_E2E_NETWORK_CAPTURE_DIR",
+        "ROBINDONE_E2E_HOME_DIR",
+        "ROBINDONE_E2E_ARTIFACT_DIR",
+        "ROBINDONE_E2E_NETWORK_CAPTURE_DIR",
       ] as const) {
         const firstPaths = new Set(firstPlan.children.map((child) => child.env[key]));
         const secondPaths = new Set(secondPlan.children.map((child) => child.env[key]));
@@ -57,7 +57,7 @@ describe("Windows E2E shard runner", () => {
       }
 
       const explicitPlan = createPlan({
-        env: { ROBINRUN_E2E_RUN_ID: "explicit-compatible-run" },
+        env: { ROBINDONE_E2E_RUN_ID: "explicit-compatible-run" },
         processId: 4242,
         runIdEntropy: "ignored-entropy",
         runIdTimestamp: timestamp,
@@ -70,12 +70,12 @@ describe("Windows E2E shard runner", () => {
 
   it("plans a default full Windows run as a single shard", () => {
     const plan = createPlan({
-      env: { ROBINRUN_E2E_RUN_ID: "default-single" },
+      env: { ROBINDONE_E2E_RUN_ID: "default-single" },
     });
     expect(plan.shardTotal).toBe(1);
     expect(plan.children).toHaveLength(1);
     expect(plan.children[0]?.args.some((arg) => arg.startsWith("--shard"))).toBe(false);
-    expect(plan.children[0]?.env.ROBINRUN_E2E_HOME_DIR).toBe(
+    expect(plan.children[0]?.env.ROBINDONE_E2E_HOME_DIR).toBe(
       join(desktopDir, ".e2e-home-default-single"),
     );
   });
@@ -91,9 +91,9 @@ describe("Windows E2E shard runner", () => {
     expect(specs.some((spec) => spec.includes("conversation-session-ssh-remote"))).toBe(false);
 
     const sshSpecs = listDefaultFormalE2ESpecs(resolve(process.cwd(), "packages/desktop"), {
-      ROBINRUN_E2E_SSH_HOST: "ssh.example.test",
-      ROBINRUN_E2E_SSH_USERNAME: "root",
-      ROBINRUN_E2E_SSH_PASSWORD: "secret-from-test-env",
+      ROBINDONE_E2E_SSH_HOST: "ssh.example.test",
+      ROBINDONE_E2E_SSH_USERNAME: "root",
+      ROBINDONE_E2E_SSH_PASSWORD: "secret-from-test-env",
     });
     expect(sshSpecs).toContain(
       "./test/e2e/conversation-session/conversation-session-ssh-remote-connection-p0.test.ts",
@@ -128,7 +128,7 @@ describe("Windows E2E shard runner", () => {
     const plan = createPlan({ weightedSpecBuckets });
 
     expect(plan.distributionKind).toBe("historical-lpt");
-    expect(plan.children.map((child) => child.env.ROBINRUN_E2E_SPEC)).toEqual([
+    expect(plan.children.map((child) => child.env.ROBINDONE_E2E_SPEC)).toEqual([
       "./test/e2e/smoke.test.ts",
       "./test/e2e/container-boot.test.ts",
     ]);
@@ -146,17 +146,17 @@ describe("Windows E2E shard runner", () => {
     expect(plan.children.map((child) => child.args.at(-1))).toEqual(["--shard=1/2", "--shard=2/2"]);
 
     for (const key of [
-      "ROBINRUN_E2E_HOME_DIR",
-      "ROBINRUN_E2E_RUN_ID",
-      "ROBINRUN_E2E_ARTIFACT_DIR",
-      "ROBINRUN_E2E_NETWORK_CAPTURE_DIR",
+      "ROBINDONE_E2E_HOME_DIR",
+      "ROBINDONE_E2E_RUN_ID",
+      "ROBINDONE_E2E_ARTIFACT_DIR",
+      "ROBINDONE_E2E_NETWORK_CAPTURE_DIR",
     ] as const) {
       expect(new Set(plan.children.map((child) => child.env[key])).size).toBe(2);
     }
 
     for (const child of plan.children) {
-      expect(child.env.ROBINRUN_E2E_SKIP_BUILD).toBe("1");
-      expect(child.env.ROBINRUN_E2E_SKIP_AGENT_BUILD).toBe("1");
+      expect(child.env.ROBINDONE_E2E_SKIP_BUILD).toBe("1");
+      expect(child.env.ROBINDONE_E2E_SKIP_AGENT_BUILD).toBe("1");
       expect(child.summaryPath).toBe(join(child.artifactDir, "summary.json"));
     }
   });
@@ -165,19 +165,19 @@ describe("Windows E2E shard runner", () => {
     const firstPlan = createPlan({
       // 修复原因：覆盖 env 会同时移除 createPlan 默认的 shard 数，需保留显式分片前提。
       env: {
-        ROBINRUN_E2E_RUN_ID: "concurrent-run-a",
-        ROBINRUN_E2E_SHARD_TOTAL: "2",
+        ROBINDONE_E2E_RUN_ID: "concurrent-run-a",
+        ROBINDONE_E2E_SHARD_TOTAL: "2",
       },
     });
     const secondPlan = createPlan({
       env: {
-        ROBINRUN_E2E_RUN_ID: "concurrent-run-b",
-        ROBINRUN_E2E_SHARD_TOTAL: "2",
+        ROBINDONE_E2E_RUN_ID: "concurrent-run-b",
+        ROBINDONE_E2E_SHARD_TOTAL: "2",
       },
     });
-    const firstHomes = new Set(firstPlan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR));
+    const firstHomes = new Set(firstPlan.children.map((child) => child.env.ROBINDONE_E2E_HOME_DIR));
     const secondHomes = new Set(
-      secondPlan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR),
+      secondPlan.children.map((child) => child.env.ROBINDONE_E2E_HOME_DIR),
     );
 
     expect([...firstHomes].filter((home) => secondHomes.has(home))).toEqual([]);
@@ -189,26 +189,26 @@ describe("Windows E2E shard runner", () => {
     const explicitHomeRoot = resolve("C:/e2e-homes/single");
     const plan = createPlan({
       env: {
-        ROBINRUN_E2E_HOME_DIR: explicitHomeRoot,
-        ROBINRUN_E2E_RUN_ID: "explicit-single-home-run",
+        ROBINDONE_E2E_HOME_DIR: explicitHomeRoot,
+        ROBINDONE_E2E_RUN_ID: "explicit-single-home-run",
       },
     });
 
     expect(plan.shardTotal).toBe(1);
-    expect(plan.children[0]?.env.ROBINRUN_E2E_HOME_DIR).toBe(explicitHomeRoot);
+    expect(plan.children[0]?.env.ROBINDONE_E2E_HOME_DIR).toBe(explicitHomeRoot);
   });
 
   it("adds run and shard identity below an explicit sharded HOME base", () => {
     const explicitHomeRoot = resolve("C:/e2e-homes");
     const plan = createPlan({
       env: {
-        ROBINRUN_E2E_HOME_DIR: explicitHomeRoot,
-        ROBINRUN_E2E_RUN_ID: "explicit-home-run",
-        ROBINRUN_E2E_SHARD_TOTAL: "2",
+        ROBINDONE_E2E_HOME_DIR: explicitHomeRoot,
+        ROBINDONE_E2E_RUN_ID: "explicit-home-run",
+        ROBINDONE_E2E_SHARD_TOTAL: "2",
       },
     });
 
-    expect(plan.children.map((child) => child.env.ROBINRUN_E2E_HOME_DIR)).toEqual([
+    expect(plan.children.map((child) => child.env.ROBINDONE_E2E_HOME_DIR)).toEqual([
       join(explicitHomeRoot, "explicit-home-run", "shard-1-of-2"),
       join(explicitHomeRoot, "explicit-home-run", "shard-2-of-2"),
     ]);
@@ -216,7 +216,7 @@ describe("Windows E2E shard runner", () => {
 
   it("builds desktop and agent once before starting both children concurrently", async () => {
     const plan = createPlan();
-    expect(plan.buildSteps[1]?.env.ROBINRUN_DESKTOP_AGENT_BUILD_MODE).toBe("turbo");
+    expect(plan.buildSteps[1]?.env.ROBINDONE_DESKTOP_AGENT_BUILD_MODE).toBe("turbo");
     const events: string[] = [];
     const childResolvers: Array<(result: { exitCode: number }) => void> = [];
 
@@ -261,25 +261,25 @@ describe("Windows E2E shard runner", () => {
     {
       label: "targeted CLI",
       args: ["--spec=./test/e2e/container-boot.test.ts", "--shards=10"],
-      env: { ROBINRUN_E2E_SHARD_TOTAL: "4" },
+      env: { ROBINDONE_E2E_SHARD_TOTAL: "4" },
     },
     {
       label: "targeted env",
       args: ["--shards=10"],
       env: {
-        ROBINRUN_E2E_SPEC: "./test/e2e/container-boot.test.ts",
-        ROBINRUN_E2E_SHARD_TOTAL: "4",
+        ROBINDONE_E2E_SPEC: "./test/e2e/container-boot.test.ts",
+        ROBINDONE_E2E_SHARD_TOTAL: "4",
       },
     },
     {
       label: "capture",
       args: ["--shards=10"],
-      env: { E2E_PROVIDER_HTTP_MODE: "capture", ROBINRUN_E2E_SHARD_TOTAL: "4" },
+      env: { E2E_PROVIDER_HTTP_MODE: "capture", ROBINDONE_E2E_SHARD_TOTAL: "4" },
     },
     {
       label: "manual review",
       args: ["--shards=10"],
-      env: { ROBINRUN_E2E_MANUAL_REVIEW: "1", ROBINRUN_E2E_SHARD_TOTAL: "4" },
+      env: { ROBINDONE_E2E_MANUAL_REVIEW: "1", ROBINDONE_E2E_SHARD_TOTAL: "4" },
     },
   ])("keeps $label runs single despite explicit shard overrides", ({ args, env }) => {
     const plan = createPlan({ args, env });
@@ -294,7 +294,7 @@ describe("Windows E2E shard runner", () => {
   it("validates explicit overrides and strips the runner-only option", () => {
     const plan = createPlan({
       args: ["--logLevel=warn", "--shards=3", "--mochaOpts.timeout=9000"],
-      env: { ROBINRUN_E2E_SHARD_TOTAL: "4", ROBINRUN_E2E_RUN_ID: "override" },
+      env: { ROBINDONE_E2E_SHARD_TOTAL: "4", ROBINDONE_E2E_RUN_ID: "override" },
     });
 
     expect(plan.shardTotal).toBe(3);
@@ -310,7 +310,7 @@ describe("Windows E2E shard runner", () => {
     expect(() =>
       resolveWindowsE2EShardTotal({
         args: [],
-        env: { ROBINRUN_E2E_SHARD_TOTAL: "two" },
+        env: { ROBINDONE_E2E_SHARD_TOTAL: "two" },
         platform: "win32",
       }),
     ).toThrow("positive integer");
@@ -320,14 +320,14 @@ describe("Windows E2E shard runner", () => {
     expect(
       resolveWindowsE2EShardTotal({
         args: ["--shard=1/2"],
-        env: { ROBINRUN_E2E_SHARD_TOTAL: "4" },
+        env: { ROBINDONE_E2E_SHARD_TOTAL: "4" },
         platform: "win32",
       }),
     ).toBe(1);
     expect(
       resolveWindowsE2EShardTotal({
         args: ["--shard=1/2", "--shards=3"],
-        env: { ROBINRUN_E2E_SHARD_TOTAL: "4" },
+        env: { ROBINDONE_E2E_SHARD_TOTAL: "4" },
         platform: "win32",
       }),
     ).toBe(1);
@@ -533,13 +533,13 @@ describe("Windows E2E shard runner", () => {
     ) as { scripts: Record<string, string> };
 
     expect(desktopPackage.scripts["pretest:e2e"]).toBe(
-      "pnpm --filter @robinrun/e2e-report build:node",
+      "pnpm --filter @robindone/e2e-report build:node",
     );
     expect(desktopPackage.scripts["test:e2e"]).toBe("node scripts/run-windows-e2e-shards.mjs");
-    expect(rootPackage.scripts["test:e2e"]).toBe("pnpm --filter @robinrun/desktop test:e2e");
+    expect(rootPackage.scripts["test:e2e"]).toBe("pnpm --filter @robindone/desktop test:e2e");
     expect(desktopPackage.scripts["test:e2e:windows:sharded"]).toBe("pnpm test:e2e -- --shards=10");
     expect(rootPackage.scripts["test:e2e:windows:sharded"]).toBe(
-      "pnpm --filter @robinrun/desktop test:e2e:windows:sharded",
+      "pnpm --filter @robindone/desktop test:e2e:windows:sharded",
     );
   });
 });

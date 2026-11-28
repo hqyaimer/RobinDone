@@ -3,10 +3,10 @@ import type {
   DesktopWindowChromeState,
   IPlatformService,
   UpdateStatePayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logger } from "@/logger.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 const MACOS_WINDOW_CONTROLS_DEFAULT_LEFT_PADDING_PX = 96;
 const WINDOWS_WINDOW_CONTROLS_DEFAULT_RIGHT_PADDING_PX = 136;
@@ -82,7 +82,7 @@ export function useAppChromeState({
   const sidebarContainerRef = useRef<HTMLElement | null>(null);
   const hasShownUpdateToastRef = useRef(false);
   const updateStateEventRevisionRef = useRef(0);
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   useEffect(() => {
     if (!isDesktop || !isMacDesktop) {

@@ -1,4 +1,4 @@
-import { formatRobinRunAgentProcessName } from "@robinrun/shared";
+import { formatRobinDoneAgentProcessName } from "@robindone/shared";
 import { startDraftFromProject, waitForProjectRow } from "./project-sidebar.js";
 import {
   countAgentProcessRows,
@@ -27,11 +27,11 @@ export async function waitForActiveWorkspacePath(
         return await browser.execute((expectedPath) => {
           const tabStore = (
             window as Window & {
-              __robinrunTabStoreE2E?: {
+              __robindoneTabStoreE2E?: {
                 getState?: () => { activeWorkspacePath?: string | null };
               };
             }
-          ).__robinrunTabStoreE2E;
+          ).__robindoneTabStoreE2E;
           return tabStore?.getState?.().activeWorkspacePath === expectedPath;
         }, expectedWorkspacePath);
       } catch {
@@ -75,9 +75,9 @@ export async function assertStableAgentSelection(
   expect(identities).toHaveLength(expectedWorkspacePaths.length);
 
   const expected = new Set(expectedWorkspacePaths);
-  const placeholderPrefix = formatRobinRunAgentProcessName("placeholder");
+  const placeholderPrefix = formatRobinDoneAgentProcessName("placeholder");
   for (const workspacePath of allWorkspacePaths) {
-    const formatted = formatRobinRunAgentProcessName("placeholder", workspacePath);
+    const formatted = formatRobinDoneAgentProcessName("placeholder", workspacePath);
     const workspaceNameSuffix = formatted.slice(placeholderPrefix.length);
     const actual = await countAgentProcessRows({ workspaceNameSuffix });
     expect(actual).toBe(expected.has(workspacePath) ? 1 : 0);

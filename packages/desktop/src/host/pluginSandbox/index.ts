@@ -1,8 +1,8 @@
-import { HostResponseTypes } from "@robinrun/shared";
+import { HostResponseTypes } from "@robindone/shared";
 import type {
   PluginSandboxHandle,
   PluginSandboxRegisterRequestPayload,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 import { randomUUID } from "node:crypto";
 import type { PluginSandboxRegistrationBridge } from "./contract.js";
 

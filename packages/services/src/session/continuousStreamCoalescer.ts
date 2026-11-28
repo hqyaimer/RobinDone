@@ -1,4 +1,4 @@
-import type { RobinRunStreamEvent } from "@robinrun/shared";
+import type { RobinDoneStreamEvent } from "@robindone/shared";
 
 const CONTINUOUS_CHUNK_FLUSH_DELAY_MS = 16;
 const CONTINUOUS_CHUNK_MAX_CHARS = 4096;
@@ -6,12 +6,12 @@ const CONTINUOUS_CHUNK_MAX_EVENTS = 128;
 const CONTINUOUS_CHUNK_KEY_SEPARATOR = "\u0000";
 
 type ContinuousCoalescibleChunk =
-  | Extract<RobinRunStreamEvent, { type: "agent_message_chunk" }>
-  | Extract<RobinRunStreamEvent, { type: "agent_thought_chunk" }>;
+  | Extract<RobinDoneStreamEvent, { type: "agent_message_chunk" }>
+  | Extract<RobinDoneStreamEvent, { type: "agent_thought_chunk" }>;
 
 type ContinuousCoalescibleState =
-  | Extract<RobinRunStreamEvent, { type: "usage_update" }>
-  | Extract<RobinRunStreamEvent, { type: "session_info_update" }>;
+  | Extract<RobinDoneStreamEvent, { type: "usage_update" }>
+  | Extract<RobinDoneStreamEvent, { type: "session_info_update" }>;
 
 interface PendingContinuousChunkItem {
   kind: "chunk";
@@ -29,22 +29,22 @@ interface PendingContinuousStateItem {
 type PendingContinuousItem = PendingContinuousChunkItem | PendingContinuousStateItem;
 
 interface ContinuousStreamCoalescer {
-  accept(event: RobinRunStreamEvent): void;
+  accept(event: RobinDoneStreamEvent): void;
   flush(): void;
   dispose(): void;
 }
 
 function isContinuousCoalescibleChunk(
-  event: RobinRunStreamEvent,
+  event: RobinDoneStreamEvent,
 ): event is ContinuousCoalescibleChunk {
   return (
     event.type === "agent_thought_chunk" ||
-    (event.type === "agent_message_chunk" && !event.robinrunTimeline)
+    (event.type === "agent_message_chunk" && !event.robindoneTimeline)
   );
 }
 
 function isContinuousCoalescibleState(
-  event: RobinRunStreamEvent,
+  event: RobinDoneStreamEvent,
 ): event is ContinuousCoalescibleState {
   if (event.type === "usage_update") {
     return true;
@@ -89,7 +89,7 @@ function mergeContinuousChunks(
 }
 
 export function createContinuousStreamCoalescer(params: {
-  emit: (event: RobinRunStreamEvent) => void;
+  emit: (event: RobinDoneStreamEvent) => void;
   flushDelayMs?: number;
   maxChars?: number;
   maxEvents?: number;
@@ -168,7 +168,7 @@ export function createContinuousStreamCoalescer(params: {
   }
 
   return {
-    accept(event: RobinRunStreamEvent): void {
+    accept(event: RobinDoneStreamEvent): void {
       if (disposed) {
         return;
       }

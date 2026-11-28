@@ -12,14 +12,14 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   type ModelConnectivityResult,
   type OAuthProviderId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   getProviderFormApiKeyManagementUrl,
   type ProviderSettingsFormProvider,
 } from "@/lib/providerSettingsFormTypes.js";
 import { ArrowRightIcon, AstroidIcon, UsersIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   type CodingPlanStatus,
   type CodingPlanProviderId,
@@ -60,8 +60,8 @@ import {
 } from "@/lib/codingPlanFunnelTelemetry.js";
 import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
-import type { ProviderSettingsView } from "@robinrun/services";
-import type { SavePersonalModelDraftInput } from "@robinrun/provider";
+import type { ProviderSettingsView } from "@robindone/services";
+import type { SavePersonalModelDraftInput } from "@robindone/provider";
 import { resolveAccountProviderInspectionAccess } from "@/lib/accountProviderAccess.js";
 import { projectProviderSettingsViewToFormProviders } from "@/lib/providerSettingsFormProjection.js";
 
@@ -304,11 +304,11 @@ export function ModelProviderSectionDetail({
   onSelectNavItem?: (item: ModelProviderNavItem) => void;
   providerSettingsView?: ProviderSettingsView | null;
 }) {
-  const { intl } = useRobinRunIntl();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  const { intl } = useRobinDoneIntl();
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
   // 非可选 hook 无 Provider 会 throw；恢复时随 Root Provider 一并取消注释（连同下方购买横幅/升级入口注释段）
   // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const loadingLabel = intl.formatMessage({ id: "common.loading" });
   const [upgradePlansVisibleProviderId, setUpgradePlansVisibleProviderId] =
     useState<BuiltinModelProviderId | null>(null);
@@ -523,7 +523,7 @@ export function ModelProviderSectionDetail({
     const handleUpgradePlansVisibleChange = (visible: boolean) => {
       setUpgradePlansVisibleProviderId(visible ? selectedNavItem.presetId : null);
     };
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Coding Plan 购买横幅 + 选择回调」——购买面板依赖
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Coding Plan 购买横幅 + 选择回调」——购买面板依赖
     // 上游账号/OAuth（登录入口也已隐藏），恢复时取消本段注释并删除下方 planSupplementalContent 的 null 赋值
     /*
     const purchaseChoiceBannersVisible =
@@ -578,7 +578,7 @@ export function ModelProviderSectionDetail({
       });
     };
     */
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     const codingPlanFamilyHeader = (
       <ProviderFamilyHeader selectedNavItem={selectedNavItem} trailingAction={planModeSwitch} />
     );
@@ -596,7 +596,7 @@ export function ModelProviderSectionDetail({
             provider.accountState.entitled,
         ),
     );
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「购买横幅渲染」——横幅与选择回调已注释，
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「购买横幅渲染」——横幅与选择回调已注释，
     // 恢复时取消下方原 ternary 注释并删除本行
     const planSupplementalContent = null;
     /*
@@ -614,7 +614,7 @@ export function ModelProviderSectionDetail({
         <CodingPlanAccessBanner title={accessBanner.title} description={accessBanner.description} />
       ) : null;
     */
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 
     if (shouldShowDedicatedProviderDetail && dedicatedProvider) {
       const statusPanel = (
@@ -695,7 +695,7 @@ export function ModelProviderSectionDetail({
               options,
             );
           }}
-          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」——升级弹窗 Provider 已摘除，恢复时取消以下注释
+          // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」——升级弹窗 Provider 已摘除，恢复时取消以下注释
           // onOpenUpgradePlans={(options) => {
           //   openCodingPlanUpgrade({
           //     providerId: selectedNavItem.presetId,
@@ -703,7 +703,7 @@ export function ModelProviderSectionDetail({
           //     funnelContext: options.funnelContext ?? undefined,
           //   });
           // }}
-          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+          // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
           upgradePlansVisible={upgradePlansVisible}
           onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
           purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}
@@ -817,7 +817,7 @@ export function ModelProviderSectionDetail({
                 : undefined
             }
             disconnectLoading={codingPlanDisconnectProviderId === selectedNavItem.presetId}
-            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」（个人/团队卡）——恢复时取消以下注释
+            // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级套餐入口」（个人/团队卡）——恢复时取消以下注释
             // onOpenUpgradePlans={(options) => {
             //   openCodingPlanUpgrade({
             //     providerId: selectedNavItem.presetId,
@@ -825,7 +825,7 @@ export function ModelProviderSectionDetail({
             //     funnelContext: options.funnelContext ?? undefined,
             //   });
             // }}
-            // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+            // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
             upgradePlansVisible={upgradePlansVisible}
             onUpgradePlansVisibleChange={handleUpgradePlansVisibleChange}
             purchaseInitialAudience={selectedNavItem.type === "teamPlan" ? "team" : "personal"}
@@ -916,7 +916,7 @@ function CodingPlanPurchaseChoiceBanners({
   onSelectStartPlan?: () => void;
 }) {
   const entryGate = useCodingPlanEntryGate();
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const startPlanSummary = startPlanPreview
     ? resolveStartPlanEntitlementSummary(startPlanPreview, intl, locale)
     : null;
@@ -1217,7 +1217,7 @@ function PurchaseChoiceBannerPrice({
   currency: string | null;
   locale: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const formattedAmount = formatCodingPlanAmount(price, currency, locale);
   const isChineseLocale = locale.toLowerCase().startsWith("zh");
   if (!isChineseLocale) {
@@ -1261,7 +1261,7 @@ function CodingPlanAccessBanner({ title, description }: { title: string; descrip
 
 function resolveCodingPlanAccessBanner(
   status: CodingPlanStatus,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
   reloginOnFailure = false,
 ): { title: string; description: string } | null {
   if (

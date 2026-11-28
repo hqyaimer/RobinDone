@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { RobinRunPluginInfo } from "@robinrun/shared";
+import type { RobinDonePluginInfo } from "@robindone/shared";
 import { clearAppData, getE2EAppDataPaths } from "../helpers/desktop-app.js";
 import {
   PLUGIN_CDN_ZIP_ARCHIVE_PATH,
@@ -52,7 +52,7 @@ describe("PLM-LC-007 Desktop official CDN ZIP plugin UI lifecycle", () => {
     await installPluginThroughUi(PLUGIN_CDN_ZIP_ID);
 
     const paths = getE2EAppDataPaths();
-    const pluginStorageRoot = join(paths.homeDir, ".robinrun", "cli", "plugins");
+    const pluginStorageRoot = join(paths.homeDir, ".robindone", "cli", "plugins");
     const cacheRoot = join(
       pluginStorageRoot,
       "cache",
@@ -105,7 +105,7 @@ function assertInstalledRecord(pluginStorageRoot: string, cacheRoot: string): vo
 }
 
 function componentNames(
-  plugin: RobinRunPluginInfo | undefined,
+  plugin: RobinDonePluginInfo | undefined,
   kind: "command" | "skill",
 ): string[] {
   return (

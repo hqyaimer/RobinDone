@@ -1,0 +1,11 @@
+{
+  "name": "robindone-compact-microcompact-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dry-run": "node run.mjs --dry-run",
+    "e2e": "node run.mjs",
+    "docker:build": "docker build -f Dockerfile -t robindone-compact-microcompact ../..",
+    "docker:e2e": "docker run --rm -e ROBINDONE_API_KEY robindone-compact-microcompact"
+  }
+}

@@ -1,5 +1,5 @@
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatCommitTime, getRefIcon, getShortHash } from "./GitGraphDisplay.js";
 import type { GitGraphCommit } from "./layout.js";
 
@@ -8,7 +8,7 @@ export interface GitGraphCommitDetailProps {
 }
 
 export function GitGraphCommitDetail({ commit }: GitGraphCommitDetailProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
 
   return (
     <div className="border-t border-border bg-surface/45 px-3 py-3">

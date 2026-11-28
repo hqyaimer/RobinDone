@@ -1,9 +1,9 @@
-import type { IFileService } from "@robinrun/services";
+import type { IFileService } from "@robindone/services";
 import {
   REMOTE_WORKSPACE_DIRECTORY_UNAVAILABLE_ERROR_CODE,
   REMOTE_WORKSPACE_DIRECTORY_UNRESPONSIVE_ERROR_CODE,
   REMOTE_WORKSPACE_PREPARATION_TIMEOUT_MS,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface RemoteWorkspaceIdentityInput {
   workspacePath: string;

@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- 网络指标采集/聚合/ARMS 上报 */
 import armsRum from "@arms/rum-electron";
-import { mapRobinRunEnvToArmsRumEnv } from "@robinrun/shared";
-import type { NetworkObservation } from "@robinrun/rpc";
+import { mapRobinDoneEnvToArmsRumEnv } from "@robindone/shared";
+import type { NetworkObservation } from "@robindone/rpc";
 import {
   flushInterfaceNetworkStats,
   ingestArmsApiEvent,
@@ -23,7 +23,7 @@ interface NetworkGlobalContext {
   deviceMid: string;
   platform: NodeJS.Platform;
   appVersion: string;
-  armsEnv: ReturnType<typeof mapRobinRunEnvToArmsRumEnv>;
+  armsEnv: ReturnType<typeof mapRobinDoneEnvToArmsRumEnv>;
 }
 
 let globalContext: NetworkGlobalContext | null = null;

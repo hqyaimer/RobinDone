@@ -15,7 +15,7 @@ import {
   writeE2EDesktopBuildStampAtomic,
 } from "../scripts/ensure-e2e-desktop-build.mjs";
 
-const ROOT = resolve(tmpdir(), `robinrun-e2e-build-cache-${process.pid}`);
+const ROOT = resolve(tmpdir(), `robindone-e2e-build-cache-${process.pid}`);
 
 afterEach(() => {
   rmSync(ROOT, { force: true, recursive: true });
@@ -26,7 +26,7 @@ describe("desktop E2E build cache", () => {
     mkdirSync(resolve(ROOT, "src"), { recursive: true });
     writeFileSync(resolve(ROOT, "src/main.ts"), "export const value = 1;\n");
     const base = createE2EDesktopBuildFingerprint({
-      env: { VITE_ROBINRUN_E2E_STORE_BRIDGE: "1", ROBINRUN_ENV: "test" },
+      env: { VITE_ROBINDONE_E2E_STORE_BRIDGE: "1", ROBINDONE_ENV: "test" },
       gitHead: "head-a",
       inputPaths: ["src"],
       repoRoot: ROOT,
@@ -35,7 +35,7 @@ describe("desktop E2E build cache", () => {
     writeFileSync(resolve(ROOT, "src/main.ts"), "export const value = 2;\n");
     expect(
       createE2EDesktopBuildFingerprint({
-        env: { VITE_ROBINRUN_E2E_STORE_BRIDGE: "1", ROBINRUN_ENV: "test" },
+        env: { VITE_ROBINDONE_E2E_STORE_BRIDGE: "1", ROBINDONE_ENV: "test" },
         gitHead: "head-a",
         inputPaths: ["src"],
         repoRoot: ROOT,
@@ -43,7 +43,7 @@ describe("desktop E2E build cache", () => {
     ).not.toBe(base);
     expect(
       createE2EDesktopBuildFingerprint({
-        env: { VITE_ROBINRUN_E2E_STORE_BRIDGE: "1", ROBINRUN_ENV: "test" },
+        env: { VITE_ROBINDONE_E2E_STORE_BRIDGE: "1", ROBINDONE_ENV: "test" },
         gitHead: "head-b",
         inputPaths: ["src"],
         repoRoot: ROOT,
@@ -64,7 +64,7 @@ describe("desktop E2E build cache", () => {
     for (const envName of E2E_DESKTOP_BUILD_ENV_NAMES) {
       expect(
         createE2EDesktopBuildFingerprint({
-          env: { [envName]: envName === "ROBINRUN_E2E_COVERAGE" ? "1" : "changed" },
+          env: { [envName]: envName === "ROBINDONE_E2E_COVERAGE" ? "1" : "changed" },
           gitHead: "head-a",
           inputPaths: ["src"],
           repoRoot: ROOT,
@@ -74,7 +74,7 @@ describe("desktop E2E build cache", () => {
     }
     expect(
       createE2EDesktopBuildFingerprint({
-        env: { ROBINRUN_ENV: "" },
+        env: { ROBINDONE_ENV: "" },
         gitHead: "head-a",
         inputPaths: ["src"],
         repoRoot: ROOT,
@@ -99,7 +99,7 @@ describe("desktop E2E build cache", () => {
         // 只排除此文件的开发开关，build 分支不装配 Scan 由 viteRendererConfig.test.ts 验证。
         if (
           configPath === "packages/desktop/vite.config.ts" &&
-          match[1] === "ROBINRUN_REACT_SCAN"
+          match[1] === "ROBINDONE_REACT_SCAN"
         ) {
           continue;
         }
@@ -123,7 +123,7 @@ describe("desktop E2E build cache", () => {
     const base = fingerprint({});
 
     for (const value of ["", "0", "1"]) {
-      expect(fingerprint({ ROBINRUN_REACT_SCAN: value })).toBe(base);
+      expect(fingerprint({ ROBINDONE_REACT_SCAN: value })).toBe(base);
     }
   });
 
@@ -136,17 +136,17 @@ describe("desktop E2E build cache", () => {
     writeFileSync(
       resolve(ROOT, "packages/desktop/package.json"),
       JSON.stringify({
-        dependencies: { "@robinrun/server": "workspace:*" },
-        name: "@robinrun/desktop",
+        dependencies: { "@robindone/server": "workspace:*" },
+        name: "@robindone/desktop",
       }),
     );
     writeFileSync(
       resolve(ROOT, "packages/server/package.json"),
-      JSON.stringify({ name: "@robinrun/server" }),
+      JSON.stringify({ name: "@robindone/server" }),
     );
     writeFileSync(resolve(ROOT, "packages/desktop/src/main.ts"), "export const desktop = 1;\n");
     writeFileSync(resolve(ROOT, "packages/server/src/index.ts"), "export const server = 1;\n");
-    writeFileSync(resolve(ROOT, ".env"), "ROBINRUN_BASE_URL=https://one.example\n");
+    writeFileSync(resolve(ROOT, ".env"), "ROBINDONE_BASE_URL=https://one.example\n");
     writeFileSync(resolve(ROOT, ".env.production"), "CDN_DOMAIN=one.example\n");
 
     const inputPaths = resolveE2EDesktopBuildInputPaths({ repoRoot: ROOT });
@@ -160,10 +160,10 @@ describe("desktop E2E build cache", () => {
     expect(fingerprint()).not.toBe(base);
 
     writeFileSync(resolve(ROOT, "packages/server/src/index.ts"), "export const server = 1;\n");
-    writeFileSync(resolve(ROOT, ".env"), "ROBINRUN_BASE_URL=https://two.example\n");
+    writeFileSync(resolve(ROOT, ".env"), "ROBINDONE_BASE_URL=https://two.example\n");
     expect(fingerprint()).not.toBe(base);
 
-    writeFileSync(resolve(ROOT, ".env"), "ROBINRUN_BASE_URL=https://one.example\n");
+    writeFileSync(resolve(ROOT, ".env"), "ROBINDONE_BASE_URL=https://one.example\n");
     writeFileSync(resolve(ROOT, ".env.production"), "CDN_DOMAIN=two.example\n");
     expect(fingerprint()).not.toBe(base);
   });

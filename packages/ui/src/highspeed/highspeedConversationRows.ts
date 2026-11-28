@@ -3,7 +3,7 @@ import type {
   ConversationRowsPartition,
   TurnHeaderRow,
   UserInputRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { memoizeByRows } from "@/v4/conversationProjectionStore.js";
 
 function sortedHighspeedExpiries(rows: readonly ConversationRow[]): number[] {

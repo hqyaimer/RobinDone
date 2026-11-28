@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const REWARDS_PARTITION = "persist:robinrun-rewards";
-export const REWARDS_CONTEXT_EVENT = "robinrun-rewards-context";
+export const REWARDS_PARTITION = "persist:robindone-rewards";
+export const REWARDS_CONTEXT_EVENT = "robindone-rewards-context";
 export const rewardsContextSchema = z.object({
   theme: z.enum(["zai-light", "zai-dark"]),
   locale: z.enum(["zh-CN", "en-US"]),

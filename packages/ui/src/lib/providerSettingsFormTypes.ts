@@ -1,11 +1,11 @@
-import { isApiKeyAccess } from "@robinrun/provider";
+import { isApiKeyAccess } from "@robindone/provider";
 import type {
   ConfigValidationIssue,
   AccountProviderState,
   ModelConfigObject,
   ProviderConfigObject,
   ProviderSettingsProviderView,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 
 /** 设置页面在一次编辑会话中使用的 Provider 状态。 */
 export interface ProviderSettingsFormProvider extends Pick<

@@ -1,9 +1,9 @@
 import {
   BOT_TASK_BROADCAST_CHANNEL,
-  type RobinRunTaskRuntimeStatus,
+  type RobinDoneTaskRuntimeStatus,
   type BotTaskBroadcastPayload,
-} from "@robinrun/shared";
-import type { BroadcastMessage } from "@robinrun/services";
+} from "@robindone/shared";
+import type { BroadcastMessage } from "@robindone/services";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
 import type { WindowTabState } from "@/store/tabStore.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
@@ -79,7 +79,7 @@ export function resolveBotTaskBroadcastRefresh(
 
 export function resolveBotTaskBroadcastRuntimeStatus(
   event: BotTaskBroadcastPayload["event"],
-): RobinRunTaskRuntimeStatus {
+): RobinDoneTaskRuntimeStatus {
   switch (event) {
     case "created":
       return "creating";

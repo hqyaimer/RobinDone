@@ -1,16 +1,16 @@
 import { join } from "node:path";
 import { app } from "electron";
-import { HELPER_APP_NAME } from "@robinrun/robinrun-cua/broker/helperConstants";
+import { HELPER_APP_NAME } from "@robindone/robindone-cua/broker/helperConstants";
 import {
   canonicalizeCuaHelperInstallerOptions,
   createCuaHelperInstaller,
   type CuaHelperInstaller,
   type CuaHelperInstallerOptions,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 
 type InstallerFactory = (options: CuaHelperInstallerOptions) => CuaHelperInstaller;
 
-export { normalizeCuaHelperArch, normalizeCuaHelperArchs } from "@robinrun/services/node";
+export { normalizeCuaHelperArch, normalizeCuaHelperArchs } from "@robindone/services/node";
 
 export interface DesktopCuaHelperInstallerOptions extends Pick<
   CuaHelperInstallerOptions,
@@ -45,7 +45,7 @@ export function createDesktopCuaHelperInstaller(
   // A signed app with a bundled Helper must be deterministic even when its
   // LaunchServices environment was polluted by an earlier dev session.
   if (bundledAppPath) {
-    delete env.ROBINRUN_CUA_HELPER_ALLOW_UNSIGNED_LOCAL;
+    delete env.ROBINDONE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL;
   }
   return createInstaller(
     canonicalizeCuaHelperInstallerOptions({

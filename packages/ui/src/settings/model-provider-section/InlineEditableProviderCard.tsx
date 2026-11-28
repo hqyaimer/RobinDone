@@ -6,14 +6,14 @@ import {
   type ProviderSettingsFormProvider,
   type ProviderSettingsFormModel,
 } from "@/lib/providerSettingsFormTypes.js";
-import type { ModelConnectivityResult } from "@robinrun/shared";
+import type { ModelConnectivityResult } from "@robindone/shared";
 import {
   isApiKeyAccess,
   type ProviderApiType,
   type SavePersonalModelDraftInput,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import { logger } from "@/logger.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { Switch } from "@/components/ui/switch.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { isImeComposingKeyEvent } from "@/lib/imeComposition.js";
@@ -183,7 +183,7 @@ export function InlineEditableProviderCard({
   headerActionsVisible?: boolean;
   settingsRevision?: number;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { dismissFeedback, showFeedback } = useProviderDetailFeedback();
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(getProviderFormLabel(provider));

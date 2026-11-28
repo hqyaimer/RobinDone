@@ -1,4 +1,4 @@
-import type { ArmsCustomEventPayload } from "@robinrun/shared";
+import type { ArmsCustomEventPayload } from "@robindone/shared";
 import { shouldExposeE2EStoreBridge } from "@/lib/e2eStoreBridge.js";
 
 export interface ArmsCustomEventE2EEntry extends ArmsCustomEventPayload {
@@ -8,7 +8,7 @@ export interface ArmsCustomEventE2EEntry extends ArmsCustomEventPayload {
 const MAX_ARMS_CUSTOM_EVENT_ENTRIES = 200;
 
 type ArmsCustomEventDebugWindow = Window & {
-  __robinrunArmsCustomEventsE2E?: ArmsCustomEventE2EEntry[];
+  __robindoneArmsCustomEventsE2E?: ArmsCustomEventE2EEntry[];
 };
 
 /**
@@ -27,7 +27,7 @@ export function recordArmsCustomEventForE2E(
   if (!enabled || (typeof window === "undefined" && !options.host)) return;
 
   const host = options.host ?? (window as ArmsCustomEventDebugWindow);
-  const buffer = (host.__robinrunArmsCustomEventsE2E ??= []);
+  const buffer = (host.__robindoneArmsCustomEventsE2E ??= []);
   buffer.push({
     ...payload,
     ...(payload.properties ? { properties: { ...payload.properties } } : {}),

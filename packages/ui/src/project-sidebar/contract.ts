@@ -1,4 +1,4 @@
-import type { Locale, RemoteTarget, UserInfo } from "@robinrun/shared";
+import type { Locale, RemoteTarget, UserInfo } from "@robindone/shared";
 import type { LucideIcon } from "lucide-react";
 import type {
   AppProps,
@@ -7,8 +7,8 @@ import type {
 } from "@/app-shell/types.js";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import type { Theme } from "@/useTheme.js";
-export { LEGACY_SINGLE_ROOT_PROJECT_PREFIX } from "@robinrun/services";
-export type { WebRemoteControlMobileTaskView, WebRemoteControlStatus } from "@robinrun/shared";
+export { LEGACY_SINGLE_ROOT_PROJECT_PREFIX } from "@robindone/services";
+export type { WebRemoteControlMobileTaskView, WebRemoteControlStatus } from "@robindone/shared";
 export interface ProjectDevice {
   id: string;
   label: string;
@@ -32,11 +32,11 @@ export {
   buildRemoteWorkspaceIdentity,
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 export type {
   WindowHostTaskAddress,
   WindowHostControllerTaskActivity,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 export type {
   TaskGroup,
   TaskGroupColor,
@@ -51,7 +51,7 @@ export type {
   SaveProjectInput,
   IProjectService,
   IWindowControllerService,
-  IRobinRunTaskService,
+  IRobinDoneTaskService,
   WindowHostControllerMutation,
   WindowHostControllerFrame,
   WindowHostTaskUnreadSignal,
@@ -59,7 +59,7 @@ export type {
   RemoteProjectDirectory,
   RemoteProjectEntry,
   RemoteProjectHost,
-} from "@robinrun/services";
+} from "@robindone/services";
 export interface ProjectAvailability {
   entryId?: string;
   /** 仅首次升级入口用于替换旧排序键，不改变项目身份。 */
@@ -102,7 +102,7 @@ export interface ProjectSidebarProps {
   onCreateConversationTask: () => void;
   onCreateConversationTaskOnSource?: (sourceServerId: string) => void;
   onOpenFolderFromWorkspaceMenu: () => void;
-  /** RobinRun 项目列表导航：项目行点击 → 打开/激活该项目工作区（Root 的 handleSelectProject）。 */
+  /** RobinDone 项目列表导航：项目行点击 → 打开/激活该项目工作区（Root 的 handleSelectProject）。 */
   onOpenProject?: (workspacePath: string) => void;
   onOpenRemoteWorkspace?: AppProps["onOpenRemoteWorkspace"];
   webRemoteControlWorkspaceSwitcher?: import("@/root/types.js").WebRemoteControlWorkspaceSwitcherApi;

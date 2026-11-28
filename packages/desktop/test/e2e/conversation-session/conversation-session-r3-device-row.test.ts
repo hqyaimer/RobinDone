@@ -1,4 +1,4 @@
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { clearAppData, readSettings } from "#e2e/helpers/desktop-app";
 import {
   connectRemoteSourceFromSettings,

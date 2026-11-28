@@ -1,16 +1,16 @@
 import { z } from "zod";
-import { modelSelectionSchema } from "@robinrun/shared/model-selection";
+import { modelSelectionSchema } from "@robindone/shared/model-selection";
 import {
   completeModelConfigDataSchema,
   modelConfigDataSchema,
-} from "@robinrun/shared/model-config";
+} from "@robindone/shared/model-config";
 import {
   parsePersonalModelConfigRules,
   parsePersonalProviderConfigMap,
   extractManualModelConfig,
   manualModelConfigSchema,
   type ProviderConfigLayerUpdate,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 
 const CURRENT_SCHEMA_VERSION = 1 as const;
 

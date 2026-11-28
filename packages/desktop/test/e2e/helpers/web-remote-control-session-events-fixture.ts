@@ -2,17 +2,17 @@ import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { readFile, writeFile } from "node:fs/promises";
-import { createFakeRelayV2 } from "@robinrun/shared/testing/fake-relay-v2";
+import { createFakeRelayV2 } from "@robindone/shared/testing/fake-relay-v2";
 
 export const WEB_REMOTE_CONTROL_FIXTURE_CREDENTIALS = {
   "oauth:active_provider": "zai",
   "oauth:zai:access_token": "mock-token",
   "oauth:zai:user_info": JSON.stringify({
-    id: "robinrun-e2e-user",
-    username: "RobinRun E2E",
-    displayName: "RobinRun E2E",
+    id: "robindone-e2e-user",
+    username: "RobinDone E2E",
+    displayName: "RobinDone E2E",
   }),
-  robinrunjwttoken: "mock-token",
+  robindonejwttoken: "mock-token",
 };
 
 /** 单窗口真实 OAuth owner → RPC → renderer → Main 回归，只替换外部 relay。 */
@@ -24,7 +24,7 @@ export async function prepareWebRemoteControlSessionEventsFixture(options: {
   mobilePush?: boolean;
 }): Promise<() => Promise<void>> {
   const relay = await createFakeRelayV2({
-    users: { "mock-token": "robinrun-e2e-user" },
+    users: { "mock-token": "robindone-e2e-user" },
     onHttp: (call) => {
       if (options.mobilePush && call.path === "/api/v1/remote/notification/status")
         return {
@@ -63,14 +63,14 @@ export async function prepareWebRemoteControlSessionEventsFixture(options: {
   });
   const envPatch = {
     // 账号后台请求也必须走 loopback；合成凭据发到默认业务 API 会触发401并提前登出。
-    ...(options.webUrl ? { VITE_ROBINRUN_E2E_STORE_BRIDGE: "1" } : {}),
+    ...(options.webUrl ? { VITE_ROBINDONE_E2E_STORE_BRIDGE: "1" } : {}),
     ZAI_BUSINESS_BASE_URL: relay.httpUrl,
-    ROBINRUN_E2E_REMOTE_AUTH_GATE_URL: relay.httpUrl,
-    ROBINRUN_BASE_URL: relay.httpUrl,
-    ROBINRUN_ENDPOINT_ORIGIN: relay.httpUrl,
-    ROBINRUN_TEST_BASE_URL: relay.httpUrl,
-    ROBINRUN_WEB_REMOTE_CONTROL_RELAY_WS_URL: relay.wsUrl,
-    ROBINRUN_WEB_REMOTE_CONTROL_URL: options.webUrl ?? `${relay.httpUrl}/remote/v4`,
+    ROBINDONE_E2E_REMOTE_AUTH_GATE_URL: relay.httpUrl,
+    ROBINDONE_BASE_URL: relay.httpUrl,
+    ROBINDONE_ENDPOINT_ORIGIN: relay.httpUrl,
+    ROBINDONE_TEST_BASE_URL: relay.httpUrl,
+    ROBINDONE_WEB_REMOTE_CONTROL_RELAY_WS_URL: relay.wsUrl,
+    ROBINDONE_WEB_REMOTE_CONTROL_URL: options.webUrl ?? `${relay.httpUrl}/remote/v4`,
   };
   const previous = Object.fromEntries(Object.keys(envPatch).map((key) => [key, process.env[key]]));
   Object.assign(process.env, envPatch);
@@ -109,7 +109,7 @@ export async function prepareWebRemoteControlSessionEventsFixture(options: {
         }
         if (!origin) return;
         // 独立夹具可能避开已占用端口，手机配对必须使用 Vite 实际监听的端口。
-        process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL = new URL(
+        process.env.ROBINDONE_WEB_REMOTE_CONTROL_URL = new URL(
           new URL(options.webUrl!).pathname,
           origin,
         ).href;
@@ -126,7 +126,7 @@ export async function prepareWebRemoteControlSessionEventsFixture(options: {
     options.settingsFile,
     JSON.stringify({
       ...settings,
-      robinrunEndpointOrigin: relay.httpUrl,
+      robindoneEndpointOrigin: relay.httpUrl,
       webRemoteControlLastEnabledContext: options.mobilePush
         ? undefined
         : { workspacePath: options.workspacePath },

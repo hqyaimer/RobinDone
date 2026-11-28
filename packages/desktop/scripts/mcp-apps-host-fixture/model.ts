@@ -112,7 +112,7 @@ export async function startModel(root: string, cli: string) {
   const port = (server.address() as { port: number }).port;
   const builtin = join(root, "fixture-builtin.json"),
     personal = join(root, "fixture-personal.json");
-  await copyFile(resolve(cli, "../../../../../../config/provider/robinrun-builtin.json"), builtin);
+  await copyFile(resolve(cli, "../../../../../../config/provider/robindone-builtin.json"), builtin);
   await writeFile(
     personal,
     JSON.stringify({
@@ -153,8 +153,8 @@ export async function startModel(root: string, cli: string) {
     aborted,
     release: (key: string) => releases.get(key)?.(),
     env: {
-      ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE: builtin,
-      ROBINRUN_PERSONAL_PROVIDER_CONFIG_FILE: personal,
+      ROBINDONE_BUILTIN_PROVIDER_CONFIG_FILE: builtin,
+      ROBINDONE_PERSONAL_PROVIDER_CONFIG_FILE: personal,
     },
     selection: {
       providerId: "fixture-local",

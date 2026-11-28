@@ -1,4 +1,4 @@
-import { robinrunProtocolTraceSchema } from "./robinrun-protocol/trace.js";
+import { robindoneProtocolTraceSchema } from "./robindone-protocol/trace.js";
 import { z } from "zod";
 
 export const channelMentionSchema = z
@@ -122,7 +122,7 @@ export function resolveChannelReplyParts(
 
 export const channelReplyHostRequestSchema = channelReplyRequestSchema
   .extend({
-    trace: robinrunProtocolTraceSchema.optional(),
+    trace: robindoneProtocolTraceSchema.optional(),
     workspacePath: z.string().min(1),
     workspaceIdentity: z.string().optional(),
     remoteSessionId: z.string().optional(),

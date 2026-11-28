@@ -1,5 +1,5 @@
-import type { IBotsService, ServiceCollection } from "@robinrun/services";
-import type { DynamicWorkflowMode, WindowHostAttachmentScope } from "@robinrun/shared";
+import type { IBotsService, ServiceCollection } from "@robindone/services";
+import type { DynamicWorkflowMode, WindowHostAttachmentScope } from "@robindone/shared";
 import {
   connectServerRemoteOverDuplex,
   type ServerRemoteConnection,
@@ -20,7 +20,7 @@ export async function connectDesktopSourceServer(
 ): Promise<ServerRemoteConnection> {
   let connection: ServerRemoteConnection | undefined;
   const relay = createWindowTopicResourceRelay({
-    getPeerAgentService: () => connection?.services.robinrunAgentService,
+    getPeerAgentService: () => connection?.services.robindoneAgentService,
     resolveServices: deps.resolveServices,
     getBots: deps.getBots,
   });
@@ -37,7 +37,7 @@ export async function connectDesktopSourceServer(
     // 否则 manager 自动重连直接换 services，会丢失 Desktop 的当前用户选择。
     try {
       const mode = await deps.readDynamicWorkflowMode().catch(() => undefined);
-      await connection.services.robinrunAgentService.syncDynamicWorkflowUserMode(
+      await connection.services.robindoneAgentService.syncDynamicWorkflowUserMode(
         mode ? { mode } : {},
       );
     } catch (error) {

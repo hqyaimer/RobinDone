@@ -1,22 +1,22 @@
 import type {
-  RobinRunTaskMeta,
-  RobinRunProvider,
-  RobinRunTaskChangeSummary,
+  RobinDoneTaskMeta,
+  RobinDoneProvider,
+  RobinDoneTaskChangeSummary,
   EditorInfo,
   GitRepositorySummary,
   RemoteTarget,
   UserInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface WorkspaceHeaderState {
-  selectedProvider: RobinRunProvider;
+  selectedProvider: RobinDoneProvider;
 }
 
 export type WorkspaceHeaderVariant = "task" | "draft";
 
 export interface WorkspaceHeaderReloadSessionOptions {
   resumeTaskId?: string | null;
-  provider?: RobinRunProvider | null;
+  provider?: RobinDoneProvider | null;
 }
 
 export interface WorkspaceHeaderTitleSectionProps {
@@ -29,16 +29,16 @@ export interface WorkspaceHeaderTitleSectionProps {
   localWorkspacePath?: string;
   projectName: string;
   activeTaskTitle: string;
-  activeTaskChangeSummary?: RobinRunTaskChangeSummary | null;
+  activeTaskChangeSummary?: RobinDoneTaskChangeSummary | null;
   activeTaskId: string | null;
   activeTraceId: string | null;
   activeSessionId: string | null;
-  activeTaskProvider: RobinRunProvider | null;
-  resolvedActiveTaskMeta?: RobinRunTaskMeta | null;
+  activeTaskProvider: RobinDoneProvider | null;
+  resolvedActiveTaskMeta?: RobinDoneTaskMeta | null;
   gitSummary: GitRepositorySummary;
   gitDirtyFileCount: number;
   sessionLogPath: string | null;
-  nativeSessionLogProvider: RobinRunProvider | null;
+  nativeSessionLogProvider: RobinDoneProvider | null;
   nativeSessionLogPath: string | null;
   nativeSessionLogExists: boolean;
   nativeSessionLogLoading: boolean;

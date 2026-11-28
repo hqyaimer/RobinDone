@@ -1,5 +1,5 @@
-import { Button } from "@robinrun/ui/button";
-import type { WebRemoteControlFailure } from "@robinrun/shared";
+import { Button } from "@robindone/ui/button";
+import type { WebRemoteControlFailure } from "@robindone/shared";
 import { WebRemoteControlSwitchAccountDialog } from "#src/web-remote-control/ui/webRemoteControlSwitchAccountDialog.js";
 
 import {

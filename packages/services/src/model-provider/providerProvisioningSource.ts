@@ -5,12 +5,12 @@ import {
   providerProvisioningEnvelopeSchema,
   type ProviderProvisioningCredentialEntry,
   type ProviderProvisioningEnvelope,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   PersonalProviderConfigRepository,
   ProviderConfigLayerSnapshot,
-} from "@robinrun/provider";
-import { decodeProviderConfigFile, encodeProviderConfigFile } from "@robinrun/provider-node";
+} from "@robindone/provider";
+import { decodeProviderConfigFile, encodeProviderConfigFile } from "@robindone/provider-node";
 import {
   createCredentialCipherProvider,
   type CredentialCipherProvider,
@@ -26,7 +26,7 @@ export const PROVIDER_PROVISIONING_OAUTH_CREDENTIAL_KEYS = [
   "oauth:bigmodel:access_token",
   "oauth:bigmodel:refresh_token",
   "oauth:bigmodel:user_info",
-  "robinrunjwttoken",
+  "robindonejwttoken",
 ] as const;
 
 export interface ProviderProvisioningSource {

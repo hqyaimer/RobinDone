@@ -1,5 +1,5 @@
 const SHARE_CONTEXT_BLOCK_PATTERN =
-  /(?:\n\n)?# robinrun-share-context:\n```robinrun-share-context\n([\s\S]*?)\n```\s*$/u;
+  /(?:\n\n)?# robindone-share-context:\n```robindone-share-context\n([\s\S]*?)\n```\s*$/u;
 
 export interface ConversationShareContextReference {
   contextId: string;

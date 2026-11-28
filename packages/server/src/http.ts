@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { hostname } from "node:os";
-import { resolveServerOsUser } from "@robinrun/shared/node";
+import { resolveServerOsUser } from "@robindone/shared/node";
 import * as nodePath from "node:path";
 import { basename, extname, resolve } from "node:path";
 import { Hono, type Context } from "hono";
@@ -17,32 +17,32 @@ import {
   ChannelClient,
   LoggingChannelServer,
   type ISocket,
-} from "@robinrun/rpc";
-import type { TopicResourcePeers } from "@robinrun/services/node";
-import { TOPIC_RESOURCE_RELAY_CHANNEL } from "@robinrun/shared";
+} from "@robindone/rpc";
+import type { TopicResourcePeers } from "@robindone/services/node";
+import { TOPIC_RESOURCE_RELAY_CHANNEL } from "@robindone/shared";
 import {
   ServiceCollection,
-  IRobinRunAgentService,
-  createRobinRunAgentConnectionScope,
+  IRobinDoneAgentService,
+  createRobinDoneAgentConnectionScope,
   IBotsService,
   IProviderProvisioningTargetService,
-} from "@robinrun/services";
+} from "@robindone/services";
 import {
   botProviders,
   formatLogPrefix,
   serverRemoteInfoOutputSchema,
   SERVER_REMOTE_PROTOCOL_VERSION,
-  ROBINRUN_RPC_HOST_CAPABILITY_HEADER,
-  ROBINRUN_COMPATIBILITY_MANIFEST,
-  ROBINRUN_VERSION,
+  ROBINDONE_RPC_HOST_CAPABILITY_HEADER,
+  ROBINDONE_COMPATIBILITY_MANIFEST,
+  ROBINDONE_VERSION,
   type BotProvider,
   type ServerRemoteInfo,
   type ServerRemoteWorkspaceInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   SourceServerWorkspaceIdentityChannelServer,
   type SourceServerWorkspaceIdentityMapper,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import { createHostCapabilityStore } from "./hostCapability.js";
 
 function wrapWebSocket(ws: WebSocket): ISocket {
@@ -85,7 +85,7 @@ function wrapWebSocket(ws: WebSocket): ISocket {
 }
 
 const log = (...args: unknown[]) =>
-  console.log(formatLogPrefix("robinrun-server:http", process.pid), ...args);
+  console.log(formatLogPrefix("robindone-server:http", process.pid), ...args);
 
 function setupChannelServer(
   ws: WebSocket,
@@ -102,14 +102,14 @@ function setupChannelServer(
   const server = workspaceIdentityMapper
     ? new SourceServerWorkspaceIdentityChannelServer(loggedServer, workspaceIdentityMapper)
     : loggedServer;
-  const agentService = services.getOptional(IRobinRunAgentService);
+  const agentService = services.getOptional(IRobinDoneAgentService);
   const reverseClient =
     clientMode === "desktop-continuous" && resourcePeers ? new ChannelClient(protocol) : undefined;
   const peer = reverseClient
     ? resourcePeers?.attach(reverseClient.getChannel(TOPIC_RESOURCE_RELAY_CHANNEL))
     : undefined;
   const connectionScope = agentService
-    ? createRobinRunAgentConnectionScope(peer ? peer.wrapAgent(agentService) : agentService, {
+    ? createRobinDoneAgentConnectionScope(peer ? peer.wrapAgent(agentService) : agentService, {
         connectionId: `server-ws-${randomUUID()}`,
         clientMode,
         role: clientMode === "desktop-continuous" ? "trusted-host-relay" : "terminal-client",
@@ -117,7 +117,7 @@ function setupChannelServer(
     : undefined;
   const overrides = new Map<string, unknown>();
   if (connectionScope) {
-    overrides.set(IRobinRunAgentService.channelName, connectionScope.service);
+    overrides.set(IRobinDoneAgentService.channelName, connectionScope.service);
   }
   // Provisioning 携带跨 Environment 凭据，只允许 Desktop trusted host 使用；普通 Web
   // remote/replayable 客户端即使知道频道名，也不能获得 target 写入接口。
@@ -163,9 +163,9 @@ function readTrimmedEnv(name: string): string | undefined {
 export function resolveHttpServerId(options: HttpServerOptions = {}): string {
   return (
     options.serverId?.trim() ||
-    readTrimmedEnv("ROBINRUN_SERVER_ID") ||
+    readTrimmedEnv("ROBINDONE_SERVER_ID") ||
     hostname() ||
-    "robinrun-server"
+    "robindone-server"
   );
 }
 
@@ -173,7 +173,7 @@ function resolveServerWorkspaces(options: HttpServerOptions): ServerRemoteWorksp
   if (options.workspaces) {
     return options.workspaces;
   }
-  const workspacePath = readTrimmedEnv("ROBINRUN_SERVER_WORKSPACE") || process.cwd();
+  const workspacePath = readTrimmedEnv("ROBINDONE_SERVER_WORKSPACE") || process.cwd();
   return [
     {
       path: workspacePath,
@@ -185,14 +185,14 @@ function resolveServerWorkspaces(options: HttpServerOptions): ServerRemoteWorksp
 function createServerInfo(options: HttpServerOptions): ServerRemoteInfo {
   return serverRemoteInfoOutputSchema.parse({
     serverId: resolveHttpServerId(options),
-    ...(options.name?.trim() || readTrimmedEnv("ROBINRUN_SERVER_NAME")
-      ? { name: options.name?.trim() || readTrimmedEnv("ROBINRUN_SERVER_NAME") }
+    ...(options.name?.trim() || readTrimmedEnv("ROBINDONE_SERVER_NAME")
+      ? { name: options.name?.trim() || readTrimmedEnv("ROBINDONE_SERVER_NAME") }
       : {}),
-    version: ROBINRUN_VERSION,
+    version: ROBINDONE_VERSION,
     protocolVersion: SERVER_REMOTE_PROTOCOL_VERSION,
-    authRequired: options.authRequired ?? Boolean(readTrimmedEnv("ROBINRUN_SERVER_TOKEN")),
+    authRequired: options.authRequired ?? Boolean(readTrimmedEnv("ROBINDONE_SERVER_TOKEN")),
     workspaces: resolveServerWorkspaces(options),
-    compatibility: ROBINRUN_COMPATIBILITY_MANIFEST,
+    compatibility: ROBINDONE_COMPATIBILITY_MANIFEST,
     migration: { failedPathCount: options.migrationFailedPathCount ?? 0 },
     identity: { osUser: resolveServerOsUser(), hostname: hostname() },
     capabilities: {
@@ -205,7 +205,7 @@ function createServerInfo(options: HttpServerOptions): ServerRemoteInfo {
   });
 }
 
-const robinrunLiteTokenCookieName = "robinrun_lite_token";
+const robindoneLiteTokenCookieName = "robindone_lite_token";
 
 const staticMimeTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -257,11 +257,11 @@ function hasValidLiteToken(c: Context, token: string): boolean {
   if (url.searchParams.get("token") === token) {
     c.header(
       "Set-Cookie",
-      `${robinrunLiteTokenCookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax`,
+      `${robindoneLiteTokenCookieName}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax`,
     );
     return true;
   }
-  return parseCookieHeader(c.req.header("cookie")).get(robinrunLiteTokenCookieName) === token;
+  return parseCookieHeader(c.req.header("cookie")).get(robindoneLiteTokenCookieName) === token;
 }
 
 function isTokenProtectedPath(pathname: string): boolean {
@@ -397,7 +397,7 @@ export function createHttpServer(
     },
   }));
   app.use("/ws/host", async (c, next) => {
-    const capability = c.req.header(ROBINRUN_RPC_HOST_CAPABILITY_HEADER);
+    const capability = c.req.header(ROBINDONE_RPC_HOST_CAPABILITY_HEADER);
     if (!hostCapabilities.consume(capability)) {
       return c.json({ error: "Invalid or expired host capability" }, 401);
     }
@@ -426,7 +426,7 @@ export function createHttpServer(
         rawBody = { payload: rawBodyText };
       }
     }
-    const webhookSecret = c.req.header("x-robinrun-bot-secret");
+    const webhookSecret = c.req.header("x-robindone-bot-secret");
     const botId = c.req.param("botId");
     const result = await botsService.handleProviderCallbackResponse(provider, {
       ...(typeof rawBody === "object" && rawBody !== null ? rawBody : { payload: rawBody }),

@@ -14,7 +14,7 @@ import {
 
 describe("E2E Node coverage normalization", () => {
   it("keeps only generated bundles that can map back to the selected first-party domain", async () => {
-    const fixtureRoot = await mkdtemp(resolve(tmpdir(), "robinrun-e2e-node-coverage-"));
+    const fixtureRoot = await mkdtemp(resolve(tmpdir(), "robindone-e2e-node-coverage-"));
     const sourceMapRoot = resolve(fixtureRoot, "out/main");
     const canonicalBundle = resolve(sourceMapRoot, "index.js");
     mkdirSync(sourceMapRoot, { recursive: true });
@@ -71,7 +71,7 @@ describe("E2E Node coverage normalization", () => {
   });
 
   it("compacts each finished worker once and retains one source map per unique bundle", async () => {
-    const fixtureRoot = await mkdtemp(resolve(tmpdir(), "robinrun-e2e-node-compact-"));
+    const fixtureRoot = await mkdtemp(resolve(tmpdir(), "robindone-e2e-node-compact-"));
     const rawDir = resolve(fixtureRoot, "raw");
     const sourceMapRoot = resolve(fixtureRoot, "out/main");
     const canonicalBundle = resolve(sourceMapRoot, "index.js");
@@ -136,7 +136,7 @@ describe("E2E Node coverage normalization", () => {
       ),
     ).toHaveLength(2);
     expect(
-      readFileSync(resolve(rawDir, ".robinrun-compacted-coverage-files-v1.marker"), "utf-8"),
+      readFileSync(resolve(rawDir, ".robindone-compacted-coverage-files-v1.marker"), "utf-8"),
     ).toContain("coverage-101-1-0.json");
 
     const alreadyCompactedPath = resolve(rawDir, "coverage-101-1-0.json");

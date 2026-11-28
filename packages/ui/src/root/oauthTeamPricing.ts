@@ -1,5 +1,5 @@
-import type { IServiceAccessor } from "@robinrun/services";
-import type { EnterpriseCodingPlanPricingProduct, ProviderFamilyDomain } from "@robinrun/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import type { EnterpriseCodingPlanPricingProduct, ProviderFamilyDomain } from "@robindone/shared";
 import { logger } from "@/logger.js";
 
 type EnterprisePricingProductsResult =

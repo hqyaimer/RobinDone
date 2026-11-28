@@ -1,5 +1,5 @@
 import { Cron } from "croner";
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry } from "@robindone/shared";
 
 /**
  * 触发器调度纯函数（2026-11-25 分发器裁决批次从 engine.ts 拆出，文件行数上限）：
@@ -37,7 +37,7 @@ export function computeNextCronRunMs(expr: string, fromMs: number): number | nul
   } catch (error) {
     process.emitWarning(
       `trigger cron expression invalid, schedule skipped: "${expr}" — ${error instanceof Error ? error.message : String(error)}`,
-      { code: "ROBINRUN_TRIGGER_CRON_INVALID" },
+      { code: "ROBINDONE_TRIGGER_CRON_INVALID" },
     );
     return null;
   }

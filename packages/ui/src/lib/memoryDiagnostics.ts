@@ -6,7 +6,7 @@ import {
   type MemoryDiagnosticsRegistry,
   type MemorySample,
   type RendererHeapSample,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logMemoryDiagnostics } from "@/logger.js";
 
 /**

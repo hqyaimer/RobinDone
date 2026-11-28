@@ -2,13 +2,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   UsageEntitlementSnapshot,
-  RobinRunAccountAccess,
-  RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
-import type { IUsageStatsService } from "@robinrun/services";
+  RobinDoneAccountAccess,
+  RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
+import type { IUsageStatsService } from "@robindone/services";
 import { useOptionalBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useStableAccountAccess } from "@/hooks/useStableAccountAccess.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { logger } from "@/logger.js";
 import {
   readCachedUsageEntitlementSnapshot,
@@ -137,7 +137,7 @@ export interface UseUsageEntitlementOptions {
   enabled?: boolean;
   includeSubscription?: boolean;
   preferredProviderId?: string;
-  accountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   allowDisabledPreferredProvider?: boolean;
   requirePreferredProvider?: boolean;
   allowEnvApiKey?: boolean;
@@ -168,7 +168,7 @@ export function useUsageEntitlementWithService(
   const allowDisabledPreferredProvider = options.allowDisabledPreferredProvider === true;
   const requirePreferredProvider = options.requirePreferredProvider === true;
   const allowEnvApiKey = options.allowEnvApiKey;
-  const authScope = useRobinRunStoreWithDefault(
+  const authScope = useRobinDoneStoreWithDefault(
     (store) => (store.user ? `${store.user.id}:${store.authSessionSeq}` : "signed-out"),
     "unscoped",
   );

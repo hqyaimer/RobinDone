@@ -70,7 +70,7 @@ export function buildNativeSearchToolsWindows({
     arch: config.arch,
     outputDir,
   });
-  const workDir = mkdtempSync(join(tmpdir(), "robinrun-native-search-build-"));
+  const workDir = mkdtempSync(join(tmpdir(), "robindone-native-search-build-"));
   const cmakeBuildDir = join(workDir, "cmake-build");
   const cmakeOutputDir = join(workDir, "cmake-output");
   const env = {
@@ -79,7 +79,7 @@ export function buildNativeSearchToolsWindows({
     LC_ALL: "C",
   };
 
-  console.log("==> RobinRun native search build");
+  console.log("==> RobinDone native search build");
   console.log(`    target:  ${plan.platformKey}`);
   console.log(`    output:  ${plan.outputDir}`);
   console.log(`    workdir: ${workDir}`);
@@ -109,14 +109,14 @@ export function buildNativeSearchToolsWindows({
         config.generator,
         "-A",
         config.generatorArchitecture,
-        `-DROBINRUN_BUILD_PATH=${toCmakePath(workDir)}`,
-        `-DROBINRUN_UGREP_OUTPUT_DIR=${toCmakePath(cmakeOutputDir)}`,
-        `-DROBINRUN_UGREP_SOURCE_DIR=${toCmakePath(sources.ugrep)}`,
-        `-DROBINRUN_PCRE2_SOURCE_DIR=${toCmakePath(sources.pcre2)}`,
-        `-DROBINRUN_ZLIB_SOURCE_DIR=${toCmakePath(sources.zlib)}`,
-        `-DROBINRUN_BZIP2_SOURCE_DIR=${toCmakePath(sources.bzip2)}`,
-        `-DROBINRUN_ZSTD_SOURCE_DIR=${toCmakePath(sources.zstd)}`,
-        `-DROBINRUN_BROTLI_SOURCE_DIR=${toCmakePath(sources.brotli)}`,
+        `-DROBINDONE_BUILD_PATH=${toCmakePath(workDir)}`,
+        `-DROBINDONE_UGREP_OUTPUT_DIR=${toCmakePath(cmakeOutputDir)}`,
+        `-DROBINDONE_UGREP_SOURCE_DIR=${toCmakePath(sources.ugrep)}`,
+        `-DROBINDONE_PCRE2_SOURCE_DIR=${toCmakePath(sources.pcre2)}`,
+        `-DROBINDONE_ZLIB_SOURCE_DIR=${toCmakePath(sources.zlib)}`,
+        `-DROBINDONE_BZIP2_SOURCE_DIR=${toCmakePath(sources.bzip2)}`,
+        `-DROBINDONE_ZSTD_SOURCE_DIR=${toCmakePath(sources.zstd)}`,
+        `-DROBINDONE_BROTLI_SOURCE_DIR=${toCmakePath(sources.brotli)}`,
       ],
       { env, quiet },
     );

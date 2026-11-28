@@ -1,4 +1,4 @@
-import type { McpAppsResourcePermission } from "@robinrun/shared/mcp-apps";
+import type { McpAppsResourcePermission } from "@robindone/shared/mcp-apps";
 import type { PluginSandboxRecord, PluginSandboxRegistryPort } from "./contract.js";
 import {
   decidePluginSandboxPermission,
@@ -52,14 +52,14 @@ export function createPluginSandboxPermissionGate(deps: {
     try {
       if (!url || !guestUrl) return null;
       const guest = new URL(guestUrl);
-      if (guest.protocol !== "robinrun-sandbox:" || !guest.hostname.startsWith("shell-"))
+      if (guest.protocol !== "robindone-sandbox:" || !guest.hostname.startsWith("shell-"))
         return null;
       const record = deps.registry.get(guest.pathname.split("/")[2] ?? "");
       if (
         !record ||
         guestUrl !== record.shellUrl ||
         `${new URL(url).protocol}//${new URL(url).host}` !==
-          `robinrun-sandbox://plugin-${record.instance.appIdentity}`
+          `robindone-sandbox://plugin-${record.instance.appIdentity}`
       )
         return null;
       return record;
@@ -110,7 +110,7 @@ export function createPluginSandboxPermissionGate(deps: {
               allowed = allowed && valid();
               deps.logger?.info?.("[plugin-sandbox] permission prompt settled", {
                 sandboxId: record.sandboxId,
-                serverName: record.serverName ?? "RobinRun Gen UI",
+                serverName: record.serverName ?? "RobinDone Gen UI",
                 permissions: pending,
                 allowed,
               });

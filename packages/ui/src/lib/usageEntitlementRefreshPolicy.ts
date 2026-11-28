@@ -1,16 +1,16 @@
-import { isStartPlanModelProviderId } from "@robinrun/shared";
-import type { IUsageStatsService } from "@robinrun/services";
+import { isStartPlanModelProviderId } from "@robindone/shared";
+import type { IUsageStatsService } from "@robindone/services";
 import type {
   UsageEntitlementSnapshot,
-  RobinRunAccountAccess,
-  RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
+  RobinDoneAccountAccess,
+  RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
 
 export interface UsageEntitlementRequestOptions {
   invalidateBalanceCache?: boolean;
   includeSubscription: boolean;
   preferredProviderId?: string;
-  accountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   allowDisabledPreferredProvider: boolean;
   requirePreferredProvider: boolean;
   allowEnvApiKey?: boolean;

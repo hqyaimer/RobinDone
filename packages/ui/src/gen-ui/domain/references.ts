@@ -1,4 +1,4 @@
-import { genUiReferenceSchema, type GenUiReference } from "@robinrun/shared/gen-ui";
+import { genUiReferenceSchema, type GenUiReference } from "@robindone/shared/gen-ui";
 import {
   extractAssistantDirectives,
   findAssistantDirectivePrefixStart,

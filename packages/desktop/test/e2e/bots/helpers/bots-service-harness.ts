@@ -1,14 +1,14 @@
-import { remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
+import { remoteHostIdFromWorkspaceIdentity } from "@robindone/shared";
 import { readFile } from "node:fs/promises";
 
-import type { ModelSelectionView } from "@robinrun/provider";
+import type { ModelSelectionView } from "@robindone/provider";
 import type {
   BotsConfigFile,
   BotsStateFile,
   ModelSelection,
-  RobinRunStreamEvent,
-} from "@robinrun/shared";
-import { createBotsService, type IModelSelectionService } from "@robinrun/services/node";
+  RobinDoneStreamEvent,
+} from "@robindone/shared";
+import { createBotsService, type IModelSelectionService } from "@robindone/services/node";
 import { resolveE2ERuntimePath } from "../../helpers/e2e-runtime-paths.js";
 
 const E2E_BOT_WORKSPACE = resolveE2ERuntimePath("bots", "e2e-bot-workspace");
@@ -53,9 +53,9 @@ export interface BotsServiceHarness {
   service: ReturnType<typeof createBotsService>;
   subscriptions: Array<{
     params: Record<string, unknown>;
-    listener: (event: RobinRunStreamEvent) => Promise<void> | void;
+    listener: (event: RobinDoneStreamEvent) => Promise<void> | void;
   }>;
-  robinrunTaskService: Record<string, unknown>;
+  robindoneTaskService: Record<string, unknown>;
 }
 
 export function createBotModelSelectionView(): ModelSelectionView {
@@ -121,10 +121,10 @@ export function createBotsServiceHarness(options: BotsServiceHarnessOptions): Bo
   const respondElicitationCalls: unknown[] = [];
   const subscriptions: Array<{
     params: Record<string, unknown>;
-    listener: (event: RobinRunStreamEvent) => Promise<void> | void;
+    listener: (event: RobinDoneStreamEvent) => Promise<void> | void;
   }> = [];
 
-  const robinrunTaskService = {
+  const robindoneTaskService = {
     listTasks: async () => [],
     listDeletedTaskIds: async () => [],
     createTask: async (params: unknown) => {
@@ -176,7 +176,7 @@ export function createBotsServiceHarness(options: BotsServiceHarnessOptions): Bo
     stopGeneration: async () => undefined,
     onDynamicTaskEvent:
       (params: Record<string, unknown>) =>
-      (listener: (event: RobinRunStreamEvent) => Promise<void> | void) => {
+      (listener: (event: RobinDoneStreamEvent) => Promise<void> | void) => {
         subscriptions.push({ params, listener });
         return { dispose() {} };
       },
@@ -190,7 +190,7 @@ export function createBotsServiceHarness(options: BotsServiceHarnessOptions): Bo
       save: async () => undefined,
       delete: async () => undefined,
     },
-    robinrunTaskService,
+    robindoneTaskService,
     settingService: {
       get: async () => ({
         locale: "zh-CN",
@@ -234,7 +234,7 @@ export function createBotsServiceHarness(options: BotsServiceHarnessOptions): Bo
     sendPromptCalls,
     service,
     subscriptions,
-    robinrunTaskService,
+    robindoneTaskService,
   };
 }
 

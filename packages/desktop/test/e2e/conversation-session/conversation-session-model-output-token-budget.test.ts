@@ -250,7 +250,7 @@ async function waitForSuccessfulModelIo(input: {
   querySource: "compact" | "main_turn";
   sessionId?: string;
 }): Promise<ModelIoMatch> {
-  const debugDir = join(paths.homeDir, ".robinrun", "cli", "debug");
+  const debugDir = join(paths.homeDir, ".robindone", "cli", "debug");
   let matched: ModelIoMatch | null = null;
   await browser.waitUntil(
     async () => {
@@ -302,7 +302,7 @@ async function waitForSuccessfulModelIo(input: {
 
 async function waitForAutoCompactDecision(sessionId: string): Promise<Record<string, unknown>> {
   const logDir =
-    process.env.ROBINRUN_LOG_DIR?.trim() || join(paths.homeDir, ".robinrun", "cli", "log");
+    process.env.ROBINDONE_LOG_DIR?.trim() || join(paths.homeDir, ".robindone", "cli", "log");
   let matched: Record<string, unknown> | null = null;
   await browser.waitUntil(
     async () => {

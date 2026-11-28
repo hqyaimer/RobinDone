@@ -2,7 +2,7 @@ import type {
   WorkflowRunActor,
   WorkflowRunNode,
   WorkflowRunState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { phaseBinder } from "./instance-phases.js";
 import {
   isSyntheticLaneId,

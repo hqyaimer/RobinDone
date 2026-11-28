@@ -1,7 +1,7 @@
 import {
   TID_AUTOMATION_CREATE_MANUALLY,
   TID_AUTOMATION_CREATE_MENU,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import type { ReactNode } from "react";
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { AutomationSwitchToggle } from "@/settings/AutomationSwitchToggle.js";
 import { AutomationChevronDownIcon, AutomationInfoIcon } from "@/settings/AutomationIcons.js";
 import { Button } from "@/components/ui/button.js";
@@ -83,7 +83,7 @@ export function AutomationKeepAwakeNotice({
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // 桌面断点曾清空提示栏的垂直内边距，导致实际样式偏离 12px 规格。
   return (
     <div
@@ -114,7 +114,7 @@ export function AutomationCreateDropdown({
   onViaChat: () => void;
   onManually: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <DropdownMenu>
       <div className="inline-flex h-7 items-center overflow-hidden rounded-lg">

@@ -1,4 +1,4 @@
-import type { ApiClient } from "@robinrun/shared";
+import type { ApiClient } from "@robindone/shared";
 import { z } from "zod";
 import { readApiJson } from "#src/providers/api/apiJson.js";
 import type { BigModelTeamPlanBizContext } from "#src/bigmodel/teamPlanApiKey.js";

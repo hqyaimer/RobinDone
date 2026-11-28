@@ -1,4 +1,4 @@
-import { BROWSER_VIEW_RESTORE_BOOTSTRAP_URL } from "@robinrun/shared";
+import { BROWSER_VIEW_RESTORE_BOOTSTRAP_URL } from "@robindone/shared";
 
 const RESPONSE_DELAY_MS = 60_000;
 const installedProtocols = new WeakSet<object>();

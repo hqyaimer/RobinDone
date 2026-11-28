@@ -12,7 +12,7 @@ import { logger } from "@/logger.js";
 import type {
   CommandsQueryParams,
   CommandsQueryResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 /** pane 持有的租约；release 幂等。 */
 export interface SessionLease {

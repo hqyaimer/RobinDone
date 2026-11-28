@@ -5,25 +5,25 @@
 // Workspace presentation 水合只提供 mode 与 slash commands；模型候选、能力和首选值
 // 统一来自目标 Host ModelSelectionView。
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ROBINRUN_AGENT_PROVIDER, resolveExecutionState } from "@robinrun/shared";
+import { ROBINDONE_AGENT_PROVIDER, resolveExecutionState } from "@robindone/shared";
 import type {
-  RobinRunConfigOption,
+  RobinDoneConfigOption,
   ModelSelection,
-  RobinRunProvider,
-  RobinRunSlashCommand,
-} from "@robinrun/shared";
-import type { SessionConfigState } from "@robinrun/shared/robinrun-protocol-v4";
-import type { IModelSelectionService } from "@robinrun/services";
-import { completeNewModelSelection } from "@robinrun/provider";
+  RobinDoneProvider,
+  RobinDoneSlashCommand,
+} from "@robindone/shared";
+import type { SessionConfigState } from "@robindone/shared/robindone-protocol-v4";
+import type { IModelSelectionService } from "@robindone/services";
+import { completeNewModelSelection } from "@robindone/provider";
 import {
   useModelSelectionServiceView,
   type ModelSelectionRead,
 } from "@/hooks/useModelSelectionView.js";
-import { submissionModeSchema } from "@robinrun/shared/robinrun-protocol-v4";
-import { prepareWorkspaceWithRobinRunSessionService } from "@/hooks/useWorkspacePrepare.js";
-import { useRobinRunSessionService } from "@/hooks/useRobinRunSessionService.js";
+import { submissionModeSchema } from "@robindone/shared/robindone-protocol-v4";
+import { prepareWorkspaceWithRobinDoneSessionService } from "@/hooks/useWorkspacePrepare.js";
+import { useRobinDoneSessionService } from "@/hooks/useRobinDoneSessionService.js";
 import { useSettings, updateSettingsAndRefreshSnapshot } from "@/hooks/useSettingService.js";
-import { parseModelPickerValue } from "@/lib/robinrunSessionProjection.js";
+import { parseModelPickerValue } from "@/lib/robindoneSessionProjection.js";
 import {
   recordGlobalComposerMode,
   resolveDraftInitialModelSelection,
@@ -40,7 +40,7 @@ import {
 } from "@/v4/composer/composerDraftStore.js";
 import { resolveAppFollowupMode } from "@/v4/composer/followupModeSettings.js";
 import { logger } from "@/logger.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 
 /** 目录水合单飞（per workspaceKey）：draft、已有 session 和严格模式双挂载共享一次 RPC。 */
 const workspaceCatalogHydrationFlights = new Map<string, Promise<void>>();
@@ -66,9 +66,9 @@ export function applyDraftModelSelection(
 }
 
 export function shouldHydrateWorkspaceCatalog(params: {
-  configOptions: readonly RobinRunConfigOption[];
+  configOptions: readonly RobinDoneConfigOption[];
   sessionId: string | null;
-  slashCommands: readonly RobinRunSlashCommand[];
+  slashCommands: readonly RobinDoneSlashCommand[];
 }): boolean {
   const hasModePresentation = params.configOptions.some(
     (option) => option.category === "mode" && option.type === "select",
@@ -166,7 +166,7 @@ function hasSameComposerDraftContent(left: V4ComposerDraft, right: V4ComposerDra
 export function useDraftConfigControl(params: {
   workspacePath: string;
   workspaceIdentity?: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   /** 会话切换恢复文字/模型，权限和 Plan 使用当前快照。 */
   sessionId: string | null;
   /** 仅匹配当前 Session 的首份投影可用作初始化；null 表示还没恢复完成。 */
@@ -185,22 +185,26 @@ export function useDraftConfigControl(params: {
     modelSelectionService,
   } = params;
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
-  const robinrunSessionService = useRobinRunSessionService(workspacePath, null, workspaceIdentity);
+  const displayProvider = provider ?? ROBINDONE_AGENT_PROVIDER;
+  const robindoneSessionService = useRobinDoneSessionService(
+    workspacePath,
+    null,
+    workspaceIdentity,
+  );
   const { settings: sharedSettings } = useSettings();
   // 全局权限模式升格（2026-11-22）：改档双写 AppSettings（host 可读，自动创建的会话继承）。
   const services = useOptionalServices();
   const appFollowupMode = resolveAppFollowupMode(sharedSettings);
   const scopeId = sessionId ?? V4_DRAFT_SCOPE_ROOT;
   const clientNamespace = useComposerClientNamespace();
-  const draftProjectId = useRobinRunSessionStore(
+  const draftProjectId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.draftProjectId,
   );
   const rootScope = useMemo(
     () => resolveComposerScope(draftProjectId, workspaceIdentity, clientNamespace),
     [draftProjectId, workspaceIdentity, clientNamespace],
   );
-  const draftFocusVersion = useRobinRunSessionStore((state) =>
+  const draftFocusVersion = useRobinDoneSessionStore((state) =>
     sessionId === null ? (state.workspaces[workspaceKey]?.draftFocusVersion ?? 0) : 0,
   );
   // New Task 可以复用同一个 pane；无文字时必须重新取 Recent，不能只清磁盘留旧内存。
@@ -210,7 +214,7 @@ export function useDraftConfigControl(params: {
     draftFocusVersion,
     sessionId === null ? composerScopeKey(rootScope) : null,
   ]);
-  const navigationInitialization = useRobinRunSessionStore((state) => {
+  const navigationInitialization = useRobinDoneSessionStore((state) => {
     const workspace = state.workspaces[workspaceKey];
     return workspace?.activeTaskId === sessionId &&
       workspace?.composerInitialization?.taskId === sessionId
@@ -265,7 +269,7 @@ export function useDraftConfigControl(params: {
     // 项目权限全量同步（2026-11-18）：项目确认过完全访问后，新会话草稿默认完全访问
     // （Recent 显式意图仍优先）。提交链路自带 mode，worker 派发经继承链同步拿到。
     const projectDefaultFullAccess =
-      sharedSettings?.robinrunProjects?.some(
+      sharedSettings?.robindoneProjects?.some(
         (entry) => entry.path === workspacePath && entry.fullAccessConfirmedAt !== undefined,
       ) ?? false;
     draft = initializeNewTaskDraft(
@@ -364,11 +368,11 @@ export function useDraftConfigControl(params: {
   draftConfigRef.current = draftConfig;
   const createDraftPersistence = useCallback(
     (targetScopeId = stateRef.current.promotedSessionId ?? scopeId) => {
-      const workspace = useRobinRunSessionStore
+      const workspace = useRobinDoneSessionStore
         .getState()
         .getWorkspaceState(workspacePath, workspaceIdentity);
       return (value: V4ComposerDraft) => {
-        const current = useRobinRunSessionStore
+        const current = useRobinDoneSessionStore
           .getState()
           .getWorkspaceState(workspacePath, workspaceIdentity);
         // Bug 根因：自动保存不再触发父级 render 后，旧闭包可能把已关闭的分组归属写回来。
@@ -437,7 +441,7 @@ export function useDraftConfigControl(params: {
   }, []);
   useEffect(() => {
     if (navigationInitialization)
-      useRobinRunSessionStore
+      useRobinDoneSessionStore
         .getState()
         .consumeComposerInitialization(workspacePath, navigationInitialization, workspaceIdentity);
   }, [scopeKey, navigationInitialization, workspacePath, workspaceIdentity]);
@@ -447,7 +451,7 @@ export function useDraftConfigControl(params: {
       stateRef.current.scopeKey === scopeKey &&
       stateRef.current.incarnation === incarnation &&
       (sessionId !== null ||
-        (useRobinRunSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
+        (useRobinDoneSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
           .draftFocusVersion ?? 0) === draftFocusVersion),
     [scopeKey, incarnation, sessionId, workspacePath, workspaceIdentity, draftFocusVersion],
   );
@@ -877,7 +881,7 @@ export function useDraftConfigControl(params: {
   // 目录已 ready（reload/广播/上次水合写过）则跳过；否则读取最小 workspace presentation。
   useEffect(() => {
     const isDraft = sessionId === null;
-    const store = useRobinRunSessionStore.getState();
+    const store = useRobinDoneSessionStore.getState();
     const workspaceState = store.getWorkspaceState(workspacePath, workspaceIdentity);
     if (!agentStartupAllowed) {
       // V4 目录水合曾在无模型时直接进入 RPC，虽然 Host 不会启动 CLI，
@@ -913,11 +917,11 @@ export function useDraftConfigControl(params: {
     }
 
     store.setConfigOptionsStatus(workspacePath, "loading", workspaceIdentity);
-    const flight = prepareWorkspaceWithRobinRunSessionService({
+    const flight = prepareWorkspaceWithRobinDoneSessionService({
       workspacePath,
       workspaceIdentity,
       provider: displayProvider,
-      robinrunSessionService,
+      robindoneSessionService,
     })
       .then((prepareResult) => {
         const baseOptions = prepareResult.configOptions ?? [];
@@ -931,7 +935,7 @@ export function useDraftConfigControl(params: {
           ),
           workspaceKey,
         });
-        const latest = useRobinRunSessionStore.getState();
+        const latest = useRobinDoneSessionStore.getState();
         latest.setConfigOptions(workspacePath, baseOptions, workspaceIdentity);
         latest.setConfigOptionsStatus(workspacePath, "ready", workspaceIdentity);
         latest.setSlashCommands(
@@ -941,7 +945,7 @@ export function useDraftConfigControl(params: {
         );
       })
       .catch((error) => {
-        useRobinRunSessionStore
+        useRobinDoneSessionStore
           .getState()
           .setConfigOptionsStatus(workspacePath, "error", workspaceIdentity);
         logger.warn(`[v4-workspace-catalog] workspace 目录水合失败: ${String(error)}`);
@@ -957,7 +961,7 @@ export function useDraftConfigControl(params: {
     workspaceIdentity,
     workspaceKey,
     workspacePath,
-    robinrunSessionService,
+    robindoneSessionService,
   ]);
 
   const handleDraftSelectModel = useCallback(

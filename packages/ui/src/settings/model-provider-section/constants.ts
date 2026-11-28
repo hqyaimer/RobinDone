@@ -5,13 +5,13 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   createUuid,
   type OAuthProviderId,
-  ROBINRUN_ENV,
+  ROBINDONE_ENV,
   ZAI_PROVIDER_ID,
   type BuiltinModelProviderId,
   type UsageQuotaLimit,
   type UsageEntitlementSubscriptionDetail,
   type UsageEntitlementSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
 import { getProviderFormLabel } from "@/lib/providerSettingsFormTypes.js";
 
@@ -20,9 +20,9 @@ export function generateId(): string {
 }
 
 export const PRESET_SUBSCRIPTION_TIMEOUT_MS = 2 * 60 * 1000;
-export const BIGMODEL_REGISTRATION_URL = buildBigModelApiUrl({ ROBINRUN_ENV }, "/login");
+export const BIGMODEL_REGISTRATION_URL = buildBigModelApiUrl({ ROBINDONE_ENV }, "/login");
 export const BIGMODEL_CODING_PLAN_PERSONAL_MANAGE_URL = buildBigModelCodingPlanPersonalManageUrl({
-  ROBINRUN_ENV,
+  ROBINDONE_ENV,
 });
 
 export interface PresetProviderSpec {

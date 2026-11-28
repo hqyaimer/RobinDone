@@ -4,8 +4,8 @@ import type {
 } from "#src/project-storage/repository-contract.js";
 export * from "#src/project-storage/repository-contract.js";
 import type { DatabaseSync } from "node:sqlite";
-import type { AppSettings } from "@robinrun/shared";
-import type { MigrationResult } from "@robinrun/shared/sqlite-migrations";
+import type { AppSettings } from "@robindone/shared";
+import type { MigrationResult } from "@robindone/shared/sqlite-migrations";
 
 export interface ProjectMigrationContext {
   /** 可信持库 Server 身份；不受客户端请求或旧 canonical route 影响。 */

@@ -1,5 +1,5 @@
-import type { AppSettings, RemoteWorkspaceSessionEntry } from "@robinrun/shared";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import type { AppSettings, RemoteWorkspaceSessionEntry } from "@robindone/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import {
   buildWorkspaceSessionKey,
   readPersistedWorkspaceSessionEntries,

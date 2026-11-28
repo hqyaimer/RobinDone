@@ -9,20 +9,20 @@ import {
   createAccountProviderConfigSnapshot,
   createFailClosedAccountProviderConfigSnapshot,
   type ModelSelectionViewInput,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import {
   NodeProviderRegistryRuntime,
   createNodeModelSelectionFacade,
-} from "@robinrun/provider-node";
+} from "@robindone/provider-node";
 import {
-  createRobinRunAgentService,
-  createRobinRunTaskServiceAdapter,
+  createRobinDoneAgentService,
+  createRobinDoneTaskServiceAdapter,
   getDataBaseDir,
   setDataBaseDir,
-} from "@robinrun/services/node";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
+} from "@robindone/services/node";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
 import { TaskIndexRepo } from "../../../../services/src/session/taskIndexRepo.js";
-import { createRobinRunTaskIndexSyncer } from "../../../../services/src/robinrun-agent/robinrunTaskIndexSyncer.js";
+import { createRobinDoneTaskIndexSyncer } from "../../../../services/src/robindone-agent/robindoneTaskIndexSyncer.js";
 import { getE2EAppDataPaths } from "./desktop-app.js";
 
 /** 独立测试 Host + 真实 stdio Worker；仅账号上游和模型 HTTP 使用隔离 fixture。 */
@@ -40,19 +40,19 @@ export async function createWorkerSelectionIntegration(
   const deliverySource = new MutableAccountProviderConfigSource();
   let deliveryPaused = false;
   const runtimePaths = {
-    robinrunBuiltinFilePath: resolve("../../config/provider/robinrun-builtin.json"),
-    personalFilePath: join(home, ".robinrun/v2/provider_config.json"),
+    robindoneBuiltinFilePath: resolve("../../config/provider/robindone-builtin.json"),
+    personalFilePath: join(home, ".robindone/v2/provider_config.json"),
   };
   // 独立 Host 不继承 Electron 设置。保持内建 HTTPS endpoint，
   // 将显式网络出口接到本轮数据面代理，避免假凭据直连或 HTTP 被官方请求安全校验拒绝。
-  const httpProxy = process.env.ROBINRUN_HTTP_PROXY?.trim();
-  const caCertFile = process.env.ROBINRUN_AGENT_CA_CERT?.trim();
+  const httpProxy = process.env.ROBINDONE_HTTP_PROXY?.trim();
+  const caCertFile = process.env.ROBINDONE_AGENT_CA_CERT?.trim();
   if (!httpProxy || !caCertFile) throw new Error("Worker 选择回归缺少隔离 HTTPS 数据面代理");
-  await mkdir(join(home, ".robinrun/cli"), { recursive: true });
+  await mkdir(join(home, ".robindone/cli"), { recursive: true });
   await writeFile(
-    join(home, ".robinrun/cli/config.json"),
+    join(home, ".robindone/cli/config.json"),
     JSON.stringify({
-      network: { httpProxy, caCertFile, noProxy: process.env.ROBINRUN_NO_PROXY },
+      network: { httpProxy, caCertFile, noProxy: process.env.ROBINDONE_NO_PROXY },
     }),
   );
   const runtime = new NodeProviderRegistryRuntime({
@@ -80,7 +80,7 @@ export async function createWorkerSelectionIntegration(
     }
     source.replace(
       createAccountProviderConfigSnapshot(
-        config.robinrunBuiltinRevision,
+        config.robindoneBuiltinRevision,
         new ProviderConfigMap([...providers]),
         Object.fromEntries(
           [individual, team].map((id) => [
@@ -107,7 +107,7 @@ export async function createWorkerSelectionIntegration(
   };
   const repo = new TaskIndexRepo();
   const projects: ProjectRepositoryContract = await repo.getProjectRepository();
-  const agent = createRobinRunAgentService({
+  const agent = createRobinDoneAgentService({
     // 真实 Host 创建端口必须预留任务归属；旧夹具漏装配，Worker 启动前即报 creation-unavailable。
     prepareSessionCreation: async (target) => {
       const prepared = projects.reserveCreatedTask({
@@ -122,17 +122,17 @@ export async function createWorkerSelectionIntegration(
       command: process.execPath,
       args: [
         ...(options.cliNodeArgs ?? []),
-        resolve("../../apps/robinrun-cli/packages/cli/dist/robinrun.cjs"),
+        resolve("../../apps/robindone-cli/packages/cli/dist/robindone.cjs"),
         "app-server",
         "--stdio",
       ],
       env: {
         HOME: home,
         USERPROFILE: home,
-        ROBINRUN_DATA_BASE_DIR: home,
-        ROBINRUN_RUNTIME_ENV: "development",
-        ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE: runtimePaths.robinrunBuiltinFilePath,
-        ROBINRUN_PERSONAL_PROVIDER_CONFIG_FILE: runtimePaths.personalFilePath,
+        ROBINDONE_DATA_BASE_DIR: home,
+        ROBINDONE_RUNTIME_ENV: "development",
+        ROBINDONE_BUILTIN_PROVIDER_CONFIG_FILE: runtimePaths.robindoneBuiltinFilePath,
+        ROBINDONE_PERSONAL_PROVIDER_CONFIG_FILE: runtimePaths.personalFilePath,
       },
     }),
     modelSelectionReadinessSource: modelSelectionService,
@@ -154,9 +154,9 @@ export async function createWorkerSelectionIntegration(
     // 夹具只用 Team Plan，不会读取验证配置；返回 null 保持 Start Plan 失败关闭的正式语义。
     readRequestVerificationConfig: async () => null,
   });
-  const syncer = createRobinRunTaskIndexSyncer({ agentService: agent, taskIndexRepo: repo });
-  const task = createRobinRunTaskServiceAdapter({
-    robinrunAgentService: agent,
+  const syncer = createRobinDoneTaskIndexSyncer({ agentService: agent, taskIndexRepo: repo });
+  const task = createRobinDoneTaskServiceAdapter({
+    robindoneAgentService: agent,
     taskIndexRepo: repo,
     taskIndexSyncer: syncer,
   });

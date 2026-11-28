@@ -4,7 +4,7 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   encodeCustomModelValue,
   generateTraceId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createWorkerSelectionIntegration } from "../helpers/worker-selection-integration.js";
 import {
   createBotsServiceHarness,
@@ -138,7 +138,7 @@ describe("Todo99 Worker 有效选择真实执行", () => {
         modelSelectionService: host.modelSelectionService,
       });
       // 只替换测试 harness 的 task port；以下读取、命令、发送、订阅均为生产 adapter。
-      Object.assign(harness.robinrunTaskService, host.task);
+      Object.assign(harness.robindoneTaskService, host.task);
       const sendBot = (text: string) =>
         harness.service.handleInboundMessage({
           botId: "feishu-e2e",
@@ -150,7 +150,7 @@ describe("Todo99 Worker 有效选择真实执行", () => {
           },
           text,
         });
-      const debugDir = join(host.home, ".robinrun/cli/debug");
+      const debugDir = join(host.home, ".robindone/cli/debug");
       async function waitRequest(marker: string) {
         let result: ModelIoRecord | undefined;
         await browser.waitUntil(
@@ -319,14 +319,14 @@ describe("Todo99 Worker 有效选择真实执行", () => {
           modelSelection: effective,
         }),
       ).rejects.toMatchObject({
-        name: "RobinRunV4CommandRejectedError",
+        name: "RobinDoneV4CommandRejectedError",
         ack: { status: "failed", reasonCode: "modelUnavailable" },
       });
       const afterRejected = await host.agent.readSession(target);
       expect(afterRejected.session.status).toBe("idle");
       expect(afterRejected.messages).toEqual(beforeRejected.messages);
       expect(
-        (await readModelIoRecords(join(host.home, ".robinrun/cli/debug"))).some((record) =>
+        (await readModelIoRecords(join(host.home, ".robindone/cli/debug"))).some((record) =>
           JSON.stringify(record.request).includes("E2E_W99_LAG_REJECT"),
         ),
       ).toBe(false);
@@ -343,7 +343,7 @@ describe("Todo99 Worker 有效选择真实执行", () => {
       let records: ModelIoRecord[] = [];
       await browser.waitUntil(
         async () => {
-          records = await readModelIoRecords(join(host.home, ".robinrun/cli/debug"));
+          records = await readModelIoRecords(join(host.home, ".robindone/cli/debug"));
           return records.some(
             (record) =>
               record.querySource === "main_turn" &&
@@ -374,7 +374,7 @@ async function logWorkerFailure(
 ) {
   const snapshot = await host.agent.readSession(target);
   const events = await host.agent.readSessionEvents(target);
-  const records = await readModelIoRecords(join(host.home, ".robinrun/cli/debug"));
+  const records = await readModelIoRecords(join(host.home, ".robindone/cli/debug"));
   console.log(
     "E2E_WORKER_FAILURE",
     JSON.stringify({

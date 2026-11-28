@@ -1,6 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, type RefObject } from "react";
-import type { RobinRunModelTrajectoryRecord } from "@robinrun/services";
+import type { RobinDoneModelTrajectoryRecord } from "@robindone/services";
 import {
   type TrajectorySearchMatch,
   type TrajectorySearchTimelineItem,
@@ -141,7 +141,7 @@ export function ModelTrajectoryTimeline({
   );
 }
 
-export function resolveTrajectoryTimelineItems(records: RobinRunModelTrajectoryRecord[]) {
+export function resolveTrajectoryTimelineItems(records: RobinDoneModelTrajectoryRecord[]) {
   let previousConversationMessageCount = 0;
 
   return records.map((record, index) => {
@@ -165,11 +165,11 @@ export function resolveTrajectoryInputMessages({
   index,
   previousConversationMessageCount,
 }: {
-  record: RobinRunModelTrajectoryRecord;
+  record: RobinDoneModelTrajectoryRecord;
   index: number;
   previousConversationMessageCount: number;
 }): {
-  inputMessages: RobinRunModelTrajectoryRecord["request"]["messages"];
+  inputMessages: RobinDoneModelTrajectoryRecord["request"]["messages"];
   nextConversationMessageCount: number;
 } {
   const messages = record.request.messages;
@@ -192,16 +192,16 @@ export function resolveTrajectoryInputMessages({
   };
 }
 
-function shouldUseConversationDelta(record: RobinRunModelTrajectoryRecord): boolean {
+function shouldUseConversationDelta(record: RobinDoneModelTrajectoryRecord): boolean {
   const kind = record.callSource?.kind;
   return kind === undefined || kind === "main" || kind === "subagent";
 }
 
 function computeDeltaMessages(
-  messages: RobinRunModelTrajectoryRecord["request"]["messages"],
+  messages: RobinDoneModelTrajectoryRecord["request"]["messages"],
   previousMessageCount: number,
   index: number,
-): RobinRunModelTrajectoryRecord["request"]["messages"] {
+): RobinDoneModelTrajectoryRecord["request"]["messages"] {
   if (index === 0) return messages;
   if (messages.length > previousMessageCount) return messages.slice(previousMessageCount);
   if (messages.length < previousMessageCount) return messages;

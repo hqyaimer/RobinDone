@@ -1,4 +1,4 @@
-import type { WebRemoteControlRpcTransportFault } from "@robinrun/shared";
+import type { WebRemoteControlRpcTransportFault } from "@robindone/shared";
 
 interface PendingDeadlineEntry {
   queuedAt: number;

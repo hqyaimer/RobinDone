@@ -3,8 +3,8 @@ import { createServer, type Socket } from "node:net";
 import { createInterface } from "node:readline";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { RobinRunProtocolClient } from "../../../services/src/robinrun-agent/robinrunProtocolClient.js";
-import { RobinRunStdioTransport } from "../../../services/src/robinrun-agent/robinrunStdioTransport.js";
+import { RobinDoneProtocolClient } from "../../../services/src/robindone-agent/robindoneProtocolClient.js";
+import { RobinDoneStdioTransport } from "../../../services/src/robindone-agent/robindoneStdioTransport.js";
 
 export class Events<T> {
   readonly history: T[] = [];
@@ -62,18 +62,18 @@ export async function startAgent(
     cwd: data,
     env: {
       PATH: process.env.PATH,
-      ROBINRUN_DATA_BASE_DIR: data,
-      ROBINRUN_SESSION_DB: join(data, "session.sqlite"),
-      ROBINRUN_STORAGE_DIR: data,
+      ROBINDONE_DATA_BASE_DIR: data,
+      ROBINDONE_SESSION_DB: join(data, "session.sqlite"),
+      ROBINDONE_STORAGE_DIR: data,
       LANG: "en_US.UTF-8",
       ...providerEnv,
     },
     stdio: ["pipe", "pipe", "pipe"],
   });
-  const transport = new RobinRunStdioTransport(child, {
+  const transport = new RobinDoneStdioTransport(child, {
     onStderrLine: (line) => process.stderr.write(line + "\n"),
   });
-  const client = new RobinRunProtocolClient(transport, {
+  const client = new RobinDoneProtocolClient(transport, {
     requireStorageStartup: true,
     requestTimeoutMs: 15_000,
   });
@@ -154,9 +154,9 @@ export async function startAgent(
       demo?: { serverScript: string; resourceUri: string; surface: string },
     ) {
       const pluginRoot = join(workspacePath, "editor-plugin");
-      await mkdir(join(pluginRoot, ".robinrun-plugin"), { recursive: true });
+      await mkdir(join(pluginRoot, ".robindone-plugin"), { recursive: true });
       await writeFile(
-        join(pluginRoot, ".robinrun-plugin", "plugin.json"),
+        join(pluginRoot, ".robindone-plugin", "plugin.json"),
         JSON.stringify({
           name: "background-editor",
           mcpServers: {
@@ -170,7 +170,7 @@ export async function startAgent(
         }),
       );
       await writeFile(
-        join(workspacePath, "robinrun.json"),
+        join(workspacePath, "robindone.json"),
         JSON.stringify({ plugins: { dirs: [pluginRoot] } }),
       );
       const workspace = { workspacePath, workspaceKey: workspacePath };

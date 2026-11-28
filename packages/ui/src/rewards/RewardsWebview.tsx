@@ -5,13 +5,13 @@ import {
   isTrustedRewardsUrl,
   REWARDS_PARTITION,
   resolveRewardsOrigin,
-  ROBINRUN_ENV,
+  ROBINDONE_ENV,
   type RewardsContext,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { resolveTheme } from "@/useTheme.js";
 import { logger } from "@/logger.js";
 import { Button } from "@/components/ui/button.js";
@@ -20,9 +20,9 @@ import { EmbeddedWebsiteHeader } from "@/components/EmbeddedWebsiteHeader.js";
 export function RewardsWebview({ onClose }: { onClose: () => void }) {
   const { credentialService, oauthService } = useServices();
   const platform = usePlatform();
-  const { intl, locale } = useRobinRunIntl();
-  const themePreference = useRobinRunStore((s) => s.theme);
-  const userId = useRobinRunStore((s) => s.user?.id ?? null);
+  const { intl, locale } = useRobinDoneIntl();
+  const themePreference = useRobinDoneStore((s) => s.theme);
+  const userId = useRobinDoneStore((s) => s.user?.id ?? null);
   const [systemDark, setSystemDark] = useState(
     () => matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -38,12 +38,12 @@ export function RewardsWebview({ onClose }: { onClose: () => void }) {
     ? "zai-dark"
     : "zai-light";
   const env = import.meta.env;
-  const policy = { dev: env.DEV, e2e: env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1" };
+  const policy = { dev: env.DEV, e2e: env.VITE_ROBINDONE_E2E_STORE_BRIDGE === "1" };
   const [url] = useState(() =>
     buildRewardsUrl(
       resolveRewardsOrigin({
         ...policy,
-        env: ROBINRUN_ENV,
+        env: ROBINDONE_ENV,
         override:
           typeof env.VITE_REWARDS_WEBVIEW_ORIGIN === "string"
             ? env.VITE_REWARDS_WEBVIEW_ORIGIN
@@ -97,7 +97,7 @@ export function RewardsWebview({ onClose }: { onClose: () => void }) {
       const [oauth, jwt] = provider
         ? await Promise.all([
             credentialService.load(`oauth:${provider}:access_token`),
-            credentialService.load("robinrunjwttoken"),
+            credentialService.load("robindonejwttoken"),
           ])
         : [null, null];
       if (

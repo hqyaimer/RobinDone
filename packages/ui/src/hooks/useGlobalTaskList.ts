@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type {
   WindowHostControllerTaskListItem,
-  RobinRunTaskListQuery,
-  RobinRunTaskListWorkspaceScope,
-} from "@robinrun/services";
+  RobinDoneTaskListQuery,
+  RobinDoneTaskListWorkspaceScope,
+} from "@robindone/services";
 import { logger } from "@/logger.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import type { WorkspaceTabState } from "@/store/tabStore.js";
 import {
-  selectWorkspaceRobinRunState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
+  selectWorkspaceRobinDoneState,
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
 import { attachTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 import { stabilizeTaskListItems } from "@/v4/taskListItemStabilization.js";
 import { getWindowControllerTaskListRegistry } from "@/v4/windowControllerTaskListRegistry.js";
@@ -23,8 +23,8 @@ const zeroRevision = () => 0;
 
 function buildWorkspaceScopes(
   workspaceTabs: WorkspaceTabState[],
-): RobinRunTaskListWorkspaceScope[] {
-  const scopes = new Map<string, RobinRunTaskListWorkspaceScope>();
+): RobinDoneTaskListWorkspaceScope[] {
+  const scopes = new Map<string, RobinDoneTaskListWorkspaceScope>();
   for (const tab of workspaceTabs) {
     const scope = {
       workspacePath: tab.workspacePath,
@@ -39,7 +39,7 @@ function buildWorkspaceScopes(
 }
 
 export function useGlobalTaskList(params: {
-  kind: RobinRunTaskListQuery["kind"];
+  kind: RobinDoneTaskListQuery["kind"];
   scope?: "host";
   enabled?: boolean;
   workspaceTabs: WorkspaceTabState[];
@@ -97,11 +97,11 @@ export function useGlobalTaskList(params: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [workspaceSignature, params.scope],
   );
-  const taskListVersionSignature = useRobinRunSessionStore((state) =>
+  const taskListVersionSignature = useRobinDoneSessionStore((state) =>
     JSON.stringify(
       params.workspaceTabs
         .map((tab) => {
-          const workspace = selectWorkspaceRobinRunState(
+          const workspace = selectWorkspaceRobinDoneState(
             state,
             tab.workspacePath,
             tab.workspaceIdentity,

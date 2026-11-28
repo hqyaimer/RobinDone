@@ -1,5 +1,5 @@
-import type { Event } from "@robinrun/rpc";
-import { ServiceChannels } from "@robinrun/shared";
+import type { Event } from "@robindone/rpc";
+import { ServiceChannels } from "@robindone/shared";
 import {
   type ModelConfigObject,
   type ModelId,
@@ -15,9 +15,9 @@ import {
   type ProviderSettingsView,
   type ResolveModelConfigInput,
   type SavePersonalModelDraftInput,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import { createServiceDescriptor } from "../descriptors.js";
-import type { ModelConnectivityResult } from "@robinrun/shared";
+import type { ModelConnectivityResult } from "@robindone/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 
 export type {
@@ -25,7 +25,7 @@ export type {
   ModelSelectionView,
   ModelSelectionViewInput,
   ProviderSettingsView,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 
 export interface IProviderSettingsService {
   readonly onDidChange: Event<ProviderSettingsView>;

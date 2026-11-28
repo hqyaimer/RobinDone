@@ -2,31 +2,31 @@ import {
   createServerHostServices,
   createTopicResourcePeers,
   getAppConfigDir,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import {
-  materializeBundledRobinRunBuiltinProviderConfig,
-  readBundledRobinRunBuiltinProviderConfig,
-} from "./bundledRobinRunBuiltinProviderConfig.js";
+  materializeBundledRobinDoneBuiltinProviderConfig,
+  readBundledRobinDoneBuiltinProviderConfig,
+} from "./bundledRobinDoneBuiltinProviderConfig.js";
 import { createHttpServer, resolveHttpServerId } from "./http.js";
 
 async function main(): Promise<void> {
-  const robinrunBuiltinProviderConfigFilePath =
-    await materializeBundledRobinRunBuiltinProviderConfig({
+  const robindoneBuiltinProviderConfigFilePath =
+    await materializeBundledRobinDoneBuiltinProviderConfig({
       environmentConfigRoot: getAppConfigDir(),
-      content: readBundledRobinRunBuiltinProviderConfig(),
+      content: readBundledRobinDoneBuiltinProviderConfig(),
     });
   const port = Number(process.env["PORT"]) || 3030;
   const host =
-    process.env["ROBINRUN_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
-  const staticRoot = process.env["ROBINRUN_WEB_STATIC_ROOT"]?.trim() || undefined;
-  const authToken = process.env["ROBINRUN_SERVER_AUTH_TOKEN"]?.trim() || undefined;
+    process.env["ROBINDONE_SERVER_HOST"]?.trim() || process.env["HOST"]?.trim() || undefined;
+  const staticRoot = process.env["ROBINDONE_WEB_STATIC_ROOT"]?.trim() || undefined;
+  const authToken = process.env["ROBINDONE_SERVER_AUTH_TOKEN"]?.trim() || undefined;
   const topicResourcePeers = createTopicResourcePeers();
   const serverId = resolveHttpServerId();
   const { services, workspaceIdentityMapper, migrationFailedPathCount } =
     await createServerHostServices({
       topicResourceRelayChannel: (request) => topicResourcePeers.getChannel(request),
       sourceServerId: serverId,
-      robinrunBuiltinProviderConfigFilePath,
+      robindoneBuiltinProviderConfigFilePath,
       providerProvisioningTargetEnabled: Boolean(authToken),
     });
 
@@ -43,6 +43,6 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error: unknown) => {
-  console.error("[robinrun-server:http] startup failed", error);
+  console.error("[robindone-server:http] startup failed", error);
   process.exitCode = 1;
 });

@@ -11,7 +11,7 @@
 import type {
   WorkflowRunState,
   WorkflowRunWorkspaceNode,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { WorkflowCausalityGraphData } from "@/components/workflow-graph/types.js";
 import type { PhaseNaming } from "@/components/workflow-graph/phase-name.js";
 

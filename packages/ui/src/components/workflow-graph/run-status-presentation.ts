@@ -1,4 +1,4 @@
-import type { WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunState } from "@robindone/shared/robindone-protocol-v4";
 import type { StepRunStatus } from "@/components/workflow-graph/types.js";
 
 /**

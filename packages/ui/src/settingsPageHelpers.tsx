@@ -4,22 +4,22 @@ import type {
   IntegratedTerminalShellOption,
   IntegratedTerminalShellSelection,
   LocalePreference,
-  RobinRunInteractionBehavior,
-} from "@robinrun/shared";
-import { appToolSearchModeSchema } from "@robinrun/shared";
+  RobinDoneInteractionBehavior,
+} from "@robindone/shared";
+import { appToolSearchModeSchema } from "@robindone/shared";
 import {
   TID_SETTINGS_ASK_USER_QUESTION_AUTO_RESOLUTION_SWITCH,
   TID_SETTINGS_NATIVE_SEARCH_SWITCH,
   TID_SETTINGS_TOOL_SEARCH_SELECT,
   TID_SETTINGS_TOOL_SEARCH_OPTION,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { useState, useCallback, useEffect } from "react";
-import type { IPlatformService } from "@robinrun/shared";
+import type { IPlatformService } from "@robindone/shared";
 import {
   TID_SETTINGS_LOCALE_SELECT_ITEM,
   TID_SETTINGS_LOCALE_SELECT_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   Select,
   SelectContent,
@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input.js";
 import { Button } from "@/components/ui/button.js";
 import { SettingsBadge, SettingsGroupCard, SettingsRow } from "@/settings/SettingsPageParts.js";
 import { DataBaseDirControl } from "@/settings/DataBaseDirControl.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
 import { ProactiveSuggestionsSetting } from "@/settings/ProactiveSuggestionsSetting.js";
 import { DynamicWorkflowModeSetting } from "@/settings/DynamicWorkflowModeSetting.js";
@@ -46,14 +46,14 @@ import {
   type SettingsSectionId,
 } from "@/settings/settingsPageConfig.js";
 
-export type { Locale, LocalePreference } from "@robinrun/shared";
+export type { Locale, LocalePreference } from "@robindone/shared";
 export { type SettingsSectionId };
 export { createSettingsPageConfig, resolveSettingsSectionForPlatform };
 export { SETTINGS_SECTION_GROUPS, SETTINGS_SECTIONS };
 export { isSettingsSectionAvailable };
 
 const TASK_AUTO_ARCHIVE_DAY_OPTIONS = [3, 7, 14, 30] as const;
-const ROBINRUN_INTERACTION_BEHAVIOR_OPTIONS: readonly RobinRunInteractionBehavior[] = [
+const ROBINDONE_INTERACTION_BEHAVIOR_OPTIONS: readonly RobinDoneInteractionBehavior[] = [
   "queue",
   "guide",
 ];
@@ -73,7 +73,7 @@ export function TaskAutoArchiveSettings({
   onTaskAutoArchiveEnabledChange: (enabled: boolean) => Promise<void>;
   onTaskAutoArchiveOlderThanDaysChange: (days: number) => Promise<void>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <SettingsGroupCard>
       <SettingsRow
@@ -166,7 +166,7 @@ export function GeneralSectionContent({
   toolGroupingExploreEnabled,
   toolGroupingTerminalEnabled,
   toolGroupingChangesEnabled,
-  robinrunInteractionBehavior,
+  robindoneInteractionBehavior,
   askUserQuestionAutoResolutionEnabled = true,
   modelIoFullRetentionEnabled = false,
   onDataBaseDirChange,
@@ -188,7 +188,7 @@ export function GeneralSectionContent({
   onToolGroupingExploreEnabledChange,
   onToolGroupingTerminalEnabledChange,
   onToolGroupingChangesEnabledChange,
-  onRobinRunInteractionBehaviorChange,
+  onRobinDoneInteractionBehaviorChange,
   onAskUserQuestionAutoResolutionEnabledChange = async () => {},
   onModelIoFullRetentionEnabledChange = async () => {},
   onOpenOnboardingDialog,
@@ -238,7 +238,7 @@ export function GeneralSectionContent({
   toolGroupingExploreEnabled: boolean;
   toolGroupingTerminalEnabled: boolean;
   toolGroupingChangesEnabled: boolean;
-  robinrunInteractionBehavior: RobinRunInteractionBehavior;
+  robindoneInteractionBehavior: RobinDoneInteractionBehavior;
   askUserQuestionAutoResolutionEnabled?: boolean;
   modelIoFullRetentionEnabled?: boolean;
   onDataBaseDirChange: (dir: string) => Promise<void>;
@@ -260,13 +260,13 @@ export function GeneralSectionContent({
   onToolGroupingExploreEnabledChange: (enabled: boolean) => Promise<void>;
   onToolGroupingTerminalEnabledChange: (enabled: boolean) => Promise<void>;
   onToolGroupingChangesEnabledChange: (enabled: boolean) => Promise<void>;
-  onRobinRunInteractionBehaviorChange: (behavior: RobinRunInteractionBehavior) => Promise<void>;
+  onRobinDoneInteractionBehaviorChange: (behavior: RobinDoneInteractionBehavior) => Promise<void>;
   onAskUserQuestionAutoResolutionEnabledChange?: (enabled: boolean) => Promise<void>;
   onModelIoFullRetentionEnabledChange?: (enabled: boolean) => Promise<void>;
-  // RobinRun(2026-11-22): [hide-upstream-account] 打开引导入口已隐藏，prop 降级可选；恢复时改回必选并还原设置行
+  // RobinDone(2026-11-22): [hide-upstream-account] 打开引导入口已隐藏，prop 降级可选；恢复时改回必选并还原设置行
   onOpenOnboardingDialog?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const hasServices = Boolean(useOptionalServices());
   // 部分 SSR 单测会用精简 props 直接渲染本组件，新增终端设置项后旧 helper 未必同步传值。
   // 这里把运行时缺省值兜到“继承系统 profile”，避免 undefined.trim() 把无关测试打断。
@@ -814,25 +814,25 @@ export function GeneralSectionContent({
 
       <SettingsGroupCard>
         <SettingsRow
-          label={intl.formatMessage({ id: "settings.robinrunInteractionBehavior" })}
+          label={intl.formatMessage({ id: "settings.robindoneInteractionBehavior" })}
           description={intl.formatMessage({
-            id: "settings.robinrunInteractionBehaviorDescription",
+            id: "settings.robindoneInteractionBehaviorDescription",
           })}
           control={
             <Select
-              value={robinrunInteractionBehavior}
+              value={robindoneInteractionBehavior}
               onValueChange={(value) => {
-                void onRobinRunInteractionBehaviorChange(value as RobinRunInteractionBehavior);
+                void onRobinDoneInteractionBehaviorChange(value as RobinDoneInteractionBehavior);
               }}
             >
               <SelectTrigger size="lg" className="w-[260px] min-w-0 justify-between">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ROBINRUN_INTERACTION_BEHAVIOR_OPTIONS.map((behavior) => (
+                {ROBINDONE_INTERACTION_BEHAVIOR_OPTIONS.map((behavior) => (
                   <SelectItem key={behavior} value={behavior}>
                     {intl.formatMessage({
-                      id: `settings.robinrunInteractionBehavior.option.${behavior}`,
+                      id: `settings.robindoneInteractionBehavior.option.${behavior}`,
                     })}
                   </SelectItem>
                 ))}
@@ -971,7 +971,7 @@ export function GeneralSectionContent({
         />
       </SettingsGroupCard>
 
-      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」设置行——职业引导壳已摘除，恢复时取消本段注释 */}
+      {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏「打开引导」设置行——职业引导壳已摘除，恢复时取消本段注释 */}
       {/* <SettingsGroupCard>
         <SettingsRow
           label={intl.formatMessage({ id: "settings.onboarding" })}
@@ -985,13 +985,13 @@ export function GeneralSectionContent({
           }
         />
       </SettingsGroupCard> */}
-      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
+      {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束 */}
     </div>
   );
 }
 
 export function GeneralSectionHeader({ localePreference }: { localePreference: LocalePreference }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div className="mt-4 flex flex-wrap gap-2">

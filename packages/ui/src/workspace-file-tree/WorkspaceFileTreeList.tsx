@@ -1,7 +1,7 @@
 import type { CSSProperties, KeyboardEvent, RefCallback } from "react";
 import type { VirtualItem } from "@tanstack/react-virtual";
 import { AlertCircle, Files, LoaderCircle } from "lucide-react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   areWorkspaceFilePathsEqual,
   getWorkspaceDirectoryGitStatuses,
@@ -94,7 +94,7 @@ export function WorkspaceFileTreeList({
   onOpenBrowserUrl?: (url: string) => void;
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>, row: WorkspaceFileTreeRow) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (rootError) {
     return (
       <WorkspaceFileTreeNotice

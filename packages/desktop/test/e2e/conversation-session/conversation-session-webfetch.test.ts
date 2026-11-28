@@ -118,7 +118,7 @@ describe("会话区 WebFetch E2E", () => {
     const proxyRecord = await waitForWebFetchProxyRecord(webFetchProxy);
     expect(proxyRecord.isSSL).toBe(true);
     expect(proxyRecord.path).toBe("/e2e-webfetch-success");
-    expect(proxyRecord.userAgent).toContain("RobinRun-WebFetch");
+    expect(proxyRecord.userAgent).toContain("RobinDone-WebFetch");
 
     await waitForUpstreamRequest(
       {

@@ -1,61 +1,61 @@
 !include nsDialogs.nsh
 !include FileFunc.nsh
 
-!ifndef ROBINRUN_INSTALLER_DEFAULT_LOG_PATH
-  !define ROBINRUN_INSTALLER_DEFAULT_LOG_PATH "$TEMP\RobinRun-installer.log"
+!ifndef ROBINDONE_INSTALLER_DEFAULT_LOG_PATH
+  !define ROBINDONE_INSTALLER_DEFAULT_LOG_PATH "$TEMP\RobinDone-installer.log"
 !endif
-!ifndef ROBINRUN_INSTALLER_ELEVATED_LOG_PATH
-  !define ROBINRUN_INSTALLER_ELEVATED_LOG_PATH "$WINDIR\Logs\RobinRun-installer.log"
+!ifndef ROBINDONE_INSTALLER_ELEVATED_LOG_PATH
+  !define ROBINDONE_INSTALLER_ELEVATED_LOG_PATH "$WINDIR\Logs\RobinDone-installer.log"
 !endif
-!ifndef ROBINRUN_INSTALLER_IS_ELEVATED_INNER
+!ifndef ROBINDONE_INSTALLER_IS_ELEVATED_INNER
   ; 修复原因：来源只在测试夹具模拟内层，正式默认恒假会让提权进程继续使用调用方 /LOG。
   ; 使用 electron-builder 同一 UAC 判据；隔离夹具仍可显式替换，不改变真正的提权流程。
   !include UAC.nsh
-  !define ROBINRUN_INSTALLER_IS_ELEVATED_INNER `${UAC_IsInnerInstance}`
+  !define ROBINDONE_INSTALLER_IS_ELEVATED_INNER `${UAC_IsInnerInstance}`
 !endif
 
-!ifndef ROBINRUN_INSTALL_MANIFEST_NAME
-  !define ROBINRUN_INSTALL_MANIFEST_NAME ".robinrun-install-manifest"
+!ifndef ROBINDONE_INSTALL_MANIFEST_NAME
+  !define ROBINDONE_INSTALL_MANIFEST_NAME ".robindone-install-manifest"
 !endif
 
-!ifndef ROBINRUN_UNINSTALLER_LOG_PATH
-  !define ROBINRUN_UNINSTALLER_LOG_PATH "$TEMP\RobinRun-uninstaller.log"
+!ifndef ROBINDONE_UNINSTALLER_LOG_PATH
+  !define ROBINDONE_UNINSTALLER_LOG_PATH "$TEMP\RobinDone-uninstaller.log"
 !endif
-!ifndef ROBINRUN_UNINSTALLER_FUNCTION_PREFIX
-  !define ROBINRUN_UNINSTALLER_FUNCTION_PREFIX "un."
+!ifndef ROBINDONE_UNINSTALLER_FUNCTION_PREFIX
+  !define ROBINDONE_UNINSTALLER_FUNCTION_PREFIX "un."
 !endif
 
 !ifdef BUILD_UNINSTALLER
-  Var RobinRunUninstallerLogUnavailable
+  Var RobinDoneUninstallerLogUnavailable
 
   ; 卸载器只在更新时删除旧文件；单独记录清理阶段，避免外层把权限/空间错误误报成应用仍在运行。
-  !macro RobinRunReportUninstallerStage MESSAGE
-    DetailPrint "RobinRun: ${MESSAGE}"
+  !macro RobinDoneReportUninstallerStage MESSAGE
+    DetailPrint "RobinDone: ${MESSAGE}"
     Push "${MESSAGE}"
-    Call ${ROBINRUN_UNINSTALLER_FUNCTION_PREFIX}RobinRunWriteUninstallerLog
+    Call ${ROBINDONE_UNINSTALLER_FUNCTION_PREFIX}RobinDoneWriteUninstallerLog
   !macroend
 
-  Function ${ROBINRUN_UNINSTALLER_FUNCTION_PREFIX}RobinRunWriteUninstallerLog
+  Function ${ROBINDONE_UNINSTALLER_FUNCTION_PREFIX}RobinDoneWriteUninstallerLog
     Exch $R9
     Push $R0
     Push $R1
     Push $R2
 
-    StrCmp $RobinRunUninstallerLogUnavailable "1" robinrunUninstallerLogDone
+    StrCmp $RobinDoneUninstallerLogUnavailable "1" robindoneUninstallerLogDone
     ClearErrors
-    FileOpen $R1 "${ROBINRUN_UNINSTALLER_LOG_PATH}" a
-    IfErrors robinrunUninstallerLogFailed robinrunUninstallerLogWrite
-    robinrunUninstallerLogWrite:
+    FileOpen $R1 "${ROBINDONE_UNINSTALLER_LOG_PATH}" a
+    IfErrors robindoneUninstallerLogFailed robindoneUninstallerLogWrite
+    robindoneUninstallerLogWrite:
       System::Call "kernel32::GetCurrentProcessId() i.R0"
       FileSeek $R1 0 END
       FileWrite $R1 "[pid=$R0] $R9$\r$\n"
       FileClose $R1
-      Goto robinrunUninstallerLogDone
-    robinrunUninstallerLogFailed:
+      Goto robindoneUninstallerLogDone
+    robindoneUninstallerLogFailed:
       ; 日志不可写不应改变卸载结果，保留原始清理错误供外层处理。
-      StrCpy $RobinRunUninstallerLogUnavailable "1"
+      StrCpy $RobinDoneUninstallerLogUnavailable "1"
       ClearErrors
-    robinrunUninstallerLogDone:
+    robindoneUninstallerLogDone:
       Pop $R2
       Pop $R1
       Pop $R0
@@ -63,11 +63,11 @@
   FunctionEnd
 
   !macro customRemoveFilesDiagnosticsStart
-    !insertmacro RobinRunReportUninstallerStage "cleanup-started"
+    !insertmacro RobinDoneReportUninstallerStage "cleanup-started"
   !macroend
 
   !macro customRemoveFilesDiagnosticsComplete
-    !insertmacro RobinRunReportUninstallerStage "cleanup-completed"
+    !insertmacro RobinDoneReportUninstallerStage "cleanup-completed"
   !macroend
 !endif
 
@@ -79,55 +79,55 @@
       !insertmacro customRemoveFilesDiagnosticsStart
     !endif
     ClearErrors
-    FileOpen $R0 "$INSTDIR\${ROBINRUN_INSTALL_MANIFEST_NAME}" r
-    IfErrors robinrunManifestMissing
+    FileOpen $R0 "$INSTDIR\${ROBINDONE_INSTALL_MANIFEST_NAME}" r
+    IfErrors robindoneManifestMissing
 
-    robinrunManifestRead:
+    robindoneManifestRead:
       ClearErrors
       FileRead $R0 $R1
-      IfErrors robinrunManifestClose
+      IfErrors robindoneManifestClose
       ; NSIS FileRead 保留行尾 CRLF；打包清单统一使用换行结尾，先去掉两个行尾字符。
       StrCpy $R1 $R1 -2
-      StrCmp $R1 "" robinrunManifestRead
+      StrCmp $R1 "" robindoneManifestRead
 
       ; 拒绝绝对路径和 .. 前缀，避免损坏或篡改清单越界删除。
       StrCpy $R2 $R1 1
-      StrCmp $R2 "\\" robinrunManifestRead
-      StrCmp $R2 "/" robinrunManifestRead
+      StrCmp $R2 "\\" robindoneManifestRead
+      StrCmp $R2 "/" robindoneManifestRead
       StrCpy $R2 $R1 2
-      StrCmp $R2 ".." robinrunManifestRead
-      StrCmp $R1 "${UNINSTALL_FILENAME}" robinrunManifestRead
+      StrCmp $R2 ".." robindoneManifestRead
+      StrCmp $R1 "${UNINSTALL_FILENAME}" robindoneManifestRead
       GetFullPathName $R2 "$INSTDIR\$R1"
-      StrCmp $R2 "$INSTDIR\$R1" 0 robinrunManifestRead
+      StrCmp $R2 "$INSTDIR\$R1" 0 robindoneManifestRead
 
       ; 当前版本卸载器与外层安装器是两个进程；逐项记录到卸载器日志，便于核对真正尝试删除的文件。
       !ifdef BUILD_UNINSTALLER
-        !insertmacro RobinRunReportUninstallerStage "cleanup-file path=$R1"
+        !insertmacro RobinDoneReportUninstallerStage "cleanup-file path=$R1"
       !endif
       ClearErrors
       Delete "$INSTDIR\$R1"
-      IfErrors robinrunManifestDeleteFailed
-      Goto robinrunManifestRead
+      IfErrors robindoneManifestDeleteFailed
+      Goto robindoneManifestRead
 
-    robinrunManifestDeleteFailed:
+    robindoneManifestDeleteFailed:
       FileClose $R0
       !ifdef BUILD_UNINSTALLER
-        !insertmacro RobinRunReportUninstallerStage "cleanup-failed reason=permission-or-disk-space"
+        !insertmacro RobinDoneReportUninstallerStage "cleanup-failed reason=permission-or-disk-space"
       !endif
       Abort "无法删除旧版本文件：$INSTDIR\$R1"
 
-    robinrunManifestClose:
+    robindoneManifestClose:
       FileClose $R0
-      Goto robinrunManifestDone
+      Goto robindoneManifestDone
 
-    robinrunManifestMissing:
+    robindoneManifestMissing:
       ; 首次从旧版本升级时没有清单，不能猜测所有权并删除用户文件。
       !ifdef BUILD_UNINSTALLER
-        !insertmacro RobinRunReportUninstallerStage "cleanup-skipped reason=manifest-missing action=preserve"
+        !insertmacro RobinDoneReportUninstallerStage "cleanup-skipped reason=manifest-missing action=preserve"
       !endif
       ClearErrors
 
-    robinrunManifestDone:
+    robindoneManifestDone:
       !ifdef BUILD_UNINSTALLER
         !insertmacro customRemoveFilesDiagnosticsComplete
       !endif
@@ -139,154 +139,154 @@
 !macroend
 
 !ifndef BUILD_UNINSTALLER
-  Var RobinRunInstallerLogPath
-  Var RobinRunInstallerLogUnavailable
-  Var RobinRunInstallerProcessRole
-  Var RobinRunUninstallerDetailsUnavailable
-  Var RobinRunPreviousUninstallerSupportsManifest
+  Var RobinDoneInstallerLogPath
+  Var RobinDoneInstallerLogUnavailable
+  Var RobinDoneInstallerProcessRole
+  Var RobinDoneUninstallerDetailsUnavailable
+  Var RobinDonePreviousUninstallerSupportsManifest
 
   ; 详情面板和文件日志共用同一条阶段事件，避免静默安装丢失关键上下文。
-  !macro RobinRunReportInstallerStage MESSAGE
+  !macro RobinDoneReportInstallerStage MESSAGE
     SetDetailsPrint listonly
-    DetailPrint "RobinRun: ${MESSAGE}"
+    DetailPrint "RobinDone: ${MESSAGE}"
     Push "${MESSAGE}"
-    Call RobinRunWriteInstallerLog
+    Call RobinDoneWriteInstallerLog
   !macroend
 
-  Function RobinRunWriteInstallerLog
+  Function RobinDoneWriteInstallerLog
     Exch $R9
     Push $R0
     Push $R1
     Push $R2
 
-    StrCmp $RobinRunInstallerLogPath "" robinrunInstallerLogDone
-    StrCmp $RobinRunInstallerLogUnavailable "1" robinrunInstallerLogDone
+    StrCmp $RobinDoneInstallerLogPath "" robindoneInstallerLogDone
+    StrCmp $RobinDoneInstallerLogUnavailable "1" robindoneInstallerLogDone
     StrCpy $R2 0
-    robinrunInstallerLogOpen:
+    robindoneInstallerLogOpen:
       ClearErrors
-      FileOpen $R1 $RobinRunInstallerLogPath a
-      IfErrors robinrunInstallerLogRetry robinrunInstallerLogWrite
-    robinrunInstallerLogRetry:
+      FileOpen $R1 $RobinDoneInstallerLogPath a
+      IfErrors robindoneInstallerLogRetry robindoneInstallerLogWrite
+    robindoneInstallerLogRetry:
       IntOp $R2 $R2 + 1
-      IntCmp $R2 3 robinrunInstallerLogFailed robinrunInstallerLogWait robinrunInstallerLogFailed
-    robinrunInstallerLogWait:
+      IntCmp $R2 3 robindoneInstallerLogFailed robindoneInstallerLogWait robindoneInstallerLogFailed
+    robindoneInstallerLogWait:
       Sleep 50
-      Goto robinrunInstallerLogOpen
-    robinrunInstallerLogWrite:
+      Goto robindoneInstallerLogOpen
+    robindoneInstallerLogWrite:
       System::Call "kernel32::GetCurrentProcessId() i.R0"
       FileSeek $R1 0 END
       FileWrite $R1 "[pid=$R0] $R9$\r$\n"
       FileClose $R1
-      Goto robinrunInstallerLogDone
-    robinrunInstallerLogFailed:
-      StrCpy $RobinRunInstallerLogUnavailable "1"
+      Goto robindoneInstallerLogDone
+    robindoneInstallerLogFailed:
+      StrCpy $RobinDoneInstallerLogUnavailable "1"
       ClearErrors
-    robinrunInstallerLogDone:
+    robindoneInstallerLogDone:
       Pop $R2
       Pop $R1
       Pop $R0
       Pop $R9
   FunctionEnd
 
-  Function RobinRunResetUninstallerLog
-    StrCpy $RobinRunUninstallerDetailsUnavailable ""
+  Function RobinDoneResetUninstallerLog
+    StrCpy $RobinDoneUninstallerDetailsUnavailable ""
     ClearErrors
-    FileOpen $R0 "${ROBINRUN_UNINSTALLER_LOG_PATH}" w
-    IfErrors robinrunUninstallerDetailsResetFailed robinrunUninstallerDetailsResetSucceeded
-    robinrunUninstallerDetailsResetSucceeded:
+    FileOpen $R0 "${ROBINDONE_UNINSTALLER_LOG_PATH}" w
+    IfErrors robindoneUninstallerDetailsResetFailed robindoneUninstallerDetailsResetSucceeded
+    robindoneUninstallerDetailsResetSucceeded:
       FileClose $R0
-      Goto robinrunUninstallerDetailsResetDone
-    robinrunUninstallerDetailsResetFailed:
+      Goto robindoneUninstallerDetailsResetDone
+    robindoneUninstallerDetailsResetFailed:
       ; 外层详情不能读取旧卸载器日志时仍继续安装，文件日志和退出码仍是最终依据。
-      StrCpy $RobinRunUninstallerDetailsUnavailable "1"
+      StrCpy $RobinDoneUninstallerDetailsUnavailable "1"
       ClearErrors
-    robinrunUninstallerDetailsResetDone:
+    robindoneUninstallerDetailsResetDone:
   FunctionEnd
 
-  Function RobinRunShowUninstallerCleanupDetails
+  Function RobinDoneShowUninstallerCleanupDetails
     Push $R0
     Push $R1
     Push $R2
 
-    StrCmp $RobinRunUninstallerDetailsUnavailable "1" robinrunShowUninstallerDetailsDone
+    StrCmp $RobinDoneUninstallerDetailsUnavailable "1" robindoneShowUninstallerDetailsDone
     ClearErrors
-    FileOpen $R0 "${ROBINRUN_UNINSTALLER_LOG_PATH}" r
-    IfErrors robinrunShowUninstallerDetailsDone
-    robinrunShowUninstallerDetailsRead:
+    FileOpen $R0 "${ROBINDONE_UNINSTALLER_LOG_PATH}" r
+    IfErrors robindoneShowUninstallerDetailsDone
+    robindoneShowUninstallerDetailsRead:
       ClearErrors
       FileRead $R0 $R1
-      IfErrors robinrunShowUninstallerDetailsClose
-      StrCmp $R1 "" robinrunShowUninstallerDetailsRead
+      IfErrors robindoneShowUninstallerDetailsClose
+      StrCmp $R1 "" robindoneShowUninstallerDetailsRead
       SetDetailsPrint listonly
-      DetailPrint "RobinRun: cleanup-log $R1"
-      Goto robinrunShowUninstallerDetailsRead
-    robinrunShowUninstallerDetailsClose:
+      DetailPrint "RobinDone: cleanup-log $R1"
+      Goto robindoneShowUninstallerDetailsRead
+    robindoneShowUninstallerDetailsClose:
       FileClose $R0
-    robinrunShowUninstallerDetailsDone:
+    robindoneShowUninstallerDetailsDone:
       Pop $R2
       Pop $R1
       Pop $R0
   FunctionEnd
 
   !macro preInit
-    Call RobinRunInitializeInstallerLog
+    Call RobinDoneInitializeInstallerLog
   !macroend
 
   !macro customInit
-    IfSilent robinrunInstallerInitSilent robinrunInstallerInitInteractive
-    robinrunInstallerInitSilent:
-      !insertmacro RobinRunReportInstallerStage "installer-initialized mode=silent"
-      Goto robinrunInstallerInitDone
-    robinrunInstallerInitInteractive:
-      !insertmacro RobinRunReportInstallerStage "installer-initialized mode=interactive"
-    robinrunInstallerInitDone:
+    IfSilent robindoneInstallerInitSilent robindoneInstallerInitInteractive
+    robindoneInstallerInitSilent:
+      !insertmacro RobinDoneReportInstallerStage "installer-initialized mode=silent"
+      Goto robindoneInstallerInitDone
+    robindoneInstallerInitInteractive:
+      !insertmacro RobinDoneReportInstallerStage "installer-initialized mode=interactive"
+    robindoneInstallerInitDone:
   !macroend
 
   ; 这些宏由打包时的 electron-builder installSection.nsh 补丁按安装顺序调用。
   ; 只有阶段 marker 写入详情和日志，解压文件明细由 NSIS 的 File 命令在 listonly 模式输出。
   !macro customInstallSectionStarted
-    !insertmacro RobinRunReportInstallerStage "install-started"
+    !insertmacro RobinDoneReportInstallerStage "install-started"
   !macroend
 
   !macro customInstallCleanupStarted
-    Call RobinRunResetUninstallerLog
-    !insertmacro RobinRunReportInstallerStage "cleanup-started"
+    Call RobinDoneResetUninstallerLog
+    !insertmacro RobinDoneReportInstallerStage "cleanup-started"
   !macroend
 
   !macro customInstallCleanupCompleted
-    !insertmacro RobinRunReportInstallerStage "cleanup-completed"
-    Call RobinRunShowUninstallerCleanupDetails
+    !insertmacro RobinDoneReportInstallerStage "cleanup-completed"
+    Call RobinDoneShowUninstallerCleanupDetails
   !macroend
 
   !macro customInstallExtractStarted
-    !insertmacro RobinRunReportInstallerStage "extract-started"
+    !insertmacro RobinDoneReportInstallerStage "extract-started"
   !macroend
 
   !macro customInstallExtractCompleted
-    !insertmacro RobinRunReportInstallerStage "extract-completed"
+    !insertmacro RobinDoneReportInstallerStage "extract-completed"
   !macroend
 
   !macro customInstallShortcutsStarted
-    !insertmacro RobinRunReportInstallerStage "shortcuts-started"
+    !insertmacro RobinDoneReportInstallerStage "shortcuts-started"
   !macroend
 
   !macro customInstallShortcutsCompleted
-    !insertmacro RobinRunReportInstallerStage "shortcuts-completed"
+    !insertmacro RobinDoneReportInstallerStage "shortcuts-completed"
   !macroend
 
-  Function RobinRunDetectPreviousUninstallerCapabilities
-    StrCpy $RobinRunPreviousUninstallerSupportsManifest "0"
+  Function RobinDoneDetectPreviousUninstallerCapabilities
+    StrCpy $RobinDonePreviousUninstallerSupportsManifest "0"
     ; manifest 是卸载器能力标记：存在即表示旧卸载器会按清单选择性删除。
-    IfFileExists "$INSTDIR\${ROBINRUN_INSTALL_MANIFEST_NAME}" 0 robinrunPreviousUninstallerCapabilityCheckNested
-      StrCpy $RobinRunPreviousUninstallerSupportsManifest "1"
+    IfFileExists "$INSTDIR\${ROBINDONE_INSTALL_MANIFEST_NAME}" 0 robindonePreviousUninstallerCapabilityCheckNested
+      StrCpy $RobinDonePreviousUninstallerSupportsManifest "1"
       Return
 
-    robinrunPreviousUninstallerCapabilityCheckNested:
+    robindonePreviousUninstallerCapabilityCheckNested:
       ; assisted installer 的目录页会在后续 instfilesPre 才补上 APP_FILENAME 子目录，提前兼容两种形态。
-      IfFileExists "$INSTDIR\${APP_FILENAME}\${ROBINRUN_INSTALL_MANIFEST_NAME}" 0 robinrunPreviousUninstallerCapabilityDone
-        StrCpy $RobinRunPreviousUninstallerSupportsManifest "1"
+      IfFileExists "$INSTDIR\${APP_FILENAME}\${ROBINDONE_INSTALL_MANIFEST_NAME}" 0 robindonePreviousUninstallerCapabilityDone
+        StrCpy $RobinDonePreviousUninstallerSupportsManifest "1"
 
-    robinrunPreviousUninstallerCapabilityDone:
+    robindonePreviousUninstallerCapabilityDone:
   FunctionEnd
 
   !macro customUnInstallCheck
@@ -296,9 +296,9 @@
       ; 修复原因：静默自动更新无人值守，未设置 /SD 的模态框会一直等待用户点击，
       ; 使明确的退出码无法返回 electron-updater。静默时自动采用 IDOK，交互时仍显示提示。
       SetDetailsPrint listonly
-      DetailPrint "RobinRun: cleanup-failed exit-code=$R0"
-      Call RobinRunShowUninstallerCleanupDetails
-      MessageBox MB_OK|MB_ICONSTOP "旧版本清理失败（错误码 $R0）。可能是文件被占用、权限不足或磁盘空间不足。详细日志：${ROBINRUN_UNINSTALLER_LOG_PATH}" /SD IDOK
+      DetailPrint "RobinDone: cleanup-failed exit-code=$R0"
+      Call RobinDoneShowUninstallerCleanupDetails
+      MessageBox MB_OK|MB_ICONSTOP "旧版本清理失败（错误码 $R0）。可能是文件被占用、权限不足或磁盘空间不足。详细日志：${ROBINDONE_UNINSTALLER_LOG_PATH}" /SD IDOK
       SetErrorLevel 2
       Quit
     ${endif}
@@ -311,38 +311,38 @@
   !macroend
 !endif
 
-!define ROBINRUN_INSTALL_DIR_BACK_BUTTON_WIDTH 180
+!define ROBINDONE_INSTALL_DIR_BACK_BUTTON_WIDTH 180
 
 !macro customHeader
   !ifndef BUILD_UNINSTALLER
     ; 修复原因：异步生成的 header 可能先 include 本文件，再注册 UAC 插件目录。
     ; 在 customHeader 展开函数，确保插件已注册；preInit 仍调用同一函数和真实 UAC 判据。
-    Function RobinRunInitializeInstallerLog
+    Function RobinDoneInitializeInstallerLog
       Push $R0
       Push $R1
       Push $R2
-      StrCpy $RobinRunInstallerLogUnavailable ""
-      ${If} ${ROBINRUN_INSTALLER_IS_ELEVATED_INNER}
-        StrCpy $RobinRunInstallerProcessRole "elevated-inner"
-        StrCpy $RobinRunInstallerLogPath "${ROBINRUN_INSTALLER_ELEVATED_LOG_PATH}"
+      StrCpy $RobinDoneInstallerLogUnavailable ""
+      ${If} ${ROBINDONE_INSTALLER_IS_ELEVATED_INNER}
+        StrCpy $RobinDoneInstallerProcessRole "elevated-inner"
+        StrCpy $RobinDoneInstallerLogPath "${ROBINDONE_INSTALLER_ELEVATED_LOG_PATH}"
       ${Else}
-        StrCpy $RobinRunInstallerProcessRole "outer"
+        StrCpy $RobinDoneInstallerProcessRole "outer"
         StrCpy $R0 $CMDLINE
         ClearErrors
         ${GetOptions} $R0 "/LOG=" $R1
-        IfErrors robinrunInstallerLogUseDefault
-        StrCmp $R1 "" robinrunInstallerLogUseDefault
-        StrCpy $RobinRunInstallerLogPath $R1
-        Goto robinrunInstallerLogPathReady
-        robinrunInstallerLogUseDefault:
-          StrCpy $RobinRunInstallerLogPath "${ROBINRUN_INSTALLER_DEFAULT_LOG_PATH}"
-        robinrunInstallerLogPathReady:
-          ${GetParent} $RobinRunInstallerLogPath $R2
-          StrCmp $R2 "" robinrunInstallerLogInitialized
+        IfErrors robindoneInstallerLogUseDefault
+        StrCmp $R1 "" robindoneInstallerLogUseDefault
+        StrCpy $RobinDoneInstallerLogPath $R1
+        Goto robindoneInstallerLogPathReady
+        robindoneInstallerLogUseDefault:
+          StrCpy $RobinDoneInstallerLogPath "${ROBINDONE_INSTALLER_DEFAULT_LOG_PATH}"
+        robindoneInstallerLogPathReady:
+          ${GetParent} $RobinDoneInstallerLogPath $R2
+          StrCmp $R2 "" robindoneInstallerLogInitialized
           CreateDirectory "$R2"
       ${EndIf}
-      robinrunInstallerLogInitialized:
-        !insertmacro RobinRunReportInstallerStage "installer-process-started role=$RobinRunInstallerProcessRole"
+      robindoneInstallerLogInitialized:
+        !insertmacro RobinDoneReportInstallerStage "installer-process-started role=$RobinDoneInstallerProcessRole"
       Pop $R2
       Pop $R1
       Pop $R0
@@ -364,23 +364,23 @@
 !ifndef BUILD_UNINSTALLER
   ; 修复原因：electron-builder 会先编译卸载器，但快捷方式目标读取只在安装更新流程中调用。
   ; 若把函数带入卸载器，NSIS 会产生 6010 未引用告警，并在 /WX 下直接中断 Windows CI。
-  Function RobinRunReadShortcutTarget
+  Function RobinDoneReadShortcutTarget
     Exch $R9
     Push $R1
     Push $R2
 
     StrCpy $R2 ""
-    System::Call 'Kernel32::SetEnvironmentVariableW(w "ROBINRUN_SHORTCUT_PATH", w "$R9") i.R1'
-    StrCmp $R1 "0" robinrunReadShortcutTargetDone 0
+    System::Call 'Kernel32::SetEnvironmentVariableW(w "ROBINDONE_SHORTCUT_PATH", w "$R9") i.R1'
+    StrCmp $R1 "0" robindoneReadShortcutTargetDone 0
 
-    nsExec::ExecToStack /TIMEOUT=5000 `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "[Console]::Out.Write(([Activator]::CreateInstance([type]::GetTypeFromProgID('WScript.Shell'))).CreateShortcut([Environment]::GetEnvironmentVariable('ROBINRUN_SHORTCUT_PATH')).TargetPath)"`
+    nsExec::ExecToStack /TIMEOUT=5000 `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "[Console]::Out.Write(([Activator]::CreateInstance([type]::GetTypeFromProgID('WScript.Shell'))).CreateShortcut([Environment]::GetEnvironmentVariable('ROBINDONE_SHORTCUT_PATH')).TargetPath)"`
     Pop $R1
     Pop $R2
-    StrCmp $R1 "0" robinrunReadShortcutTargetDone 0
+    StrCmp $R1 "0" robindoneReadShortcutTargetDone 0
     StrCpy $R2 ""
 
-    robinrunReadShortcutTargetDone:
-      System::Call 'Kernel32::SetEnvironmentVariableW(w "ROBINRUN_SHORTCUT_PATH", p 0) i.R1'
+    robindoneReadShortcutTargetDone:
+      System::Call 'Kernel32::SetEnvironmentVariableW(w "ROBINDONE_SHORTCUT_PATH", p 0) i.R1'
       StrCpy $R9 "$R2"
       Pop $R2
       Pop $R1
@@ -388,10 +388,10 @@
   FunctionEnd
 !endif
 
-!macro RobinRunRepairShortcutIfNeeded SHORTCUT_PATH LABEL_PREFIX
+!macro RobinDoneRepairShortcutIfNeeded SHORTCUT_PATH LABEL_PREFIX
   ${if} ${FileExists} "${SHORTCUT_PATH}"
     Push "${SHORTCUT_PATH}"
-    Call RobinRunReadShortcutTarget
+    Call RobinDoneReadShortcutTarget
     Pop $R0
     StrCmp $R0 "$appExe" ${LABEL_PREFIX}Done 0
 
@@ -414,16 +414,16 @@
 
 !macro customInstall
   !ifndef BUILD_UNINSTALLER
-    !insertmacro RobinRunReportInstallerStage "install-finalization-started"
+    !insertmacro RobinDoneReportInstallerStage "install-finalization-started"
   !endif
   ${if} ${isUpdated}
   ${orIf} $keepShortcuts == "true"
     !ifndef DO_NOT_CREATE_START_MENU_SHORTCUT
-      !insertmacro RobinRunRepairShortcutIfNeeded "$newStartMenuLink" robinrunStartMenuShortcutRepair
+      !insertmacro RobinDoneRepairShortcutIfNeeded "$newStartMenuLink" robindoneStartMenuShortcutRepair
     !endif
 
     !ifndef DO_NOT_CREATE_DESKTOP_SHORTCUT
-      !insertmacro RobinRunRepairShortcutIfNeeded "$newDesktopLink" robinrunDesktopShortcutRepair
+      !insertmacro RobinDoneRepairShortcutIfNeeded "$newDesktopLink" robindoneDesktopShortcutRepair
     !endif
   ${endIf}
 
@@ -432,17 +432,17 @@
   ; assisted installer 完成页始终直接运行本次安装落盘的 exe。
   StrCpy $launchLink "$appExe"
   !ifndef BUILD_UNINSTALLER
-    !insertmacro RobinRunReportInstallerStage "install-completed"
+    !insertmacro RobinDoneReportInstallerStage "install-completed"
   !endif
 !macroend
 
 !macro customPageAfterChangeDir
-  Function RobinRunResizeInstallDirBackButton
+  Function RobinDoneResizeInstallDirBackButton
     GetDlgItem $1 $HWNDPARENT 3
-    StrCmp $1 0 robinrunResizeInstallDirBackButtonDone 0
+    StrCmp $1 0 robindoneResizeInstallDirBackButtonDone 0
 
     System::Call "*(i 0, i 0, i 0, i 0) p.r2"
-    StrCmp $2 0 robinrunResizeInstallDirBackButtonDone 0
+    StrCmp $2 0 robindoneResizeInstallDirBackButtonDone 0
     System::Call "user32::GetWindowRect(p r1, p r2)"
     System::Call "user32::MapWindowPoints(p 0, p $HWNDPARENT, p r2, i 2)"
     System::Call "*$2(i.r3,i.r4,i.r5,i.r6)"
@@ -450,88 +450,88 @@
 
     IntOp $7 $5 - $3
     IntOp $8 $6 - $4
-    IntCmp $7 ${ROBINRUN_INSTALL_DIR_BACK_BUTTON_WIDTH} robinrunResizeInstallDirBackButtonDone robinrunResizeInstallDirBackButtonResize robinrunResizeInstallDirBackButtonDone
+    IntCmp $7 ${ROBINDONE_INSTALL_DIR_BACK_BUTTON_WIDTH} robindoneResizeInstallDirBackButtonDone robindoneResizeInstallDirBackButtonResize robindoneResizeInstallDirBackButtonDone
 
-    robinrunResizeInstallDirBackButtonResize:
+    robindoneResizeInstallDirBackButtonResize:
       ; 修复原因：阻断页把“上一步”改成中文动作文案，NSIS 默认按钮宽度可能裁掉文字。
       ; 保持右边缘不动向左扩宽，避免和右侧“安装/取消”按钮重叠。
-      IntOp $3 $5 - ${ROBINRUN_INSTALL_DIR_BACK_BUTTON_WIDTH}
-      System::Call "user32::MoveWindow(p r1, i r3, i r4, i ${ROBINRUN_INSTALL_DIR_BACK_BUTTON_WIDTH}, i r8, i 1)"
+      IntOp $3 $5 - ${ROBINDONE_INSTALL_DIR_BACK_BUTTON_WIDTH}
+      System::Call "user32::MoveWindow(p r1, i r3, i r4, i ${ROBINDONE_INSTALL_DIR_BACK_BUTTON_WIDTH}, i r8, i 1)"
 
-    robinrunResizeInstallDirBackButtonDone:
+    robindoneResizeInstallDirBackButtonDone:
   FunctionEnd
 
-  Function RobinRunFindNestedDataDir
+  Function RobinDoneFindNestedDataDir
     Exch $R9
     Push $0
     Push $1
 
     StrCpy $R2 ""
 
-    IfFileExists "$R9\.robinrun\*.*" 0 +2
-      StrCpy $R2 "$R9\.robinrun"
-    StrCmp $R2 "" 0 robinrunFindNestedDataDirDone
-    IfFileExists "$R9\.robinrun" 0 robinrunFindNestedDataDirListChildren
-      StrCpy $R2 "$R9\.robinrun"
-    StrCmp $R2 "" 0 robinrunFindNestedDataDirDone
+    IfFileExists "$R9\.robindone\*.*" 0 +2
+      StrCpy $R2 "$R9\.robindone"
+    StrCmp $R2 "" 0 robindoneFindNestedDataDirDone
+    IfFileExists "$R9\.robindone" 0 robindoneFindNestedDataDirListChildren
+      StrCpy $R2 "$R9\.robindone"
+    StrCmp $R2 "" 0 robindoneFindNestedDataDirDone
 
-    robinrunFindNestedDataDirListChildren:
+    robindoneFindNestedDataDirListChildren:
       FindFirst $0 $1 "$R9\*"
-      IfErrors robinrunFindNestedDataDirDone
+      IfErrors robindoneFindNestedDataDirDone
 
-    robinrunFindNestedDataDirNext:
-      StrCmp $1 "" robinrunFindNestedDataDirClose
-      StrCmp $1 "." robinrunFindNestedDataDirContinue
-      StrCmp $1 ".." robinrunFindNestedDataDirContinue
-      IfFileExists "$R9\$1\*.*" 0 robinrunFindNestedDataDirContinue
+    robindoneFindNestedDataDirNext:
+      StrCmp $1 "" robindoneFindNestedDataDirClose
+      StrCmp $1 "." robindoneFindNestedDataDirContinue
+      StrCmp $1 ".." robindoneFindNestedDataDirContinue
+      IfFileExists "$R9\$1\*.*" 0 robindoneFindNestedDataDirContinue
         Push "$R9\$1"
-        Call RobinRunFindNestedDataDir
-        StrCmp $R2 "" robinrunFindNestedDataDirContinue robinrunFindNestedDataDirClose
+        Call RobinDoneFindNestedDataDir
+        StrCmp $R2 "" robindoneFindNestedDataDirContinue robindoneFindNestedDataDirClose
 
-    robinrunFindNestedDataDirContinue:
+    robindoneFindNestedDataDirContinue:
       FindNext $0 $1
-      IfErrors robinrunFindNestedDataDirClose
-      Goto robinrunFindNestedDataDirNext
+      IfErrors robindoneFindNestedDataDirClose
+      Goto robindoneFindNestedDataDirNext
 
-    robinrunFindNestedDataDirClose:
+    robindoneFindNestedDataDirClose:
       FindClose $0
 
-    robinrunFindNestedDataDirDone:
+    robindoneFindNestedDataDirDone:
       Pop $1
       Pop $0
       Pop $R9
   FunctionEnd
 
-  Function RobinRunBlockInstallDirContainsData
-    Call RobinRunDetectPreviousUninstallerCapabilities
-    StrCmp $RobinRunPreviousUninstallerSupportsManifest "1" robinrunInstallDirDataBlockSkip
+  Function RobinDoneBlockInstallDirContainsData
+    Call RobinDoneDetectPreviousUninstallerCapabilities
+    StrCmp $RobinDonePreviousUninstallerSupportsManifest "1" robindoneInstallDirDataBlockSkip
 
-    ; Bugfix: 用户可能把数据存储目录放进安装目录，Windows 更新覆盖安装目录时会清掉 .robinrun。
+    ; Bugfix: 用户可能把数据存储目录放进安装目录，Windows 更新覆盖安装目录时会清掉 .robindone。
     ; assisted installer 会把不含应用名的选择目录补成 "$INSTDIR\${APP_FILENAME}"，所以这里按相同规则计算最终安装目录。
     ${StrContains} $R1 "${APP_FILENAME}" "$INSTDIR"
-    StrCmp $R1 "" 0 robinrunInstallDirDataBlockUseSelectedDir
+    StrCmp $R1 "" 0 robindoneInstallDirDataBlockUseSelectedDir
     StrCpy $R0 "$INSTDIR\${APP_FILENAME}"
-    Goto robinrunInstallDirDataBlockCheckDir
+    Goto robindoneInstallDirDataBlockCheckDir
 
-    robinrunInstallDirDataBlockUseSelectedDir:
+    robindoneInstallDirDataBlockUseSelectedDir:
       StrCpy $R0 "$INSTDIR"
 
-    robinrunInstallDirDataBlockCheckDir:
-      ; 修复原因：旧阻断只检查最终安装目录直属的 .robinrun，漏掉 data\.robinrun 等子目录数据。
-      ; 安装器覆盖安装时会管理整个安装目录树，递归命中任意 .robinrun 都必须阻断。
+    robindoneInstallDirDataBlockCheckDir:
+      ; 修复原因：旧阻断只检查最终安装目录直属的 .robindone，漏掉 data\.robindone 等子目录数据。
+      ; 安装器覆盖安装时会管理整个安装目录树，递归命中任意 .robindone 都必须阻断。
       Push "$R0"
-      Call RobinRunFindNestedDataDir
-      StrCmp $R2 "" robinrunInstallDirDataBlockSkip robinrunInstallDirDataBlockFound
+      Call RobinDoneFindNestedDataDir
+      StrCmp $R2 "" robindoneInstallDirDataBlockSkip robindoneInstallDirDataBlockFound
 
-    robinrunInstallDirDataBlockFound:
-      IfSilent robinrunInstallDirDataBlockSilent
+    robindoneInstallDirDataBlockFound:
+      IfSilent robindoneInstallDirDataBlockSilent
 
-      !insertmacro MUI_HEADER_TEXT "需要修改安装目录" "当前安装目录或其子目录包含 RobinRun 数据目录"
+      !insertmacro MUI_HEADER_TEXT "需要修改安装目录" "当前安装目录或其子目录包含 RobinDone 数据目录"
       nsDialogs::Create 1018
       Pop $0
-      StrCmp $0 error robinrunInstallDirDataBlockDialogFailed 0
+      StrCmp $0 error robindoneInstallDirDataBlockDialogFailed 0
 
-      ${NSD_CreateLabel} 0u 0u 300u 44u "检测到该安装目录或其子目录中存在 .robinrun 数据目录：$\r$\n$R2"
+      ${NSD_CreateLabel} 0u 0u 300u 44u "检测到该安装目录或其子目录中存在 .robindone 数据目录：$\r$\n$R2"
       Pop $1
       ${NSD_CreateLabel} 0u 54u 300u 70u "为避免历史会话和配置被安装器清理，请返回上一步选择其他安装目录。$\r$\n$\r$\n当前目录不能继续安装。"
       Pop $1
@@ -541,29 +541,29 @@
       GetDlgItem $1 $HWNDPARENT 3
       EnableWindow $1 1
       SendMessage $1 ${WM_SETTEXT} 0 "STR:重选目录"
-      Call RobinRunResizeInstallDirBackButton
+      Call RobinDoneResizeInstallDirBackButton
 
       nsDialogs::Show
       Return
 
-    robinrunInstallDirDataBlockDialogFailed:
-      MessageBox MB_OK|MB_ICONSTOP "检测到安装目录或其子目录中存在 .robinrun 数据目录，安装已停止。请重新运行安装器并选择其他安装目录。"
+    robindoneInstallDirDataBlockDialogFailed:
+      MessageBox MB_OK|MB_ICONSTOP "检测到安装目录或其子目录中存在 .robindone 数据目录，安装已停止。请重新运行安装器并选择其他安装目录。"
       SetErrorLevel 1
       Quit
 
-    robinrunInstallDirDataBlockSilent:
+    robindoneInstallDirDataBlockSilent:
       SetErrorLevel 1
       Quit
 
-    robinrunInstallDirDataBlockSkip:
+    robindoneInstallDirDataBlockSkip:
       Abort
   FunctionEnd
 
-  Function RobinRunBlockInstallDirContainsDataLeave
+  Function RobinDoneBlockInstallDirContainsDataLeave
     ; 修复原因：阻断页的下一步按钮已禁用，但自动化或系统快捷键仍可能触发下一页。
     ; leave 回调只处理继续前进的路径，这里强制留在当前页，确保用户只能返回修改安装目录。
     Abort
   FunctionEnd
 
-  Page custom RobinRunBlockInstallDirContainsData RobinRunBlockInstallDirContainsDataLeave
+  Page custom RobinDoneBlockInstallDirContainsData RobinDoneBlockInstallDirContainsDataLeave
 !macroend

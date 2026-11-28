@@ -1,4 +1,4 @@
-import { resolveWorkspaceKey, type RemoteTarget, type WorkspacePurpose } from "@robinrun/shared";
+import { resolveWorkspaceKey, type RemoteTarget, type WorkspacePurpose } from "@robindone/shared";
 
 export interface AutomationWorkspaceOption {
   projectId?: string | null;

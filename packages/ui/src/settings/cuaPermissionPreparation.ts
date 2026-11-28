@@ -1,5 +1,5 @@
-import type { CuaPermissionKind } from "@robinrun/shared";
-import type { CuaPermissionStatus } from "@robinrun/services";
+import type { CuaPermissionKind } from "@robindone/shared";
+import type { CuaPermissionStatus } from "@robindone/services";
 
 function isActionablePermissionState(state: CuaPermissionStatus["accessibility"]): boolean {
   return state === "denied" || state === "stale";

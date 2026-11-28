@@ -1,6 +1,6 @@
 import { ProtocolError } from "@modelcontextprotocol/client";
-import type { IPluginUiSamplingService, PluginUiPluginScope } from "@robinrun/services";
-import { mcpAppsSamplingParamsSchema } from "@robinrun/shared/mcp-apps";
+import type { IPluginUiSamplingService, PluginUiPluginScope } from "@robindone/services";
+import { mcpAppsSamplingParamsSchema } from "@robindone/shared/mcp-apps";
 import type { PluginUiHostBridge } from "./pluginUiHostBridge.js";
 
 export function createPluginUiSampling(deps: {

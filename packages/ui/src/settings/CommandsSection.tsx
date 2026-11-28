@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
-import type { CommandConfig, UserCommand, RobinRunCommand } from "@robinrun/shared";
-import type { IServiceAccessor } from "@robinrun/services";
-import { isPluginCommand, isUserCommand, ROBINRUN_COMMAND_AGENT_SOURCE } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { CommandConfig, UserCommand, RobinDoneCommand } from "@robindone/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import { isPluginCommand, isUserCommand, ROBINDONE_COMMAND_AGENT_SOURCE } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useCommands } from "@/hooks/useCommands.js";
@@ -66,7 +66,7 @@ export function CommandsSection({
   unscopedServices,
   cacheAuthorityKey,
 }: CommandsSectionProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
 
   const currentWorkspaceKey = workspaceIdentity?.trim() || workspacePath || "";
@@ -98,7 +98,7 @@ export function CommandsSection({
     toggleCommand,
   } = useCommands({
     // 用户视图只列用户目录与插件命令；workspacePath 只是服务锚点（远端为 home，本机为任一项目）。
-    // Bug 原因：锚点被当作项目路径查询时，同一 ~/.robinrun/commands 先被归为 project，按名称去重后
+    // Bug 原因：锚点被当作项目路径查询时，同一 ~/.robindone/commands 先被归为 project，按名称去重后
     // 又被用户视图过滤，远端用户命令列表为空；锚点项目的同名命令也会遮住用户命令。
     workspacePath: scopeFilter === "user" ? undefined : (workspacePath ?? undefined),
     workspaceIdentity: scopeFilter === "user" ? undefined : workspaceIdentity,
@@ -196,7 +196,7 @@ export function CommandsSection({
         } else {
           await formServices.commandsService.writeCommandFile({
             config,
-            agentSource: ROBINRUN_COMMAND_AGENT_SOURCE,
+            agentSource: ROBINDONE_COMMAND_AGENT_SOURCE,
             storageLevel,
             workspacePath: targetWorkspacePath,
           });
@@ -234,7 +234,7 @@ export function CommandsSection({
   );
 
   const handleDelete = useCallback(
-    async (command: RobinRunCommand) => {
+    async (command: RobinDoneCommand) => {
       if (!isEditableUserCommand(command)) {
         return;
       }
@@ -267,7 +267,7 @@ export function CommandsSection({
   );
 
   const handleToggle = useCallback(
-    async (command: RobinRunCommand, enabled: boolean) => {
+    async (command: RobinDoneCommand, enabled: boolean) => {
       if (!isUserCommand(command)) {
         return;
       }
@@ -287,7 +287,7 @@ export function CommandsSection({
   );
 
   const handleEdit = useCallback(
-    (command: RobinRunCommand) => {
+    (command: RobinDoneCommand) => {
       if (!isEditableUserCommand(command)) {
         return;
       }
@@ -358,7 +358,7 @@ export function CommandsSection({
   const directInstalledCommandCount = scopedCommands.filter(isUserCommand).length;
   const hideInstalledGroup = Boolean(searchQuery.trim()) && groupedCommands.local.length === 0;
 
-  const renderCommandList = (items: RobinRunCommand[]) => (
+  const renderCommandList = (items: RobinDoneCommand[]) => (
     <SettingsResourceList
       items={items}
       getKey={(command) => command.id}
@@ -423,7 +423,7 @@ export function CommandsSection({
 
           <CommandForm
             initial={editingCommand ?? undefined}
-            agentSource={editingCommand?.agentSource ?? ROBINRUN_COMMAND_AGENT_SOURCE}
+            agentSource={editingCommand?.agentSource ?? ROBINDONE_COMMAND_AGENT_SOURCE}
             scopeKey={formScopeKey}
             workspaceTabs={workspaceTabs}
             onScopeKeyChange={handleFormScopeKeyChange}

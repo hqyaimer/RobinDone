@@ -85,7 +85,7 @@ for (const [width, locale, theme] of [
         if (change !== "unchanged") await page.getByTestId(change).click();
         if (change === "scope") await page.getByTestId(change).click();
         await page.getByTestId("release").click();
-        const toast = page.locator("#robinrun-toast-host");
+        const toast = page.locator("#robindone-toast-host");
         await toast
           .getByText(
             change === "unchanged"

@@ -16,7 +16,7 @@ const WORKSPACE = "E:\\ws\\backfill";
 function meta(overrides: Record<string, unknown>) {
   return {
     taskId: "sess-backfill-1",
-    traceId: "robinrun-sess-backfill-1",
+    traceId: "robindone-sess-backfill-1",
     title: "first input title",
     workspacePath: WORKSPACE,
     createdAt: 100,
@@ -28,7 +28,7 @@ function meta(overrides: Record<string, unknown>) {
 }
 
 describe("TaskIndexRepo.applyCliFacts worker 身份补写", () => {
-  const dir = mkdtempSync(join(tmpdir(), "robinrun-task-index-"));
+  const dir = mkdtempSync(join(tmpdir(), "robindone-task-index-"));
   const repo = new TaskIndexRepo(undefined, "local", join(dir, "tasks-index.sqlite"));
   afterAll(() => {
     repo.close();

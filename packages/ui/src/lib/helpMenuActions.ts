@@ -1,8 +1,8 @@
-import type { IPlatformService } from "@robinrun/shared";
+import type { IPlatformService } from "@robindone/shared";
 import type { IntlInstance } from "@/i18n/IntlProvider.js";
 import type { FeedbackSubmitDraft } from "@/feedback/feedbackStore.js";
 import { runExportLogsAction } from "@/lib/exportLogsAction.js";
-import { ROBINRUN_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
+import { ROBINDONE_PRODUCT_DOCS_URL } from "@/lib/productDocs.js";
 
 export interface HelpMenuActionHandlers {
   openIssueReport: () => Promise<void>;
@@ -30,7 +30,7 @@ export function createHelpMenuActionHandlers({
       });
     },
     openProductDocs: () => {
-      platform.openExternal(ROBINRUN_PRODUCT_DOCS_URL);
+      platform.openExternal(ROBINDONE_PRODUCT_DOCS_URL);
     },
     exportLogs: () => {
       void runExportLogsAction(platform, intl);

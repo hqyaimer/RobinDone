@@ -1,7 +1,7 @@
 import { captureV4ComposerDraftHandoff } from "@/v4/composer/composerDraftWorkspaceTransfer.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
 import { useOptionalTabStore } from "@/store/TabStoreProvider.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { useEffect, useRef, useState } from "react";
 import { useOptionalBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useSourceServerManagementSnapshot } from "@/hooks/useSourceServerManagementSnapshot.js";
@@ -11,7 +11,7 @@ import {
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
 } from "@/project-sidebar/contract.js";
-import { mainAgentGroupId } from "@robinrun/shared";
+import { mainAgentGroupId } from "@robindone/shared";
 import type {
   IProjectService,
   IRemoteProjectService,
@@ -72,7 +72,7 @@ export function ProjectCreation({
   const currentScope = useRef({ workspaceKey, activeTabId });
   currentScope.current = { workspaceKey, activeTabId };
   const [originDraft] = useState(() => {
-    const { activeTaskId, draftFocusVersion, draftProjectId } = useRobinRunSessionStore
+    const { activeTaskId, draftFocusVersion, draftProjectId } = useRobinDoneSessionStore
       .getState()
       .getWorkspaceState(workspacePath, workspaceIdentity);
     return { workspaceKey, activeTaskId, draftFocusVersion, draftProjectId };
@@ -155,7 +155,7 @@ export function ProjectCreation({
       sidebar?.preferences.prepend(project);
     }
     await onSaved();
-    const draft = useRobinRunSessionStore
+    const draft = useRobinDoneSessionStore
       .getState()
       .getWorkspaceState(workspacePath, workspaceIdentity);
     // 创建原来只刷新列表，草稿仍绑定旧项目；复用项目选择入口，并拒绝保存期间已失效的草稿。

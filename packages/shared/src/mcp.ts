@@ -1,23 +1,23 @@
 /**
- * MCP (Model Context Protocol) types for RobinRun
+ * MCP (Model Context Protocol) types for RobinDone
  * Based on the original Tauri implementation
  */
 
 import type { SettingsDirectoryLocation } from "./settings-source.js";
-import type { McpServerFailureKind, WorkspaceMcpTrustReview } from "./robinrun-protocol/index.js";
+import type { McpServerFailureKind, WorkspaceMcpTrustReview } from "./robindone-protocol/index.js";
 
 // CUA official plugin 身份常量（port 自 feat；UI 设置面板 + bootstrap 复用以避免字面量漂移）。
-export const ROBINRUN_CUA_OFFICIAL_PLUGIN_ID = "computer-use@robinrun-plugins-official";
-// CUA server 身份串（port 自 feat mcp.ts）：server key = 模型可见工具前缀段（刻意不带 robinrun-）；
+export const ROBINDONE_CUA_OFFICIAL_PLUGIN_ID = "computer-use@robindone-plugins-official";
+// CUA server 身份串（port 自 feat mcp.ts）：server key = 模型可见工具前缀段（刻意不带 robindone-）；
 // namespace name = official plugin 运行时命名空间 plugin:<pluginId>:<serverKey>。
-export const ROBINRUN_CUA_OFFICIAL_MCP_NAMESPACE_NAME = "plugin:computer-use:computer-use";
+export const ROBINDONE_CUA_OFFICIAL_MCP_NAMESPACE_NAME = "plugin:computer-use:computer-use";
 // 插件身份 env key：resolver（adapters/src/plugins/mcp.ts）权威写入 loaded.id，manifest/user env 不可覆盖。
-// bootstrap + cli/plugin-host-command.ts 复用此常量识别 official robinrun-cua plugin server，避免字面量漂移。
-export const ROBINRUN_PLUGIN_ID_ENV_KEY = "ROBINRUN_PLUGIN_ID";
+// bootstrap + cli/plugin-host-command.ts 复用此常量识别 official robindone-cua plugin server，避免字面量漂移。
+export const ROBINDONE_PLUGIN_ID_ENV_KEY = "ROBINDONE_PLUGIN_ID";
 
 export type McpSource =
   | "mcp"
-  | "robinrunagentmcp"
+  | "robindoneagentmcp"
   | "claudeclimcp"
   | "geminiclimcp"
   | "codexclimcp"
@@ -120,14 +120,14 @@ export interface McpConfig {
   mcp: {
     mcpServers: Record<string, McpServerConfig>;
   };
-  robinrunagentmcp: CliMcpConfig;
+  robindoneagentmcp: CliMcpConfig;
   claudeclimcp: CliMcpConfig;
   geminiclimcp: CliMcpConfig;
   codexclimcp: CliMcpConfig;
   opencodemcp: CliMcpConfig;
 }
 
-export interface RobinRunMcpServer {
+export interface RobinDoneMcpServer {
   id: string;
   name: string;
   config: McpServerConfig;
@@ -181,7 +181,7 @@ export interface McpTestResult {
   response_time?: number;
 }
 
-export type RobinRunAgentMcpServer = { scope?: "user" | "workspace" } & (
+export type RobinDoneAgentMcpServer = { scope?: "user" | "workspace" } & (
   | {
       name: string;
       command: string;
@@ -231,12 +231,12 @@ export function getMcpServerRequestHeaders(
   return config.headers ?? config.http_headers;
 }
 
-// robinrun-cua MCP server 识别的单一事实源。desktop 产品 broker resolver（@robinrun/services 的
-// mcpBrokerInjection）与 CLI bootstrap（apps/robinrun-cli 的 mcp-config）两条注入入口必须用
+// robindone-cua MCP server 识别的单一事实源。desktop 产品 broker resolver（@robindone/services 的
+// mcpBrokerInjection）与 CLI bootstrap（apps/robindone-cli 的 mcp-config）两条注入入口必须用
 // 完全一致的判定；否则同一 MCP 配置在不同入口行为不同，可能漏注入 product broker，让
 // Python/uvx 自己持有 macOS TCC 权限（违反 fail-closed 边界）。改这里即同时改两条链路。
-function robinrunCuaArgLeaf(value: string): string {
-  // 先去掉结尾的路径分隔符再取叶子：`.../robinrun-cua/` 直接 split 会得到空串叶子 → 漏判 → fail-open。
+function robindoneCuaArgLeaf(value: string): string {
+  // 先去掉结尾的路径分隔符再取叶子：`.../robindone-cua/` 直接 split 会得到空串叶子 → 漏判 → fail-open。
   return (
     value
       .replace(/[\\/]+$/, "")
@@ -245,38 +245,38 @@ function robinrunCuaArgLeaf(value: string): string {
   );
 }
 
-// 单个候选串是否为 robinrun-cua 的包规格。PyPI 视 `_`/`-` 等价，故先把下划线归一成短横（robinrun_cua →
-// robinrun-cua）；覆盖 uv/npm 的 `@version`、pip 的 `==version`、extras `[...]`、git 的 `.git`/`.git@`，
-// 以及 `python -m robinrun_cua.server` 这种点号子模块（`robinrun-cua.<submodule>`）。fail-closed 边界宁可
-// 过判也不漏判；仍不会误判 `robinrun-cua-proxy`（短横续接，不以 `.`/`@`/`[`/`==` 边界续接）。
-function matchesRobinRunCuaSpec(candidate: string): boolean {
+// 单个候选串是否为 robindone-cua 的包规格。PyPI 视 `_`/`-` 等价，故先把下划线归一成短横（robindone_cua →
+// robindone-cua）；覆盖 uv/npm 的 `@version`、pip 的 `==version`、extras `[...]`、git 的 `.git`/`.git@`，
+// 以及 `python -m robindone_cua.server` 这种点号子模块（`robindone-cua.<submodule>`）。fail-closed 边界宁可
+// 过判也不漏判；仍不会误判 `robindone-cua-proxy`（短横续接，不以 `.`/`@`/`[`/`==` 边界续接）。
+function matchesRobinDoneCuaSpec(candidate: string): boolean {
   const c = candidate.replace(/_/g, "-");
   return (
-    c === "robinrun-cua" ||
-    c.startsWith("robinrun-cua[") ||
-    c.startsWith("robinrun-cua@") ||
-    c.startsWith("robinrun-cua==") ||
-    // `.` 分支同时覆盖 `robinrun-cua.git` / `robinrun-cua.git@v1` 与 `robinrun-cua.server` 等 python 子模块。
-    c.startsWith("robinrun-cua.")
+    c === "robindone-cua" ||
+    c.startsWith("robindone-cua[") ||
+    c.startsWith("robindone-cua@") ||
+    c.startsWith("robindone-cua==") ||
+    // `.` 分支同时覆盖 `robindone-cua.git` / `robindone-cua.git@v1` 与 `robindone-cua.server` 等 python 子模块。
+    c.startsWith("robindone-cua.")
   );
 }
 
 /**
- * MCP server 的 command 是否指向 robinrun-cua。用与 args 相同的包规格判定（并比对路径叶子），
- * 覆盖 `command: "robinrun-cua"`、`/opt/bin/robinrun-cua`，以及把包规格直接当 command 的写法
- * （`robinrun-cua@1.2.3` 等）。对 fail-closed 边界宁可过判也不漏判。
+ * MCP server 的 command 是否指向 robindone-cua。用与 args 相同的包规格判定（并比对路径叶子），
+ * 覆盖 `command: "robindone-cua"`、`/opt/bin/robindone-cua`，以及把包规格直接当 command 的写法
+ * （`robindone-cua@1.2.3` 等）。对 fail-closed 边界宁可过判也不漏判。
  */
-export function isRobinRunCuaMcpCommand(command: string): boolean {
-  return matchesRobinRunCuaSpec(command) || matchesRobinRunCuaSpec(robinrunCuaArgLeaf(command));
+export function isRobinDoneCuaMcpCommand(command: string): boolean {
+  return matchesRobinDoneCuaSpec(command) || matchesRobinDoneCuaSpec(robindoneCuaArgLeaf(command));
 }
 
 /**
- * 单个 arg 是否为 robinrun-cua 的包规格。覆盖 `robinrun-cua`、`robinrun-cua[macos]`、`robinrun-cua@1.2.3`、
- * `robinrun-cua==1.2.3`、`robinrun_cua`，以及 git / 本地路径形态（`.../robinrun-cua`、`robinrun-cua.git`、
+ * 单个 arg 是否为 robindone-cua 的包规格。覆盖 `robindone-cua`、`robindone-cua[macos]`、`robindone-cua@1.2.3`、
+ * `robindone-cua==1.2.3`、`robindone_cua`，以及 git / 本地路径形态（`.../robindone-cua`、`robindone-cua.git`、
  * `git+https://.../zcode-cua.git@v1`）。同时比对原始值与路径叶子，覆盖 `--from <path>`、`--from <git-url>`。
  */
-export function isRobinRunCuaMcpPackageArg(value: string): boolean {
-  return matchesRobinRunCuaSpec(value) || matchesRobinRunCuaSpec(robinrunCuaArgLeaf(value));
+export function isRobinDoneCuaMcpPackageArg(value: string): boolean {
+  return matchesRobinDoneCuaSpec(value) || matchesRobinDoneCuaSpec(robindoneCuaArgLeaf(value));
 }
 
 /** 审核摘要与 Host DTO 共用 Windows 命令归一化，避免批准 cmd /c 后执行 npx 被误拒绝。 */
@@ -297,11 +297,11 @@ export function normalizeMcpStdioCommand(command: string, args: string[] = []) {
   return { command, args };
 }
 
-export function convertToRobinRunAgentMcpServer(
+export function convertToRobinDoneAgentMcpServer(
   name: string,
   config: McpServerConfig,
   scope?: "user" | "workspace",
-): RobinRunAgentMcpServer | null {
+): RobinDoneAgentMcpServer | null {
   let inferredType = config.type;
   if (!inferredType) {
     if (config.command) inferredType = "stdio";

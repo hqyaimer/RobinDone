@@ -2,5 +2,5 @@
 export { createWindowTopicResourceRelay } from "../windowTopicResourceRelay.js";
 export type {
   WindowHostAttachmentScope,
-  RobinRunTopicResourceRelayRequest,
-} from "@robinrun/shared";
+  RobinDoneTopicResourceRelayRequest,
+} from "@robindone/shared";

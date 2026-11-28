@@ -4,7 +4,7 @@ import {
   MEMORY_SAMPLE_INTERVAL_MS,
   memoryUsageToSampleFields,
   type MemorySample,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface HostMemoryDiagnosticsLogger {
   info(...args: unknown[]): void;

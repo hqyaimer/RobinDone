@@ -5,12 +5,12 @@ import {
   TID_WORKFLOWS_LIST,
   TID_WORKFLOW_PROJECT_GROUP,
   resolveWorkspaceKey,
-  type RobinRunSavedWorkflowEntry,
-} from "@robinrun/shared";
-import { testId } from "@robinrun/shared/test-ids";
+  type RobinDoneSavedWorkflowEntry,
+} from "@robindone/shared";
+import { testId } from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
@@ -83,7 +83,7 @@ export function SavedWorkflowProjectGroup({
   onOpenWorkflowRun,
   onOpenWorkflowArtifact,
 }: SavedWorkflowProjectGroupProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const requestConfirmation = useConfirmDialog();
   const resolution = useWorkspaceServicesResolution(
     project.workspacePath,
@@ -92,7 +92,7 @@ export function SavedWorkflowProjectGroup({
     project.remoteTarget,
   );
   const { services, rpcReady } = resolution;
-  const agentService = services.robinrunAgentService;
+  const agentService = services.robindoneAgentService;
   const fileWatcherService = services.fileWatcherService;
 
   const workspaceKey = useMemo(
@@ -111,7 +111,7 @@ export function SavedWorkflowProjectGroup({
 
   const state = useSavedWorkflowStore((store) => selectSavedWorkflowState(store, target));
   const load = useSavedWorkflowStore((store) => store.load);
-  const [launchEntry, setLaunchEntry] = useState<RobinRunSavedWorkflowEntry | null>(null);
+  const [launchEntry, setLaunchEntry] = useState<RobinDoneSavedWorkflowEntry | null>(null);
   const [busyName, setBusyName] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -159,7 +159,7 @@ export function SavedWorkflowProjectGroup({
   });
 
   const launch = useCallback(
-    async (entry: RobinRunSavedWorkflowEntry, args: Record<string, unknown>) => {
+    async (entry: RobinDoneSavedWorkflowEntry, args: Record<string, unknown>) => {
       const result = await launcher.launch(launchTarget, {
         name: entry.name,
         scope: "project",
@@ -174,7 +174,7 @@ export function SavedWorkflowProjectGroup({
     [launchTarget, launcher],
   );
   const handleRun = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => {
+    (entry: RobinDoneSavedWorkflowEntry) => {
       if (entry.args && Object.keys(entry.args).length > 0) {
         launcher.clearError();
         setLaunchEntry(entry);
@@ -190,7 +190,7 @@ export function SavedWorkflowProjectGroup({
     [intl, launch, launcher],
   );
   const handleRevise = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => {
+    (entry: RobinDoneSavedWorkflowEntry) => {
       onCreateViaChat?.(
         buildSavedWorkflowRevisePrompt({ name: entry.name, path: entry.path, locale }),
         projectTarget,
@@ -199,7 +199,7 @@ export function SavedWorkflowProjectGroup({
     [locale, onCreateViaChat, projectTarget],
   );
   const handleCopyPath = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => {
+    (entry: RobinDoneSavedWorkflowEntry) => {
       void navigator.clipboard
         ?.writeText(entry.path)
         .then(() => toast(intl.formatMessage({ id: "workflows.hub.copied" })))
@@ -212,7 +212,7 @@ export function SavedWorkflowProjectGroup({
     [intl],
   );
   const handleDelete = useCallback(
-    async (entry: RobinRunSavedWorkflowEntry) => {
+    async (entry: RobinDoneSavedWorkflowEntry) => {
       const confirmed = await requestConfirmation({
         title: intl.formatMessage({ id: "workflows.hub.delete.title" }, { name: entry.name }),
         description: intl.formatMessage(
@@ -252,7 +252,7 @@ export function SavedWorkflowProjectGroup({
     [agentService, intl, mode, onBack, refresh, requestConfirmation, target],
   );
   const handleCardDelete = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => void handleDelete(entry),
+    (entry: RobinDoneSavedWorkflowEntry) => void handleDelete(entry),
     [handleDelete],
   );
   // 「提升为全局」：不搬文件——在本项目开新会话、
@@ -261,7 +261,7 @@ export function SavedWorkflowProjectGroup({
   const isLocalProject = !project.remoteSessionId;
   const promoter = useSavedWorkflowPromote({ agentService, onNavigate: onNavigateToLaunchedRun });
   const handlePromote = useCallback(
-    async (entry: RobinRunSavedWorkflowEntry) => {
+    async (entry: RobinDoneSavedWorkflowEntry) => {
       setBusyName(entry.name);
       try {
         const result = await promoter.promote(launchTarget, {
@@ -284,11 +284,11 @@ export function SavedWorkflowProjectGroup({
     [intl, launchTarget, locale, promoter],
   );
   const handleCardPromote = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => void handlePromote(entry),
+    (entry: RobinDoneSavedWorkflowEntry) => void handlePromote(entry),
     [handlePromote],
   );
   const handleOpen = useCallback(
-    (entry: RobinRunSavedWorkflowEntry) => onOpenDetail(entry.name),
+    (entry: RobinDoneSavedWorkflowEntry) => onOpenDetail(entry.name),
     [onOpenDetail],
   );
   // 两个「打开」的门与实参构造与全局档共用（见该 hook 的注释：产物不需要 toolCallId）。

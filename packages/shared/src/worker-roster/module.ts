@@ -5,7 +5,7 @@
  */
 export const workerRosterModule = {
   id: "worker-roster",
-  requires: ["shared", "services", "robinrun-cli"],
+  requires: ["shared", "services", "robindone-cli"],
   provides: ["worker-roster"],
   publicEntrypoints: ["index.ts", "contract.ts"],
 } as const;

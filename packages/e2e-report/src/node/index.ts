@@ -20,7 +20,7 @@ export function readE2EReportSummary(summaryJsonPath: string) {
 export function createE2EReportViewerUrl(options: CreateE2EReportViewerUrlOptions) {
   const baseUrl =
     options.baseUrl ??
-    process.env.ROBINRUN_E2E_REPORT_VIEWER_BASE_URL ??
+    process.env.ROBINDONE_E2E_REPORT_VIEWER_BASE_URL ??
     DEFAULT_E2E_REPORT_VIEWER_BASE_URL;
   const url = new URL(baseUrl);
   url.searchParams.set("summary", toViteFsPath(options.summaryJsonPath));

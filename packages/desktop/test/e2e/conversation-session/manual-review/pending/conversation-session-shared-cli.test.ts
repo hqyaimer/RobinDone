@@ -6,7 +6,7 @@ import {
   TID_TASK_ITEM,
   TID_WORKSPACE_MORE_BUTTON,
   TID_CONFIRM_DIALOG_CONFIRM,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, DEFAULT_WORKSPACE } from "#e2e/helpers/desktop-app";
 import { openMobilePairingPage, seedMobileFixtureLogin } from "#e2e/helpers/mobile-pairing";
 import { obtainUnreadPairingUrl } from "#e2e/helpers/web-remote-unread";
@@ -47,9 +47,9 @@ async function currentDirectory() {
     () =>
       (
         window as Window & {
-          __robinrunTabStoreE2E?: { getState(): { activeWorkspacePath?: string | null } };
+          __robindoneTabStoreE2E?: { getState(): { activeWorkspacePath?: string | null } };
         }
-      ).__robinrunTabStoreE2E?.getState().activeWorkspacePath,
+      ).__robindoneTabStoreE2E?.getState().activeWorkspacePath,
   );
 }
 
@@ -71,9 +71,9 @@ describe("无项目工作区共享 CLI", () => {
   let webBrowser: Browser | undefined;
   let mobile: Page | undefined;
   after(async () => {
-    if (mobile && process.env.ROBINRUN_E2E_ARTIFACT_DIR)
+    if (mobile && process.env.ROBINDONE_E2E_ARTIFACT_DIR)
       await mobile
-        .screenshot({ path: join(process.env.ROBINRUN_E2E_ARTIFACT_DIR, "STCLI-mobile.png") })
+        .screenshot({ path: join(process.env.ROBINDONE_E2E_ARTIFACT_DIR, "STCLI-mobile.png") })
         .catch(() => undefined);
     await webBrowser?.close();
     await browser.electron.restoreAllMocks();
@@ -90,9 +90,9 @@ describe("无项目工作区共享 CLI", () => {
     const taskA = (await getV4ConversationState()).taskId;
     const cwdA = await currentDirectory();
     const agentsA = await readAgents();
-    const shared = agentsA.find((agent) => agent.name.endsWith("-robinrun"));
+    const shared = agentsA.find((agent) => agent.name.endsWith("-robindone"));
     expect(shared).toBeDefined();
-    expect(agentsA.some((agent) => agent.name.endsWith("-robinrunproject"))).toBe(true);
+    expect(agentsA.some((agent) => agent.name.endsWith("-robindoneproject"))).toBe(true);
 
     await startNewV4Draft();
     await sendV4Prompt("E2E_SHARED_CLI_B reply briefly");
@@ -156,10 +156,10 @@ describe("无项目工作区共享 CLI", () => {
     await sendAndFinish("E2E_SHARED_CLI_A_RESTARTED");
 
     const pairingUrl = await obtainUnreadPairingUrl(
-      new URL(process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL!).origin,
+      new URL(process.env.ROBINDONE_WEB_REMOTE_CONTROL_URL!).origin,
     );
     webBrowser = await chromium.launch({
-      executablePath: process.env.ROBINRUN_E2E_MOBILE_BROWSER_EXECUTABLE,
+      executablePath: process.env.ROBINDONE_E2E_MOBILE_BROWSER_EXECUTABLE,
       headless: true,
       args: ["--no-sandbox"],
     });
@@ -172,7 +172,7 @@ describe("无项目工作区共享 CLI", () => {
     await seedMobileFixtureLogin(context);
     mobile = await context.newPage();
     await openMobilePairingPage(mobile, pairingUrl, {
-      artifactDir: process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+      artifactDir: process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
       caseMarker: "STCLI07",
       phase: "shared",
       readySelector: `[data-testid="${testId(TID_TASK_ITEM, taskB!)}"]`,
@@ -209,7 +209,7 @@ describe("无项目工作区共享 CLI", () => {
     await sendAndFinish("E2E_SHARED_CLI_B_RECOVERED");
     const afterB = await readAgents();
     expect(afterB.some((agent) => agent.pid === shared!.pid)).toBe(false);
-    const nextShared = afterB.find((agent) => agent.name.endsWith("-robinrun"));
+    const nextShared = afterB.find((agent) => agent.name.endsWith("-robindone"));
     expect(nextShared).toBeDefined();
     await $(`[data-testid="${testId(TID_TASK_ITEM, taskA!)}"]`).click();
     await waitForV4TimelineContaining("E2E_SHARED_CLI_A_MOVED", 60_000);

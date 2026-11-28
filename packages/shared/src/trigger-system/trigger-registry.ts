@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 /**
- * RobinRun 触发器注册表（`.robinrun/triggers/triggers.json`）的协议层定义。
+ * RobinDone 触发器注册表（`.robindone/triggers/triggers.json`）的协议层定义。
  *
  * 设计正身：`docs/trigger-system.md`（2026-11-19 定稿）。核心裁决：
- * - 触发器以 id 为路径锚点（`.robinrun/triggers/<id>/`），name 仅作显示名。
+ * - 触发器以 id 为路径锚点（`.robindone/triggers/<id>/`），name 仅作显示名。
  * - 注册表是唯一事实源，由程序（ManageTriggers 工具）原子写入；模型不经 Write/Edit 直接改。
  * - 说明文件是 `<id>/README.md`（触发器自己的 AGENTS.md），纯正文无 frontmatter；元数据只存本注册表。
  * - 订阅上下文互斥（裁决 1）：同一触发器对同一订阅者要么直连（groupId=null）、要么属于一个组，
@@ -409,7 +409,7 @@ export const triggerRegistrySchema = z
 export type TriggerRegistry = z.infer<typeof triggerRegistrySchema>;
 
 // ---------------------------------------------------------------------------
-// 存储布局常量（`.robinrun/triggers/`，见 docs/trigger-system.md「对象模型与存储布局」）
+// 存储布局常量（`.robindone/triggers/`，见 docs/trigger-system.md「对象模型与存储布局」）
 // ---------------------------------------------------------------------------
 
 export const triggerRegistryFileName = "triggers.json" as const;

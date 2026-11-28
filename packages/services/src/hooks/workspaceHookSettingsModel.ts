@@ -5,7 +5,7 @@ import type {
   HookEvent,
   SettingsDirectoryLocation,
   WorkspaceHookDiscoveryState,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   resolveWorkspaceHookEntries,
   type CanonicalWorkspaceHookEntryData,
@@ -14,7 +14,7 @@ import {
   type WorkspaceHookRuntimeRoot,
   type WorkspaceHookSourceInput,
   type WorkspaceHooksConfig,
-} from "@robinrun/shared/workspace-hook-discovery";
+} from "@robindone/shared/workspace-hook-discovery";
 
 export interface LegacyHookDefinition {
   type?: "command" | "process" | string;
@@ -175,7 +175,7 @@ export function fromProjectSnapshot(input: {
       source,
       id: entry.reviewItemId,
       location: {
-        source: "robinrun",
+        source: "robindone",
         scope: "project",
         directoryPath: dirname(source.canonicalPath),
         projectPath: input.workspacePath,
@@ -192,7 +192,7 @@ export function fromProjectSnapshot(input: {
   });
 }
 
-export function fromUserRobinRunSource(input: {
+export function fromUserRobinDoneSource(input: {
   source: WorkspaceHookSourceInput | undefined;
   runtimeRoot: WorkspaceHookRuntimeRoot;
   workspacePath: string;
@@ -207,7 +207,7 @@ export function fromUserRobinRunSource(input: {
     toHook({
       entry,
       source: input.source!,
-      id: `hook-robinrun-user-${index}`,
+      id: `hook-robindone-user-${index}`,
       location: input.location,
     }),
   );
@@ -248,7 +248,7 @@ export function fromLegacyHooksConfig(input: {
   return hooks;
 }
 
-export function toRobinRunHooksEvents(hooks: Hook[]): WorkspaceHooksConfig["events"] {
+export function toRobinDoneHooksEvents(hooks: Hook[]): WorkspaceHooksConfig["events"] {
   const events: WorkspaceHooksConfig["events"] = {};
   for (const hook of hooks) {
     const eventMatchers = events[hook.event] ?? [];

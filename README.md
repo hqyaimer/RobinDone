@@ -1,15 +1,15 @@
-# RobinRun
+# RobinDone
 
 <div align="center">
-  <img src="public/logo/icons/1024x1024.png" alt="RobinRun" width="128" height="128" />
+  <img src="public/logo/icons/1024x1024.png" alt="RobinDone" width="128" height="128" />
 </div>
 <p align="center">
   简体中文 | <a href="README.en.md">English</a>
 </p>
 
-**RobinRun** 是一个**通用型常驻自动化 Harness**：以项目为单位组建多智能体团队，触发器驱动、全天候自动运转——智能体只在被触发时启动，状态沉淀在文件里，人随时可以插话和接管。
+**RobinDone** 是一个**通用型常驻自动化 Harness**：以项目为单位组建多智能体团队，触发器驱动、全天候自动运转——智能体只在被触发时启动，状态沉淀在文件里，人随时可以插话和接管。
 
-## RobinRun 是什么
+## RobinDone 是什么
 
 把一个长期运转的项目（监控、运营、开发协作……任何领域）交给一个智能体团队：
 
@@ -18,25 +18,25 @@
 - **触发器**（定时 / webhook / 脚本）在事件发生时自动唤醒对应的智能体；
 - 你在群聊式对话区里与所有智能体协作，随时插话、随时打断，重大事项由主智能体上报给你决策。
 
-| 概念 | 一句话说明 |
-| --- | --- |
-| 项目（工作空间） | 一个主体 / 一个长期目标一个项目，数据、智能体编制、触发器相互隔离 |
-| 主智能体（master） | 项目总管：方向、规划、分工、进度、验收全部兜底 |
-| worker | 常驻执行智能体（开发、运营等），独立会话 + 独立状态文件 |
-| subagent | 任意智能体临时拉起的帮手，任务结束即销毁 |
-| 触发器 | 定时 / 本地 webhook / 脚本三类事件源，事件自动唤醒智能体 |
-| 运营面板 | 需求、审批、反馈与项目进度账本 |
+| 概念               | 一句话说明                                                        |
+| ------------------ | ----------------------------------------------------------------- |
+| 项目（工作空间）   | 一个主体 / 一个长期目标一个项目，数据、智能体编制、触发器相互隔离 |
+| 主智能体（master） | 项目总管：方向、规划、分工、进度、验收全部兜底                    |
+| worker             | 常驻执行智能体（开发、运营等），独立会话 + 独立状态文件           |
+| subagent           | 任意智能体临时拉起的帮手，任务结束即销毁                          |
+| 触发器             | 定时 / 本地 webhook / 脚本三类事件源，事件自动唤醒智能体          |
+| 运营面板           | 需求、审批、反馈与项目进度账本                                    |
 
 ## 与常见 Agent Harness 的区别
 
-| | 常见单智能体 Harness | RobinRun |
-| --- | --- | --- |
-| 组织形态 | 单智能体，一次处理一个会话 | 项目制 + 三层编制：master → 常驻 worker → 临时 subagent |
-| 驱动方式 | 以人发起对话为主 | 事件驱动：触发器自动唤醒对应智能体，人可随时介入 |
-| 生命周期 | 会话结束工作即停止 | 项目持续运转；智能体仅被触发时启动，无常驻 LLM 循环 |
-| 状态沉淀 | 依赖会话上下文 | 状态文件与知识库落盘，是跨会话唯一可信状态 |
-| 协作模型 | —— | 群聊形态：worker 之间不直连、经主智能体转达；用户可插话、可打断 |
-| 使用形态 | CLI / 编辑器插件为主 | 桌面应用，所有项目共用一个窗口 |
+|          | 常见单智能体 Harness       | RobinDone                                                       |
+| -------- | -------------------------- | --------------------------------------------------------------- |
+| 组织形态 | 单智能体，一次处理一个会话 | 项目制 + 三层编制：master → 常驻 worker → 临时 subagent         |
+| 驱动方式 | 以人发起对话为主           | 事件驱动：触发器自动唤醒对应智能体，人可随时介入                |
+| 生命周期 | 会话结束工作即停止         | 项目持续运转；智能体仅被触发时启动，无常驻 LLM 循环             |
+| 状态沉淀 | 依赖会话上下文             | 状态文件与知识库落盘，是跨会话唯一可信状态                      |
+| 协作模型 | ——                         | 群聊形态：worker 之间不直连、经主智能体转达；用户可插话、可打断 |
+| 使用形态 | CLI / 编辑器插件为主       | 桌面应用，所有项目共用一个窗口                                  |
 
 ## 核心功能
 
@@ -101,7 +101,7 @@
 
 ## 安装
 
-从 [GitHub Releases](https://github.com/hqyaimer/RobinRun/releases) 下载对应平台的安装包（最新版本以 Releases 页为准）。当前安装包均未做代码签名，首次安装需要按各平台说明放行一次。
+从 [GitHub Releases](https://github.com/hqyaimer/RobinDone/releases) 下载对应平台的安装包（最新版本以 Releases 页为准）。当前安装包均未做代码签名，首次安装需要按各平台说明放行一次。
 
 ### Windows 11（win-x64）
 
@@ -113,18 +113,18 @@
 
 ### macOS（Apple Silicon / Intel）
 
-1. 下载对应架构的 `.dmg`，打开后把 RobinRun 拖入「应用程序」；
+1. 下载对应架构的 `.dmg`，打开后把 RobinDone 拖入「应用程序」；
 2. 当前 mac 包未签名公证，首次打开需在终端移除隔离属性后再启动：
 
 ```bash
-sudo xattr -rd com.apple.quarantine /Applications/RobinRun.app
+sudo xattr -rd com.apple.quarantine /Applications/RobinDone.app
 ```
 
 > mac 版自动更新暂不可用，新版本请在 Releases 页手动下载。
 
 ### Linux（x64）
 
-- **AppImage**：`chmod +x RobinRun-*.AppImage` 后直接运行；
+- **AppImage**：`chmod +x RobinDone-*.AppImage` 后直接运行；
 - **deb / rpm / pacman 包**：按发行版常规方式安装。
 
 ### 首次启动
@@ -133,7 +133,7 @@ sudo xattr -rd com.apple.quarantine /Applications/RobinRun.app
 2. 在设置中配置模型提供商（API 地址与 key）；
 3. 与主智能体对话，让它组建 worker 编制、配置触发器，项目开始运转。
 
-所有数据保存在本机 `~/.robinrun` 目录。
+所有数据保存在本机 `~/.robindone` 目录。
 
 ## 从源码构建
 
@@ -150,7 +150,7 @@ pnpm lint          # 代码检查
 
 双许可：
 
-- **RobinRun 原创代码与文档**：[MIT](LICENSE-MIT)
+- **RobinDone 原创代码与文档**：[MIT](LICENSE-MIT)
 - **衍生自上游开源项目的代码**：[Apache-2.0](LICENSE)（其法律授权不可更改）
 
 第三方组件声明见 [NOTICE.md](NOTICE.md) 与 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

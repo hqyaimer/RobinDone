@@ -32,7 +32,7 @@ import {
   TrendingUpDownIcon,
   XIcon,
 } from "lucide-react";
-import { parseAutomationRunId, workerGroupId } from "@robinrun/shared";
+import { parseAutomationRunId, workerGroupId } from "@robindone/shared";
 import {
   TID_V4_EDIT,
   TID_V4_EDIT_ATTACHMENT_REMOVE,
@@ -46,7 +46,7 @@ import {
   TID_V4_ROW,
   TID_V4_ROW_ATTACHMENTS,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import type {
   AttachmentRef,
   ArtifactRow,
@@ -62,7 +62,7 @@ import type {
   TurnHeaderRow,
   UserInputRow,
   V4ConversationFileRewindPreviewResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { AssistantPreviewCards } from "@/AssistantPreviewCards.js";
 import { AssistantCodeCommentCards } from "@/AssistantCodeCommentCards.js";
 import { useAssistantCodeCommentFeatureEnabled } from "@/AssistantCodeCommentFeatureProvider.js";
@@ -101,7 +101,7 @@ import {
 } from "@/ToolCallBlocks/renderers/createWorkflowHoleInput.js";
 import { ToolCallBlock } from "@/ToolCallBlocks.js";
 import { resolveWorkflowRunOpenToolCallId } from "@/v4/workflowRunCardJoin.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useOptionalPlatform } from "@/hooks/usePlatform.js";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
@@ -227,7 +227,7 @@ type UserInputEditHandler = (
   newText: string,
   attachments?: readonly AttachmentRef[],
   workspaceMode?: "preserve" | "rewind",
-  conversationQuotes?: import("@robinrun/shared").ConversationSelectionText[],
+  conversationQuotes?: import("@robindone/shared").ConversationSelectionText[],
 ) => Promise<CommandAck | boolean | void> | CommandAck | boolean | void;
 
 type AssistantMessageFeedback = "like" | "dislike";
@@ -372,7 +372,7 @@ const UserInputAttachmentList = memo(function UserInputAttachmentList({
   readAttachment?: NonNullable<ConversationRowRenderContext["readAttachment"]>;
   readAttachmentRange?: NonNullable<ConversationRowRenderContext["readAttachmentRange"]>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [failedRefs, setFailedRefs] = useState<ReadonlySet<string>>(() => new Set());
@@ -990,7 +990,7 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
   editWorkspaceRewindAvailability?: EditWorkspaceRewindAvailability;
   status?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // 引擎尾注折叠：正文只到 epilogueStart，
   // 之后的引擎文本折进气泡底部的披露。提示词上下文解析也只看正文——尾注里没有用户引用。
   const { body: bodyText, epilogue } = splitUserInputEpilogue(row.text, row.epilogueStart);
@@ -1497,7 +1497,7 @@ const SingleUserInputRowView = memo(function SingleUserInputRowView({
               <GenUiMessageResponse
                 completed
                 messageKey={`${row.rowId}:${row.entityId ?? ""}`}
-                renderRobinRunFileCitations
+                renderRobinDoneFileCitations
                 streaming={false}
                 workspacePath={context.workspacePath}
                 workspaceIdentity={context.workspaceIdentity}
@@ -1667,7 +1667,7 @@ export const ConversationAssistantTextActions = memo(function ConversationAssist
   onFeedbackChange?: AssistantFeedbackHandler;
   className?: string;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const platform = useOptionalPlatform();
   const [localFeedback, setLocalFeedback] = useState<AssistantMessageFeedback | null>(feedback);
   const copyLabel = intl.formatMessage({ id: "chat.message.copy" });
@@ -1760,7 +1760,7 @@ export const ConversationAssistantTextActions = memo(function ConversationAssist
             <span
               className={cn(
                 "relative inline-flex",
-                localFeedback === "like" && "robinrun-reaction-burst",
+                localFeedback === "like" && "robindone-reaction-burst",
               )}
             >
               <ThumbsUpIcon className="size-3.5" />
@@ -1778,7 +1778,7 @@ export const ConversationAssistantTextActions = memo(function ConversationAssist
             <span
               className={cn(
                 "relative inline-flex",
-                localFeedback === "dislike" && "robinrun-reaction-burst",
+                localFeedback === "dislike" && "robindone-reaction-burst",
               )}
             >
               <ThumbsDownIcon className="size-3.5" />
@@ -1912,7 +1912,7 @@ const AssistantTextRowView = memo(function AssistantTextRowView({
         <GenUiMessageResponse
           completed={row.state === "complete"}
           messageKey={`${row.rowId}:${row.entityId ?? ""}`}
-          renderRobinRunFileCitations
+          renderRobinDoneFileCitations
           streaming={streaming}
           workspacePath={context.workspacePath}
           workspaceIdentity={context.workspaceIdentity}
@@ -2147,7 +2147,7 @@ const TimelineMarkerRowView = memo(function TimelineMarkerRowView({
   row: TimelineMarkerRow;
   context: ConversationRowRenderContext;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const marker = row.marker;
   const modelSelectionView = context.modelSelectionView ?? null;

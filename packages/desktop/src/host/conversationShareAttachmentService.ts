@@ -1,1 +1,1 @@
-export { scopeConversationShareServiceForAttachment } from "@robinrun/services/node";
+export { scopeConversationShareServiceForAttachment } from "@robindone/services/node";

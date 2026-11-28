@@ -2,7 +2,7 @@
 // 侧栏/任务列表消费本 hook 拿会话摘要列表，替代 zustand 任务态（08-phasing M5 步骤 2）；
 // 多个列表消费者共享同一 workspace 订阅时改走 sessionsIndexRegistry（引用计数复用 store）。
 import { useEffect, useMemo, useSyncExternalStore } from "react";
-import type { SessionSummary } from "@robinrun/shared/robinrun-protocol-v4";
+import type { SessionSummary } from "@robindone/shared/robindone-protocol-v4";
 import { useServices } from "@/hooks/useServices.js";
 import { createAgentSessionsIndexTransport } from "@/v4/agentSessionsIndexTransport.js";
 import { SessionsIndexStore, type SessionsIndexStoreStatus } from "@/v4/sessionsIndexStore.js";
@@ -20,22 +20,22 @@ export function useSessionsIndex(
   workspacePath: string,
   workspaceIdentity?: string,
 ): UseSessionsIndexResult {
-  const { robinrunAgentService } = useServices();
+  const { robindoneAgentService } = useServices();
 
   const store = useMemo(
     () => new SessionsIndexStore(),
     // 每个 workspace 一个 store 实例（依赖变化 → 全新 store 冷启动）。
-    [workspacePath, workspaceIdentity, robinrunAgentService],
+    [workspacePath, workspaceIdentity, robindoneAgentService],
   );
 
   useEffect(() => {
-    const transport = createAgentSessionsIndexTransport(robinrunAgentService, {
+    const transport = createAgentSessionsIndexTransport(robindoneAgentService, {
       workspacePath,
       ...(workspaceIdentity ? { workspaceIdentity } : {}),
     });
     void store.connect(transport, { forceSnapshot: true });
     return () => store.close();
-  }, [store, workspacePath, workspaceIdentity, robinrunAgentService]);
+  }, [store, workspacePath, workspaceIdentity, robindoneAgentService]);
 
   // useSyncExternalStore：store.subscribe/getState 是类字段箭头函数，引用稳定。
   const state = useSyncExternalStore(store.subscribe, store.getState);

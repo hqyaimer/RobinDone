@@ -24,20 +24,20 @@ import type {
   Locale,
   UsageEntitlementSnapshot,
   UserInfo,
-  RobinRunInteractionBehavior,
-} from "@robinrun/shared";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
+  RobinDoneInteractionBehavior,
+} from "@robindone/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
 import {
   TID_SETTINGS_BACK_BUTTON,
   TID_SETTINGS_PAGE,
   TID_SETTINGS_SECTION_NAV,
   TID_SETTINGS_USAGE_TAB,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { DesktopWindowFrame } from "@/DesktopWindowFrame.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { logger } from "@/logger.js";
 import { getPathLeaf } from "@/lib/path.js";
@@ -101,7 +101,7 @@ import {
   SettingsHeaderBreadcrumb,
   type SettingsBreadcrumbItem,
 } from "@/settings/SettingsHeaderBreadcrumb.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 import type { Theme } from "@/useTheme.js";
@@ -114,7 +114,7 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { cn } from "@/components/lib/utils.js";
 import { useSelectDirectory } from "@/hooks/usePlatform.js";
 import { ServiceProvider, useServices } from "@/hooks/useServices.js";
-import type { AppToolSearchMode } from "@robinrun/shared";
+import type { AppToolSearchMode } from "@robindone/shared";
 import { useSettings } from "@/hooks/useSettingService.js";
 import type { CreateTaskRequest, RemoteConnectionOpenPreference } from "@/app-shell/types.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
@@ -170,7 +170,7 @@ function SettingsUsageProviderTabs({
   codingPlanSources: CodingPlanUsageSource[];
   onTabChange: (tab: UsageStatsSectionTab) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const tabItems = [
     {
       id: "app" as const,
@@ -326,7 +326,7 @@ export function SettingsPage({
   onLogout?: () => void;
   user?: UserInfo | null;
 }) {
-  const { intl, localePreference, setLocalePreference } = useRobinRunIntl();
+  const { intl, localePreference, setLocalePreference } = useRobinDoneIntl();
   const { settingsSectionGroups, settingsSections } = useMemo(
     () =>
       createSettingsPageConfig({
@@ -417,20 +417,20 @@ export function SettingsPage({
   const [settingsBreadcrumbItems, setSettingsBreadcrumbItems] = useState<
     readonly SettingsBreadcrumbItem[]
   >([]);
-  const interfaceMode = useRobinRunStore((state) => state.interfaceMode);
-  const setInterfaceMode = useRobinRunStore((state) => state.setInterfaceMode);
-  const theme = useRobinRunStore((state) => state.theme);
-  const setTheme = useRobinRunStore((state) => state.setTheme);
-  const codePreviewSettings = useRobinRunStore((state) => state.codePreviewSettings);
-  const setCodePreviewSettings = useRobinRunStore((state) => state.setCodePreviewSettings);
-  const uiFontSizePx = useRobinRunStore((state) => state.uiFontSizePx);
-  const setUiFontSizePx = useRobinRunStore((state) => state.setUiFontSizePx);
-  const hideProjectDeviceNames = useRobinRunStore((state) => state.hideProjectDeviceNames);
-  const setHideProjectDeviceNames = useRobinRunStore((state) => state.setHideProjectDeviceNames);
-  const notificationEnabled = useRobinRunStore((state) => state.notificationEnabled);
-  const setNotificationEnabled = useRobinRunStore((state) => state.setNotificationEnabled);
-  const notificationSoundEnabled = useRobinRunStore((state) => state.notificationSoundEnabled);
-  const setNotificationSoundEnabled = useRobinRunStore(
+  const interfaceMode = useRobinDoneStore((state) => state.interfaceMode);
+  const setInterfaceMode = useRobinDoneStore((state) => state.setInterfaceMode);
+  const theme = useRobinDoneStore((state) => state.theme);
+  const setTheme = useRobinDoneStore((state) => state.setTheme);
+  const codePreviewSettings = useRobinDoneStore((state) => state.codePreviewSettings);
+  const setCodePreviewSettings = useRobinDoneStore((state) => state.setCodePreviewSettings);
+  const uiFontSizePx = useRobinDoneStore((state) => state.uiFontSizePx);
+  const setUiFontSizePx = useRobinDoneStore((state) => state.setUiFontSizePx);
+  const hideProjectDeviceNames = useRobinDoneStore((state) => state.hideProjectDeviceNames);
+  const setHideProjectDeviceNames = useRobinDoneStore((state) => state.setHideProjectDeviceNames);
+  const notificationEnabled = useRobinDoneStore((state) => state.notificationEnabled);
+  const setNotificationEnabled = useRobinDoneStore((state) => state.setNotificationEnabled);
+  const notificationSoundEnabled = useRobinDoneStore((state) => state.notificationSoundEnabled);
+  const setNotificationSoundEnabled = useRobinDoneStore(
     (state) => state.setNotificationSoundEnabled,
   );
   const usageProviderSettingsRead = useProviderSettingsView();
@@ -636,10 +636,10 @@ export function SettingsPage({
     usageBigmodelEnterpriseProducts.loading ||
     usageZaiEnterpriseProducts.loading;
   const [initialModelProviderTarget] = useState(() => consumePendingSettingsModelProviderTarget());
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「升级弹窗 hook」——Root 已摘除 CodingPlanUpgradeDialogProvider，
   // 非可选 hook 无 Provider 会 throw，恢复时随 Root Provider 一并取消注释
   // const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const [pendingModelProviderTarget, setPendingModelProviderTarget] = useState<
     SettingsModelProviderTarget | undefined
   >(() => initialModelProviderTarget);
@@ -678,12 +678,12 @@ export function SettingsPage({
         : "app",
     );
   }, [selectedUsageCodingPlanSource, usageActiveTab, usageCodingPlanSources]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——职业引导壳已摘除，恢复时取消本行注释
-  // const setNewUserOnboardingOpen = useRobinRunStore((state) => state.setNewUserOnboardingOpen);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——职业引导壳已摘除，恢复时取消本行注释
+  // const setNewUserOnboardingOpen = useRobinDoneStore((state) => state.setNewUserOnboardingOpen);
   // // 「通用」页「打开引导」打开职业引导；迁移向导只从数据同步页「迁移」进入。
   // const openOccupationOnboarding = () => setNewUserOnboardingOpen(true);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-  const requestMigrationDialog = useRobinRunStore((state) => state.requestOnboardingDialog);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+  const requestMigrationDialog = useRobinDoneStore((state) => state.requestOnboardingDialog);
   const setActiveSettingsSection = useCallback(
     (section: SettingsSectionId, fallbackSection: SettingsSectionId = activeSection) => {
       const resolvedSection = resolveSettingsSection(section, fallbackSection);
@@ -697,7 +697,7 @@ export function SettingsPage({
       setActiveSettingsSection("general");
     }
   }, [activeSection, isDesktop, setActiveSettingsSection]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「footer 升级/用量入口 handler」——usage 分区与升级弹窗
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「footer 升级/用量入口 handler」——usage 分区与升级弹窗
   // 均已隐藏，恢复时取消本段注释（升级弹窗还需恢复 Root 的 CodingPlanUpgradeDialogProvider）
   // const handleOpenCodingPlanUpgradeSettings = useCallback(
   //   (
@@ -711,17 +711,17 @@ export function SettingsPage({
   //   },
   //   [openCodingPlanUpgrade],
   // );
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const handleOpenModelProviderSettings = useCallback(() => {
     setActiveSettingsSection("modelProvider");
   }, [setActiveSettingsSection]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「usage 分区跳转 handler」——恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「usage 分区跳转 handler」——恢复时取消本段注释
   // const handleOpenUsageSettings = useCallback(() => {
   //   // 设置页 sidebar footer 里的齿轮/返回按钮复用 onBack，
   //   // 但头像菜单的“使用统计”应该停留在设置页并切到 Usage，不能跟着返回工作区。
   //   setActiveSettingsSection("usage");
   // }, [setActiveSettingsSection]);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const activeWorkspacePath = useTabStore((state) => state.activeWorkspacePath);
   const activateTab = useTabStore((state) => state.activateTab);
   const openSettingsTab = useTabStore((state) => state.openSettingsTab);
@@ -834,8 +834,8 @@ export function SettingsPage({
   const [toolGroupingExploreEnabled, setToolGroupingExploreEnabled] = useState(true);
   const [toolGroupingTerminalEnabled, setToolGroupingTerminalEnabled] = useState(true);
   const [toolGroupingChangesEnabled, setToolGroupingChangesEnabled] = useState(false);
-  const [robinrunInteractionBehavior, setRobinRunInteractionBehavior] =
-    useState<RobinRunInteractionBehavior>("queue");
+  const [robindoneInteractionBehavior, setRobinDoneInteractionBehavior] =
+    useState<RobinDoneInteractionBehavior>("queue");
   const [defaultHomeDir, setDefaultHomeDir] = useState("");
   const [hostPlatform, setHostPlatform] = useState("");
 
@@ -970,7 +970,7 @@ export function SettingsPage({
     setToolGroupingExploreEnabled(sharedSettings.toolGroupingExploreEnabled ?? true);
     setToolGroupingTerminalEnabled(sharedSettings.toolGroupingTerminalEnabled ?? true);
     setToolGroupingChangesEnabled(sharedSettings.toolGroupingChangesEnabled ?? false);
-    setRobinRunInteractionBehavior(sharedSettings.robinrunInteractionBehavior ?? "queue");
+    setRobinDoneInteractionBehavior(sharedSettings.robindoneInteractionBehavior ?? "queue");
     setReceivePreviewUpdates(sharedSettings.receivePreviewUpdates ?? false);
     setAutoDownloadAndInstallUpdates(sharedSettings.autoDownloadAndInstallUpdates ?? false);
   }, [sharedSettings]);
@@ -1442,16 +1442,16 @@ export function SettingsPage({
     },
     [updateSharedSettings],
   );
-  const handleRobinRunInteractionBehaviorChange = useCallback(
-    async (behavior: RobinRunInteractionBehavior) => {
+  const handleRobinDoneInteractionBehaviorChange = useCallback(
+    async (behavior: RobinDoneInteractionBehavior) => {
       await runSettingsActionAsync({
         featureId: "settings.conversation",
         action: "change_interaction_behavior",
         trigger: "select",
-        operation: () => updateSharedSettings({ robinrunInteractionBehavior: behavior }),
+        operation: () => updateSharedSettings({ robindoneInteractionBehavior: behavior }),
         completed: { resultSource: "shared_settings", valueAfter: behavior },
       });
-      setRobinRunInteractionBehavior(behavior);
+      setRobinDoneInteractionBehavior(behavior);
     },
     [updateSharedSettings],
   );
@@ -1713,11 +1713,11 @@ export function SettingsPage({
                   onLocaleChange={handleFooterLocaleChange}
                   onThemeChange={handleFooterThemeChange}
                   onSettingsButtonClick={onBack}
-                  // RobinRun(2026-11-22): [hide-upstream-account] footer 的 usage/upgrade 入口 props 已随
+                  // RobinDone(2026-11-22): [hide-upstream-account] footer 的 usage/upgrade 入口 props 已随
                   // WorkspaceSidebarFooter 类型注释移除，恢复时取消以下两行
                   // onUsageClick={handleOpenUsageSettings}
                   // onUpgradeClick={handleOpenCodingPlanUpgradeSettings}
-                  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+                  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
                   onLogin={onLogin}
                   onLogout={onLogout}
                   settingsButtonMode="back"
@@ -1913,7 +1913,7 @@ export function SettingsPage({
                               toolGroupingExploreEnabled={toolGroupingExploreEnabled}
                               toolGroupingTerminalEnabled={toolGroupingTerminalEnabled}
                               toolGroupingChangesEnabled={toolGroupingChangesEnabled}
-                              robinrunInteractionBehavior={robinrunInteractionBehavior}
+                              robindoneInteractionBehavior={robindoneInteractionBehavior}
                               askUserQuestionAutoResolutionEnabled={
                                 askUserQuestionAutoResolutionEnabled
                               }
@@ -1956,13 +1956,13 @@ export function SettingsPage({
                               onToolGroupingChangesEnabledChange={
                                 handleToolGroupingChangesEnabledChange
                               }
-                              onRobinRunInteractionBehaviorChange={
-                                handleRobinRunInteractionBehaviorChange
+                              onRobinDoneInteractionBehaviorChange={
+                                handleRobinDoneInteractionBehaviorChange
                               }
                               onAskUserQuestionAutoResolutionEnabledChange={
                                 handleAskUserQuestionAutoResolutionEnabledChange
                               }
-                              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——
+                              // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「打开引导」入口——
                               // 职业引导壳已摘除，恢复时取消以下注释
                               // onOpenOnboardingDialog={() =>
                               //   runUserAction({
@@ -1976,7 +1976,7 @@ export function SettingsPage({
                               //     failureStage: "dialog_open",
                               //   })
                               // }
-                              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+                              // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
                             />
                           ) : activeSection === "dataSync" ? (
                             isDesktop ? (
@@ -2149,7 +2149,7 @@ export function SettingsPage({
                               />
                             </ServiceProvider>
                           ) : activeSection === "personalization" ? (
-                            // 个性化指令编辑的是本机 ~/.robinrun/AGENTS.md（Agent 实际读取的文件）。
+                            // 个性化指令编辑的是本机 ~/.robindone/AGENTS.md（Agent 实际读取的文件）。
                             // 仅桌面本地入口可编辑：手机远控的 base services 可能归属远程
                             // Source（remoteWorkspaceServiceCollection 注册的是远端 settingService），
                             // 编辑会写错机器；Web 端只显示本地桌面端指引。
@@ -2236,7 +2236,7 @@ export function SettingsPage({
                               />
                               <ArchiveManagement />
                             </div>
-                          ) : // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区渲染」——上游 Coding Plan
+                          ) : // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区渲染」——上游 Coding Plan
                           // 套餐用量（依赖登录 entitlement），分区已从导航移除且意图回落 general，分支不可达。
                           // 恢复时取消本段注释
                           // ) : activeSection === "usage" ? (
@@ -2247,7 +2247,7 @@ export function SettingsPage({
                           //     workspaceIdentity={activeWorkspaceIdentity}
                           //     workspacePath={activeWorkspacePath ?? undefined}
                           //   />
-                          // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+                          // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
                           activeSection === "subagents" ? (
                             <SubagentsSection
                               onManageModels={handleOpenModelProviderSettings}

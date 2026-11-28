@@ -1,23 +1,23 @@
 import { useState } from "react";
 import { Smartphone } from "lucide-react";
-import type { WebRemoteControlStatus } from "@robinrun/shared";
+import type { WebRemoteControlStatus } from "@robindone/shared";
 import {
   buildWebRemoteControlEntryViewTelemetry,
   parseRemoteWorkspaceIdentity,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { useResolvedRemoteWorkspaceSessionId } from "@/hooks/useResolvedRemoteWorkspaceSessionId.js";
 import { useOptionalPlatform } from "@/hooks/usePlatform.js";
 import { useWebRemoteControlStatus } from "@/hooks/useWebRemoteControlStatus.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { WebRemoteControlDialog } from "@/web-remote-control/index.js";
 import { useWebRemoteControlFeatureEnabled } from "@/WebRemoteControlFeatureProvider.js";
 
-type FormatMessage = ReturnType<typeof useRobinRunIntl>["intl"]["formatMessage"];
+type FormatMessage = ReturnType<typeof useRobinDoneIntl>["intl"]["formatMessage"];
 
 export function getWebRemoteControlTriggerPresentation(
   status: Pick<WebRemoteControlStatus, "status" | "mobileConnected">,
@@ -123,7 +123,7 @@ function WorkspaceWebRemoteControlTriggerContent({
   compact?: boolean;
   className?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const platform = useOptionalPlatform();
   const mappedRemoteSessionId = useResolvedRemoteWorkspaceSessionId(
     workspacePath,

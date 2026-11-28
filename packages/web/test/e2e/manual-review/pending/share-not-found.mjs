@@ -10,7 +10,7 @@ try {
       for (const theme of ["zai-light", "zai-dark"]) {
         const context = await browser.newContext({ viewport: { width, height: 800 } });
         await context.addInitScript(
-          (value) => localStorage.setItem("robinrun-theme", value),
+          (value) => localStorage.setItem("robindone-theme", value),
           theme,
         );
         const page = await context.newPage();
@@ -54,7 +54,7 @@ try {
           exact: true,
         });
         // 清除模拟登录态后重试必须回到登录页，证明按钮实际重新读取 token 并请求。
-        await page.evaluate(() => sessionStorage.removeItem("robinrun:share:mock-auth"));
+        await page.evaluate(() => sessionStorage.removeItem("robindone:share:mock-auth"));
         await retry.click();
         await page.locator('[data-share-login-provider="bigmodel"]').waitFor();
         await page.locator('[data-share-login-provider="bigmodel"]').click();

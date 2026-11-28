@@ -1,11 +1,11 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { createUuid } from "@robinrun/shared";
-import { getAppConfigDir } from "@robinrun/services/node";
+import { createUuid } from "@robindone/shared";
+import { getAppConfigDir } from "@robindone/services/node";
 
 export interface EnsureDesktopDeviceMidSyncOptions {
-  /** state 文件所在目录，默认 getAppConfigDir()（即 ~/.robinrun/v2）。仅测试注入 */
+  /** state 文件所在目录，默认 getAppConfigDir()（即 ~/.robindone/v2）。仅测试注入 */
   configDir?: string;
   /** UUID 生成器，默认 createUuid。仅测试注入 */
   createId?: () => string;

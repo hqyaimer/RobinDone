@@ -1,6 +1,6 @@
-import { HostResponseTypes, type NetworkCaptureBatch } from "@robinrun/shared";
-import { createNodeNetworkCapture } from "@robinrun/shared/node";
-import { localRuntimeNetworkCapture } from "@robinrun/services/node";
+import { HostResponseTypes, type NetworkCaptureBatch } from "@robindone/shared";
+import { createNodeNetworkCapture } from "@robindone/shared/node";
+import { localRuntimeNetworkCapture } from "@robindone/services/node";
 
 export function createHostNetworkCapture(
   port: { postMessage(message: unknown): void } | undefined,

@@ -1,4 +1,4 @@
-import type { RemoteTarget } from "@robinrun/shared";
+import type { RemoteTarget } from "@robindone/shared";
 
 export function formatRemoteLinkRailTarget(target: RemoteTarget): string {
   switch (target.kind) {

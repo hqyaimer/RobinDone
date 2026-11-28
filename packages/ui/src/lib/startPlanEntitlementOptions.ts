@@ -1,5 +1,5 @@
-import type { ProviderSettingsView } from "@robinrun/services";
-import { resolveModelProviderFamilySpecByProviderId } from "@robinrun/shared";
+import type { ProviderSettingsView } from "@robindone/services";
+import { resolveModelProviderFamilySpecByProviderId } from "@robindone/shared";
 import type { UseUsageEntitlementOptions } from "@/hooks/useUsageEntitlement.js";
 import { resolveAccountProviderInspectionAccess } from "@/lib/accountProviderAccess.js";
 import { buildUsageEntitlementCacheKey } from "@/lib/usageEntitlementCache.js";

@@ -1,4 +1,4 @@
-export const ROBINRUN_KNOWN_TOOL_NAMES = [
+export const ROBINDONE_KNOWN_TOOL_NAMES = [
   "Read",
   "Write",
   "Edit",
@@ -42,9 +42,9 @@ export const ROBINRUN_KNOWN_TOOL_NAMES = [
   "submit_result",
 ] as const;
 
-export type RobinRunKnownToolName = (typeof ROBINRUN_KNOWN_TOOL_NAMES)[number];
+export type RobinDoneKnownToolName = (typeof ROBINDONE_KNOWN_TOOL_NAMES)[number];
 
-export type RobinRunToolFamily =
+export type RobinDoneToolFamily =
   | "file-read"
   | "file-write"
   | "shell"
@@ -61,7 +61,7 @@ export type RobinRunToolFamily =
   | "node-repl"
   | "workflow";
 
-const TOOL_FAMILY_BY_NAME: Record<RobinRunKnownToolName, RobinRunToolFamily> = {
+const TOOL_FAMILY_BY_NAME: Record<RobinDoneKnownToolName, RobinDoneToolFamily> = {
   Read: "file-read",
   Write: "file-write",
   Edit: "file-write",
@@ -100,13 +100,13 @@ const TOOL_FAMILY_BY_NAME: Record<RobinRunKnownToolName, RobinRunToolFamily> = {
   submit_result: "workflow",
 };
 
-const TOOL_NAME_BY_LOWER = new Map<string, RobinRunKnownToolName>(
-  ROBINRUN_KNOWN_TOOL_NAMES.map((toolName) => [toolName.toLowerCase(), toolName]),
+const TOOL_NAME_BY_LOWER = new Map<string, RobinDoneKnownToolName>(
+  ROBINDONE_KNOWN_TOOL_NAMES.map((toolName) => [toolName.toLowerCase(), toolName]),
 );
 
-export function normalizeRobinRunToolName(
+export function normalizeRobinDoneToolName(
   value: string | null | undefined,
-): RobinRunKnownToolName | null {
+): RobinDoneKnownToolName | null {
   const normalized = value?.trim();
   if (!normalized) {
     return null;
@@ -115,20 +115,20 @@ export function normalizeRobinRunToolName(
   return TOOL_NAME_BY_LOWER.get(normalized.toLowerCase()) ?? null;
 }
 
-export function getRobinRunToolFamilyForName(
+export function getRobinDoneToolFamilyForName(
   value: string | null | undefined,
-): RobinRunToolFamily | null {
-  const toolName = normalizeRobinRunToolName(value);
+): RobinDoneToolFamily | null {
+  const toolName = normalizeRobinDoneToolName(value);
   return toolName ? TOOL_FAMILY_BY_NAME[toolName] : null;
 }
 
-export function isRobinRunToolFamily(
+export function isRobinDoneToolFamily(
   value: string | null | undefined,
-  family: RobinRunToolFamily,
+  family: RobinDoneToolFamily,
 ): boolean {
-  return getRobinRunToolFamilyForName(value) === family;
+  return getRobinDoneToolFamilyForName(value) === family;
 }
 
-export function isRobinRunFileContentWriteToolName(value: string | null | undefined): boolean {
-  return normalizeRobinRunToolName(value) === "Write";
+export function isRobinDoneFileContentWriteToolName(value: string | null | undefined): boolean {
+  return normalizeRobinDoneToolName(value) === "Write";
 }

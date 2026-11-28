@@ -5,9 +5,9 @@ import type {
   CommandSetEnabledParams,
   CommandUpdateParams,
   UserCommand,
-  RobinRunCommand,
-} from "@robinrun/shared";
-import type { ICommandsService } from "@robinrun/services";
+  RobinDoneCommand,
+} from "@robindone/shared";
+import type { ICommandsService } from "@robindone/services";
 
 interface CommandsStoreState {
   workspacePath: string | null;
@@ -17,9 +17,9 @@ interface CommandsStoreState {
   loadedWorkspacePath: string | null;
   loadedWorkspaceIdentity: string | null;
   loadedAuthorityKey: string | null;
-  commands: RobinRunCommand[];
+  commands: RobinDoneCommand[];
   userCommands: UserCommand[];
-  pluginCommands: RobinRunCommand[];
+  pluginCommands: RobinDoneCommand[];
   capability: { userScopeAvailable: boolean };
   loading: boolean;
   error: string | null;

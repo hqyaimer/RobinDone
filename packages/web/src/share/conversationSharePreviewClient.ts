@@ -10,7 +10,7 @@ import {
   type ConversationShareErrorKind,
   type ConversationSharePreview,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 const SHARE_CODE_PATTERN = /^[A-Za-z0-9._~-]{1,512}$/u;
 
@@ -67,7 +67,7 @@ export function buildShareImportDeepLink(shareCode: string): string {
   if (!isSafeConversationShareCode(shareCode)) {
     throw new TypeError("Invalid conversation share code");
   }
-  return `robinrun://share/import?code=${encodeURIComponent(shareCode)}`;
+  return `robindone://share/import?code=${encodeURIComponent(shareCode)}`;
 }
 
 export interface ConversationSharePreviewClientOptions {
@@ -238,7 +238,7 @@ export class ConversationSharePreviewClient {
       });
       throw new ConversationSharePreviewClientError({
         kind: "unsupported_schema_version",
-        message: "Conversation share requires a newer RobinRun version",
+        message: "Conversation share requires a newer RobinDone version",
         status: response.status,
         requestId,
       });

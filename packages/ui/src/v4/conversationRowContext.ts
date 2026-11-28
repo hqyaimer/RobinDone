@@ -11,10 +11,10 @@ import type { WorkflowRunSettingsChange } from "@/components/workflow-timeline/w
 import type { WorkflowDraftPosition, WorkflowRunCardSummary } from "@/ToolCallBlocks/shared.js";
 import type { WorkflowFillGraph } from "@/v4/workflowRunCardJoin.js";
 import type { ConversationAgentBlockSurfaces } from "@/v4/ConversationAgentBlock.js";
-import type { TaskGroupColor as RobinRunTaskGroupColor } from "@/project-sidebar/contract.js";
+import type { TaskGroupColor as RobinDoneTaskGroupColor } from "@/project-sidebar/contract.js";
 import type { Theme } from "@/useTheme.js";
-import type { ModelSelectionView } from "@robinrun/services";
-import type { RobinRunWorkflowsForRunCandidate } from "@robinrun/shared";
+import type { ModelSelectionView } from "@robindone/services";
+import type { RobinDoneWorkflowsForRunCandidate } from "@robindone/shared";
 import type { ConversationAttachmentReadParams, ConversationTransport } from "@/v4/transport.js";
 import type {
   OpenPlanDetailSideTabRequest,
@@ -30,7 +30,7 @@ import type {
   TurnHeaderRow,
   V4ConversationFileChangesResult,
   V4ConversationFileRewindPreviewResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 export type ConversationFileChangesState = Exclude<
   NonNullable<TurnHeaderRow["fileChanges"]>["state"],
@@ -71,7 +71,7 @@ export interface ConversationRowRenderContext {
    * 者（workerGroupId(senderId)）的块头头像染成该 agent 的组色，与编制投影一一对应；
    * 缺席/未命中回退中性。第四轮起值从预拼 class 串改为色枚举。需保持引用稳定（memo 依赖）。
    */
-  agentGroupColors?: ReadonlyMap<string, RobinRunTaskGroupColor>;
+  agentGroupColors?: ReadonlyMap<string, RobinDoneTaskGroupColor>;
   /** @deprecated 旧内联下钻标记；新的子会话统一打开侧栏详情。 */
   inSubagentDrilldown?: boolean;
   /** 手机 /remote 紧凑模式：隐藏外部 App 打开下拉，只保留应用内预览。 */
@@ -155,7 +155,7 @@ export interface ConversationRowRenderContext {
   ) => Promise<CommandAck>;
   /**
    * 完成卡的「保存」/「再次运行」（docs/dynamic-workflow/transcript-and-notifications.md
-   * 「Saving the run, and running it again」）：把 GUI 写好的那条用户消息发进本会话，交给 RobinRun
+   * 「Saving the run, and running it again」）：把 GUI 写好的那条用户消息发进本会话，交给 RobinDone
    * 去提炼保存。与 Resume 同两道门（只读、灰度）且**同一个供给点**——写文件与起引擎都属于
    * 「Resume 被收走的地方一并收走」。缺席即卡上只剩「已保存」芯片那条事实。
    */
@@ -165,7 +165,7 @@ export interface ConversationRowRenderContext {
    * 由宿主从行窗口一遍建立。它是「模型另起名字存下的那份定义」与这次 run 之间仅有的联系
    * （模型不会用 run 名当工作流名），所以必须从转写里读。
    */
-  workflowSaveCandidatesByRunId?: ReadonlyMap<string, readonly RobinRunWorkflowsForRunCandidate[]>;
+  workflowSaveCandidatesByRunId?: ReadonlyMap<string, readonly RobinDoneWorkflowsForRunCandidate[]>;
   /** 会话当前模型（「配置」弹层首项「会话模型」的名字）；读不到即缺席，首项只写「会话模型」。 */
   workflowSessionModel?: { providerId: string; modelId: string };
   /**

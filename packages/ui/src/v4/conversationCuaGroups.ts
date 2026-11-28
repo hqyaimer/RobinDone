@@ -2,7 +2,7 @@ import type {
   AssistantTextRow,
   ReasoningRow,
   ToolCallRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { TaskChatToolCallTreeNode } from "@/lib/toolCallTree.js";
 import type { AssistantWorkRow } from "@/v4/conversationTurnRenderUnits.js";
 import type { ConversationTurnFlowItem } from "@/v4/conversationTurnFlowItems.js";
@@ -27,7 +27,7 @@ export interface ConversationCuaGroupRenderItem {
 
 const OFFICIAL_CUA_TOOL_PREFIXES = [
   "mcp__computer-use__",
-  "mcp__plugin_robinrun-cua_computer-use__",
+  "mcp__plugin_robindone-cua_computer-use__",
 ] as const;
 
 export const ENABLE_CUA_TOOL_CALL_GROUPING = true;

@@ -1,4 +1,4 @@
-import type { BrowserCommand, BrowserCommandResult } from "@robinrun/shared";
+import type { BrowserCommand, BrowserCommandResult } from "@robindone/shared";
 import {
   handleCheck,
   handleClick,

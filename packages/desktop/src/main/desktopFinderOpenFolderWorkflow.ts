@@ -2,14 +2,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import type { Locale } from "@robinrun/shared";
+import type { Locale } from "@robindone/shared";
 
-const WORKFLOW_NAME = "Open in RobinRun.workflow";
-const WORKFLOW_BUNDLE_ID = "dev.robinrun.app.finder-open-workflow";
+const WORKFLOW_NAME = "Open in RobinDone.workflow";
+const WORKFLOW_BUNDLE_ID = "dev.robindone.app.finder-open-workflow";
 const WORKFLOW_VERSION = "5";
 const SERVICES_MENU_LABELS: Record<Locale, string> = {
-  "zh-CN": "在RobinRun中打开",
-  "en-US": "Open in RobinRun",
+  "zh-CN": "在RobinDone中打开",
+  "en-US": "Open in RobinDone",
 };
 
 const workflowScript = `first=""
@@ -22,7 +22,7 @@ done
 
 if [ -n "$first" ]; then
   encoded=$(/usr/bin/osascript -l JavaScript -e 'function run(argv) { return encodeURIComponent(argv[0]); }' "$first")
-  /usr/bin/open "robinrun://workspace/open?path=\${encoded}"
+  /usr/bin/open "robindone://workspace/open?path=\${encoded}"
 fi
 `;
 

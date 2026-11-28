@@ -4,7 +4,7 @@ import {
   PlatformChannels,
   type EmbeddedBrowserPermissionDeviceOption,
   type EmbeddedBrowserPermissionResolveRequest,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   EmbeddedBrowserPermissionLogger,
   EmbeddedBrowserPermissionPromptAction,

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import type { FileApplicationInfo } from "@robinrun/shared";
+import type { FileApplicationInfo } from "@robindone/shared";
 import { ExternalLinkIcon } from "lucide-react";
 import { FileApplicationIcon } from "@/file-menu/FileApplicationIcon.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 /** 已知默认应用才展示其身份；中性系统动作不能借用首个候选或历史选择的图标。 */
 export function DefaultFileApplicationLabel({
@@ -12,7 +12,7 @@ export function DefaultFileApplicationLabel({
   application?: FileApplicationInfo | null;
   children?: ReactNode;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const label =
     children ??
     intl.formatMessage(

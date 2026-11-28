@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Loader2Icon } from "lucide-react";
-import type { RobinRunTaskSnapshotToolFieldRef } from "@robinrun/shared";
+import type { RobinDoneTaskSnapshotToolFieldRef } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function ToolSnapshotFieldNotice({
   refs,
   onLoadFullToolCallFields,
 }: {
-  refs: readonly RobinRunTaskSnapshotToolFieldRef[];
+  refs: readonly RobinDoneTaskSnapshotToolFieldRef[];
   onLoadFullToolCallFields?: () => Promise<boolean | void> | boolean | void;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   if (refs.length === 0 || !onLoadFullToolCallFields) {

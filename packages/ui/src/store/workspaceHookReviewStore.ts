@@ -3,10 +3,10 @@ import type {
   CommandAck,
   CommandEnvelope,
   WorkspaceHookReviewRequestPayload,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 // review 单调性裁决单一来源；store 的应用策略是 cross_flow 接受新 Runtime 权威
 // （renderer 服从 canonical snapshot 的最新投递）。
-import { verdictWorkspaceHookReviewRequest } from "@robinrun/shared/workspace-hook-review-monotonicity";
+import { verdictWorkspaceHookReviewRequest } from "@robindone/shared/workspace-hook-review-monotonicity";
 
 export interface WorkspaceHookCommandBinding {
   sessionId: string;

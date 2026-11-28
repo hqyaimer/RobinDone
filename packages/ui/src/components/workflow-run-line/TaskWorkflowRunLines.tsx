@@ -7,8 +7,8 @@ import { Workflow } from "lucide-react";
 import type {
   SessionWorkflowActivity,
   SessionWorkflowRunSummary,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import { isSessionWorkflowRunLive } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
+import { isSessionWorkflowRunLive } from "@robindone/shared/robindone-protocol-v4";
 import { cn } from "@/components/lib/utils.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import {

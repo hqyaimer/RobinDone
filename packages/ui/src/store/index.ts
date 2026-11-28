@@ -5,9 +5,9 @@
  * 广播频道前缀 "state:" 表示状态同步类消息。
  */
 import { create } from "zustand";
-import type { IBroadcastService, BroadcastMessage } from "@robinrun/services";
-import type { OAuthProviderId, UserInfo } from "@robinrun/shared";
-import type { CodingPlanResetType } from "@robinrun/shared";
+import type { IBroadcastService, BroadcastMessage } from "@robindone/services";
+import type { OAuthProviderId, UserInfo } from "@robindone/shared";
+import type { CodingPlanResetType } from "@robindone/shared";
 import type { CodePreviewSettings } from "@/lib/codePreviewSettings.js";
 import type {
   CodingPlanQuotaResetUiEntries,
@@ -67,11 +67,11 @@ export interface LoginEntryAttempt {
   status: LoginEntryAttemptStatus;
 }
 
-const CODE_PREVIEW_SETTINGS_KEY = "robinrun-code-preview-settings";
-const PERFORMANCE_MODE_STORAGE_KEY = "robinrun-performance-mode";
-const HIDE_PROJECT_DEVICE_NAMES_STORAGE_KEY = "robinrun-hide-project-device-names";
+const CODE_PREVIEW_SETTINGS_KEY = "robindone-code-preview-settings";
+const PERFORMANCE_MODE_STORAGE_KEY = "robindone-performance-mode";
+const HIDE_PROJECT_DEVICE_NAMES_STORAGE_KEY = "robindone-hide-project-device-names";
 export const FILE_MANAGER_NAVIGATION_PREFERENCES_STORAGE_KEY =
-  "robinrun-file-manager-navigation-preferences";
+  "robindone-file-manager-navigation-preferences";
 
 function loadFileManagerNavigationPreferences(): Record<string, boolean> {
   try {
@@ -120,7 +120,7 @@ function loadPerformanceMode(): boolean {
 // State 定义
 // ============================================================================
 
-export interface RobinRunState {
+export interface RobinDoneState {
   /** 展示详情偏好，不改变 Agent 权限或执行能力。 */
   interfaceMode: InterfaceMode;
   setInterfaceMode: (mode: InterfaceMode) => void;
@@ -272,7 +272,7 @@ const STATE_CHANNEL_PREFIX = "state:";
  *
  * @param broadcastService - 广播服务。Desktop 走 RPC，Web 可传 no-op 实现
  */
-export function createRobinRunStore(
+export function createRobinDoneStore(
   broadcastService: IBroadcastService,
   options: {
     initialIsRestoringOAuthSession?: boolean;
@@ -284,7 +284,7 @@ export function createRobinRunStore(
   let cleanupSystemThemeListener: (() => void) | null = null;
   let syncSystemThemeListener = (_theme: Theme) => {};
 
-  const useStore = create<RobinRunState>()((set, get) => ({
+  const useStore = create<RobinDoneState>()((set, get) => ({
     interfaceMode: normalizeInterfaceMode(readSafeLocalStorage(INTERFACE_MODE_STORAGE_KEY)),
     setInterfaceMode: (mode) => {
       const interfaceMode = normalizeInterfaceMode(mode);
@@ -301,20 +301,20 @@ export function createRobinRunStore(
     // store 与其他主题入口表现不一致。仍然优先尊重 localStorage 中已保存的用户选择，
     // 不覆盖已有偏好。
     theme: normalizeThemePreference(
-      (readSafeLocalStorage("robinrun-theme") as Theme) || "zai-light",
+      (readSafeLocalStorage("robindone-theme") as Theme) || "zai-light",
     ),
     setTheme: (theme: Theme) => {
       const normalizedTheme = normalizeThemePreference(theme);
-      writeSafeLocalStorage("robinrun-theme", normalizedTheme);
+      writeSafeLocalStorage("robindone-theme", normalizedTheme);
       syncSystemThemeListener(normalizedTheme);
       applyTheme(normalizedTheme);
 
       set({ theme: normalizedTheme });
     },
 
-    locale: readSafeLocalStorage("robinrun-locale") || "zh-CN",
+    locale: readSafeLocalStorage("robindone-locale") || "zh-CN",
     setLocale: (locale: string) => {
-      writeSafeLocalStorage("robinrun-locale", locale);
+      writeSafeLocalStorage("robindone-locale", locale);
       set({ locale });
     },
 
@@ -574,4 +574,4 @@ export function createRobinRunStore(
   return useStore;
 }
 
-export type RobinRunStore = ReturnType<typeof createRobinRunStore>;
+export type RobinDoneStore = ReturnType<typeof createRobinDoneStore>;

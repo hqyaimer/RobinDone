@@ -1,10 +1,10 @@
 import { useToolPresentationCapabilities } from "@/ToolCallBlocks/presentationCapabilities.js";
 import { BotIcon } from "lucide-react";
 import { useCallback, useMemo, type ReactNode } from "react";
-import type { AgentColor } from "@robinrun/shared";
+import type { AgentColor } from "@robindone/shared";
 import { MessageResponse } from "@/components/ai-elements/message.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { resolveSubagentColorFromName, SUBAGENT_TEXT_COLOR_CLASS } from "@/lib/subagentColors.js";
 import { ToolSnapshotFieldNotice } from "@/ToolCallBlocks/ToolSnapshotFieldNotice.js";
 import { ToolLayout } from "../ToolLayout.js";
@@ -158,7 +158,7 @@ function BackgroundAgentProcessSection({
   isRunning: boolean;
   status: string | undefined;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const msg = (id: string, fallback: string) => formatAgentMessage(intl, id, fallback);
   const launchStatus =
     status === "failed"
@@ -212,7 +212,7 @@ function BackgroundAgentProcessSection({
 }
 
 export function AgentToolCallBlock(context: ToolCallBlockRenderContext) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { toolCall, childToolCalls } = context.toolCallNode;
   const prompt = getAgentPrompt(toolCall);
   const fallbackLabel = formatAgentMessage(intl, "chat.toolCall.agent.fallback", "SubAgent");

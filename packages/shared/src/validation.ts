@@ -13,21 +13,21 @@ import { browserCommandSchema } from "./browser-use/commands.js";
 import { browserCommandResultSchema } from "./browser-use/result.js";
 import { modelSelectionSchema } from "./model-selection.js";
 import { localeSchema } from "./validationAppSettings.js";
-import { robinrunProcessDiagnosticSchema } from "./process-diagnostic.js";
+import { robindoneProcessDiagnosticSchema } from "./process-diagnostic.js";
 import { PROCESS_RESOURCE_CLI_LANES } from "./processResourceTelemetry.js";
 import {
   providerProvisioningErrorCodeSchema,
   providerProvisioningLaneStatusSchema,
   providerProvisioningTriggerSchema,
 } from "./provider-provisioning.js";
-import { robinrunProviderSchema } from "./providers.js";
+import { robindoneProviderSchema } from "./providers.js";
 import { REMOTE_ASSET_INSTALL_MODES } from "./remoteAssetInstallMode.js";
 import { isKnownRemoteResourcePackageId } from "./remoteResourcePackages.js";
 import type { WebRemoteControlAppPayload } from "./web-remote-control.js";
 import { webRemoteControlMobileLogAppPayloadSchemas } from "#src/web-remote-relay/index.js";
-import { PROTOCOL_V4_LIMITS } from "./robinrun-protocol-v4/core.js";
+import { PROTOCOL_V4_LIMITS } from "./robindone-protocol-v4/core.js";
 import { sourceServerArtifactPolicySchema } from "./source-server/release.js";
-import { sessionWorkflowActivitySchema } from "./robinrun-protocol-v4/sessions-index-workflow-activity.js";
+import { sessionWorkflowActivitySchema } from "./robindone-protocol-v4/sessions-index-workflow-activity.js";
 import {
   webRemoteControlRpcTransportAckSchema,
   webRemoteControlRpcTransportFrameSchema,
@@ -46,15 +46,15 @@ import {
   taskStreamMirrorTargetSchema,
 } from "./task-realtime-core.js";
 import { wslUserSchema } from "./wslUserValidation.js";
-import { legacyRobinRunProviderSchema } from "./robinrun-agent-policy.js";
-import { errorAttributionSchema } from "./robinrun-protocol-v4/snapshot.js";
+import { legacyRobinDoneProviderSchema } from "./robindone-agent-policy.js";
+import { errorAttributionSchema } from "./robindone-protocol-v4/snapshot.js";
 import {
-  robinrunMcpResourceSamplesSchema,
-  robinrunMcpTelemetryEventSchema,
-  robinrunProcessResourceSampleSchema,
-  robinrunToolExecResourceSchema,
-} from "./robinrun-protocol/index.js";
-import { robinrunTaskModeSchema } from "./robinrun-task-mode-schema.js";
+  robindoneMcpResourceSamplesSchema,
+  robindoneMcpTelemetryEventSchema,
+  robindoneProcessResourceSampleSchema,
+  robindoneToolExecResourceSchema,
+} from "./robindone-protocol/index.js";
+import { robindoneTaskModeSchema } from "./robindone-task-mode-schema.js";
 
 export {
   appSettingsOccupationEnum,
@@ -64,7 +64,7 @@ export {
   postUpdateReleaseNotesPayloadSchema,
 } from "./validationAppSettings.js";
 export { isValidWslUser, WSL_USER_MAX_LENGTH, wslUserSchema } from "./wslUserValidation.js";
-export { robinrunTaskModeSchema } from "./robinrun-task-mode-schema.js";
+export { robindoneTaskModeSchema } from "./robindone-task-mode-schema.js";
 
 export function formatZodError(error: z.ZodError): string {
   return error.issues
@@ -266,12 +266,12 @@ export const webRemoteControlRendererActionResultSchema = z.union([
 
 const webRemoteControlActionPayloadSchemas = [
   z.object({
-    robinrun_type: z.literal("workspace-create-request"),
+    robindone_type: z.literal("workspace-create-request"),
     requestId: nonEmptyStringSchema,
     name: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("workspace-create-response"),
+    robindone_type: z.literal("workspace-create-response"),
     requestId: nonEmptyStringSchema,
     success: z.literal(true),
     workspacePath: nonEmptyStringSchema,
@@ -280,44 +280,44 @@ const webRemoteControlActionPayloadSchemas = [
     hostId: nonEmptyStringSchema.optional(),
   }),
   z.object({
-    robinrun_type: z.literal("workspace-create-response"),
+    robindone_type: z.literal("workspace-create-response"),
     requestId: nonEmptyStringSchema,
     success: z.literal(false),
     error: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("task-pin-request"),
+    robindone_type: z.literal("task-pin-request"),
     ...webRemoteControlTaskActionTargetShape,
     pinned: z.boolean(),
   }),
   z.object({
-    robinrun_type: z.literal("task-pin-response"),
+    robindone_type: z.literal("task-pin-response"),
     requestId: nonEmptyStringSchema,
     taskId: nonEmptyStringSchema,
     success: z.literal(true),
     pinned: z.boolean(),
   }),
   z.object({
-    robinrun_type: z.literal("task-pin-response"),
+    robindone_type: z.literal("task-pin-response"),
     requestId: nonEmptyStringSchema,
     taskId: nonEmptyStringSchema,
     success: z.literal(false),
     error: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("task-archive-request"),
+    robindone_type: z.literal("task-archive-request"),
     ...webRemoteControlTaskActionTargetShape,
     archived: z.boolean().optional(),
   }),
   z.object({
-    robinrun_type: z.literal("task-archive-response"),
+    robindone_type: z.literal("task-archive-response"),
     requestId: nonEmptyStringSchema,
     taskId: nonEmptyStringSchema,
     success: z.literal(true),
     archived: z.boolean(),
   }),
   z.object({
-    robinrun_type: z.literal("task-archive-response"),
+    robindone_type: z.literal("task-archive-response"),
     requestId: nonEmptyStringSchema,
     taskId: nonEmptyStringSchema,
     success: z.literal(false),
@@ -328,38 +328,38 @@ const webRemoteControlActionPayloadSchemas = [
 const webRemoteControlAppPayloadSchemas = [
   z
     .object({
-      robinrun_type: z.literal("telemetry-report"),
+      robindone_type: z.literal("telemetry-report"),
       event: z.union([sessionCreateTelemetrySchema, mobilePluginDiscoveryTelemetrySchema]),
     })
     .strict(),
   z.object({
-    robinrun_type: z.literal("bootstrap-request"),
+    robindone_type: z.literal("bootstrap-request"),
     terminalClientSessionId: webRemoteControlTransportIdSchema.optional(),
     requestId: nonEmptyStringSchema,
   }),
   z.object({
-    robinrun_type: z.literal("bootstrap-response"),
+    robindone_type: z.literal("bootstrap-response"),
     requestId: nonEmptyStringSchema,
     success: z.literal(true),
     result: webRemoteControlWindowBootstrapResultSchema,
   }),
   z.object({
-    robinrun_type: z.literal("workspace-list-request"),
+    robindone_type: z.literal("workspace-list-request"),
     requestId: nonEmptyStringSchema,
   }),
   z.object({
-    robinrun_type: z.literal("workspace-list-response"),
+    robindone_type: z.literal("workspace-list-response"),
     requestId: nonEmptyStringSchema,
     success: z.literal(true),
     result: webRemoteControlWorkspaceListResultSchema,
   }),
   z.object({
-    robinrun_type: z.literal("workspace-list-updated"),
+    robindone_type: z.literal("workspace-list-updated"),
     result: webRemoteControlWorkspaceListResultSchema,
   }),
   z
     .object({
-      robinrun_type: z.literal("workspace-bridge-open"),
+      robindone_type: z.literal("workspace-bridge-open"),
       terminalClientSessionId: webRemoteControlTransportIdSchema.optional(),
       requestId: nonEmptyStringSchema,
       bridgeSessionId: webRemoteControlTransportIdSchema,
@@ -394,7 +394,7 @@ const webRemoteControlAppPayloadSchemas = [
       "Project draft cannot target an existing task",
     ),
   z.object({
-    robinrun_type: z.literal("workspace-bridge-ready"),
+    robindone_type: z.literal("workspace-bridge-ready"),
     requestId: nonEmptyStringSchema,
     bridgeSessionId: webRemoteControlTransportIdSchema,
     bridgeGeneration: z.number().int().nonnegative().optional(),
@@ -402,7 +402,7 @@ const webRemoteControlAppPayloadSchemas = [
     bridge: webRemoteControlExternalWorkspaceBridgeSchema,
   }),
   z.object({
-    robinrun_type: z.literal("workspace-bridge-error"),
+    robindone_type: z.literal("workspace-bridge-error"),
     requestId: nonEmptyStringSchema,
     bridgeSessionId: webRemoteControlTransportIdSchema.optional(),
     bridgeGeneration: z.number().int().nonnegative().optional(),
@@ -411,31 +411,31 @@ const webRemoteControlAppPayloadSchemas = [
     error: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("workspace-reconnect-request"),
+    robindone_type: z.literal("workspace-reconnect-request"),
     requestId: nonEmptyStringSchema,
     workspaceKey: nonEmptyStringSchema,
   }),
   z.object({
-    robinrun_type: z.literal("workspace-reconnect-response"),
+    robindone_type: z.literal("workspace-reconnect-response"),
     requestId: nonEmptyStringSchema,
     workspaceKey: nonEmptyStringSchema,
     success: z.literal(true),
   }),
   z.object({
-    robinrun_type: z.literal("workspace-reconnect-response"),
+    robindone_type: z.literal("workspace-reconnect-response"),
     requestId: nonEmptyStringSchema,
     workspaceKey: nonEmptyStringSchema,
     success: z.literal(false),
     error: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("mobile-view-state-update"),
+    robindone_type: z.literal("mobile-view-state-update"),
     viewState: webRemoteControlMobileViewStateSchema,
     deviceInfo: webRemoteControlMobileDeviceInfoSchema.optional(),
   }),
   z
     .object({
-      robinrun_type: z.literal("mobile-task-view-update"),
+      robindone_type: z.literal("mobile-task-view-update"),
       epoch: webRemoteControlTransportIdSchema,
       seq: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
       bridgeSessionId: webRemoteControlTransportIdSchema,
@@ -445,25 +445,25 @@ const webRemoteControlAppPayloadSchemas = [
     .strict(),
   z
     .object({
-      robinrun_type: z.literal("mobile-task-view-request"),
+      robindone_type: z.literal("mobile-task-view-request"),
       epoch: webRemoteControlTransportIdSchema,
     })
     .strict(),
   z.object({
-    robinrun_type: z.literal("platform-request"),
+    robindone_type: z.literal("platform-request"),
     requestId: nonEmptyStringSchema,
     method: webRemoteControlPlatformMethodSchema,
     args: z.unknown().optional(),
   }),
   z.object({
-    robinrun_type: z.literal("platform-response"),
+    robindone_type: z.literal("platform-response"),
     requestId: nonEmptyStringSchema,
     method: webRemoteControlPlatformMethodSchema,
     success: z.literal(true),
     result: z.unknown(),
   }),
   z.object({
-    robinrun_type: z.literal("platform-response"),
+    robindone_type: z.literal("platform-response"),
     requestId: nonEmptyStringSchema,
     method: webRemoteControlPlatformMethodSchema,
     success: z.literal(false),
@@ -474,7 +474,7 @@ const webRemoteControlAppPayloadSchemas = [
   webRemoteControlRpcTransportFrameSchema,
   webRemoteControlRpcTransportAckSchema,
   z.object({
-    robinrun_type: z.literal("bridge-degraded"),
+    robindone_type: z.literal("bridge-degraded"),
     bridgeSessionId: webRemoteControlTransportIdSchema,
     bridgeGeneration: z.number().int().nonnegative().optional(),
     recoveryId: webRemoteControlTransportIdSchema.optional(),
@@ -491,14 +491,14 @@ const webRemoteControlAppPayloadSchemas = [
     droppedCount: z.number().int().nonnegative().optional(),
   }),
   z.object({
-    robinrun_type: z.literal("app-error"),
+    robindone_type: z.literal("app-error"),
     requestId: nonEmptyStringSchema.optional(),
     bridgeSessionId: webRemoteControlTransportIdSchema.optional(),
     reason: webRemoteControlFailureReasonSchema,
     error: z.string(),
   }),
   z.object({
-    robinrun_type: z.literal("mobile-diagnostic"),
+    robindone_type: z.literal("mobile-diagnostic"),
     event: z.enum([
       "state-transition",
       "socket-close",
@@ -527,8 +527,8 @@ const webRemoteControlAppPayloadSchemas = [
   ...webRemoteControlMobileLogAppPayloadSchemas,
 ] as const;
 
-// Bugfix: app payload 里多个消息共享 robinrun_type（例如 platform-response），
-// 不能直接用 z.discriminatedUnion("robinrun_type")，否则 schema 初始化会因重复值失败。
+// Bugfix: app payload 里多个消息共享 robindone_type（例如 platform-response），
+// 不能直接用 z.discriminatedUnion("robindone_type")，否则 schema 初始化会因重复值失败。
 // 这里保留同一批运行时约束，改用普通 union，让外部 relay 的不可信 payload
 // 在进入 desktop/web 路由前仍然先被机械校验。
 export const webRemoteControlAppPayloadSchema = z.union(webRemoteControlAppPayloadSchemas);
@@ -589,7 +589,7 @@ export const remoteTargetSchema = z.discriminatedUnion("kind", [
 ]);
 
 export const helloMessageSchema = z.object({
-  type: z.literal("robinrun-hello"),
+  type: z.literal("robindone-hello"),
   version: z.string(),
   platform: z.string(),
   arch: z.string(),
@@ -597,7 +597,7 @@ export const helloMessageSchema = z.object({
 });
 
 export const helloAckMessageSchema = z.object({
-  type: z.literal("robinrun-hello-ack"),
+  type: z.literal("robindone-hello-ack"),
   version: z.string(),
   clientId: nonEmptyStringSchema,
 });
@@ -686,7 +686,7 @@ export const hostInitLocalMessageSchema = z.object({
   remoteAssets: remoteAssetDirsSchema.optional(),
   /** spawn 时刻 Main 的实时界面语言；后续变化由 application-locale-changed 推送。 */
   locale: localeSchema.optional(),
-  robinrunBuiltinProviderConfigFilePath: nonEmptyStringSchema,
+  robindoneBuiltinProviderConfigFilePath: nonEmptyStringSchema,
   runtimeProcessEnvPatch: z
     .record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), z.string())
     .optional(),
@@ -928,7 +928,7 @@ export const hostOffPeakRunMessageSchema = z.object({
   hostId: nonEmptyStringSchema.optional(),
   additionalDirectories: z.array(nonEmptyStringSchema).max(256).optional(),
   prompt: nonEmptyStringSchema,
-  // 权限四档映射现有 RobinRunTaskMode；与 cron-run 的 mode 同样按宽松 string 传输
+  // 权限四档映射现有 RobinDoneTaskMode；与 cron-run 的 mode 同样按宽松 string 传输
   permissionMode: nonEmptyStringSchema,
   modelSelection: modelSelectionSchema,
   conversationId: z.string().optional(),
@@ -1216,16 +1216,16 @@ export const hostLogResponseSchema = z.object({
   message: z.string(),
 });
 
-export { robinrunProviderSchema };
+export { robindoneProviderSchema };
 
-export const robinrunTaskMigrationSourceSchema = z.enum(["claudeCode"]);
+export const robindoneTaskMigrationSourceSchema = z.enum(["claudeCode"]);
 
 export const hostAgentProcessSpawnedResponseSchema = z.object({
   type: z.literal("agent-process-spawned"),
   /** 进程泳道（mcp-status 等），旧 Host 不带该字段。 */
   lane: nonEmptyStringSchema.optional(),
   pid: z.number().int().positive(),
-  provider: robinrunProviderSchema,
+  provider: robindoneProviderSchema,
   workspacePath: nonEmptyStringSchema,
   command: z.string(),
   args: z.array(z.string()),
@@ -1240,7 +1240,7 @@ export const hostAgentProcessReadyResponseSchema = z.object({
   /** 进程泳道（mcp-status 等），旧 Host 不带该字段。 */
   lane: nonEmptyStringSchema.optional(),
   pid: z.number().int().positive(),
-  provider: robinrunProviderSchema,
+  provider: robindoneProviderSchema,
   workspacePath: nonEmptyStringSchema,
   readyAt: z.number().int().nonnegative(),
   startupDurationMs: z.number().int().nonnegative(),
@@ -1254,7 +1254,7 @@ export const hostAgentProcessExitedResponseSchema = z.object({
   /** 进程泳道（mcp-status 等），旧 Host 不带该字段。 */
   lane: nonEmptyStringSchema.optional(),
   pid: z.number().int().positive(),
-  provider: robinrunProviderSchema,
+  provider: robindoneProviderSchema,
   workspacePath: nonEmptyStringSchema,
   exitCode: z.number().int().nullable(),
   signal: z.string().nullable(),
@@ -1277,7 +1277,7 @@ export const hostAgentProcessErrorResponseSchema = z.object({
   /** 进程泳道（mcp-status 等），旧 Host 不带该字段。 */
   lane: nonEmptyStringSchema.optional(),
   pid: z.number().int().positive().nullable(),
-  provider: robinrunProviderSchema,
+  provider: robindoneProviderSchema,
   workspacePath: nonEmptyStringSchema,
   command: z.string(),
   args: z.array(z.string()),
@@ -1297,11 +1297,11 @@ export const hostAgentProcessExceptionResponseSchema = z
     type: z.literal("agent-process-exception"),
     lane: nonEmptyStringSchema.optional(),
     pid: z.number().int().positive(),
-    provider: robinrunProviderSchema,
+    provider: robindoneProviderSchema,
     workspacePath: nonEmptyStringSchema,
     runtimeGeneration: z.number().int().positive(),
     runtimeInstanceId: nonEmptyStringSchema,
-    diagnostic: robinrunProcessDiagnosticSchema,
+    diagnostic: robindoneProcessDiagnosticSchema,
   })
   .strict();
 export type HostAgentProcessExceptionResponse = z.infer<
@@ -1316,7 +1316,7 @@ export type HostAgentProcessExceptionResponse = z.infer<
  * 会被协议层直接拒绝。`lane` 可选是为了兼容版本落后、还没打标的远端 server。
  */
 export const processResourceCliLaneSchema = z.enum(PROCESS_RESOURCE_CLI_LANES);
-export const agentLaneResourceSampleSchema = robinrunProcessResourceSampleSchema
+export const agentLaneResourceSampleSchema = robindoneProcessResourceSampleSchema
   .extend({ lane: processResourceCliLaneSchema.optional() })
   .strict();
 export type AgentLaneResourceSample = z.infer<typeof agentLaneResourceSampleSchema>;
@@ -1343,7 +1343,7 @@ export const nodeSelfResourceSampleSchema = z
   .object({
     /**
      * 整机归一化 CPU 百分比，100 表示所有逻辑核占满。
-     * 上限刻意放宽（与 CLI 的 `robinrunProcessResourceSampleSchema` 同口径）：读数异常时宁可让
+     * 上限刻意放宽（与 CLI 的 `robindoneProcessResourceSampleSchema` 同口径）：读数异常时宁可让
      * 样本带着离谱数值上去、由平台侧数值异常规则暴露，也不在客户端静默丢样本。
      */
     cpuPercent: z.number().finite().nonnegative().max(100_000),
@@ -1379,7 +1379,7 @@ export const hostMcpResourceSamplesResponseSchema = z
     type: z.literal("mcp-resource-samples"),
     runtimeSurface: z.enum(["local", "remote"]),
     environmentKey: resourceTelemetryEnvironmentKeySchema.optional(),
-    samples: robinrunMcpResourceSamplesSchema,
+    samples: robindoneMcpResourceSamplesSchema,
   })
   .strict();
 export type HostMcpResourceSamplesResponse = z.infer<typeof hostMcpResourceSamplesResponseSchema>;
@@ -1388,7 +1388,7 @@ export const hostToolExecResourceResponseSchema = z
   .object({
     type: z.literal("tool-exec-resource"),
     runtimeSurface: z.enum(["local", "remote"]),
-    sample: robinrunToolExecResourceSchema,
+    sample: robindoneToolExecResourceSchema,
   })
   .strict();
 export type HostToolExecResourceResponse = z.infer<typeof hostToolExecResourceResponseSchema>;
@@ -1397,7 +1397,7 @@ export const hostMcpTelemetryResponseSchema = z
   .object({
     type: z.literal("mcp-telemetry"),
     runtimeSurface: z.enum(["local", "remote"]),
-    event: robinrunMcpTelemetryEventSchema,
+    event: robindoneMcpTelemetryEventSchema,
   })
   .strict();
 export type HostMcpTelemetryResponse = z.infer<typeof hostMcpTelemetryResponseSchema>;
@@ -1617,7 +1617,7 @@ export const hostPluginSandboxRegisterRequestResponseSchema = z
       })
       .strict()
       .optional(),
-    // 资源级 `_meta["robinrun/csp"]` 放宽项；与 mcp-apps 的 mcpAppCspRelaxationsSchema 同步。
+    // 资源级 `_meta["robindone/csp"]` 放宽项；与 mcp-apps 的 mcpAppCspRelaxationsSchema 同步。
     cspRelaxations: z
       .object({ unsafeEval: z.boolean().optional(), wasmUnsafeEval: z.boolean().optional() })
       .strict()
@@ -1775,9 +1775,9 @@ export const hostResponseMessageSchema = z.discriminatedUnion("type", [
   hostOffPeakSchedulerWakeRequestResponseSchema,
 ]);
 
-export const robinrunTaskPersistStatusSchema = z.enum(["running", "completed", "error"]);
+export const robindoneTaskPersistStatusSchema = z.enum(["running", "completed", "error"]);
 
-export const robinrunPromptImageAttachmentSchema = z.object({
+export const robindonePromptImageAttachmentSchema = z.object({
   kind: z.literal("image"),
   filename: z.string(),
   mimeType: z.string(),
@@ -1788,7 +1788,7 @@ export const robinrunPromptImageAttachmentSchema = z.object({
 
 // 附件 TypeScript 联合类型新增 video 后，手写的持久化运行时 schema 未同步，
 // session 恢复解析会拒绝含视频的用户消息。字段与 image 的 inline/local 引用语义保持一致。
-export const robinrunPromptVideoAttachmentSchema = z.object({
+export const robindonePromptVideoAttachmentSchema = z.object({
   kind: z.literal("video"),
   filename: z.string(),
   mimeType: z.string(),
@@ -1797,7 +1797,7 @@ export const robinrunPromptVideoAttachmentSchema = z.object({
   localPath: z.string().optional(),
 });
 
-export const robinrunPromptPdfAttachmentSchema = z.object({
+export const robindonePromptPdfAttachmentSchema = z.object({
   kind: z.literal("pdf"),
   filename: z.string(),
   mimeType: z.string(),
@@ -1806,7 +1806,7 @@ export const robinrunPromptPdfAttachmentSchema = z.object({
   localPath: z.string().optional(),
 });
 
-export const robinrunPromptFileAttachmentSchema = z.object({
+export const robindonePromptFileAttachmentSchema = z.object({
   kind: z.literal("file"),
   filename: z.string(),
   mimeType: z.string(),
@@ -1816,14 +1816,14 @@ export const robinrunPromptFileAttachmentSchema = z.object({
   localPath: z.string().optional(),
 });
 
-export const robinrunPromptAttachmentSchema = z.discriminatedUnion("kind", [
-  robinrunPromptImageAttachmentSchema,
-  robinrunPromptVideoAttachmentSchema,
-  robinrunPromptPdfAttachmentSchema,
-  robinrunPromptFileAttachmentSchema,
+export const robindonePromptAttachmentSchema = z.discriminatedUnion("kind", [
+  robindonePromptImageAttachmentSchema,
+  robindonePromptVideoAttachmentSchema,
+  robindonePromptPdfAttachmentSchema,
+  robindonePromptFileAttachmentSchema,
 ]);
 
-export const robinrunPersistedToolCallSchema = z.object({
+export const robindonePersistedToolCallSchema = z.object({
   toolName: z.string().optional(),
   title: z.string().optional(),
   kind: z.string().optional(),
@@ -1845,7 +1845,7 @@ export const robinrunPersistedToolCallSchema = z.object({
     .optional(),
 });
 
-const robinrunPersistedMessagePartSchema = z.discriminatedUnion("type", [
+const robindonePersistedMessagePartSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("content"), content: z.string() }),
   z.object({ type: z.literal("thought"), content: z.string() }),
   z.object({
@@ -1854,7 +1854,7 @@ const robinrunPersistedMessagePartSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-export const robinrunPersistedMessageSchema = z.object({
+export const robindonePersistedMessageSchema = z.object({
   id: z.string().optional(),
   role: z.enum(["user", "assistant"]),
   content: z.string(),
@@ -1867,10 +1867,10 @@ export const robinrunPersistedMessageSchema = z.object({
   durationMs: z.number().int().nonnegative().optional(),
   interrupted: z.boolean().optional(),
   feedback: z.enum(["like", "dislike"]).optional(),
-  attachments: z.array(robinrunPromptAttachmentSchema).optional(),
-  tools: z.array(robinrunPersistedToolCallSchema).optional(),
+  attachments: z.array(robindonePromptAttachmentSchema).optional(),
+  tools: z.array(robindonePersistedToolCallSchema).optional(),
   thought: z.string().optional(),
-  parts: z.array(robinrunPersistedMessagePartSchema).optional(),
+  parts: z.array(robindonePersistedMessagePartSchema).optional(),
   checkpointState: z.enum(["partial"]).optional(),
   checkpointReason: z.enum(["tool_completed", "part_boundary", "periodic"]).optional(),
   checkpointUpdatedAt: z.number().int().nonnegative().optional(),
@@ -1898,14 +1898,14 @@ export const robinrunPersistedMessageSchema = z.object({
     .optional(),
 });
 
-export const robinrunTaskGoalStatusSchema = z.enum([
+export const robindoneTaskGoalStatusSchema = z.enum([
   "active",
   "paused",
   "budget_limited",
   "complete",
 ]);
 
-export const robinrunTaskTargetChangedActionSchema = z.enum([
+export const robindoneTaskTargetChangedActionSchema = z.enum([
   "set",
   "status_updated",
   "cleared",
@@ -1915,16 +1915,16 @@ export const robinrunTaskTargetChangedActionSchema = z.enum([
   "summary_updated",
 ]);
 
-export const robinrunTaskTargetChangedSourceSchema = z.enum(["command", "tool", "runtime"]);
+export const robindoneTaskTargetChangedSourceSchema = z.enum(["command", "tool", "runtime"]);
 
-export const robinrunTaskGoalSchema = z.object({
+export const robindoneTaskGoalSchema = z.object({
   sessionID: nonEmptyStringSchema,
   targetID: nonEmptyStringSchema,
   objective: nonEmptyStringSchema,
   // 2.15.0 之前的 /goal 历史任务没有写 summaryTitle。
   // 读取 task index 老数据时要补成 null，否则整个任务列表会被运行时 schema 拒绝。
   summaryTitle: z.string().min(1).nullable().default(null),
-  status: robinrunTaskGoalStatusSchema,
+  status: robindoneTaskGoalStatusSchema,
   tokenBudget: z.number().int().positive().nullable(),
   tokensUsed: z.number().int().nonnegative(),
   timeUsedSeconds: z.number().int().nonnegative(),
@@ -1937,26 +1937,26 @@ export const robinrunTaskGoalSchema = z.object({
   }),
 });
 
-export const robinrunTaskGoalChangedPatchSchema = z.object({
-  action: robinrunTaskTargetChangedActionSchema,
-  source: robinrunTaskTargetChangedSourceSchema,
-  target: robinrunTaskGoalSchema.nullable(),
-  previousTarget: robinrunTaskGoalSchema.nullable().optional(),
+export const robindoneTaskGoalChangedPatchSchema = z.object({
+  action: robindoneTaskTargetChangedActionSchema,
+  source: robindoneTaskTargetChangedSourceSchema,
+  target: robindoneTaskGoalSchema.nullable(),
+  previousTarget: robindoneTaskGoalSchema.nullable().optional(),
 });
 
-export const robinrunTaskTargetStatusSchema = robinrunTaskGoalStatusSchema;
-export const robinrunTaskTargetSchema = robinrunTaskGoalSchema;
-export const robinrunTaskTargetChangedPatchSchema = robinrunTaskGoalChangedPatchSchema;
+export const robindoneTaskTargetStatusSchema = robindoneTaskGoalStatusSchema;
+export const robindoneTaskTargetSchema = robindoneTaskGoalSchema;
+export const robindoneTaskTargetChangedPatchSchema = robindoneTaskGoalChangedPatchSchema;
 
-// 会话创建来源（P2.5）：与 RobinRunSessionCreationOrigin 接口编译期同形；strict 校验。
-export const robinrunSessionCreationOriginSchema = z
+// 会话创建来源（P2.5）：与 RobinDoneSessionCreationOrigin 接口编译期同形；strict 校验。
+export const robindoneSessionCreationOriginSchema = z
   .object({
     kind: z.enum(["user", "agent", "trigger", "system"]),
     ref: nonEmptyStringSchema.optional(),
   })
   .strict();
 
-export const robinrunTaskMetaSchema = z.object({
+export const robindoneTaskMetaSchema = z.object({
   taskId: nonEmptyStringSchema,
   traceId: nonEmptyStringSchema,
   title: z.string(),
@@ -1966,13 +1966,13 @@ export const robinrunTaskMetaSchema = z.object({
   workspacePurpose: z.enum(["project", "conversation"]).optional(),
   createdAt: z.number().int().nonnegative(),
   updatedAt: z.number().int().nonnegative(),
-  mode: robinrunTaskModeSchema,
+  mode: robindoneTaskModeSchema,
   model: z.string().optional(),
   thoughtLevel: nonEmptyStringSchema.optional(),
   runtimeEpoch: z.number().int().nonnegative().optional(),
   // meta 直接解析自 tasks-index/旧 session 文件；历史 provider 值在此归一为 glm。
-  provider: legacyRobinRunProviderSchema.optional(),
-  migrationSource: robinrunTaskMigrationSourceSchema.optional(),
+  provider: legacyRobinDoneProviderSchema.optional(),
+  migrationSource: robindoneTaskMigrationSourceSchema.optional(),
   forkedFromTaskId: nonEmptyStringSchema.optional(),
   // cron automation 身份：随 meta_json 一起持久化（单一来源），同时在写入时投影到 tasks 表
   // cron_automation_id 索引列，供按 automation 反查 session。runId 属于 automation_runs /
@@ -1987,9 +1987,9 @@ export const robinrunTaskMetaSchema = z.object({
   workerName: nonEmptyStringSchema.optional(),
   // 会话创建来源（P2.5）：CLI session 表为唯一事实源；syncer 从 SessionSummary.creationOrigin
   // 镜像到 meta_json。内部处理机制（未来来源判断），UI 不展示。
-  creationOrigin: robinrunSessionCreationOriginSchema.optional(),
+  creationOrigin: robindoneSessionCreationOriginSchema.optional(),
   unreadAt: z.number().int().nonnegative().optional(),
-  status: robinrunTaskPersistStatusSchema.optional(),
+  status: robindoneTaskPersistStatusSchema.optional(),
   lastError: z
     .object({
       code: z.string().optional(),
@@ -2022,10 +2022,10 @@ export const robinrunTaskMetaSchema = z.object({
       ),
     })
     .optional(),
-  target: robinrunTaskGoalSchema.nullable().optional(),
+  target: robindoneTaskGoalSchema.nullable().optional(),
 });
 
-export const robinrunTaskSessionBindingStateSchema = z.enum([
+export const robindoneTaskSessionBindingStateSchema = z.enum([
   "idle",
   "syncing",
   "ready",
@@ -2033,26 +2033,26 @@ export const robinrunTaskSessionBindingStateSchema = z.enum([
   "failed",
 ]);
 
-export const robinrunTaskSessionBindingSchema = z.object({
+export const robindoneTaskSessionBindingSchema = z.object({
   // 绑定状态由 services 从持久化数据投影；旧绑定残留的历史 provider 值在此归一为 glm。
-  provider: legacyRobinRunProviderSchema,
+  provider: legacyRobinDoneProviderSchema,
   sessionId: nonEmptyStringSchema,
   // 绑定锚点需要支持空 task 的 -1，所以这里不能套 nonnegative。
   lastSyncedTurnIndex: z.number().int(),
-  state: robinrunTaskSessionBindingStateSchema,
+  state: robindoneTaskSessionBindingStateSchema,
 });
 
-export const robinrunTaskIndexEntrySchema = z.object({
+export const robindoneTaskIndexEntrySchema = z.object({
   workspaceHash: nonEmptyStringSchema,
   taskId: nonEmptyStringSchema,
 });
 
-export const robinrunPinnedTasksFileSchema = z.object({
+export const robindonePinnedTasksFileSchema = z.object({
   version: z.literal("1"),
-  tasks: z.array(robinrunTaskIndexEntrySchema),
+  tasks: z.array(robindoneTaskIndexEntrySchema),
 });
 
-const robinrunPersistedFileSnapshotSchema = z.object({
+const robindonePersistedFileSnapshotSchema = z.object({
   path: z.string(),
   beforeContent: z.string().nullable(),
   afterContent: z.string(),
@@ -2070,21 +2070,21 @@ const robinrunPersistedFileSnapshotSchema = z.object({
     .optional(),
 });
 
-const robinrunPersistedFileChangeSchema = z.object({
+const robindonePersistedFileChangeSchema = z.object({
   turnIndex: z.number().int().nonnegative(),
-  snapshots: z.array(robinrunPersistedFileSnapshotSchema),
+  snapshots: z.array(robindonePersistedFileSnapshotSchema),
   fileState: z.enum(["applied", "reverted"]).optional(),
 });
 
-const robinrunPersistedTurnCheckpointSchema = z.object({
+const robindonePersistedTurnCheckpointSchema = z.object({
   turnIndex: z.number().int().nonnegative(),
   baseFileCheckpointId: nonEmptyStringSchema,
   resultFileCheckpointId: nonEmptyStringSchema.optional(),
 });
 
-export const robinrunSessionFileSchema = z.object({
-  meta: robinrunTaskMetaSchema,
-  messages: z.array(robinrunPersistedMessageSchema),
-  fileChanges: z.array(robinrunPersistedFileChangeSchema).optional(),
-  turnCheckpoints: z.array(robinrunPersistedTurnCheckpointSchema).optional(),
+export const robindoneSessionFileSchema = z.object({
+  meta: robindoneTaskMetaSchema,
+  messages: z.array(robindonePersistedMessageSchema),
+  fileChanges: z.array(robindonePersistedFileChangeSchema).optional(),
+  turnCheckpoints: z.array(robindonePersistedTurnCheckpointSchema).optional(),
 });

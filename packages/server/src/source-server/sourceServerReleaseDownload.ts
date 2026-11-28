@@ -1,7 +1,7 @@
-import type { IRemoteBackend } from "@robinrun/server/remote/backend.js";
-import { buildRemoteArtifactDownloadCommand } from "@robinrun/server/remote/remoteAssetInstaller.js";
-import { detectRemoteAssetTools } from "@robinrun/server/remote/remoteAssetPreflight.js";
-import type { ServerReleaseAsset } from "@robinrun/server/source-server/transportAdapter.js";
+import type { IRemoteBackend } from "@robindone/server/remote/backend.js";
+import { buildRemoteArtifactDownloadCommand } from "@robindone/server/remote/remoteAssetInstaller.js";
+import { detectRemoteAssetTools } from "@robindone/server/remote/remoteAssetPreflight.js";
+import type { ServerReleaseAsset } from "@robindone/server/source-server/transportAdapter.js";
 
 export async function buildSourceServerReleaseDownloadCommand(options: {
   backend: IRemoteBackend;

@@ -1,5 +1,5 @@
 import armsRum from "@arms/rum-electron";
-import type { RobinRunMcpTelemetryEvent } from "@robinrun/shared";
+import type { RobinDoneMcpTelemetryEvent } from "@robindone/shared";
 
 interface DesktopMcpTelemetryContext {
   appVersion: string;
@@ -14,7 +14,7 @@ export function configureDesktopMcpTelemetry(next: DesktopMcpTelemetryContext): 
 }
 
 export function reportMcpTelemetryToArms(
-  event: RobinRunMcpTelemetryEvent,
+  event: RobinDoneMcpTelemetryEvent,
   runtimeSurface: "local" | "remote",
 ): void {
   // 旧 CLI 的内存通知仍允许协议解析，但不能再生成已废弃的 ARMS 事件。
@@ -44,7 +44,7 @@ export function reportMcpTelemetryToArms(
   }
 }
 
-function mapMcpTelemetryEvent(event: Exclude<RobinRunMcpTelemetryEvent, { kind: "memory" }>): {
+function mapMcpTelemetryEvent(event: Exclude<RobinDoneMcpTelemetryEvent, { kind: "memory" }>): {
   group: "resource" | "stability";
   name: string;
   properties: Record<string, string | number | boolean | undefined | null>;
@@ -88,7 +88,7 @@ function mapMcpTelemetryEvent(event: Exclude<RobinRunMcpTelemetryEvent, { kind: 
 }
 
 function processProperties(
-  event: Extract<RobinRunMcpTelemetryEvent, { kind: "process_start" | "process_crash" }>,
+  event: Extract<RobinDoneMcpTelemetryEvent, { kind: "process_start" | "process_crash" }>,
 ): Record<string, string> {
   return {
     mcp_id: event.mcpId,

@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
-import { TID_SSH_DIALOG, TID_SSH_ERROR } from "@robinrun/shared/test-ids";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
+import { TID_SSH_DIALOG, TID_SSH_ERROR } from "@robindone/shared/test-ids";
 import { readConnectRemoteFailures } from "#e2e/helpers/connect-remote-error-log";
 import { clearAppData } from "#e2e/helpers/desktop-app";
 import {
@@ -32,7 +32,7 @@ const SEAM_SCRIPT = "/home/dev/.e2e-hang-readdir.cjs";
 const DEADLINE_MS = 30_000;
 const desktopRoot = process.cwd();
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ??
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ??
     ".e2e-artifacts/remote-workspace-folder-unresponsive-ssh",
 );
 

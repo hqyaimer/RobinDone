@@ -1,19 +1,19 @@
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import {
-  selectWorkspaceRobinRunState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
-import type { WorkspaceRobinRunUIState } from "@/store/robinrunSessionStoreTypes.js";
+  selectWorkspaceRobinDoneState,
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
+import type { WorkspaceRobinDoneUIState } from "@/store/robindoneSessionStoreTypes.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 
 export function resolveChatViewActiveTaskProvider(
   taskId: string | null,
   workspaceState: Pick<
-    WorkspaceRobinRunUIState,
+    WorkspaceRobinDoneUIState,
     "selectedProvider" | "taskListCache" | "optimisticTaskListByTaskId"
   >,
-): RobinRunProvider {
+): RobinDoneProvider {
   if (!taskId) {
     return workspaceState.selectedProvider;
   }
@@ -50,8 +50,8 @@ export function useChatViewActiveTaskProvider(
   });
   const resolvedWorkspaceIdentity = workspaceIdentity ?? activeTabWorkspaceIdentity;
 
-  return useRobinRunSessionStore((state) => {
-    const workspaceState = selectWorkspaceRobinRunState(
+  return useRobinDoneSessionStore((state) => {
+    const workspaceState = selectWorkspaceRobinDoneState(
       state,
       workspacePath,
       resolvedWorkspaceIdentity,

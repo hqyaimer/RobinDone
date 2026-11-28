@@ -4,8 +4,8 @@ import {
   type IPlatformService,
   type RemoteTarget,
   type WebRemoteControlStatus,
-} from "@robinrun/shared";
-import { playTaskNotificationSound } from "@robinrun/ui";
+} from "@robindone/shared";
+import { playTaskNotificationSound } from "@robindone/ui";
 import { resolveWebCommunityUrl, resolveWebHelpConfig } from "#src/communityUrl.js";
 import type { WebRemoteControlPlatformProxy } from "#src/platform/contract.js";
 import { saveBrowserFile } from "#src/platform/saveBrowserFile.js";
@@ -48,7 +48,7 @@ export function createWebPlatform(options?: {
       _context?: {
         workspacePath: string;
         workspaceIdentity?: string;
-        connectTrigger?: import("@robinrun/shared").RemoteWorkspaceConnectTrigger;
+        connectTrigger?: import("@robindone/shared").RemoteWorkspaceConnectTrigger;
       },
     ) {
       if (platformProxy) {

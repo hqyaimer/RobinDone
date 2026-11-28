@@ -1,7 +1,7 @@
 import {
   toolCallCreateWorkflowDisplaySchema,
   type ToolCallCreateWorkflowDisplay,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { isPlainRecord } from "@/ToolCallBlocks/renderers/createWorkflowInput.js";
 
 /**

@@ -3,7 +3,7 @@ import {
   defaultCuaHelperVerifierDependencies,
   type CuaHelperInstaller,
   type CuaHelperInstallerOptions,
-} from "@robinrun/robinrun-cua/broker/server";
+} from "@robindone/robindone-cua/broker/server";
 
 type CuaHelperInstallerFactory = (options: CuaHelperInstallerOptions) => CuaHelperInstaller;
 

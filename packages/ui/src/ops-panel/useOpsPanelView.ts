@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { OpsPanelEntry, OpsPanelView, ProgressEntry } from "@robinrun/shared";
+import type { OpsPanelEntry, OpsPanelView, ProgressEntry } from "@robindone/shared";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
 

@@ -7,19 +7,19 @@ import {
   type ShareWorkflowPayload,
   type ShareWorkflowArtifact,
   type ConversationShareCapabilities,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   reduceWorkflowRunsState,
   type ConversationRow,
   type ArtifactRow,
   type WorkflowRunsState,
   type ToolCallCreateWorkflowCausalityGraph,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import type { IRobinRunAgentService } from "../robinrun-agent/robinrunAgent.js";
+} from "@robindone/shared/robindone-protocol-v4";
+import type { IRobinDoneAgentService } from "../robindone-agent/robindoneAgent.js";
 import type { PublishTextConversationInput } from "./conversationShare.js";
 
 export type ShareWorkflowReader = Pick<
-  IRobinRunAgentService,
+  IRobinDoneAgentService,
   | "conversationWorkflowRunsV4"
   | "conversationWorkflowRunEventsV4"
   | "conversationWorkflowRunArtifactsV4"

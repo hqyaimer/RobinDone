@@ -1,4 +1,4 @@
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 interface SettingsResourceGroupHeaderProps {
   count: number;
@@ -11,7 +11,7 @@ export function SettingsResourceGroupHeader({
   hint,
   title,
 }: SettingsResourceGroupHeaderProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const itemCountLabel = intl.formatMessage(
     {
       id: count === 1 ? "settings.resourceGroup.item.one" : "settings.resourceGroup.item.other",

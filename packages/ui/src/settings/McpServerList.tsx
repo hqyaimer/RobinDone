@@ -1,12 +1,12 @@
-import { type McpServerStatus, type RobinRunMcpServer } from "@robinrun/shared";
+import { type McpServerStatus, type RobinDoneMcpServer } from "@robindone/shared";
 import {
   TID_MCP_OPEN_AUTHORIZATION_BUTTON,
   TID_MCP_SERVER_ROW,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { Switch } from "@/components/ui/switch.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { settingsResourceRowInteraction } from "@/settings/settingsResourceRowInteraction.js";
 import { SettingsScopeBadge } from "@/settings/SettingsScopeBadge.js";
@@ -68,18 +68,18 @@ function McpServerItem({
   onTrust,
   hideMetadata,
 }: {
-  server: RobinRunMcpServer;
-  onEdit: (server: RobinRunMcpServer) => void;
+  server: RobinDoneMcpServer;
+  onEdit: (server: RobinDoneMcpServer) => void;
   onToggle: (id: string, enabled: boolean) => void;
-  onOpenAuthorization?: (server: RobinRunMcpServer) => void;
-  onTrust?: (server: RobinRunMcpServer) => void;
+  onOpenAuthorization?: (server: RobinDoneMcpServer) => void;
+  onTrust?: (server: RobinDoneMcpServer) => void;
   hideMetadata: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const typeLabel = server.config.command
     ? "stdio"
     : (server.config.type ?? (server.config.url ? "http" : "?"));
-  const canEdit = !server.location || server.location.source === "robinrun";
+  const canEdit = !server.location || server.location.source === "robindone";
   const canOpenAuthorization = Boolean(server.authorization?.authorizationUrl);
   const openAuthorizationLabel = intl.formatMessage({
     id: "settings.mcp.oauth.openAuthorization",
@@ -217,17 +217,17 @@ export function McpServerList({
   emptyDescription,
   hideMetadata = false,
 }: {
-  servers: RobinRunMcpServer[];
+  servers: RobinDoneMcpServer[];
   onCreate: () => void;
-  onEdit: (server: RobinRunMcpServer) => void;
+  onEdit: (server: RobinDoneMcpServer) => void;
   onToggle: (id: string, enabled: boolean) => void;
-  onOpenAuthorization?: (server: RobinRunMcpServer) => void;
-  onTrust?: (server: RobinRunMcpServer) => void;
+  onOpenAuthorization?: (server: RobinDoneMcpServer) => void;
+  onTrust?: (server: RobinDoneMcpServer) => void;
   emptyTitle: string;
   emptyDescription: string;
   hideMetadata?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   if (servers.length === 0) {
     return (

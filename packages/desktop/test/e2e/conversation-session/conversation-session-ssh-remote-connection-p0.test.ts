@@ -1,4 +1,4 @@
-import { TID_SSH_PASSWORD_INPUT } from "@robinrun/shared/test-ids";
+import { TID_SSH_PASSWORD_INPUT } from "@robindone/shared/test-ids";
 import {
   clearAppData,
   waitForWorkspaceApp,
@@ -27,7 +27,7 @@ async function readRemoteWorkspaceTabCount(): Promise<number> {
   return browser.execute(() => {
     const store = (
       window as Window & {
-        __robinrunTabStoreE2E?: {
+        __robindoneTabStoreE2E?: {
           getState: () => {
             tabs: Array<{
               remoteTarget?: unknown;
@@ -37,7 +37,7 @@ async function readRemoteWorkspaceTabCount(): Promise<number> {
           };
         };
       }
-    ).__robinrunTabStoreE2E;
+    ).__robindoneTabStoreE2E;
     if (!store) throw new Error("SSH P0 缺少真实 tab store 取证入口");
     return store
       .getState()
@@ -63,15 +63,15 @@ describe(`${CASE_MARKER}: SSH password 连接 P0`, () => {
     await browser.execute(() => {
       const state = window as Window & {
         __connectionLogs?: Array<{ message: string; level: string }>;
-        robinrun?: {
+        robindone?: {
           onRemoteConnectionLog: (
             callback: (entry: { message: string; level: string }) => void,
           ) => () => void;
         };
       };
       state.__connectionLogs = [];
-      if (!state.robinrun) throw new Error("Missing desktop platform");
-      state.robinrun.onRemoteConnectionLog((entry) =>
+      if (!state.robindone) throw new Error("Missing desktop platform");
+      state.robindone.onRemoteConnectionLog((entry) =>
         state.__connectionLogs!.push({ message: entry.message, level: entry.level }),
       );
     });

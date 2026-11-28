@@ -46,7 +46,7 @@ export type {
   ConversationShareTurnPreflightResult,
   PublishTextConversationInput,
 } from "./conversation-share/conversationShare.js";
-// Conversation share 的具体实现依赖 Node 文件系统，只能从 @robinrun/services/node 引入；
+// Conversation share 的具体实现依赖 Node 文件系统，只能从 @robindone/services/node 引入；
 // 根入口必须保持 browser-safe，避免 renderer 解析到 node:* 模块。
 export {
   createConversationTelemetryService,
@@ -92,7 +92,7 @@ export type {
   OnboardingRecordServiceFactory,
 } from "./onboarding/onboardingRecord.js";
 // 这里只能导出 descriptor 和类型。根 index 会被 renderer 经 value import 拉进浏览器包，
-// 若 value 导出 createOnboardingRecordService，会连带 fs/atomicFileUtils → @robinrun/shared/node →
+// 若 value 导出 createOnboardingRecordService，会连带 fs/atomicFileUtils → @robindone/shared/node →
 // node:timers/promises 整条 Node 链进浏览器，模块加载直接抛错导致整个应用黑屏。
 // 工厂函数由 host 侧（node.ts）与测试从实现文件路径直接导入，与 createSettingService 同惯例。
 export type {
@@ -101,25 +101,25 @@ export type {
   BroadcastMessage,
 } from "./broadcast/broadcast.js";
 
-// RobinRun task wrapper service — task 列表/置顶/归档等 app 侧包装状态入口。
-export { IRobinRunTaskService } from "./session/robinrunTaskService.js";
+// RobinDone task wrapper service — task 列表/置顶/归档等 app 侧包装状态入口。
+export { IRobinDoneTaskService } from "./session/robindoneTaskService.js";
 export type {
-  RobinRunArchivedTaskDeletionResult,
-  RobinRunModelTrajectory,
-  RobinRunModelTrajectoryCallSource,
-  RobinRunModelTrajectoryCallSourceKind,
-  RobinRunModelTrajectoryContentPart,
-  RobinRunModelTrajectoryMessage,
-  RobinRunModelTrajectoryRecord,
-  RobinRunModelTrajectoryUsage,
-  RobinRunTaskListKind,
-  RobinRunTaskListQuery,
-  RobinRunTaskListResult,
-  RobinRunTaskListSortBy,
-  RobinRunTaskListWorkspaceScope,
-  RobinRunTaskReadyOutcome,
-} from "./session/robinrunTaskService.js";
-export type { RobinRunTaskListItem } from "./session/robinrunTaskListTypes.js";
+  RobinDoneArchivedTaskDeletionResult,
+  RobinDoneModelTrajectory,
+  RobinDoneModelTrajectoryCallSource,
+  RobinDoneModelTrajectoryCallSourceKind,
+  RobinDoneModelTrajectoryContentPart,
+  RobinDoneModelTrajectoryMessage,
+  RobinDoneModelTrajectoryRecord,
+  RobinDoneModelTrajectoryUsage,
+  RobinDoneTaskListKind,
+  RobinDoneTaskListQuery,
+  RobinDoneTaskListResult,
+  RobinDoneTaskListSortBy,
+  RobinDoneTaskListWorkspaceScope,
+  RobinDoneTaskReadyOutcome,
+} from "./session/robindoneTaskService.js";
+export type { RobinDoneTaskListItem } from "./session/robindoneTaskListTypes.js";
 
 export { IWindowControllerService } from "./window-controller/windowController.js";
 export {
@@ -141,70 +141,70 @@ export type {
   WindowHostTaskUnreadSignal,
 } from "./window-controller/windowController.js";
 
-// RobinRun agent service — IRobinRunAgentService is both a type (interface) and value (descriptor)
+// RobinDone agent service — IRobinDoneAgentService is both a type (interface) and value (descriptor)
 export {
-  IRobinRunAgentService,
-  type RobinRunAgentLocalRuntimeChildProcesses,
-  ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE,
-} from "./robinrun-agent/robinrunAgent.js";
+  IRobinDoneAgentService,
+  type RobinDoneAgentLocalRuntimeChildProcesses,
+  ROBINDONE_AGENT_RUNTIME_UNAVAILABLE_CODE,
+} from "./robindone-agent/robindoneAgent.js";
 export {
-  isRobinRunAgentMcpStatusModeUnsupportedError,
-  ROBINRUN_AGENT_MCP_STATUS_MODE_UNSUPPORTED_ERROR_CODE,
-  RobinRunAgentMcpStatusModeUnsupportedError,
-} from "./robinrun-agent/robinrunAgentErrors.js";
+  isRobinDoneAgentMcpStatusModeUnsupportedError,
+  ROBINDONE_AGENT_MCP_STATUS_MODE_UNSUPPORTED_ERROR_CODE,
+  RobinDoneAgentMcpStatusModeUnsupportedError,
+} from "./robindone-agent/robindoneAgentErrors.js";
 export {
-  createRobinRunAgentConnectionScope,
-  readTrustedRobinRunAgentV4Connection,
-} from "./robinrun-agent/robinrunAgentConnectionScope.js";
+  createRobinDoneAgentConnectionScope,
+  readTrustedRobinDoneAgentV4Connection,
+} from "./robindone-agent/robindoneAgentConnectionScope.js";
 export type {
-  RobinRunAgentConnectionScope,
-  RobinRunAgentV4ClientMode,
-  RobinRunAgentV4ConnectionContext,
-} from "./robinrun-agent/robinrunAgentConnectionScope.js";
+  RobinDoneAgentConnectionScope,
+  RobinDoneAgentV4ClientMode,
+  RobinDoneAgentV4ConnectionContext,
+} from "./robindone-agent/robindoneAgentConnectionScope.js";
 export type {
-  RobinRunAgentAttachmentBeginParams,
-  RobinRunAgentAttachmentChunkParams,
-  RobinRunAgentAttachmentTerminalParams,
-  RobinRunAgentCreateSessionParams,
-  RobinRunAgentCuaPermissionObservation,
-  RobinRunAgentInitializeResult,
-  RobinRunAgentStorageStartupSnapshot,
-  RobinRunAgentRuntimeLifecycleEvent,
-  RobinRunAgentRuntimePolicy,
-  RobinRunAgentReadSessionParams,
-  RobinRunAgentRespondProviderRuntimeHeadersParams,
-  RobinRunAgentProviderRuntimeHeadersRequest,
-  RobinRunAgentResumeSessionParams,
-  RobinRunAgentRunAutomationNowResult,
-  RobinRunAgentSavedWorkflowTarget,
-  RobinRunAgentSendPromptParams,
-  RobinRunAgentServiceEvent,
-  RobinRunAgentSessionSubscribeParams,
-  RobinRunAgentSessionTarget,
-  RobinRunAgentSetModeParams,
-  RobinRunAgentSetModelParams,
-  RobinRunAgentSetThoughtLevelParams,
-  RobinRunAgentWorkspaceTarget,
-} from "./robinrun-agent/robinrunAgent.js";
+  RobinDoneAgentAttachmentBeginParams,
+  RobinDoneAgentAttachmentChunkParams,
+  RobinDoneAgentAttachmentTerminalParams,
+  RobinDoneAgentCreateSessionParams,
+  RobinDoneAgentCuaPermissionObservation,
+  RobinDoneAgentInitializeResult,
+  RobinDoneAgentStorageStartupSnapshot,
+  RobinDoneAgentRuntimeLifecycleEvent,
+  RobinDoneAgentRuntimePolicy,
+  RobinDoneAgentReadSessionParams,
+  RobinDoneAgentRespondProviderRuntimeHeadersParams,
+  RobinDoneAgentProviderRuntimeHeadersRequest,
+  RobinDoneAgentResumeSessionParams,
+  RobinDoneAgentRunAutomationNowResult,
+  RobinDoneAgentSavedWorkflowTarget,
+  RobinDoneAgentSendPromptParams,
+  RobinDoneAgentServiceEvent,
+  RobinDoneAgentSessionSubscribeParams,
+  RobinDoneAgentSessionTarget,
+  RobinDoneAgentSetModeParams,
+  RobinDoneAgentSetModelParams,
+  RobinDoneAgentSetThoughtLevelParams,
+  RobinDoneAgentWorkspaceTarget,
+} from "./robindone-agent/robindoneAgent.js";
 
-// RobinRun session service — app-facing session facade without RobinRun Agent naming.
-export { IRobinRunSessionService } from "./robinrun-session/robinrunSession.js";
+// RobinDone session service — app-facing session facade without RobinDone Agent naming.
+export { IRobinDoneSessionService } from "./robindone-session/robindoneSession.js";
 export type {
-  RobinRunSessionCreateParams,
-  RobinRunSessionEventsParams,
-  RobinRunSessionInitializeResult,
-  RobinRunSessionListParams,
-  RobinRunSessionMessagesParams,
-  RobinRunSessionReadParams,
-  RobinRunSessionResumeParams,
-  RobinRunSessionServiceEvent,
-  RobinRunSessionSetModeParams,
-  RobinRunSessionSetModelParams,
-  RobinRunSessionSetThoughtLevelParams,
-  RobinRunSessionSubscribeParams,
-  RobinRunTaskTarget,
-  RobinRunSessionWorkspaceTarget,
-} from "./robinrun-session/robinrunSession.js";
+  RobinDoneSessionCreateParams,
+  RobinDoneSessionEventsParams,
+  RobinDoneSessionInitializeResult,
+  RobinDoneSessionListParams,
+  RobinDoneSessionMessagesParams,
+  RobinDoneSessionReadParams,
+  RobinDoneSessionResumeParams,
+  RobinDoneSessionServiceEvent,
+  RobinDoneSessionSetModeParams,
+  RobinDoneSessionSetModelParams,
+  RobinDoneSessionSetThoughtLevelParams,
+  RobinDoneSessionSubscribeParams,
+  RobinDoneTaskTarget,
+  RobinDoneSessionWorkspaceTarget,
+} from "./robindone-session/robindoneSession.js";
 
 // Bots service — IBotsService is both a type (interface) and value (descriptor).
 export { IBotsService } from "./bots/bots.js";
@@ -242,7 +242,7 @@ export { IOAuthService } from "./oauth/oauth.js";
 // UsageStats service — IUsageStatsService is both a type (interface) and value (descriptor)
 export { IUsageStatsService } from "./usage-stats/usageStats.js";
 
-// Storage（资源管理器「存储」tab）：数据类型在 @robinrun/shared；这里只导出服务接口与卷分组纯函数
+// Storage（资源管理器「存储」tab）：数据类型在 @robindone/shared；这里只导出服务接口与卷分组纯函数
 // StorageRootSpec 随契约再导出：desktop 的 Worker 协议按 contract.ts 的口径只从 services 入口取类型。
 export type { IStorageService, StorageRootSpec } from "./storage/contract.js";
 
@@ -289,7 +289,7 @@ export {
 
 // Plugins service — IPluginsService is both a type (interface) and value (descriptor)
 export { IPluginsService } from "./plugins/plugins.js";
-// 设置页插件管理薄服务（UI 平台能力面不再直触 robinrunAgentService）
+// 设置页插件管理薄服务（UI 平台能力面不再直触 robindoneAgentService）
 export { IPluginManagementService, withPluginTelemetry } from "./plugins/pluginManagement.js";
 
 // Subagents service — ISubagentsService is both a type (interface) and value (descriptor)
@@ -325,7 +325,7 @@ export type {
   FeedbackTicketStatus,
   FeedbackTicketSummary,
   FeedbackTicketType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export { IProjectService, LEGACY_SINGLE_ROOT_PROJECT_PREFIX } from "#src/project/contract.js";
 export type {
@@ -404,7 +404,7 @@ export type {
   MoveGroupNode,
 } from "#src/task-groups/contract.js";
 
-// RobinRun 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：
+// RobinDone 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：
 // host 常驻服务 + 事件投递端口类型，desktop host 装配 dispatchTriggerEvent 用。
 // 边界（2026-11-19 白屏回归的根因修复）：这里只允许出口 contract.ts（接口 +
 // createServiceDescriptor 常量，无 node 依赖）。engine.ts / script-runner.ts /

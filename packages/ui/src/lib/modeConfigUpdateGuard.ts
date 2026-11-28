@@ -1,4 +1,4 @@
-import { resolveWorkspaceStateKey } from "@/store/robinrunSessionStoreSelectors.js";
+import { resolveWorkspaceStateKey } from "@/store/robindoneSessionStoreSelectors.js";
 
 interface PendingModeSwitchGuard {
   taskId: string;

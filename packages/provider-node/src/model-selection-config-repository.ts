@@ -1,4 +1,4 @@
-import type { ModelSelection, PersonalProviderConfigRepository } from "@robinrun/provider";
+import type { ModelSelection, PersonalProviderConfigRepository } from "@robindone/provider";
 
 export interface NodeModelSelectionConfigRepositoryOptions {
   readonly personalRepository: PersonalProviderConfigRepository;

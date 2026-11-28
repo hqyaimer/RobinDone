@@ -14,10 +14,10 @@
 **用户裁决（2026-11-25）**：
 
 1. **引擎托管浏览器**：执行实例由 trigger-engine 创建并持有，脚本经 CDP endpoint 接入
-   （env `ROBINRUN_CDP_ENDPOINT`），不自带 playwright 启动逻辑（脚本内仍可用
+   （env `ROBINDONE_CDP_ENDPOINT`），不自带 playwright 启动逻辑（脚本内仍可用
    `playwright` 库 `connect_over_cdp`）。
 2. **登录闭环（取代旧"首次执行捕获"设计）**：登录态会过期，脚本编写时**必须自含登录检测**；
-   检测失败 → 脚本调 `robinrun.login_failed(诊断)` → 引擎投递失败事件（带诊断）唤醒订阅者
+   检测失败 → 脚本调 `robindone.login_failed(诊断)` → 引擎投递失败事件（带诊断）唤醒订阅者
    agent + 触发器自动转 `error-paused` + 停止脚本 → agent 唤醒后调 ManageTriggers 新 action
    `open_login` 以**有头**模式拉起浏览器（注入档案登录态），**用户登录完成关闭窗口视为
    登录完成**（引擎在登录期定期快照 storageState，关窗时落档）→ agent 再 `set_status`
@@ -32,14 +32,14 @@
 ## 2. 架构
 
 ```text
-~/.robinrun/runtimes/browsers/<id>/          # 托管 chromium 缓存（全局共享；@puppeteer/browsers 下载）
-<workspace>/.robinrun/triggers/profiles/<name>.json   # storageState 档案（加密落盘，凭据级）
-<workspace>/.robinrun/triggers/state/browser-runtime.json   # 可用性状态（引擎写，CLI 读）
+~/.robindone/runtimes/browsers/<id>/          # 托管 chromium 缓存（全局共享；@puppeteer/browsers 下载）
+<workspace>/.robindone/triggers/profiles/<name>.json   # storageState 档案（加密落盘，凭据级）
+<workspace>/.robindone/triggers/state/browser-runtime.json   # 可用性状态（引擎写，CLI 读）
 
 脚本触发器（config.profile 声明档案）：
   startProcess → browserHost.acquire(profile)   # 档案级队列取号（同档案串行）
     → 注入登录态启动 chromium（--remote-debugging-port=0，headed 按 config.headed）
-    → stderr 解析 ws endpoint → ROBINRUN_CDP_ENDPOINT 注入脚本 env
+    → stderr 解析 ws endpoint → ROBINDONE_CDP_ENDPOINT 注入脚本 env
   脚本：playwright chromium.connect_over_cdp(endpoint) → 业务操作
   脚本退出 → browserHost.release → 快照最终 storageState 加密回写档案 → 关浏览器
 ```
@@ -51,7 +51,7 @@
 ### 3.1 供给：`trigger-engine/browser-runtime.ts`（镜像 python-runtime.ts 模式）
 
 - `@puppeteer/browsers`（desktop 已有 2.13.0）下载钉死 buildId 的 chromium 到
-  `~/.robinrun/runtimes/browsers/<id>/`；镜像 env `ROBINRUN_BROWSER_DOWNLOAD_BASEURL`
+  `~/.robindone/runtimes/browsers/<id>/`；镜像 env `ROBINDONE_BROWSER_DOWNLOAD_BASEURL`
   （国内用 `https://cdn.npmmirror.com/binaries/chrome-for-testing`，路径布局与官方
   storage.googleapis.com/chrome-for-testing-public 一致）；失败回退系统 Chrome 探测
   （对齐 CLI adapters `executable.ts` 的探测顺序）。
@@ -102,15 +102,15 @@ executablePath?, source: managed|system, error?, updatedAt}`（schema 进 shared
   （engine.ts 从 browser-host 桥接，测试缺席 = 旧行为）。
 - `startProcess`：`entry.config.profile` 在场且端口在场 → 先 acquire，失败按一次崩溃收口
   （信息进注册表 lastResult + 审计，退避重试）；成功 → `buildSpawnPlan` 注入
-  `ROBINRUN_CDP_ENDPOINT` + `ROBINRUN_TRIGGER_PROFILE`（plan 已含 env，注入点在既有 env 组装后）。
+  `ROBINDONE_CDP_ENDPOINT` + `ROBINDONE_TRIGGER_PROFILE`（plan 已含 env，注入点在既有 env 组装后）。
 - 停止/退出路径（initiateStop/handleExit/registerCrash/dispose）：有 browser handle 则 release
   （幂等，oneshot/resident 一致）。
 - scheduled 模式同样适用（每趟 acquire → 跑 → release）。
 
 ### 3.4 登录闭环链路
 
-- **桥接函数**：python `robinrun.login_failed(reason)` / node `robinrun.loginFailed(reason)`——
-  POST `__robinrun/pause/<trg-id>`（新内部端点，`local-webhook-server.ts` 仿 emit 路由：
+- **桥接函数**：python `robindone.login_failed(reason)` / node `robindone.loginFailed(reason)`——
+  POST `__robindone/pause/<trg-id>`（新内部端点，`local-webhook-server.ts` 仿 emit 路由：
   无 token、按运行注册表路由、≤1MiB）。
 - **引擎语义**（script-supervisor `handlePauseRequest`）：audit `{action:"login-failed",
 reason}` → 投 `script-error` 事件（summary 带 reason，唤醒订阅者）→ 注册表 status 置
@@ -136,9 +136,9 @@ reason}` → 投 `script-error` 事件（summary 带 reason，唤醒订阅者）
 ## 4. 提示词面（与批次三同五处 + README python 变体）
 
 - README python 变体与 `buildScriptRuntimeSection` 增：声明 `profile` 即申请引擎托管浏览器
-  （`ROBINRUN_CDP_ENDPOINT` 注入，`playwright.chromium.connect_over_cdp(endpoint)` 接入）；
+  （`ROBINDONE_CDP_ENDPOINT` 注入，`playwright.chromium.connect_over_cdp(endpoint)` 接入）；
   **脚本必须自含登录检测**（如关键请求 401/登录页跳转），失败时调
-  `robinrun.login_failed("诊断摘要")` 后退出——引擎会停用触发器并唤醒你修复；
+  `robindone.login_failed("诊断摘要")` 后退出——引擎会停用触发器并唤醒你修复；
   `open_login` 拉起有头登录窗口（用户登录后关窗即存档），修复后 `set_status` 重新启用。
 - 门控文案：browser runtime 不可用时 create/update 带 `profile` 拒绝，引导先
   `install_packages(["playwright"])` 自管过渡。

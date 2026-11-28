@@ -1,4 +1,4 @@
-import type { BrowserCommandResult } from "@robinrun/shared";
+import type { BrowserCommandResult } from "@robindone/shared";
 
 export type BrowserCommandDone = (
   partial: Omit<BrowserCommandResult, "elapsedMs">,

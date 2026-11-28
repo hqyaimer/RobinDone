@@ -6,7 +6,7 @@ import {
   webRemoteControlRendererActionResultSchema,
   type WebRemoteControlRendererActionRequest,
   type WebRemoteControlRendererActionResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 export type WebRemoteControlRendererActionInput = DistributiveOmit<

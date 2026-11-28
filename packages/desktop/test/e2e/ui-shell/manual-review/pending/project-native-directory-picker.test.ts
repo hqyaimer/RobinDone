@@ -6,8 +6,8 @@ import {
   waitForWorkspaceApp,
 } from "#e2e/helpers/desktop-app";
 import { selectNativeProjectDirectories } from "#e2e/helpers/project-sidebar";
-import { ServiceChannels } from "@robinrun/shared";
-import type { VirtualProject } from "@robinrun/services";
+import { ServiceChannels } from "@robindone/shared";
+import type { VirtualProject } from "@robindone/services";
 import {
   installHandoffRpcProbe,
   callHandoffHost,
@@ -24,7 +24,7 @@ type ThemeWindow = typeof window & {
 };
 
 describe("本地项目原生目录选择（单选收口）", () => {
-  const root = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "native-project-picker");
+  const root = join(DEFAULT_WORKSPACE, ".robindone-e2e", "native-project-picker");
   const paths = ["one", "two", "three"].map((name) => join(root, name));
   const project = '[data-project-name="E2E_NATIVE_PROJECT_PICKER"]';
 
@@ -152,7 +152,7 @@ describe("本地项目原生目录选择（单选收口）", () => {
             width === 1200 ? "This computer" : "此电脑",
           );
           await browser.saveScreenshot(
-            join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `PCFT-trust-${width}-${theme}.png`),
+            join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `PCFT-trust-${width}-${theme}.png`),
           );
         }
       }
@@ -233,7 +233,7 @@ describe("本地项目原生目录选择（单选收口）", () => {
           ),
         );
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `native-project-${theme}.png`),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `native-project-${theme}.png`),
         );
       }
     } finally {

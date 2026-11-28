@@ -1,5 +1,5 @@
-import type { HelloMessage, HelloAckMessage } from "@robinrun/shared";
-import { ROBINRUN_VERSION, formatZodError, helloMessageSchema } from "@robinrun/shared";
+import type { HelloMessage, HelloAckMessage } from "@robindone/shared";
+import { ROBINDONE_VERSION, formatZodError, helloMessageSchema } from "@robindone/shared";
 import type { StdioStream } from "./backend.js";
 
 const MAX_HANDSHAKE_DIAGNOSTIC_CHARS = 2048;
@@ -12,9 +12,9 @@ export interface HandshakeResult {
 
 /**
  * Perform the client-side handshake:
- * 1. Read lines from stdout until we find a robinrun-hello JSON
+ * 1. Read lines from stdout until we find a robindone-hello JSON
  *    (skip SSH banner/motd lines)
- * 2. Send a robinrun-hello-ack to stdin
+ * 2. Send a robindone-hello-ack to stdin
  * 3. Return the hello info and any remaining data
  */
 export function performHandshake(
@@ -46,7 +46,7 @@ export function performHandshake(
     };
 
     const timeout = setTimeout(() => {
-      rejectWithDiagnostics("Handshake timeout: no robinrun-hello received within timeout");
+      rejectWithDiagnostics("Handshake timeout: no robindone-hello received within timeout");
     }, timeoutMs);
 
     const onData = (chunk: Buffer) => {
@@ -76,8 +76,8 @@ export function performHandshake(
 
               // Send ack
               const ack: HelloAckMessage = {
-                type: "robinrun-hello-ack",
-                version: ROBINRUN_VERSION,
+                type: "robindone-hello-ack",
+                version: ROBINDONE_VERSION,
                 clientId,
               };
               stream.stdin.write(JSON.stringify(ack) + "\n");
@@ -92,9 +92,9 @@ export function performHandshake(
               rawValue &&
               typeof rawValue === "object" &&
               "type" in rawValue &&
-              (rawValue as { type?: unknown }).type === "robinrun-hello"
+              (rawValue as { type?: unknown }).type === "robindone-hello"
             ) {
-              rejectWithDiagnostics(`Invalid robinrun-hello: ${formatZodError(result.error)}`);
+              rejectWithDiagnostics(`Invalid robindone-hello: ${formatZodError(result.error)}`);
               return;
             }
           } catch {

@@ -7,16 +7,16 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import type { Theme } from "@/useTheme.js";
 
 const MOBILE_THEME_OPTIONS: Theme[] = ["system", "zai-dark", "zai-light"];
 
 export function WebRemoteControlThemeMenu() {
-  const { intl } = useRobinRunIntl();
-  const theme = useRobinRunStore((state) => state.theme);
-  const setTheme = useRobinRunStore((state) => state.setTheme);
+  const { intl } = useRobinDoneIntl();
+  const theme = useRobinDoneStore((state) => state.theme);
+  const setTheme = useRobinDoneStore((state) => state.setTheme);
 
   return (
     <DropdownMenu>

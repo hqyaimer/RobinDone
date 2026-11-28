@@ -4,7 +4,7 @@ import type {
   AccountRequestAuthMaterial,
   AccountRequestAuthResolver,
 } from "./accountProviderRequestAuthService.js";
-import type { RobinRunAccountAccess, RobinRunProviderAccountAccess } from "@robinrun/shared";
+import type { RobinDoneAccountAccess, RobinDoneProviderAccountAccess } from "@robindone/shared";
 
 /**
  * 请求期 Account 鉴权边界。
@@ -14,8 +14,8 @@ import type { RobinRunAccountAccess, RobinRunProviderAccountAccess } from "@robi
  */
 export interface IAccountRequestAuthService {
   resolveAccessCurrent(
-    access: RobinRunProviderAccountAccess,
-  ): Promise<RobinRunAccountAccess | null>;
+    access: RobinDoneProviderAccountAccess,
+  ): Promise<RobinDoneAccountAccess | null>;
   resolveCurrent(input: AccountRequestAuthInput): Promise<AccountRequestAuthMaterial>;
   assertCurrent(input: AccountAccessIdentityInput): Promise<void>;
 }

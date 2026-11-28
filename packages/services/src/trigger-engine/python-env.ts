@@ -6,7 +6,7 @@ import {
   triggerPythonEnvDirectoryName,
   triggerPythonPackagesFileName,
   type PythonPackagesLedger,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /**
  * 按项目 python venv 与三方包安装（2026-11-22 python 主运行时改造，
@@ -18,7 +18,7 @@ import {
  *   （解释器升级/托管↔系统回退切换）→ 删旧建新，重建后按 `state/python-packages.json`
  *   台账重放安装（清单放 venv 目录外，重建不丢）。
  * - pip 安装是唯一的三方包入口（ManageTriggers install_packages → 引擎 → 本模块）；
- *   引擎不做任何隐式安装。index 用 ROBINRUN_PIP_INDEX_URL（默认官方 PyPI）。
+ *   引擎不做任何隐式安装。index 用 ROBINDONE_PIP_INDEX_URL（默认官方 PyPI）。
  * - 命令执行器可注入（runCommand）：单测用假执行器验证编排逻辑，不必依赖真 python。
  */
 
@@ -134,9 +134,9 @@ async function fileExists(path: string): Promise<boolean> {
 // venv
 // ---------------------------------------------------------------------------
 
-/** 项目 venv 目录（`<workspace>/.robinrun/triggers/state/python-env/`）。 */
+/** 项目 venv 目录（`<workspace>/.robindone/triggers/state/python-env/`）。 */
 export function pythonEnvDirFor(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers", "state", triggerPythonEnvDirectoryName);
+  return join(workspacePath, ".robindone", "triggers", "state", triggerPythonEnvDirectoryName);
 }
 
 /** venv 解释器：Windows `Scripts/python.exe`，POSIX `bin/python`（node:path 拼接，禁 shell 拼接）。 */
@@ -196,7 +196,7 @@ export async function ensureProjectVenv(params: {
       ? " (timed out)"
       : params.interpreterFingerprint.startsWith("system|")
         ? // Debian/Ubuntu 系统解释器缺 python3-venv/ensurepip 的经典坑：文案给指引。
-          " — if this is a system Python on Debian/Ubuntu, install python3-venv (e.g. `apt install python3-venv`), or unset ROBINRUN_PYTHON_FALLBACK_SYSTEM to use the managed runtime"
+          " — if this is a system Python on Debian/Ubuntu, install python3-venv (e.g. `apt install python3-venv`), or unset ROBINDONE_PYTHON_FALLBACK_SYSTEM to use the managed runtime"
         : "";
     throw new Error(`python -m venv failed (code ${created.code})${suffix}: ${detail}`);
   }
@@ -257,7 +257,7 @@ export interface PipInstallResult {
 }
 
 /**
- * `<venv-python> -m pip install --upgrade <pkgs...>`。index：`ROBINRUN_PIP_INDEX_URL`
+ * `<venv-python> -m pip install --upgrade <pkgs...>`。index：`ROBINDONE_PIP_INDEX_URL`
  * （国内镜像等）映射为 pip 的 PIP_INDEX_URL；缺省官方 PyPI。
  */
 export async function runPipInstall(params: {
@@ -268,7 +268,7 @@ export async function runPipInstall(params: {
   timeoutMs?: number;
 }): Promise<PipInstallResult> {
   const env: NodeJS.ProcessEnv = {};
-  const indexUrl = process.env.ROBINRUN_PIP_INDEX_URL;
+  const indexUrl = process.env.ROBINDONE_PIP_INDEX_URL;
   if (indexUrl !== undefined && indexUrl.length > 0) env.PIP_INDEX_URL = indexUrl;
   const run = params.runCommand ?? defaultCommandRunner;
   const result = await run({
@@ -341,5 +341,5 @@ export async function appendPythonPackages(
 }
 
 function pythonPackagesLedgerPath(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers", "state", triggerPythonPackagesFileName);
+  return join(workspacePath, ".robindone", "triggers", "state", triggerPythonPackagesFileName);
 }

@@ -20,14 +20,14 @@ export function RootStartupLoading({ label, children, busy = true }: RootStartup
       aria-label={label}
       data-testid="root-startup-loading"
     >
-      <RobinRunStartupLogoBadge />
+      <RobinDoneStartupLogoBadge />
       {children}
     </div>
   );
 }
 
 /** 初始化与引导共用品牌图标：白底圆角瓦片 + 知更鸟特写，深浅主题通用。 */
-export function RobinRunStartupLogoBadge({
+export function RobinDoneStartupLogoBadge({
   animated = true,
   size = "default",
 }: {

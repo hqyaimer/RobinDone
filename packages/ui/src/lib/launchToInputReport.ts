@@ -1,4 +1,4 @@
-import type { LaunchMarks } from "@robinrun/shared";
+import type { LaunchMarks } from "@robindone/shared";
 
 export function shouldReportLaunchToInput(state: {
   isStartupRenderBlocked: boolean;
@@ -15,14 +15,14 @@ export function readRendererLaunchTimings(): {
   reactCommit: number;
 } | null {
   const w = window as Window & {
-    __ROBINRUN_LAUNCH_MARKS__?: LaunchMarks | null;
-    __ROBINRUN_RENDERER_START__?: number;
-    __ROBINRUN_REACT_COMMIT_AT__?: number;
+    __ROBINDONE_LAUNCH_MARKS__?: LaunchMarks | null;
+    __ROBINDONE_RENDERER_START__?: number;
+    __ROBINDONE_REACT_COMMIT_AT__?: number;
   };
-  const rendererStart = w.__ROBINRUN_RENDERER_START__;
-  const reactCommit = w.__ROBINRUN_REACT_COMMIT_AT__;
+  const rendererStart = w.__ROBINDONE_RENDERER_START__;
+  const reactCommit = w.__ROBINDONE_REACT_COMMIT_AT__;
   if (typeof rendererStart !== "number" || typeof reactCommit !== "number") {
     return null;
   }
-  return { marks: w.__ROBINRUN_LAUNCH_MARKS__ ?? null, rendererStart, reactCommit };
+  return { marks: w.__ROBINDONE_LAUNCH_MARKS__ ?? null, rendererStart, reactCommit };
 }

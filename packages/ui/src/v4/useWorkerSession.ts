@@ -43,7 +43,7 @@ export function useWorkerSession(params: {
 }): WorkerSessionFacts {
   const { workspacePath, workspaceIdentity, sessionId } = params;
   const baseServices = useBaseWorkspaceServices();
-  const agentService = baseServices.robinrunAgentService;
+  const agentService = baseServices.robindoneAgentService;
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
 
   // acquire/release 与 useWorkspaceSessionsIndexItems 同款引用计数生命周期；

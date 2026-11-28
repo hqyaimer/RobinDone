@@ -3,7 +3,7 @@ import {
   TID_PROMPT_SUGGESTION_PANEL,
   TID_V4_COMPOSER_INPUT,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   setInputValueByTestIdDom,
@@ -17,7 +17,7 @@ type LexicalInputE2EBridge = {
 };
 
 type LexicalInputE2EElement = HTMLElement & {
-  __robinrunLexicalInputE2E?: LexicalInputE2EBridge;
+  __robindoneLexicalInputE2E?: LexicalInputE2EBridge;
 };
 
 const FILE_MENTION_LABEL = "option-right-repro.ts";
@@ -25,7 +25,7 @@ const FILE_MENTION_PATH = "src/option-right-repro.ts";
 const FILE_MENTION_MARKDOWN = `[${FILE_MENTION_LABEL}](${FILE_MENTION_PATH})`;
 const TYPED_AFTER_MENTION = "继续输入";
 const PLUGIN_NAME = "skill-creator";
-const PLUGIN_STABLE_ID = "skill-creator@robinrun-plugins-official";
+const PLUGIN_STABLE_ID = "skill-creator@robindone-plugins-official";
 const PLUGIN_OPTION_ID = `plugin:${PLUGIN_STABLE_ID}`;
 
 describe("chat input mention navigation", () => {
@@ -112,7 +112,7 @@ async function startPluginOptionStabilityProbe() {
         panelDisconnected: boolean;
       };
       const probeWindow = window as Window & {
-        __robinrunMentionStabilityProbe?: StabilityProbe;
+        __robindoneMentionStabilityProbe?: StabilityProbe;
       };
       const panel = document.querySelector(`[data-testid="${panelTestId}"]`);
       const option = document.querySelector(`[data-testid="${optionTestId}"]`);
@@ -131,7 +131,7 @@ async function startPluginOptionStabilityProbe() {
         panelDisconnected: false,
       };
       probe.observer.observe(document.body, { childList: true, subtree: true });
-      probeWindow.__robinrunMentionStabilityProbe = probe;
+      probeWindow.__robindoneMentionStabilityProbe = probe;
       return true;
     },
     TID_PROMPT_SUGGESTION_PANEL,
@@ -143,15 +143,15 @@ async function startPluginOptionStabilityProbe() {
 async function finishPluginOptionStabilityProbe() {
   return browser.execute(() => {
     const probeWindow = window as Window & {
-      __robinrunMentionStabilityProbe?: {
+      __robindoneMentionStabilityProbe?: {
         observer: MutationObserver;
         optionDisconnected: boolean;
         panelDisconnected: boolean;
       };
     };
-    const probe = probeWindow.__robinrunMentionStabilityProbe;
+    const probe = probeWindow.__robindoneMentionStabilityProbe;
     probe?.observer.disconnect();
-    delete probeWindow.__robinrunMentionStabilityProbe;
+    delete probeWindow.__robindoneMentionStabilityProbe;
     return {
       optionDisconnected: probe?.optionDisconnected ?? true,
       panelDisconnected: probe?.panelDisconnected ?? true,
@@ -162,7 +162,7 @@ async function finishPluginOptionStabilityProbe() {
 function getComposerText() {
   return browser.execute((inputTestId) => {
     const input = document.querySelector<LexicalInputE2EElement>(`[data-testid="${inputTestId}"]`);
-    return input?.__robinrunLexicalInputE2E?.getText() ?? "";
+    return input?.__robindoneLexicalInputE2E?.getText() ?? "";
   }, TID_V4_COMPOSER_INPUT);
 }
 
@@ -173,7 +173,7 @@ async function setChatInputFileMentionState() {
         const input = document.querySelector<LexicalInputE2EElement>(
           `[data-testid="${inputTestId}"]`,
         );
-        return Boolean(input?.__robinrunLexicalInputE2E);
+        return Boolean(input?.__robindoneLexicalInputE2E);
       }, TID_V4_COMPOSER_INPUT),
     {
       timeout: 15000,
@@ -238,7 +238,7 @@ async function setChatInputFileMentionState() {
       const input = document.querySelector<LexicalInputE2EElement>(
         `[data-testid="${inputTestId}"]`,
       );
-      const bridge = input?.__robinrunLexicalInputE2E;
+      const bridge = input?.__robindoneLexicalInputE2E;
       if (!input || !bridge) {
         return { ok: false, reason: "bridge-missing" };
       }
@@ -313,7 +313,7 @@ function getMentionNavigationSnapshot() {
     const input = document.querySelector<LexicalInputE2EElement>(`[data-testid="${inputTestId}"]`);
     const selection = window.getSelection();
     return {
-      bridgeText: input?.__robinrunLexicalInputE2E?.getText() ?? "",
+      bridgeText: input?.__robindoneLexicalInputE2E?.getText() ?? "",
       domText: input?.innerText ?? input?.textContent ?? "",
       mentionCount: input?.querySelectorAll("[data-mention-id]").length ?? 0,
       selection: {

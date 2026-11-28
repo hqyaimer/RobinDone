@@ -1,5 +1,5 @@
-import { TID_CHAT_WORKFLOW_ARTIFACT_CHIP } from "@robinrun/shared";
-import type { WorkflowNotificationMeta } from "@robinrun/shared/robinrun-protocol-v4";
+import { TID_CHAT_WORKFLOW_ARTIFACT_CHIP } from "@robindone/shared";
+import type { WorkflowNotificationMeta } from "@robindone/shared/robindone-protocol-v4";
 import { WorkflowArtifactStrip } from "@/components/workflow-timeline/WorkflowArtifactStrip.js";
 
 /**

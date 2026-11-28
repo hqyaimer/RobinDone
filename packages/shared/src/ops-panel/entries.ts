@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * 需求/审批/反馈面板（ops-panel）的协议层定义。
  *
- * 需求正身：RobinRunOps dev/specs/2026-11-24-需求审批反馈面板-需求说明.md（MVP=A 刀 +
+ * 需求正身：RobinDoneOps dev/specs/2026-11-24-需求审批反馈面板-需求说明.md（MVP=A 刀 +
  * worker 可见性控制）。三类管理原语从"对话"升级为"状态机"：
  * - REQ（requirement）：用户 → master 的工作单，用户已拍板无需审批；
  * - APP（approval）：master → 用户的非阻塞决策门；

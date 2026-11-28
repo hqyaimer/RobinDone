@@ -2,8 +2,8 @@ import type {
   CommandPayloadMap,
   CommandType,
   WorkspaceHookReviewRequestPayload,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import type { Hook } from "@robinrun/shared";
+} from "@robindone/shared/robindone-protocol-v4";
+import type { Hook } from "@robindone/shared";
 import {
   findWorkspaceHookCommandBinding,
   findWorkspaceHookReviewBindingForItem,

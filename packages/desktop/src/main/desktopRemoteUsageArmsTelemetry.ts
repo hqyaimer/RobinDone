@@ -6,7 +6,7 @@ import type {
   RemoteUsageRemoteKind,
   RemoteUsageResult,
   RemoteWorkspaceConnectTrigger,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   dispatchFinalArmsCustomEvent,
   type FinalArmsCustomEventE2EController,

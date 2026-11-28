@@ -5,8 +5,8 @@ import {
   ZAI_PROVIDER_ID,
   type IPlatformService,
   type UsageEntitlementSnapshot,
-} from "@robinrun/shared";
-import type { ProviderSettingsView } from "@robinrun/services";
+} from "@robindone/shared";
+import type { ProviderSettingsView } from "@robindone/services";
 import { logger } from "@/logger.js";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 

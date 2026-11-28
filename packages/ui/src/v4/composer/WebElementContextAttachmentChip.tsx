@@ -1,7 +1,7 @@
 import { Globe2Icon, MousePointer2Icon, Trash2Icon } from "lucide-react";
 import type { AttachmentHoverCardContentProps } from "@/components/ai-elements/attachments.js";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { WebElementContextComposerAttachment } from "@/lib/webElementContext.js";
 import { ContextAttachmentPill } from "@/v4/composer/ContextAttachmentPill.js";
 
@@ -28,7 +28,7 @@ export function WebElementContextAttachmentChip({
   onRemove?: (id: string) => void;
   onRemoveAll?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (contexts.length === 0) {
     return null;
   }

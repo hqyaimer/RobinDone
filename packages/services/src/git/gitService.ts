@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import type { GitBranchComparison, GitFileChange, GitChangeSectionId } from "@robinrun/shared";
+import type { GitBranchComparison, GitFileChange, GitChangeSectionId } from "@robindone/shared";
 import { isPathInWorkspaceScope, normalizeGitPath, toWorkspaceRelativeGitPath } from "./config.js";
 import { filterCommitMessageFilesByCurrentSession } from "./commitMessageFileScope.js";
 import type { IGitService } from "./git.js";

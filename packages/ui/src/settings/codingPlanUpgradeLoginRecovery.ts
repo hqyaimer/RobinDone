@@ -1,4 +1,4 @@
-import type { OAuthProviderId } from "@robinrun/shared";
+import type { OAuthProviderId } from "@robindone/shared";
 import type { PurchaseAudience } from "@/settings/model-provider-section/codingPlanEnterpriseTiers.js";
 
 export interface CodingPlanUpgradeDialogTarget {

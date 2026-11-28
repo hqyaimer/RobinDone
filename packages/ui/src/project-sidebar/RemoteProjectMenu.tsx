@@ -1,6 +1,6 @@
 import { Cloud, FolderOpen, Plus } from "lucide-react";
-import { type SourceServerManagementSnapshot } from "@robinrun/shared";
-import { TID_VIRTUAL_PROJECT_ADD } from "@robinrun/shared/test-ids";
+import { type SourceServerManagementSnapshot } from "@robindone/shared";
+import { TID_VIRTUAL_PROJECT_ADD } from "@robindone/shared/test-ids";
 import type { RemoteConnectionOpenPreference } from "@/app-shell/types.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -13,7 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   getRemoteDevicePresentationInput,
   resolveRemoteConnectionPresentation,
@@ -29,7 +29,7 @@ export function RemoteProjectMenu({
   onOpenFolder: () => void;
   onOpenRemoteWorkspace?: (preference?: RemoteConnectionOpenPreference) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

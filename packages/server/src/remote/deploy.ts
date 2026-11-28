@@ -1,21 +1,21 @@
 /* eslint-disable max-lines -- 远端部署入口集中编排 server/node/agent/tool 资源，拆分需单独整理边界。 */
 import { join } from "node:path";
 import {
-  ROBINRUN_VERSION,
+  ROBINDONE_VERSION,
   formatLogPrefix,
   normalizeRemoteResourcePackageSelection,
   type RemoteAssetInstallMode,
   type RemoteResourcePackageId,
   type RemoteResourcePackageSelection,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { IRemoteBackend, RemoteEnvironment } from "./backend.js";
-import { deployRobinRunAgentRuntime } from "./robinrunAgentDeploy.js";
+import { deployRobinDoneAgentRuntime } from "./robindoneAgentDeploy.js";
 import {
   deployNodePtyPrebuilds,
   deployNodeRuntime,
   createRemoteComponentVersionResolver,
   logDeployRequired,
-} from "@robinrun/server/remote/remoteAssetDeployDecision.js";
+} from "@robindone/server/remote/remoteAssetDeployDecision.js";
 import {
   REMOTE_BASE,
   fileExists,
@@ -23,34 +23,34 @@ import {
   formatOptionalValues,
   type DeployLoggers,
   type RemoteAssetDeployOptions,
-} from "@robinrun/server/remote/deployShared.js";
-import { quotePosixPathArg } from "@robinrun/server/remote/posixShell.js";
-import { checkServerBundleRequiredMarkers } from "@robinrun/server/remote/serverBundleDeployCheck.js";
-import { deployRuntimeTools } from "@robinrun/server/remote/runtimeToolDeploy.js";
-import { REMOTE_AGENT_OFFICIAL_PLUGIN_REQUIRED_RELATIVE_PATHS } from "@robinrun/server/remote/robinrunAgentOfficialPluginAssets.js";
+} from "@robindone/server/remote/deployShared.js";
+import { quotePosixPathArg } from "@robindone/server/remote/posixShell.js";
+import { checkServerBundleRequiredMarkers } from "@robindone/server/remote/serverBundleDeployCheck.js";
+import { deployRuntimeTools } from "@robindone/server/remote/runtimeToolDeploy.js";
+import { REMOTE_AGENT_OFFICIAL_PLUGIN_REQUIRED_RELATIVE_PATHS } from "@robindone/server/remote/robindoneAgentOfficialPluginAssets.js";
 import {
   ensureRemoteReleaseDirFromCdn,
   selectRemoteAssetManifestComponents,
   type RemoteAssetManifestRef,
-} from "@robinrun/server/remote/remoteAssetCache.js";
+} from "@robindone/server/remote/remoteAssetCache.js";
 import {
   fetchRemoteDownloadManifest,
   LocalUploadAssetInstaller,
   RemoteDownloadAssetInstaller,
   type RemoteAssetInstaller,
   type RemoteManifestRef,
-} from "@robinrun/server/remote/remoteAssetInstaller.js";
+} from "@robindone/server/remote/remoteAssetInstaller.js";
 import {
   checkRemoteAssetComponentIdentity,
   createFreshRemoteAssetManifestRefResolver,
   hasRemoteAssetComponentRefreshPending,
   markRemoteAssetComponentRefreshPending,
   writeRemoteAssetComponentMeta,
-} from "@robinrun/server/remote/remoteAssetLiveIdentity.js";
-import { detectRemoteAssetTools } from "@robinrun/server/remote/remoteAssetPreflight.js";
-import { assertSupportedRemoteEnvironment } from "@robinrun/server/remote/remotePlatformSupport.js";
-import { acquireRemoteDeployLock } from "@robinrun/server/remote/remoteDeployLock.js";
-import type { RemoteAssetNetworkPort } from "@robinrun/server/remote/remoteAssetNetwork.js";
+} from "@robindone/server/remote/remoteAssetLiveIdentity.js";
+import { detectRemoteAssetTools } from "@robindone/server/remote/remoteAssetPreflight.js";
+import { assertSupportedRemoteEnvironment } from "@robindone/server/remote/remotePlatformSupport.js";
+import { acquireRemoteDeployLock } from "@robindone/server/remote/remoteDeployLock.js";
+import type { RemoteAssetNetworkPort } from "@robindone/server/remote/remoteAssetNetwork.js";
 
 const log = (...args: unknown[]) => console.log(formatLogPrefix("deploy", process.pid), ...args);
 const logWarn = (...args: unknown[]) =>
@@ -87,7 +87,7 @@ export interface DeployOptions {
 }
 
 /**
- * Deploy the robinrun server to the remote machine.
+ * Deploy the robindone server to the remote machine.
  * Uploads Node.js binary, server bundle, and node-pty prebuild.
  *
  * Returns true if a deploy was performed, false if skipped (version matches).
@@ -127,7 +127,7 @@ export async function deployServer(
   const getRemoteManifestRef = (): Promise<RemoteManifestRef> => {
     remoteManifestPromise ??= fetchRemoteDownloadManifest(
       {
-        version: ROBINRUN_VERSION,
+        version: ROBINDONE_VERSION,
         platformArch,
         remoteCdnBaseUrl: options?.remoteCdnBaseUrl,
         remoteCdnBaseUrls: options?.remoteCdnBaseUrls,
@@ -221,7 +221,7 @@ export async function deployServer(
     {
       ...assetDeployOptions,
       platformArch,
-      version: ROBINRUN_VERSION,
+      version: ROBINDONE_VERSION,
       assetInstallMode: options?.assetInstallMode,
     },
     { log, logWarn },
@@ -267,14 +267,14 @@ export async function deployServer(
       await markRemoteAssetComponentRefreshPending(backend, {
         componentId: "glm",
         platformArch,
-        appVersion: ROBINRUN_VERSION,
+        appVersion: ROBINDONE_VERSION,
       });
     }
 
     // Check if deploy is needed
     if (!serverDeployDecision.shouldDeploy) {
       log("skipped — remote version matches");
-      // 主 server 版本相同只证明 node/robinrun-server.cjs 可启动，不代表随包工具仍存在。
+      // 主 server 版本相同只证明 node/robindone-server.cjs 可启动，不代表随包工具仍存在。
       // glm 内容跟随 app/server 版本刷新；但 wrapper/bundle 被清理或开发态 bundle 变化时仍要按实体检查修复。
       if (shouldDeployResourcePackage("node-pty")) {
         await deployNodePtyPrebuilds(
@@ -289,7 +289,7 @@ export async function deployServer(
           { log, logWarn },
         );
       }
-      await deployRobinRunAgentRuntime(
+      await deployRobinDoneAgentRuntime(
         backend,
         env,
         {
@@ -335,8 +335,8 @@ export async function deployServer(
     });
     await installer.installFile({
       componentId: SERVER_BUNDLE_COMPONENT_ID,
-      sourceRelativePath: "server/robinrun-server.cjs",
-      remotePath: `${REMOTE_BASE}/robinrun-server.cjs`,
+      sourceRelativePath: "server/robindone-server.cjs",
+      remotePath: `${REMOTE_BASE}/robindone-server.cjs`,
       // App 版本变化是新的发布边界，不能只凭历史 cache 的 `.ready`
       // 判断 server-bundle 可复用；与 GLM 一致，必须重新下载并校验当前 manifest 制品。
       forceRefresh: shouldForceRefreshContentAddressedAssets,
@@ -370,8 +370,8 @@ export async function deployServer(
 
     log("all uploads complete");
 
-    // 部署 RobinRun Agent runtime 到远程，历史资源包选择已在入口统一忽略。
-    await deployRobinRunAgentRuntime(
+    // 部署 RobinDone Agent runtime 到远程，历史资源包选择已在入口统一忽略。
+    await deployRobinDoneAgentRuntime(
       backend,
       env,
       {
@@ -497,7 +497,7 @@ async function checkServerDeployDecision(
       };
     }
 
-    const serverPath = `${REMOTE_BASE}/robinrun-server.cjs`;
+    const serverPath = `${REMOTE_BASE}/robindone-server.cjs`;
     const serverExists = await backend.exists(serverPath);
     log("remote server exists:", serverExists);
     if (!serverExists) {
@@ -513,11 +513,11 @@ async function checkServerDeployDecision(
       `${quotePosixPathArg(nodePath)} ${quotePosixPathArg(serverPath)} --version`,
     );
     const version = (await collectStdout(stream)).trim();
-    log("remote version:", JSON.stringify(version), "local:", ROBINRUN_VERSION);
-    if (version !== ROBINRUN_VERSION) {
+    log("remote version:", JSON.stringify(version), "local:", ROBINDONE_VERSION);
+    if (version !== ROBINDONE_VERSION) {
       return {
         shouldDeploy: true,
-        reason: `remote server version mismatch remote=${version} expected=${ROBINRUN_VERSION}`,
+        reason: `remote server version mismatch remote=${version} expected=${ROBINDONE_VERSION}`,
         appVersionChanged: true,
       };
     }
@@ -620,7 +620,7 @@ function resolveMockCdnReleaseDir(mockCdnDir?: string): string | null {
     return null;
   }
 
-  return join(mockCdnDir, "releases", ROBINRUN_VERSION);
+  return join(mockCdnDir, "releases", ROBINDONE_VERSION);
 }
 
 async function resolveReleaseDir(
@@ -669,7 +669,7 @@ async function resolveReleaseDir(
       remoteCdnBaseUrl: options?.remoteCdnBaseUrl,
       remoteCdnBaseUrls: options?.remoteCdnBaseUrls,
       remoteCacheDir: options?.remoteCacheDir,
-      version: ROBINRUN_VERSION,
+      version: ROBINDONE_VERSION,
       platformArch,
       componentIds,
       manifestRef,
@@ -717,7 +717,7 @@ function resolveRequiredMockReleasePaths(
   for (const componentId of ids) {
     switch (componentId) {
       case SERVER_BUNDLE_COMPONENT_ID:
-        requiredPaths.add("server/robinrun-server.cjs");
+        requiredPaths.add("server/robindone-server.cjs");
         break;
       case "node-runtime":
         requiredPaths.add(`node/${platformArch}/node`);
@@ -729,7 +729,7 @@ function resolveRequiredMockReleasePaths(
         }
         break;
       case "glm":
-        requiredPaths.add(`glm/${platformArch}/robinrun.cjs`);
+        requiredPaths.add(`glm/${platformArch}/robindone.cjs`);
         for (const relativePath of REMOTE_AGENT_OFFICIAL_PLUGIN_REQUIRED_RELATIVE_PATHS) {
           requiredPaths.add(`glm/${platformArch}/packages/${relativePath}`);
         }

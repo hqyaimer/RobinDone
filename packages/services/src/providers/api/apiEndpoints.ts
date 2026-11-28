@@ -1,6 +1,6 @@
-import { buildRuntimeRobinRunApiUrl, resolveZaiBusinessBaseUrl } from "@robinrun/shared";
+import { buildRuntimeRobinDoneApiUrl, resolveZaiBusinessBaseUrl } from "@robindone/shared";
 
-export const ROBINRUN_CLIENT_SCENES_URL = buildRuntimeRobinRunApiUrl(
+export const ROBINDONE_CLIENT_SCENES_URL = buildRuntimeRobinDoneApiUrl(
   process.env,
   "/api/v1/client/scenes",
 );

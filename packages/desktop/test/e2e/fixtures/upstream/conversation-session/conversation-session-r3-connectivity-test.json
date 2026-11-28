@@ -16,7 +16,7 @@
       "match": {
         "method": "POST",
         "pathIncludes": "/messages",
-        "bodyIncludes": ["You are RobinRun connectivity probe."]
+        "bodyIncludes": ["You are RobinDone connectivity probe."]
       },
       "response": {
         "statusCode": 200,

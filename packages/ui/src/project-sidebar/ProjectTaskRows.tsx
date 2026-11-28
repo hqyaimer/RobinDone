@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button.js";
 import { useProjectTaskActions } from "@/project-sidebar/useProjectTaskActions.js";
 import { ProjectTaskListContext } from "@/project-sidebar/ProjectTaskListContext.js";
 import { compareProjectTaskRows } from "@/project-sidebar/view.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { timelineDateHeadings } from "@/project-sidebar/timelineDates.js";
 
 const EMPTY: ProjectTask[] = [];
@@ -27,7 +27,7 @@ export const ProjectTaskRow = memo(function Row({
   const presentation = useContext(ProjectTaskListContext);
   const { remoteSessionId, rename, pin, archive, unread } = useProjectTaskActions(task, refresh);
   const workspaceKey = task.workspaceIdentity?.trim() || task.workspacePath;
-  const activeId = useRobinRunSessionStore(
+  const activeId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.activeTaskId ?? null,
   );
   const rows = useMemo(() => [task], [task]);
@@ -95,7 +95,7 @@ export function ProjectTaskRows({
   onSelect: ProjectSidebarProps["onSelectTask"];
   refresh(): Promise<void>;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const chronological = kind === "timeline" || kind === "unread";
   const pageSize = chronological ? 20 : 5;
   const [limit, setLimit] = useState(pageSize);

@@ -39,7 +39,7 @@ function parseArgs(args) {
 
 function printUsage() {
   console.log(
-    "Usage: pnpm --filter @robinrun/desktop e2e:docker:admit:plugins -- --spec ./test/e2e/plugins/<case>.test.ts --verified --artifact <path> --apply",
+    "Usage: pnpm --filter @robindone/desktop e2e:docker:admit:plugins -- --spec ./test/e2e/plugins/<case>.test.ts --verified --artifact <path> --apply",
   );
 }
 

@@ -1,4 +1,4 @@
-import type { WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunState } from "@robindone/shared/robindone-protocol-v4";
 import { phaseNameMatches } from "./phase-name.js";
 import type { WorkflowCausalityGraphData } from "./types.js";
 

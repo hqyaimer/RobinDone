@@ -2,7 +2,7 @@ import {
   HostMessageTypes,
   HostResponseTypes,
   type ProviderProvisioningLaneStatus,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { IProviderProvisioningStatusService } from "./contract.js";
 
 type LaneAction = "read" | "wait" | "retry";

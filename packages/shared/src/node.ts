@@ -53,3 +53,11 @@ export {
   type NodeSelfResourceSampler,
   type NodeSelfResourceSamplerOptions,
 } from "./node/nodeSelfResourceTelemetry.js";
+
+export {
+  BRAND_DATA_DIR_NAME,
+  LEGACY_BRAND_DATA_DIR_NAME,
+  migrateBrandDataRoot,
+  type BrandDataRootMigrationResult,
+  type BrandDataRootMigrationStatus,
+} from "./node/brand-data-root-migration.js";

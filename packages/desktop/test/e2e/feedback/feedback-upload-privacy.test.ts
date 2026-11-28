@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { build } from "esbuild";
-import { TID_FEEDBACK_LOGS_OPT_IN } from "@robinrun/shared/test-ids";
+import { TID_FEEDBACK_LOGS_OPT_IN } from "@robindone/shared/test-ids";
 import { readSettings, seedSettings, waitForDefaultWorkspaceReady } from "#e2e/helpers/desktop-app";
 import { startHelpConfigFixture } from "#e2e/helpers/help-client-config-fixture";
 
@@ -72,7 +72,7 @@ describe("反馈上传授权（manual review）", () => {
       await seedSettings({
         locale,
         localePreference: locale,
-        robinrunEndpointOrigin: server.origin,
+        robindoneEndpointOrigin: server.origin,
       });
       await browser.electron.execute(
         (electron, size) => {
@@ -122,7 +122,7 @@ describe("反馈上传授权（manual review）", () => {
         await logs.scrollIntoView();
         await expect(logs).toBeDisplayed();
         await browser.saveScreenshot(
-          join(screenshotDirectory, `robinrun-feedback-${locale}-${theme}.png`),
+          join(screenshotDirectory, `robindone-feedback-${locale}-${theme}.png`),
         );
       }
       await browser.keys("Escape");
@@ -160,7 +160,7 @@ describe("反馈上传授权（manual review）", () => {
         }, theme);
         for (const marker of requiredMarkers) await expect(marker).toBeDisplayed();
         await browser.saveScreenshot(
-          join(screenshotDirectory, `robinrun-feature-request-${locale}-${theme}.png`),
+          join(screenshotDirectory, `robindone-feature-request-${locale}-${theme}.png`),
         );
       }
       await browser.keys("Escape");

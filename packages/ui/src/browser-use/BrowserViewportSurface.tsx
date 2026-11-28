@@ -1,6 +1,6 @@
 import { useCallback, type RefObject } from "react";
-import { BROWSER_VIEW_RESTORE_BOOTSTRAP_URL, type BrowserViewportSize } from "@robinrun/shared";
-import { TID_BROWSER_WEBVIEW } from "@robinrun/shared/test-ids";
+import { BROWSER_VIEW_RESTORE_BOOTSTRAP_URL, type BrowserViewportSize } from "@robindone/shared";
+import { TID_BROWSER_WEBVIEW } from "@robindone/shared/test-ids";
 import { TriangleAlertIcon } from "lucide-react";
 import { ResponsiveBrowserViewport } from "@/browser-use/ResponsiveBrowserViewport.js";
 import {
@@ -145,7 +145,7 @@ export function BrowserViewportSurface({
             ref={handleWebviewRef}
             allowpopups={"" as unknown as boolean}
             src={isResidencyRestore ? BROWSER_VIEW_RESTORE_BOOTSTRAP_URL : DEFAULT_BROWSER_URL}
-            partition="persist:robinrun-embedded-browser"
+            partition="persist:robindone-embedded-browser"
             nodeintegrationinsubframes="true"
             data-browser-compositor-scale={isResponsiveMode ? desktopZoomFactor : undefined}
             data-browser-layout-scale={isResponsiveMode ? responsiveGuestLayoutScale : undefined}

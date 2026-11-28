@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { PlatformChannels } from "@robinrun/shared";
+import { PlatformChannels } from "@robindone/shared";
 import { installEmbeddedBrowserWheelForwarding } from "./embeddedBrowserWheel.js";
 
-const BRIDGE_KEY = "__robinrunEmbeddedBrowserJavaScriptDialog__";
+const BRIDGE_KEY = "__robindoneEmbeddedBrowserJavaScriptDialog__";
 
 if (typeof window !== "undefined") {
   installEmbeddedBrowserWheelForwarding(window, (channel, payload) => {

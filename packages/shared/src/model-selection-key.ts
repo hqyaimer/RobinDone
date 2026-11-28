@@ -1,6 +1,6 @@
 import type { ModelSelectionGhostReason } from "./model-selection-types.js";
 import { decodeCustomModelValue } from "./custom-model-value.js";
-import type { RobinRunProvider } from "./robinrun-task-types-core.js";
+import type { RobinDoneProvider } from "./robindone-task-types-core.js";
 
 export const NATIVE_SUPPLIER_KEY_PREFIX = "native:";
 export const CUSTOM_SUPPLIER_KEY_PREFIX = "custom:";
@@ -29,8 +29,8 @@ export function normalizeSupplierBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(TRAILING_SLASHES_RE, "");
 }
 
-export function buildNativeSupplierKey(robinrunProvider: RobinRunProvider): string {
-  return `${NATIVE_SUPPLIER_KEY_PREFIX}${robinrunProvider}`;
+export function buildNativeSupplierKey(robindoneProvider: RobinDoneProvider): string {
+  return `${NATIVE_SUPPLIER_KEY_PREFIX}${robindoneProvider}`;
 }
 
 export function buildCustomSupplierKey(providerId: string): string {
@@ -49,13 +49,13 @@ export function buildGhostSupplierIdentity(rawIdentity: string): string {
 }
 
 export function buildGhostSupplierKey(
-  robinrunProvider: RobinRunProvider,
+  robindoneProvider: RobinDoneProvider,
   reason: ModelSelectionGhostReason,
   rawIdentity: string,
 ): string {
   return [
     GHOST_SUPPLIER_KEY_PREFIX,
-    robinrunProvider,
+    robindoneProvider,
     ":",
     reason,
     ":",
@@ -64,7 +64,7 @@ export function buildGhostSupplierKey(
 }
 
 export function resolveSupplierKeyFromModelDisplayValue(
-  robinrunProvider: RobinRunProvider,
+  robindoneProvider: RobinDoneProvider,
   value: string | boolean | undefined,
 ): string {
   const customModel = decodeCustomModelValue(String(value ?? ""));
@@ -72,5 +72,5 @@ export function resolveSupplierKeyFromModelDisplayValue(
     return buildCustomSupplierKey(customModel.providerId);
   }
 
-  return buildNativeSupplierKey(robinrunProvider);
+  return buildNativeSupplierKey(robindoneProvider);
 }

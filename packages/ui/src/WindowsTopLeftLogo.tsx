@@ -1,5 +1,5 @@
 import { cn } from "@/components/lib/utils.js";
-import { RobinRunStartupLogoBadge } from "@/root/RootStartupLoading.js";
+import { RobinDoneStartupLogoBadge } from "@/root/RootStartupLoading.js";
 
 export function WindowsTopLeftLogo({
   className,
@@ -18,14 +18,14 @@ export function WindowsTopLeftLogo({
     >
       <span
         role="img"
-        aria-label="RobinRun"
+        aria-label="RobinDone"
         data-testid="settings-logo"
         className={cn(
           "pointer-events-none flex size-5 items-center justify-center select-none",
           imageClassName,
         )}
       >
-        <RobinRunStartupLogoBadge size="titlebar" animated={false} />
+        <RobinDoneStartupLogoBadge size="titlebar" animated={false} />
       </span>
     </div>
   );

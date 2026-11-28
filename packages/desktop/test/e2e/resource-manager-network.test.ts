@@ -55,7 +55,7 @@ describe("资源管理器网络", () => {
       const externalResult = await browser.electron.execute(async (electron, origin) => {
         return (
           await electron.session
-            .fromPartition("persist:robinrun-embedded-browser")
+            .fromPartition("persist:robindone-embedded-browser")
             .fetch(`${origin}/excluded-external-page`)
         ).text();
       }, url);
@@ -92,8 +92,8 @@ describe("资源管理器网络", () => {
       ]) {
         await browser.execute(
           (themeValue, localeValue) => {
-            localStorage.setItem("robinrun-theme", themeValue!);
-            localStorage.setItem("robinrun-locale-preference", localeValue!);
+            localStorage.setItem("robindone-theme", themeValue!);
+            localStorage.setItem("robindone-locale-preference", localeValue!);
           },
           theme,
           locale,
@@ -106,7 +106,7 @@ describe("资源管理器网络", () => {
             "renderer-network-test",
           ),
         );
-        await browser.saveScreenshot(join(tmpdir(), `robinrun-network-${theme}.png`));
+        await browser.saveScreenshot(join(tmpdir(), `robindone-network-${theme}.png`));
       }
       await $('//button[normalize-space(.)="Clear" or normalize-space(.)="清空"]').click();
       await browser.waitUntil(

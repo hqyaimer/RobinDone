@@ -1,5 +1,5 @@
 import { createStallableTcpProxy } from "#e2e/helpers/ssh-stallable-proxy";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { clearAppData, readSettings } from "#e2e/helpers/desktop-app";
 import {
   disconnectRemoteSource,

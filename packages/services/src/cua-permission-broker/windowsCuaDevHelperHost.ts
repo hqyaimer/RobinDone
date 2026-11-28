@@ -1,12 +1,12 @@
 /* eslint-disable max-lines -- Windows two-phase transport lifecycle must remain one linearized state machine. */
 import { randomBytes } from "node:crypto";
 
-import type { HelperHealth } from "@robinrun/robinrun-cua/broker";
+import type { HelperHealth } from "@robindone/robindone-cua/broker";
 import type {
   CuaHelperHandle,
   CuaHelperTransportRestartResult,
   CuaProductHelperHost,
-} from "@robinrun/robinrun-cua/broker/server";
+} from "@robindone/robindone-cua/broker/server";
 
 import { createServiceLogger, type ServiceLogger } from "#src/logger/serviceLogger.js";
 import {

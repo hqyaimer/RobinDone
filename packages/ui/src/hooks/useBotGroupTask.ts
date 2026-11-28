@@ -3,7 +3,7 @@ import {
   isFeishuBotProvider,
   type BotContextState,
   type FeishuBotProvider,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 

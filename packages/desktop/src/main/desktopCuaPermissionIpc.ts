@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { app, BrowserWindow, ipcMain, nativeImage, screen } from "electron";
-import { PlatformChannels, type CuaPermissionKind, type Locale } from "@robinrun/shared";
+import { PlatformChannels, type CuaPermissionKind, type Locale } from "@robindone/shared";
 import {
   cuaHelperBundleFingerprintUnchanged,
   openCuaPermissionOnboarding,
@@ -19,31 +19,31 @@ import { createSystemSettingsWindowWatcher } from "./cuaSystemSettingsWindowWatc
 const execFileAsync = promisify(execFile);
 const MACOS_SYSTEM_SETTINGS_BUNDLE_ID = "com.apple.systempreferences";
 // 1x1 透明 PNG。startDrag 在 macOS 上要求 icon 非空（electron.d.ts: "The image must be non-empty
-// on macOS"），连随包 RobinRun 图标都读不到时用它兜底 —— 否则 startDrag 抛异常，用户完全拖不动。
+// on macOS"），连随包 RobinDone 图标都读不到时用它兜底 —— 否则 startDrag 抛异常，用户完全拖不动。
 const CUA_HELPER_DRAG_ICON_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 /** 拖拽光标与浮窗 tile 都用 64pt，避免巨大的光标贴图。 */
 const CUA_DRAG_ICON_SIZE = 64;
 
 /**
- * 拖拽光标与浮窗 tile 共用的 RobinRun 图标（模块级缓存，避免每次拖拽读磁盘）。
+ * 拖拽光标与浮窗 tile 共用的 RobinDone 图标（模块级缓存，避免每次拖拽读磁盘）。
  *
  * 不能用 `nativeImage.createFromNamedImage("NSApplicationIcon")`：那取的是**当前宿主 app** 的
  * 图标，dev 下宿主是 Electron.app，于是拖拽时显示 Electron 默认图标。
- * 改为显式读随包的 RobinRun 图标（electron-builder 已把 build/icon.png 打进 resources/icon.png）。
+ * 改为显式读随包的 RobinDone 图标（electron-builder 已把 build/icon.png 打进 resources/icon.png）。
  */
-let cachedRobinRunIcon: Electron.NativeImage | null = null;
+let cachedRobinDoneIcon: Electron.NativeImage | null = null;
 
-function resolveRobinRunIcon(): Electron.NativeImage {
-  if (cachedRobinRunIcon && !cachedRobinRunIcon.isEmpty()) return cachedRobinRunIcon;
+function resolveRobinDoneIcon(): Electron.NativeImage {
+  if (cachedRobinDoneIcon && !cachedRobinDoneIcon.isEmpty()) return cachedRobinDoneIcon;
   const iconPath = app.isPackaged
     ? join(process.resourcesPath, "icon.png")
     : join(import.meta.dirname, "..", "..", "build", "icon.png");
   const image = nativeImage.createFromPath(iconPath);
-  cachedRobinRunIcon = image.isEmpty()
+  cachedRobinDoneIcon = image.isEmpty()
     ? nativeImage.createFromDataURL(CUA_HELPER_DRAG_ICON_DATA_URL)
     : image;
-  return cachedRobinRunIcon;
+  return cachedRobinDoneIcon;
 }
 
 interface CuaApplicationReturnOptions {
@@ -82,11 +82,11 @@ function waitForCuaApplicationReturn({
     let settled = false;
     let settingsOpened = false;
     // LaunchServices 查询是两次子进程往返，可能已经读到 Settings 的 ASN，却在
-    // RobinRun focus 边沿之后才返回 bundle id。用单调序号配对“探针开始/期间 blur”与
+    // RobinDone focus 边沿之后才返回 bundle id。用单调序号配对“探针开始/期间 blur”与
     // 后续 focus，既不丢失真实返回，也不复活 BrowserWindow.isFocused() 的旧快照。
     let applicationEventSequence = 0;
     let latestBlurSequence = 0;
-    let latestRobinRunReturnSequence = 0;
+    let latestRobinDoneReturnSequence = 0;
     let observedSystemSettingsAfterSequence: number | null = null;
     let activeInspections = 0;
     let inspectionTimer: ReturnType<typeof setTimeout> | undefined;
@@ -111,7 +111,7 @@ function waitForCuaApplicationReturn({
       if (
         settingsOpened &&
         observedSystemSettingsAfterSequence !== null &&
-        latestRobinRunReturnSequence > observedSystemSettingsAfterSequence
+        latestRobinDoneReturnSequence > observedSystemSettingsAfterSequence
       )
         finish();
     };
@@ -135,7 +135,7 @@ function waitForCuaApplicationReturn({
       // 只有在“最近一次应用事件是 blur、且尚未看到 return focus”的离开区间内启动的采样，
       // 才能为本次 System Settings round-trip 建立证据。由 return focus 自己触发的查询即使稍后
       // 读到 LaunchServices 的滞后 Settings 值，也不能与同一 focus 配对或清除超时。
-      const inspectionStartedWhileAway = latestBlurSequence > latestRobinRunReturnSequence;
+      const inspectionStartedWhileAway = latestBlurSequence > latestRobinDoneReturnSequence;
       activeInspections += 1;
       void readFrontmostBundleId().then(
         (bundleId) => {
@@ -146,10 +146,10 @@ function waitForCuaApplicationReturn({
             inspectionStartedWhileAway &&
             inspectionStartedAtSequence >= latestBlurSequence
           ) {
-            // 如果本次查询期间又收到 blur，该 blur 也必须早于可接受的 RobinRun
-            // return edge。这会排除“先在 RobinRun 内部切窗，后打开 Settings”的旧 focus。
+            // 如果本次查询期间又收到 blur，该 blur 也必须早于可接受的 RobinDone
+            // return edge。这会排除“先在 RobinDone 内部切窗，后打开 Settings”的旧 focus。
             // LaunchServices 的结果可早于 Electron blur 投递。若 pre-open 探针先读到
-            // Settings，而探测启动前恰有一次 RobinRun focus/activate，立即把旧 focus 当成「返回」会误判。
+            // Settings，而探测启动前恰有一次 RobinDone focus/activate，立即把旧 focus 当成「返回」会误判。
             // 探针必须在最近一次 blur 后、return focus 前启动：仅检查“曾经 blur”仍会借用一次
             // 更早的内部切窗 blur；而 focus 后才启动的探针可能读到 LaunchServices 的滞后值并永久
             // 清掉超时。两类结果都忽略，交给 blur-bound/away-interval 探针确认。
@@ -176,7 +176,7 @@ function waitForCuaApplicationReturn({
     };
     const onBlur = () => {
       latestBlurSequence = ++applicationEventSequence;
-      // pre-open 的 lsappinfo 查询可能已经采到 RobinRun，却卡在第二个 info 子进程。
+      // pre-open 的 lsappinfo 查询可能已经采到 RobinDone，却卡在第二个 info 子进程。
       // 若复用全局 single-flight，Settings 打开并快速返回的完整 round-trip 会落入盲窗。blur 边沿
       // 必须强制启动一份时间绑定的并行采样；普通 150ms 轮询仍保持 single-flight，避免无界并发。
       inspectFrontmost(true);
@@ -186,18 +186,18 @@ function waitForCuaApplicationReturn({
       // 前台探针完成时直接读取这个 stale 快照会把「刚打开设置页」误判成「用户已返回」。
       // focus/activate 总是先记序号；若对应的 Settings 探针还在飞行，它延迟返回后
       // 仍能用 inspection-start snapshot 证明这是后续边沿。边沿也可早于 openExternal resolve。
-      latestRobinRunReturnSequence = ++applicationEventSequence;
+      latestRobinDoneReturnSequence = ++applicationEventSequence;
       inspectFrontmost();
       maybeFinishReturn();
     };
-    const onQuit = () => finish(new Error("RobinRun quit during CUA permission onboarding"));
+    const onQuit = () => finish(new Error("RobinDone quit during CUA permission onboarding"));
     const onAbort = () =>
       finish(signal.reason ?? new Error("CUA permission onboarding origin window closed"));
     observationTimer = setTimeout(
       () =>
         finish(
           new Error(
-            `System Settings did not return to RobinRun within ${Math.max(1, timeoutMs)}ms`,
+            `System Settings did not return to RobinDone within ${Math.max(1, timeoutMs)}ms`,
           ),
         ),
       Math.max(1, timeoutMs),
@@ -213,7 +213,7 @@ function waitForCuaApplicationReturn({
       return;
     }
     // 在调用 openExternal 前已装好所有监听；从这一刻开始轮询 LaunchServices 的真实前台 app。
-    // 只有确实观察到 System Settings，后续 RobinRun focus 才能推进，内部窗口切换不会误判。
+    // 只有确实观察到 System Settings，后续 RobinDone focus 才能推进，内部窗口切换不会误判。
     inspectFrontmost();
     void openSettings().then(
       () => {
@@ -274,10 +274,10 @@ function createDragPanelForSession(
     getSettingsBounds: () => watcher.latest(),
     stopSettingsBounds: () => watcher.stop(),
     getLocale,
-    // tile 用真实 RobinRun 图标，与系统设置权限列表里那一行的图标对得上，用户才能把
+    // tile 用真实 RobinDone 图标，与系统设置权限列表里那一行的图标对得上，用户才能把
     // 「要拖的东西」和「要出现在列表里的条目」对应起来。
     getIconDataUrl: () =>
-      resolveRobinRunIcon()
+      resolveRobinDoneIcon()
         .resize({ width: CUA_DRAG_ICON_SIZE, height: CUA_DRAG_ICON_SIZE })
         .toDataURL(),
     logger,
@@ -286,7 +286,7 @@ function createDragPanelForSession(
 
 /** 生产走签名包内的 extraResources；dev 走 checkout 里的构建产物。 */
 function resolveWindowBoundsBinaryPath(): string {
-  const relative = join("macos-window-bounds", "robinrun-window-bounds");
+  const relative = join("macos-window-bounds", "robindone-window-bounds");
   return app.isPackaged
     ? join(process.resourcesPath, relative)
     : join(import.meta.dirname, "..", "..", "resources", relative);
@@ -384,7 +384,7 @@ export function registerCuaPermissionIpcHandlers(options: {
       void refreshVerifiedHelperAppPath();
       return;
     }
-    const icon = resolveRobinRunIcon().resize({
+    const icon = resolveRobinDoneIcon().resize({
       width: CUA_DRAG_ICON_SIZE,
       height: CUA_DRAG_ICON_SIZE,
     });

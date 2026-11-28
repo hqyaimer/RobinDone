@@ -1,4 +1,4 @@
-import type { Event } from "@robinrun/rpc";
+import type { Event } from "@robindone/rpc";
 import type {
   RemoteTarget,
   SourceServerUpdateRequest,
@@ -9,8 +9,8 @@ import type {
   SourceServerManagementStateDelta,
   SourceServerOperationLog,
   SourceServerRunningTasksResult,
-} from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+} from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface UpdateConnectionProfileInput {

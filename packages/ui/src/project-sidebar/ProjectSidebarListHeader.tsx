@@ -2,7 +2,7 @@ import type { Ref, ReactNode } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import type { ProjectSidebarProps } from "@/project-sidebar/contract.js";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatCommandShortcutLabel } from "@/lib/keyboardShortcuts.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 
@@ -29,7 +29,7 @@ export function ProjectSidebarListHeader({
   backLabel?: string;
   projectActions?: ReactNode;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div
       className="flex min-w-0 shrink-0 items-center gap-1 px-2 pb-2"

@@ -19,15 +19,15 @@ describe("dev desktop remote production-like script", () => {
     );
   });
 
-  it("macOS 默认应复用正式版 RobinRun remote cache", () => {
+  it("macOS 默认应复用正式版 RobinDone remote cache", () => {
     expect(resolveProductionRemoteAssetCacheDir({}, "darwin", "/Users/alice")).toBe(
-      "/Users/alice/Library/Application Support/RobinRun/remote-assets-cache",
+      "/Users/alice/Library/Application Support/RobinDone/remote-assets-cache",
     );
   });
 
-  it("Linux 默认应复用正式版 RobinRun remote cache", () => {
+  it("Linux 默认应复用正式版 RobinDone remote cache", () => {
     expect(resolveProductionRemoteAssetCacheDir({}, "linux", "/home/alice")).toBe(
-      "/home/alice/.config/RobinRun/remote-assets-cache",
+      "/home/alice/.config/RobinDone/remote-assets-cache",
     );
     expect(
       resolveProductionRemoteAssetCacheDir(
@@ -35,33 +35,33 @@ describe("dev desktop remote production-like script", () => {
         "linux",
         "/home/alice",
       ),
-    ).toBe("/home/alice/.config-custom/RobinRun/remote-assets-cache");
+    ).toBe("/home/alice/.config-custom/RobinDone/remote-assets-cache");
   });
 
-  it("Windows 默认应复用正式版 RobinRun remote cache", () => {
+  it("Windows 默认应复用正式版 RobinDone remote cache", () => {
     expect(
       resolveProductionRemoteAssetCacheDir(
         { APPDATA: "C:\\Users\\Alice\\AppData\\Roaming" },
         "win32",
         "C:\\Users\\Alice",
       ),
-    ).toBe("C:\\Users\\Alice\\AppData\\Roaming\\RobinRun\\remote-assets-cache");
+    ).toBe("C:\\Users\\Alice\\AppData\\Roaming\\RobinDone\\remote-assets-cache");
   });
 
   it("启动 env 应强制走 CDN，并允许显式 cache 覆盖", () => {
     const env = buildDesktopRemoteProdEnv(
       {
-        ROBINRUN_ENV: "test",
-        ROBINRUN_DEV_REMOTE_ASSET_USE_CDN: "0",
-        ROBINRUN_REMOTE_ASSET_CACHE_DIR: "/tmp/custom-cache",
+        ROBINDONE_ENV: "test",
+        ROBINDONE_DEV_REMOTE_ASSET_USE_CDN: "0",
+        ROBINDONE_REMOTE_ASSET_CACHE_DIR: "/tmp/custom-cache",
       },
       "darwin",
       "/Users/alice",
     );
 
-    expect(env.ROBINRUN_ENV).toBe("production");
-    expect(env.ROBINRUN_DEV_REMOTE_ASSET_USE_CDN).toBe("1");
-    expect(env.ROBINRUN_REMOTE_ASSET_CACHE_DIR).toBe("/tmp/custom-cache");
+    expect(env.ROBINDONE_ENV).toBe("production");
+    expect(env.ROBINDONE_DEV_REMOTE_ASSET_USE_CDN).toBe("1");
+    expect(env.ROBINDONE_REMOTE_ASSET_CACHE_DIR).toBe("/tmp/custom-cache");
   });
 
   it("Windows 下应使用 pnpm.cmd 启动", () => {

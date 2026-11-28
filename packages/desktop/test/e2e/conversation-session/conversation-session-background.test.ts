@@ -15,7 +15,7 @@ import {
   TID_V4_SESSION_PANE,
   TID_V4_TURN_NAVIGATOR_ITEM,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, seedSettings } from "../helpers/desktop-app.js";
 import {
   waitForCompactMarkerStatus,
@@ -1068,9 +1068,9 @@ describe("会话区 Background Runtime Task E2E", () => {
           "Successfully stopped task:",
           "<task-notification>",
           "<tool-use-id>toolu_e2e_background_taskstop_agent</tool-use-id>",
-          // 模型用 TaskStop 停止：summary 写明是 RobinRun 停止的。
+          // 模型用 TaskStop 停止：summary 写明是 RobinDone 停止的。
           "<status>killed</status>",
-          "was stopped by RobinRun</summary>",
+          "was stopped by RobinDone</summary>",
         ],
         lastUserMessageIncludes: ["<task-notification>"],
       },
@@ -2520,10 +2520,10 @@ async function startVisibleUserMessageSampler() {
         samples: VisibleUserMessageSample[];
       };
       const sampleWindow = window as typeof window & {
-        __robinrunBg17UserMessageSampler?: SamplerState;
+        __robindoneBg17UserMessageSampler?: SamplerState;
       };
-      if (sampleWindow.__robinrunBg17UserMessageSampler) {
-        clearInterval(sampleWindow.__robinrunBg17UserMessageSampler.intervalId);
+      if (sampleWindow.__robindoneBg17UserMessageSampler) {
+        clearInterval(sampleWindow.__robindoneBg17UserMessageSampler.intervalId);
       }
       const collect = () => {
         const root = document.querySelector<HTMLElement>(`[data-testid="${messagesTestId}"]`);
@@ -2533,12 +2533,12 @@ async function startVisibleUserMessageSampler() {
           id: element.getAttribute("data-message-id"),
           text: element.innerText.replace(/\u00a0/g, " ").trim(),
         }));
-        sampleWindow.__robinrunBg17UserMessageSampler?.samples.push({
+        sampleWindow.__robindoneBg17UserMessageSampler?.samples.push({
           at: Date.now(),
           messages,
         });
       };
-      sampleWindow.__robinrunBg17UserMessageSampler = {
+      sampleWindow.__robindoneBg17UserMessageSampler = {
         intervalId: setInterval(collect, 50),
         samples: [],
       };
@@ -2552,17 +2552,17 @@ async function startVisibleUserMessageSampler() {
 async function stopVisibleUserMessageSampler() {
   return await browser.execute(() => {
     const sampleWindow = window as typeof window & {
-      __robinrunBg17UserMessageSampler?: {
+      __robindoneBg17UserMessageSampler?: {
         intervalId: ReturnType<typeof setInterval>;
         samples: VisibleUserMessageSample[];
       };
     };
-    const sampler = sampleWindow.__robinrunBg17UserMessageSampler;
+    const sampler = sampleWindow.__robindoneBg17UserMessageSampler;
     if (!sampler) {
       return [] satisfies VisibleUserMessageSample[];
     }
     clearInterval(sampler.intervalId);
-    delete sampleWindow.__robinrunBg17UserMessageSampler;
+    delete sampleWindow.__robindoneBg17UserMessageSampler;
     return sampler.samples;
   });
 }
@@ -2798,9 +2798,9 @@ async function startBackgroundTaskControlPresenceProbe(
   await openV4ComposerRunningBackgroundWorks();
   await browser.execute(
     (expectedKind, expectedText, expectedTaskId, v4SessionPanePrefix) => {
-      const probeKey = "__robinrunBackgroundTaskControlPresenceProbe";
+      const probeKey = "__robindoneBackgroundTaskControlPresenceProbe";
       const probeWindow = window as typeof window & {
-        __robinrunBackgroundTaskControlPresenceProbe?: {
+        __robindoneBackgroundTaskControlPresenceProbe?: {
           intervalId: number;
           missingTransitions: Array<{
             atMs: number;
@@ -2863,7 +2863,7 @@ async function startBackgroundTaskControlPresenceProbe(
         if (state.hasReturnedToTask && state.wasPresent === true && !present) {
           const store = (
             window as typeof window & {
-              __robinrunSessionStoreE2E?: {
+              __robindoneSessionStoreE2E?: {
                 getState: () => {
                   workspaces: Record<
                     string,
@@ -2883,7 +2883,7 @@ async function startBackgroundTaskControlPresenceProbe(
                 };
               };
             }
-          ).__robinrunSessionStoreE2E;
+          ).__robindoneSessionStoreE2E;
           const taskRuntime = Object.values(store?.getState().workspaces ?? {})
             .map((workspace) => workspace.taskRuntimeByTaskId?.[expectedTaskId])
             .find(Boolean);
@@ -2914,9 +2914,9 @@ async function startBackgroundTaskControlPresenceProbe(
 
 async function stopBackgroundTaskControlPresenceProbe(): Promise<BackgroundTaskControlPresenceProbeResult> {
   return browser.execute(() => {
-    const probeKey = "__robinrunBackgroundTaskControlPresenceProbe";
+    const probeKey = "__robindoneBackgroundTaskControlPresenceProbe";
     const probeWindow = window as typeof window & {
-      __robinrunBackgroundTaskControlPresenceProbe?: {
+      __robindoneBackgroundTaskControlPresenceProbe?: {
         intervalId: number;
         missingTransitions: BackgroundTaskControlPresenceProbeResult["missingTransitions"];
         observedPresent: boolean;

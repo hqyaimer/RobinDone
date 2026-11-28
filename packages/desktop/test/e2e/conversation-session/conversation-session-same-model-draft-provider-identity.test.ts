@@ -4,7 +4,7 @@ import {
   TID_CHAT_MODEL_SELECT_TRIGGER,
   TID_SETTINGS_BACK_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,

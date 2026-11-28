@@ -1,7 +1,7 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
-import { TID_MODEL_PROVIDER_ADD_MODEL_BUTTON } from "@robinrun/shared/test-ids";
-import { ModelConfig } from "@robinrun/provider";
-import { NodePersonalProviderConfigRepository } from "@robinrun/provider-node";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
+import { TID_MODEL_PROVIDER_ADD_MODEL_BUTTON } from "@robindone/shared/test-ids";
+import { ModelConfig } from "@robindone/provider";
+import { NodePersonalProviderConfigRepository } from "@robindone/provider-node";
 import { clickTestIdByDom, getE2EAppDataPaths } from "./desktop-app.js";
 
 /** Todo 88：只从账单 mock 提供成员，不能 seed Personal modelIds 让错误的静态校验侥幸通过。 */

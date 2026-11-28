@@ -7,7 +7,7 @@ import {
   channelContentPartsSchema,
   channelContentText,
   botGroupCardSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   isFeishuBotSender,
   isGroupControlCard,
@@ -17,7 +17,7 @@ import {
   readGroupMentionText,
 } from "#src/bots/providers/feishuGroupMessages.js";
 /* eslint-disable max-lines -- Feishu provider 集中承载鉴权、消息解析、卡片发送和 reaction typing 适配，后续按能力拆分。 */
-import { botTopicMessageSchema } from "@robinrun/shared";
+import { botTopicMessageSchema } from "@robindone/shared";
 import { readTopicHistory, TopicHistoryPermissionError } from "#src/bots/topicHistory.js";
 import type {
   BotInboundAttachment,
@@ -26,7 +26,7 @@ import type {
   BotOutboundMessage,
   BotProvider,
   SelectionPrompt,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   BotProviderAdapter,
   BotStreamingReplyCardHandle,
@@ -292,7 +292,7 @@ function buildFeishuElicitationForm(
         type: "callback",
         value: {
           command: buildFeishuElicitationFormCommand(selection.token),
-          robinrunCardText: message.text,
+          robindoneCardText: message.text,
         },
       },
     ],
@@ -549,7 +549,7 @@ function getFeishuDomainProvider(bot: Pick<BotConfig, "provider">): "feishu" | "
 }
 
 function readFeishuPayloadProvider(payload: Record<string, unknown>): BotProvider {
-  return readString(payload, "robinrunProvider") === "lark" ? "lark" : "feishu";
+  return readString(payload, "robindoneProvider") === "lark" ? "lark" : "feishu";
 }
 
 function getFeishuBaseUrl(bot: Pick<BotConfig, "provider">): string {
@@ -732,13 +732,13 @@ function readFeishuTextMessage(
   const message = isRecord(event?.message) ? event.message : null;
   const sender = isRecord(event?.sender) ? event.sender : null;
   const senderId = isRecord(sender?.sender_id) ? sender.sender_id : null;
-  const content = isRecord(payload.robinrunNativeCardContent)
-    ? payload.robinrunNativeCardContent
+  const content = isRecord(payload.robindoneNativeCardContent)
+    ? payload.robindoneNativeCardContent
     : parseJsonRecord(message?.content);
   const msgType = readString(message, "message_type") || readString(message, "msg_type");
   // 交互卡及其机器人确认回复属于控制流程，过去提取卡片文字会误触发另一机器人。
   if (
-    payload.robinrunIgnoreInteractionMessage === true ||
+    payload.robindoneIgnoreInteractionMessage === true ||
     (isFeishuBotSender(readString(sender, "sender_type")) &&
       msgType === "interactive" &&
       isGroupControlCard(content))
@@ -746,8 +746,8 @@ function readFeishuTextMessage(
     return null;
   const attachment = readFeishuAttachment(msgType, content);
   const attachments: BotInboundAttachment[] = attachment ? [attachment] : [];
-  if (isRecord(payload.robinrunReferencedAttachment)) {
-    const ref = payload.robinrunReferencedAttachment;
+  if (isRecord(payload.robindoneReferencedAttachment)) {
+    const ref = payload.robindoneReferencedAttachment;
     if (
       (ref.kind === "image" || ref.kind === "file") &&
       typeof ref.providerFileId === "string" &&
@@ -767,8 +767,8 @@ function readFeishuTextMessage(
         });
     }
   }
-  if (Array.isArray(payload.robinrunReferencedInlineImages)) {
-    for (const image of payload.robinrunReferencedInlineImages) {
+  if (Array.isArray(payload.robindoneReferencedInlineImages)) {
+    for (const image of payload.robindoneReferencedInlineImages) {
       if (
         isRecord(image) &&
         typeof image.imageKey === "string" &&
@@ -806,7 +806,7 @@ function readFeishuTextMessage(
     readString(content, "text") ||
     readFeishuPostText(
       content,
-      readString(payload, "robinrunBotOpenId") || undefined,
+      readString(payload, "robindoneBotOpenId") || undefined,
       message?.mentions,
     ) ||
     readString(event, "text_without_at_bot") ||
@@ -818,7 +818,7 @@ function readFeishuTextMessage(
       ? readGroupMessage(
           rawText,
           message?.mentions,
-          readString(payload, "robinrunBotOpenId"),
+          readString(payload, "robindoneBotOpenId"),
           readString(sender, "sender_type"),
           readString(senderId, "open_id"),
         )
@@ -862,7 +862,7 @@ function readFeishuTextMessage(
           ...(isFeishuBotSender(readString(sender, "sender_type"))
             ? { senderType: "app" as const }
             : {}),
-          botOpenId: readString(payload, "robinrunBotOpenId") || undefined,
+          botOpenId: readString(payload, "robindoneBotOpenId") || undefined,
           mentionedBot: groupMessage.mentionedBot,
           commandText: groupMessage.commandText,
           ...(groupMessage.contentParts
@@ -878,17 +878,17 @@ function readFeishuTextMessage(
                 ),
               }
             : {}),
-          topicRootIsCurrentBot: payload.robinrunTopicRootIsCurrentBot === true,
+          topicRootIsCurrentBot: payload.robindoneTopicRootIsCurrentBot === true,
         }
       : {}),
-    ...(isRecord(payload.robinrunReferencedMessage) &&
-    typeof payload.robinrunReferencedMessage.messageId === "string" &&
-    typeof payload.robinrunReferencedMessage.text === "string"
+    ...(isRecord(payload.robindoneReferencedMessage) &&
+    typeof payload.robindoneReferencedMessage.messageId === "string" &&
+    typeof payload.robindoneReferencedMessage.text === "string"
       ? {
           referencedMessage: {
-            ...payload.robinrunReferencedMessage,
-            messageId: payload.robinrunReferencedMessage.messageId,
-            text: payload.robinrunReferencedMessage.text,
+            ...payload.robindoneReferencedMessage,
+            messageId: payload.robindoneReferencedMessage.messageId,
+            text: payload.robindoneReferencedMessage.text,
           },
         }
       : {}),
@@ -963,7 +963,7 @@ function readFeishuCardAction(
   }
   // Bugfix: 飞书卡片回调的 context.open_chat_id 在私聊按钮里也可能存在。
   // 之前用 chatId 是否存在判断群聊，会把私聊里的卡片按钮误拒成“只支持私聊”。
-  const chatType = readFeishuChatType(readString(payload, "robinrunChatType") || contextChatType);
+  const chatType = readFeishuChatType(readString(payload, "robindoneChatType") || contextChatType);
   const groupCard = botGroupCardSchema.safeParse(value?.groupCard ?? behaviorValue?.groupCard);
   return {
     botId,
@@ -1035,9 +1035,9 @@ function readFeishuCardOriginalText(payload: unknown): string | null {
   const behavior = Array.isArray(action?.behaviors) ? action.behaviors.find(isRecord) : null;
   const behaviorValue = isRecord(behavior?.value) ? behavior.value : null;
   return (
-    readString(value, "robinrunCardText") ||
+    readString(value, "robindoneCardText") ||
     readString(value, "cardText") ||
-    readString(behaviorValue, "robinrunCardText") ||
+    readString(behaviorValue, "robindoneCardText") ||
     readString(behaviorValue, "cardText") ||
     null
   );
@@ -1091,7 +1091,7 @@ function buildFeishuButtonElement(params: {
         type: "callback",
         value: {
           command: params.command,
-          robinrunCardText: params.originalText,
+          robindoneCardText: params.originalText,
         },
       },
     ],
@@ -1760,15 +1760,15 @@ export function createFeishuWebSocketEventHandlers(params: {
       await onPayload({
         ...(isRecord(payload) ? payload : { payload }),
         botId: bot.id,
-        robinrunProvider: bot.provider,
+        robindoneProvider: bot.provider,
       });
     },
     "im.chat.member.bot.deleted_v1": async (payload: unknown) => {
       await onPayload({
         ...(isRecord(payload) ? payload : {}),
         botId: bot.id,
-        robinrunProvider: bot.provider,
-        robinrunBotRemoved: true,
+        robindoneProvider: bot.provider,
+        robindoneBotRemoved: true,
       });
     },
     // Bugfix: 我们用 Typing reaction 模拟输入中状态，飞书会把自己创建的 reaction 再推回长连接。
@@ -1778,13 +1778,13 @@ export function createFeishuWebSocketEventHandlers(params: {
       const responseState = { deferred: false };
       const callbackPayload = {
         ...(isRecord(payload) ? payload : { payload }),
-        robinrunFeishuCardResponseState: responseState,
+        robindoneFeishuCardResponseState: responseState,
         botId: bot.id,
-        robinrunProvider: bot.provider,
-        robinrunFeishuSynchronousCardAction: true,
+        robindoneProvider: bot.provider,
+        robindoneFeishuSynchronousCardAction: true,
       };
       // 修复原因：飞书点击后的同步响应才是客户端可靠采用的卡片状态。传输层不能再从
-      // robinrunCardText 拼简化卡，也不能返回 undefined 后依赖旁路 PATCH；它必须消费业务层
+      // robindoneCardText 拼简化卡，也不能返回 undefined 后依赖旁路 PATCH；它必须消费业务层
       // 已推进完成的完整 outbound，并用同一份 elicitation 状态生成下一题卡片。
       // 飞书要求三秒内响应。超时只切换卡片投递方式，业务请求仍执行一次。
       let deadline: ReturnType<typeof setTimeout> | undefined;
@@ -2469,7 +2469,7 @@ export function createFeishuBotProvider(deps: FeishuProviderDeps): BotProviderAd
             readString(isRecord(sender?.sender_id) ? sender.sender_id : null, "open_id") !==
               openId)) &&
         !(
-          payload.robinrunTopicHasAcceptedInput === true &&
+          payload.robindoneTopicHasAcceptedInput === true &&
           parentId === rootId &&
           !isFeishuBotSender(readString(sender, "sender_type"))
         ) &&
@@ -2533,7 +2533,7 @@ export function createFeishuBotProvider(deps: FeishuProviderDeps): BotProviderAd
             isFeishuBotSender(referenced.sender?.sender_type ?? "") &&
             isGroupControlCard(parseJsonRecord(referenced.body?.content))
           )
-            return { ...payload, robinrunIgnoreInteractionMessage: true };
+            return { ...payload, robindoneIgnoreInteractionMessage: true };
           const text = readGroupCardText(parseJsonRecord(referenced.body?.content));
           if (!text) throw new Error("Referenced message has no readable text");
           referencedMessage = { messageId: parentId, text };
@@ -2606,12 +2606,12 @@ export function createFeishuBotProvider(deps: FeishuProviderDeps): BotProviderAd
       }
       return {
         ...payload,
-        robinrunBotOpenId: openId,
-        ...(nativeCardContent ? { robinrunNativeCardContent: nativeCardContent } : {}),
-        robinrunTopicRootIsCurrentBot: topicRootIsCurrentBot,
-        robinrunReferencedAttachment: referencedAttachment,
-        robinrunReferencedMessage: referencedMessage,
-        robinrunReferencedInlineImages: referencedInlineImages,
+        robindoneBotOpenId: openId,
+        ...(nativeCardContent ? { robindoneNativeCardContent: nativeCardContent } : {}),
+        robindoneTopicRootIsCurrentBot: topicRootIsCurrentBot,
+        robindoneReferencedAttachment: referencedAttachment,
+        robindoneReferencedMessage: referencedMessage,
+        robindoneReferencedInlineImages: referencedInlineImages,
       };
     },
     splitStreamingReplyCardStates: splitFeishuStreamingCardStates,

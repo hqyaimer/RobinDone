@@ -3,12 +3,12 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import type {
   BrowserViewScreenshotSurfacePreparePayload,
   EmbeddedBrowserViewportPreference,
-} from "@robinrun/shared";
-import { browserPreviewSourceUrl } from "@robinrun/shared";
+} from "@robindone/shared";
+import { browserPreviewSourceUrl } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useWebElementPicker } from "@/hooks/useWebElementPicker.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { BrowserSiteSettingsEntry } from "@/browser-use/BrowserSiteSettingsEntry.js";
 import { BrowserToolbar } from "@/EmbeddedBrowserPaneParts.js";
@@ -126,7 +126,7 @@ export function UnifiedBrowserView({
   ) => void;
 }): React.JSX.Element {
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const desktopZoomFactor = useDesktopZoomFactor();
 
   const [addressValue, setAddressValue] = useState("");

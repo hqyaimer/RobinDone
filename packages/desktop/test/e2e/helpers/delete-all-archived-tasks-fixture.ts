@@ -8,7 +8,7 @@ export async function seedDeleteAllArchivedTasksFixture(
   await seedTaskIndexRowAuthorityFixture(options);
   // Node 的 SQLite 只有同步接口；在隔离 HOME、Host 启动前准备真实列表数据。
   const database = new DatabaseSync(
-    join(options.e2eHomeDir, ".robinrun", "v2", "tasks-index.sqlite"),
+    join(options.e2eHomeDir, ".robindone", "v2", "tasks-index.sqlite"),
   );
   try {
     database.exec(`

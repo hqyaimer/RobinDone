@@ -10,8 +10,8 @@ import {
   TRIGGER_PYTHON_RUNTIME_STATE_VERSION,
   type PythonRuntimeSource,
   type PythonRuntimeStateFile,
-} from "@robinrun/shared";
-import { getRobinRunDataRootDir } from "#src/paths.js";
+} from "@robindone/shared";
+import { getRobinDoneDataRootDir } from "#src/paths.js";
 import { probeCommand } from "./script-runner.js";
 import {
   PYTHON_RELEASE_BASE_URL,
@@ -39,15 +39,15 @@ import {
  *   2) **缓存复用/自动下载**（python-build-standalone install_only，零预装）：版本与
  *      六平台下载 URL + sha256 **钉死在代码**（python-runtime-assets.mjs 单一来源；
  *      确定性、可审计；不从运行时拉 SHA256SUMS）。
- * - 缓存 `~/.robinrun/runtimes/python/<版本标识>/`（全局共享跨项目）；下载 → 校验 →
+ * - 缓存 `~/.robindone/runtimes/python/<版本标识>/`（全局共享跨项目）；下载 → 校验 →
  *   解压（系统 tar，Windows 走 System32 bsdtar 绝对路径）→ 原子 rename → 完成标记，
  *   标记在场即复用（不重复下载）。
- * - 镜像：`ROBINRUN_PYTHON_RUNTIME_MIRROR`（URL 模板，`{asset}` 占位符或基址前缀），
+ * - 镜像：`ROBINDONE_PYTHON_RUNTIME_MIRROR`（URL 模板，`{asset}` 占位符或基址前缀），
  *   配置时镜像优先、官方 GitHub 兜底；每源重试 `DOWNLOAD_ATTEMPTS_PER_URL` 次。
  *   下载失败按「python 不可用」收口（node 备选），由引擎写 `state/python-runtime.json`
  *   供 CLI 门控与提示词双模式。下载字节进度经 onDownloadProgress 回调上抛
  *   （desktop host 接 broadcastService 推 UI）。
- * - 系统回退：`ROBINRUN_PYTHON_FALLBACK_SYSTEM=1` 时托管获取失败可回退系统 PATH
+ * - 系统回退：`ROBINDONE_PYTHON_FALLBACK_SYSTEM=1` 时托管获取失败可回退系统 PATH
  *   python3/python（服务离线自救；venv 模块缺失的报错带指引，见 python-env.ts）。
  * - 不支持 HTTPS_PROXY 代理隧道（镜像是有意提供的过墙通道；需要代理时用镜像 env）。
  */
@@ -59,9 +59,9 @@ import {
 /** 版本标识 = 缓存目录名；升版即换目录（单一来源见 python-runtime-assets.mjs）。 */
 export { PYTHON_RUNTIME_ID };
 /** 环境变量：镜像 URL 模板（`{asset}` 占位符替换资产文件名；无占位符则按 `<base>/<tag>/<archive>` 拼接）。 */
-export const PYTHON_RUNTIME_MIRROR_ENV = "ROBINRUN_PYTHON_RUNTIME_MIRROR";
+export const PYTHON_RUNTIME_MIRROR_ENV = "ROBINDONE_PYTHON_RUNTIME_MIRROR";
 /** 环境变量：托管获取失败时回退系统 PATH python（默认关闭，确定性优先）。 */
-export const PYTHON_FALLBACK_SYSTEM_ENV = "ROBINRUN_PYTHON_FALLBACK_SYSTEM";
+export const PYTHON_FALLBACK_SYSTEM_ENV = "ROBINDONE_PYTHON_FALLBACK_SYSTEM";
 
 type HostTriple = keyof typeof PYTHON_RUNTIME_ASSETS;
 
@@ -78,9 +78,9 @@ function resolveHostAsset(): HostAsset | undefined {
   return { triple, archive: asset.archive, sha256: asset.sha256 };
 }
 
-/** 托管解释器缓存根（`~/.robinrun/runtimes/python/`；数据根同风格，测试可注入覆盖）。 */
+/** 托管解释器缓存根（`~/.robindone/runtimes/python/`；数据根同风格，测试可注入覆盖）。 */
 export function pythonRuntimeCacheRoot(): string {
-  return join(getRobinRunDataRootDir(), "runtimes", "python");
+  return join(getRobinDoneDataRootDir(), "runtimes", "python");
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ const DOWNLOAD_MAX_REDIRECTS = 5;
 /** 每个下载源的尝试次数（2026-11-26 补：弱网断连从「整包失败」降为「换源/重试前先重试」）。 */
 const DOWNLOAD_ATTEMPTS_PER_URL = 2;
 const EXTRACT_TIMEOUT_MS = 10 * 60_000;
-const COMPLETE_MARKER_FILE = ".robinrun-complete";
+const COMPLETE_MARKER_FILE = ".robindone-complete";
 
 export interface PythonDownloadProgress {
   url: string;
@@ -166,7 +166,7 @@ function downloadToFile(
     const attempt = (target: string, redirectsLeft: number): void => {
       // 按协议选传输层：官方与公网镜像是 https；内网/本地镜像（测试 fixture）可能是 http。
       const transport = target.startsWith("http:") ? httpGet : httpsGet;
-      const request = transport(target, { headers: { "user-agent": "RobinRun" } }, (response) => {
+      const request = transport(target, { headers: { "user-agent": "RobinDone" } }, (response) => {
         handleResponse(target, response, redirectsLeft);
       });
       request.on("error", reject);
@@ -443,7 +443,7 @@ async function writePythonRuntimeState(
 }
 
 function pythonRuntimeStatePath(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers", "state", triggerPythonRuntimeStateFileName);
+  return join(workspacePath, ".robindone", "triggers", "state", triggerPythonRuntimeStateFileName);
 }
 
 // ---------------------------------------------------------------------------
@@ -508,7 +508,7 @@ const DOWNLOAD_PROGRESS_EMIT_STEP_BYTES = 1024 * 1024;
 
 export interface TriggerPythonRuntimePortOptions {
   log(message: string): void;
-  /** 测试注入：托管解释器缓存根（缺省 `~/.robinrun/runtimes/python`）。 */
+  /** 测试注入：托管解释器缓存根（缺省 `~/.robindone/runtimes/python`）。 */
   cacheRoot?: string;
   /** 测试注入：命令执行器（venv/pip/tar 共用）。 */
   runCommand?: CommandRunner;
@@ -552,7 +552,10 @@ export function createTriggerPythonRuntimePort(
         log,
         ...(options.runCommand !== undefined ? { runCommand: options.runCommand } : {}),
         onDownloadProgress: (progress) => {
-          if (progress.downloadedBytes - lastEmittedProgressBytes < DOWNLOAD_PROGRESS_EMIT_STEP_BYTES) {
+          if (
+            progress.downloadedBytes - lastEmittedProgressBytes <
+            DOWNLOAD_PROGRESS_EMIT_STEP_BYTES
+          ) {
             return;
           }
           lastEmittedProgressBytes = progress.downloadedBytes;

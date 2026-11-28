@@ -2,49 +2,49 @@ import {
   ProviderConfigService,
   type ProviderConfigLayerSnapshot,
   type ProviderConfigLayerUpdate,
-} from "@robinrun/provider";
-import { NodeRobinRunBuiltinProviderConfigSource } from "./robinrun-builtin-provider-config-source.js";
+} from "@robindone/provider";
+import { NodeRobinDoneBuiltinProviderConfigSource } from "./robindone-builtin-provider-config-source.js";
 import {
-  EndpointScopedRobinRunBuiltinSource,
-  type EndpointScopedRobinRunBuiltinSourceOptions,
-} from "./endpoint-scoped-robinrun-builtin-source.js";
+  EndpointScopedRobinDoneBuiltinSource,
+  type EndpointScopedRobinDoneBuiltinSourceOptions,
+} from "./endpoint-scoped-robindone-builtin-source.js";
 import {
-  RobinRunBuiltinRemoteSynchronizer,
-  type RobinRunBuiltinRemoteSynchronizerOptions,
-  type RobinRunBuiltinRefreshResult,
-} from "./robinrun-builtin-remote-synchronizer.js";
+  RobinDoneBuiltinRemoteSynchronizer,
+  type RobinDoneBuiltinRemoteSynchronizerOptions,
+  type RobinDoneBuiltinRefreshResult,
+} from "./robindone-builtin-remote-synchronizer.js";
 import {
   NodePersonalProviderConfigRepository,
   type PersonalProviderConfigRecoveryEvent,
 } from "./personal-provider-config-repository.js";
 
 export interface NodeProviderConfigRuntimeOptions {
-  readonly robinrunBuiltinFilePath: string;
-  readonly robinrunBuiltinActiveFilePath?: string;
-  readonly robinrunBuiltinRemote?: Omit<RobinRunBuiltinRemoteSynchronizerOptions, "source">;
-  readonly robinrunBuiltinEnvironment?: Omit<
-    EndpointScopedRobinRunBuiltinSourceOptions,
+  readonly robindoneBuiltinFilePath: string;
+  readonly robindoneBuiltinActiveFilePath?: string;
+  readonly robindoneBuiltinRemote?: Omit<RobinDoneBuiltinRemoteSynchronizerOptions, "source">;
+  readonly robindoneBuiltinEnvironment?: Omit<
+    EndpointScopedRobinDoneBuiltinSourceOptions,
     "bundledFilePath"
   >;
-  readonly onRobinRunBuiltinRefreshError?: (error: unknown) => void;
+  readonly onRobinDoneBuiltinRefreshError?: (error: unknown) => void;
   readonly onPersonalConfigRecovery?: (event: PersonalProviderConfigRecoveryEvent) => void;
   readonly onPersonalConfigPollingError?: (error: unknown) => void;
   readonly personalFilePath: string;
   readonly personalPollingIntervalMs?: number | false;
   readonly importLegacy?: (
-    robinrunBuiltin: ProviderConfigLayerSnapshot,
+    robindoneBuiltin: ProviderConfigLayerSnapshot,
   ) => Promise<ProviderConfigLayerUpdate | null>;
   readonly watch?: boolean;
 }
 
-/** 组装一个 Node.js 进程内共享的 RobinRun Built-in/Personal Config 运行边界。 */
+/** 组装一个 Node.js 进程内共享的 RobinDone Built-in/Personal Config 运行边界。 */
 export class NodeProviderConfigRuntime {
   readonly configService: ProviderConfigService;
-  readonly #robinrunBuiltinSource:
-    | NodeRobinRunBuiltinProviderConfigSource
-    | EndpointScopedRobinRunBuiltinSource;
+  readonly #robindoneBuiltinSource:
+    | NodeRobinDoneBuiltinProviderConfigSource
+    | EndpointScopedRobinDoneBuiltinSource;
   readonly #personalRepository: NodePersonalProviderConfigRepository;
-  readonly #remoteSynchronizer?: RobinRunBuiltinRemoteSynchronizer;
+  readonly #remoteSynchronizer?: RobinDoneBuiltinRemoteSynchronizer;
   readonly #onRemoteRefreshError?: (error: unknown) => void;
   #startPromise: Promise<void> | null = null;
   #disposed = false;
@@ -53,25 +53,25 @@ export class NodeProviderConfigRuntime {
   #checkInFlight: Promise<void> | null = null;
 
   constructor(options: NodeProviderConfigRuntimeOptions) {
-    this.#robinrunBuiltinSource = options.robinrunBuiltinEnvironment
-      ? new EndpointScopedRobinRunBuiltinSource({
-          bundledFilePath: options.robinrunBuiltinFilePath,
-          ...options.robinrunBuiltinEnvironment,
+    this.#robindoneBuiltinSource = options.robindoneBuiltinEnvironment
+      ? new EndpointScopedRobinDoneBuiltinSource({
+          bundledFilePath: options.robindoneBuiltinFilePath,
+          ...options.robindoneBuiltinEnvironment,
         })
-      : new NodeRobinRunBuiltinProviderConfigSource({
-          bundledFilePath: options.robinrunBuiltinFilePath,
-          activeFilePath: options.robinrunBuiltinActiveFilePath,
+      : new NodeRobinDoneBuiltinProviderConfigSource({
+          bundledFilePath: options.robindoneBuiltinFilePath,
+          activeFilePath: options.robindoneBuiltinActiveFilePath,
           watch: options.watch,
         });
     this.#remoteSynchronizer =
-      options.robinrunBuiltinRemote &&
-      this.#robinrunBuiltinSource instanceof NodeRobinRunBuiltinProviderConfigSource
-        ? new RobinRunBuiltinRemoteSynchronizer({
-            source: this.#robinrunBuiltinSource,
-            ...options.robinrunBuiltinRemote,
+      options.robindoneBuiltinRemote &&
+      this.#robindoneBuiltinSource instanceof NodeRobinDoneBuiltinProviderConfigSource
+        ? new RobinDoneBuiltinRemoteSynchronizer({
+            source: this.#robindoneBuiltinSource,
+            ...options.robindoneBuiltinRemote,
           })
         : undefined;
-    this.#onRemoteRefreshError = options.onRobinRunBuiltinRefreshError;
+    this.#onRemoteRefreshError = options.onRobinDoneBuiltinRefreshError;
     this.#personalRepository = new NodePersonalProviderConfigRepository({
       filePath: options.personalFilePath,
       onRecovery: options.onPersonalConfigRecovery,
@@ -80,28 +80,28 @@ export class NodeProviderConfigRuntime {
       ...(options.importLegacy
         ? {
             importLegacy: async () =>
-              options.importLegacy!(await this.#robinrunBuiltinSource.read()),
+              options.importLegacy!(await this.#robindoneBuiltinSource.read()),
           }
         : {}),
     });
     this.configService = new ProviderConfigService({
-      robinrunBuiltinSource: this.#robinrunBuiltinSource,
+      robindoneBuiltinSource: this.#robindoneBuiltinSource,
       personalRepository: this.#personalRepository,
     });
   }
 
-  resolveRobinRunBuiltinActiveFilePath(): Promise<string> {
-    return this.#robinrunBuiltinSource instanceof NodeRobinRunBuiltinProviderConfigSource
-      ? Promise.resolve(this.#robinrunBuiltinSource.activeFilePath)
-      : this.#robinrunBuiltinSource.resolveActiveFilePath();
+  resolveRobinDoneBuiltinActiveFilePath(): Promise<string> {
+    return this.#robindoneBuiltinSource instanceof NodeRobinDoneBuiltinProviderConfigSource
+      ? Promise.resolve(this.#robindoneBuiltinSource.activeFilePath)
+      : this.#robindoneBuiltinSource.resolveActiveFilePath();
   }
 
-  get personalRepository(): import("@robinrun/provider").PersonalProviderConfigRepository {
+  get personalRepository(): import("@robindone/provider").PersonalProviderConfigRepository {
     return this.#personalRepository;
   }
 
   /** Environment 同一周期检查中恢复未对齐依赖，不被下载 TTL 或失败挡住。 */
-  onDidCheckRobinRunBuiltin(listener: () => Promise<void>): () => void {
+  onDidCheckRobinDoneBuiltin(listener: () => Promise<void>): () => void {
     this.#checkListeners.add(listener);
     return () => this.#checkListeners.delete(listener);
   }
@@ -115,7 +115,7 @@ export class NodeProviderConfigRuntime {
       // Managed Worker 无下载配置也无恢复 owner，不建立周期任务。
       if (
         this.#remoteSynchronizer ||
-        this.#robinrunBuiltinSource instanceof EndpointScopedRobinRunBuiltinSource ||
+        this.#robindoneBuiltinSource instanceof EndpointScopedRobinDoneBuiltinSource ||
         this.#checkListeners.size > 0
       ) {
         this.#checkTimer = setInterval(() => {
@@ -131,12 +131,12 @@ export class NodeProviderConfigRuntime {
     return startPromise;
   }
 
-  refreshRobinRunBuiltin(options?: {
+  refreshRobinDoneBuiltin(options?: {
     readonly force?: boolean;
-  }): Promise<RobinRunBuiltinRefreshResult> {
+  }): Promise<RobinDoneBuiltinRefreshResult> {
     if (this.#disposed) return Promise.resolve("disposed");
-    if (this.#robinrunBuiltinSource instanceof EndpointScopedRobinRunBuiltinSource) {
-      return this.#robinrunBuiltinSource.refresh(options);
+    if (this.#robindoneBuiltinSource instanceof EndpointScopedRobinDoneBuiltinSource) {
+      return this.#robindoneBuiltinSource.refresh(options);
     }
     return this.#remoteSynchronizer?.refresh(options) ?? Promise.resolve("skipped");
   }
@@ -145,7 +145,7 @@ export class NodeProviderConfigRuntime {
     if (this.#disposed) return Promise.resolve();
     if (this.#checkInFlight) return this.#checkInFlight;
     const check = Promise.allSettled([
-      this.refreshRobinRunBuiltin(),
+      this.refreshRobinDoneBuiltin(),
       ...[...this.#checkListeners].map((listener) => Promise.resolve().then(listener)),
     ])
       .then((results) => {
@@ -169,7 +169,7 @@ export class NodeProviderConfigRuntime {
     this.#remoteSynchronizer?.dispose();
     this.configService.dispose();
     this.#personalRepository.dispose();
-    this.#robinrunBuiltinSource.dispose();
+    this.#robindoneBuiltinSource.dispose();
   }
 }
 

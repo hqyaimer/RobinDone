@@ -1,4 +1,4 @@
-import type { ModelSelection } from "@robinrun/shared";
+import type { ModelSelection } from "@robindone/shared";
 /** scheduler → main */
 export type SchedulerToMainMessage =
   | {

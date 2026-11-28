@@ -1,5 +1,5 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
-import { TID_LOGIN_TRIGGER } from "@robinrun/shared/test-ids";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
+import { TID_LOGIN_TRIGGER } from "@robindone/shared/test-ids";
 import {
   clearAppData,
   DEFAULT_WORKSPACE,
@@ -32,7 +32,7 @@ describe("BigModel Coding Plan 官网 webview 支付完成 E2E", () => {
 
     const setInventoryMode = async (mode: "hold" | "fail" | "ready") => {
       const base =
-        process.env.ROBINRUN_CODING_PLAN_UPGRADE_MOCK_BASE_URL ??
+        process.env.ROBINDONE_CODING_PLAN_UPGRADE_MOCK_BASE_URL ??
         process.env.BIGMODEL_TEST_API_BASE_URL;
       if (!base) throw new Error("Missing mock URL");
       const response = await fetch(`${base}/__e2e/coding-plan/inventory-mode`, {
@@ -113,14 +113,14 @@ describe("BigModel Coding Plan 官网 webview 支付完成 E2E", () => {
     if (!entry) throw new Error("App 入口事件不存在");
     expect(entry.event_extra_detail.purchase_funnel_id).toBeTruthy();
     expect(entry.event_extra_detail.entry_plan_list).toBe(
-      "coding_plan__personal_pro,start_plan__robinrun_v3_start_plan",
+      "coding_plan__personal_pro,start_plan__robindone_v3_start_plan",
     );
     await browser.waitUntil(
       async () => {
         const storage = await readCodingPlanWebviewLocalStorage([
-          "robinrun:coding-plan:report-context",
+          "robindone:coding-plan:report-context",
         ]);
-        const context = JSON.parse(storage["robinrun:coding-plan:report-context"] || "{}");
+        const context = JSON.parse(storage["robindone:coding-plan:report-context"] || "{}");
         return (
           context.purchase_funnel_id === entry.event_extra_detail.purchase_funnel_id &&
           context.purchase_entry_reporter === "app" &&
@@ -145,9 +145,9 @@ describe("BigModel Coding Plan 官网 webview 支付完成 E2E", () => {
     await browser.waitUntil(
       async () => {
         const storage = await readCodingPlanWebviewLocalStorage([
-          "robinrun:coding-plan:report-context",
+          "robindone:coding-plan:report-context",
         ]);
-        const context = JSON.parse(storage["robinrun:coding-plan:report-context"] || "{}");
+        const context = JSON.parse(storage["robindone:coding-plan:report-context"] || "{}");
         return (
           context.purchase_entry_reporter === "app" &&
           context.purchase_funnel_id === entry.event_extra_detail.purchase_funnel_id
@@ -253,12 +253,12 @@ async function waitForZaiWebviewCredentialsInjected() {
     async () => {
       latestStorage = await readCodingPlanWebviewLocalStorage([
         "oauth:zai:access_token",
-        "robinrunjwttoken",
+        "robindonejwttoken",
         "oauth:bigmodel:access_token",
       ]);
       return (
         latestStorage["oauth:zai:access_token"] === "zai-webview-oauth-token" &&
-        latestStorage.robinrunjwttoken === "zai-webview-oauth-token" &&
+        latestStorage.robindonejwttoken === "zai-webview-oauth-token" &&
         latestStorage["oauth:bigmodel:access_token"] === null
       );
     },

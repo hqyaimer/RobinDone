@@ -1,7 +1,7 @@
 import { useRef } from "react";
-import type { RobinRunAccountAccess, RobinRunProviderAccountAccess } from "@robinrun/shared";
+import type { RobinDoneAccountAccess, RobinDoneProviderAccountAccess } from "@robindone/shared";
 
-type StableAccountAccess = RobinRunProviderAccountAccess | RobinRunAccountAccess;
+type StableAccountAccess = RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
 
 /** Schema 解析会为同一份 Account Access 生成新对象；hook 依赖必须按配置值稳定。 */
 export function useStableAccountAccess(

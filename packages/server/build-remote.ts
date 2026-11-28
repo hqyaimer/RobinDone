@@ -4,14 +4,14 @@ import { validateRemoteServerBundle } from "./buildRemoteValidation.js";
 import { loadBuiltinProviderConfig } from "../../scripts/builtin-provider-config.mjs";
 import { stageThirdPartyNotices } from "../../scripts/third-party-notices.mjs";
 
-const { version, robinrunCompatibility } = JSON.parse(
+const { version, robindoneCompatibility } = JSON.parse(
   readFileSync("../../package.json", "utf-8"),
 ) as {
   version: string;
-  robinrunCompatibility?: { minCompatibleVersion?: string };
+  robindoneCompatibility?: { minCompatibleVersion?: string };
 };
-const minCompatibleVersion = robinrunCompatibility?.minCompatibleVersion ?? version;
-const { content: robinrunBuiltinProviderConfigJson } = await loadBuiltinProviderConfig();
+const minCompatibleVersion = robindoneCompatibility?.minCompatibleVersion ?? version;
+const { content: robindoneBuiltinProviderConfigJson } = await loadBuiltinProviderConfig();
 
 /**
  * Let esbuild bundle node-pty's JS code normally, but keep .node native
@@ -36,7 +36,7 @@ const nativeAddonPlugin: Plugin = {
 const buildResult = await build({
   entryPoints: ["src/entry-stdio.ts"],
   bundle: true,
-  outfile: "dist/remote/robinrun-server.cjs",
+  outfile: "dist/remote/robindone-server.cjs",
   platform: "node",
   format: "cjs",
   target: "node22",
@@ -49,17 +49,17 @@ const buildResult = await build({
   define: {
     "import.meta.url": "__import_meta_url",
     "import.meta.dirname": "__import_meta_dirname",
-    __ROBINRUN_VERSION__: JSON.stringify(version),
-    __ROBINRUN_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
-    __ROBINRUN_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(robinrunBuiltinProviderConfigJson),
+    __ROBINDONE_VERSION__: JSON.stringify(version),
+    __ROBINDONE_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
+    __ROBINDONE_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(robindoneBuiltinProviderConfigJson),
   },
   metafile: true,
 });
 
-const remoteBundleSource = readFileSync("dist/remote/robinrun-server.cjs", "utf-8");
+const remoteBundleSource = readFileSync("dist/remote/robindone-server.cjs", "utf-8");
 const bundledInputs = Object.keys(buildResult.metafile.inputs);
 validateRemoteServerBundle({ bundledInputs, source: remoteBundleSource });
 // 修复：remote 单文件 bundle 内联第三方代码，dist/remote 也必须附完整声明。
 await stageThirdPartyNotices("dist/remote");
 
-console.log("Built dist/remote/robinrun-server.cjs");
+console.log("Built dist/remote/robindone-server.cjs");

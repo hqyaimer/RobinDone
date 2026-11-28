@@ -134,12 +134,12 @@ export function projectAssistantCodeComments(
     } else {
       const prefixStart = findAssistantDirectivePrefixStart(
         content,
-        [CODE_COMMENT_DIRECTIVE_NAME, "robinrun-file-citation"],
+        [CODE_COMMENT_DIRECTIVE_NAME, "robindone-file-citation"],
         protectedRanges,
         {
-          minimumSingleColonPrefixLength: ":robinrun".length,
-          singleColonDirectiveNames: ["robinrun-file-citation"],
-          tripleColonDirectiveNames: ["robinrun-file-citation"],
+          minimumSingleColonPrefixLength: ":robindone".length,
+          singleColonDirectiveNames: ["robindone-file-citation"],
+          tripleColonDirectiveNames: ["robindone-file-citation"],
         },
       );
       if (prefixStart !== null) {

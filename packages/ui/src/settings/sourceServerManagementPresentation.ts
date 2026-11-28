@@ -1,4 +1,4 @@
-import type { SourceServerMigrationReportRow } from "@robinrun/shared";
+import type { SourceServerMigrationReportRow } from "@robindone/shared";
 
 const SOURCE_MIGRATION_STATUS_MESSAGE_IDS = {
   running: "settings.source.migrationStatus.running",

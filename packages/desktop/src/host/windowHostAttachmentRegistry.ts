@@ -1,5 +1,5 @@
-import type { WindowHostAttachmentScope } from "@robinrun/shared";
-import type { RobinRunAgentV4ClientMode } from "@robinrun/services";
+import type { WindowHostAttachmentScope } from "@robindone/shared";
+import type { RobinDoneAgentV4ClientMode } from "@robindone/services";
 
 export interface WindowHostAttachmentPort {
   once(event: "close", listener: () => void): unknown;
@@ -18,7 +18,7 @@ export interface WindowHostResolvedAttachmentScope<TServices, TCapabilities = ne
 export interface WindowHostExposeAttachmentParams<TServices, TPort, TCapabilities = never> {
   requestId: string;
   attachmentId: string;
-  clientMode: RobinRunAgentV4ClientMode;
+  clientMode: RobinDoneAgentV4ClientMode;
   terminalOwnerId?: string;
   scope: WindowHostAttachmentScope;
   services: TServices;
@@ -58,7 +58,7 @@ export function createWindowHostAttachmentRegistry<
   function attach(params: {
     requestId: string;
     attachmentId: string;
-    clientMode: RobinRunAgentV4ClientMode;
+    clientMode: RobinDoneAgentV4ClientMode;
     terminalOwnerId?: string;
     scope: WindowHostAttachmentScope;
     port: TPort;

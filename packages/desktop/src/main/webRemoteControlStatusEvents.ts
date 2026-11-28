@@ -1,4 +1,4 @@
-import { PlatformChannels, type WebRemoteControlStatus } from "@robinrun/shared";
+import { PlatformChannels, type WebRemoteControlStatus } from "@robindone/shared";
 
 interface WebRemoteControlStatusEventTarget {
   isDestroyed(): boolean;

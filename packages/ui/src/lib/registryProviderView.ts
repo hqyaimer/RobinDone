@@ -1,4 +1,4 @@
-import type { ModelSelectionView } from "@robinrun/services";
+import type { ModelSelectionView } from "@robindone/services";
 
 export function resolveProviderLabel(
   providerId: string | undefined,

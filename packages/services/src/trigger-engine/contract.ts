@@ -1,4 +1,4 @@
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 import type { PythonPackageInstallResult } from "./python-runtime-contract.js";
 import type {
@@ -7,12 +7,12 @@ import type {
   TriggerProfileEntry,
   TriggerRouting,
   TriggerStatus,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /**
- * RobinRun 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）。
+ * RobinDone 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）。
  *
- * 引擎是 desktop host utility 进程里的常驻服务：轮询监听各项目 `.robinrun/triggers/`
+ * 引擎是 desktop host utility 进程里的常驻服务：轮询监听各项目 `.robindone/triggers/`
  * 注册表，调度 cron/interval，执行脚本（出口契约 + 熔断），接收本地 webhook，把事件按
  * 会话 key（`trigger:<id>` / `trigger-group:<gid>`）聚合后经 dispatch 端口投递给订阅
  * 智能体的会话。引擎常驻、LLM 不常驻。
@@ -108,7 +108,7 @@ export interface RoutedEventBatch {
 /**
  * 引擎 → host 的会话投递端口（host 装配时注入；克隆 dispatchCronRun 的
  * createTask/resumeTask/sendPrompt 链）。返回 taskId 供引擎持久化会话绑定
- * （`.robinrun/triggers/state/sessions.json`，冷恢复重建路由）。
+ * （`.robindone/triggers/state/sessions.json`，冷恢复重建路由）。
  */
 export interface TriggerDispatchPort {
   dispatchTriggerEvent(batch: TriggerEventBatch): Promise<{ taskId: string }>;

@@ -2,8 +2,8 @@ import { execFile } from "node:child_process";
 import { accessSync, constants } from "node:fs";
 import { homedir } from "node:os";
 import { posix, win32 } from "node:path";
-import type { DockerContainerInfo } from "@robinrun/shared";
-export type { DockerContainerInfo } from "@robinrun/shared";
+import type { DockerContainerInfo } from "@robindone/shared";
+export type { DockerContainerInfo } from "@robindone/shared";
 
 const DOCKER_COMMAND = "docker";
 const DOCKER_EXEC_MAX_BUFFER = 8 * 1024 * 1024;

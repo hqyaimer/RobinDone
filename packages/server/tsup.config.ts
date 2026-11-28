@@ -12,22 +12,22 @@ const { stageThirdPartyNotices } = await import(
 
 // tsup config 可能从不同 cwd 加载，基于配置文件自身目录解析仓库根 package.json。
 const rootPackageJsonPath = resolve(import.meta.dirname, "../../package.json");
-const { version, robinrunCompatibility } = JSON.parse(
+const { version, robindoneCompatibility } = JSON.parse(
   readFileSync(rootPackageJsonPath, "utf-8"),
 ) as {
   version: string;
-  robinrunCompatibility?: { minCompatibleVersion?: string };
+  robindoneCompatibility?: { minCompatibleVersion?: string };
 };
-const minCompatibleVersion = robinrunCompatibility?.minCompatibleVersion ?? version;
+const minCompatibleVersion = robindoneCompatibility?.minCompatibleVersion ?? version;
 
-const { environment: robinrunEnv, content: robinrunBuiltinProviderConfigJson } =
+const { environment: robindoneEnv, content: robindoneBuiltinProviderConfigJson } =
   await loadBuiltinProviderConfig();
 
 export const SERVER_HTTP_DEFINES = {
-  __ROBINRUN_VERSION__: JSON.stringify(version),
-  __ROBINRUN_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
-  __ROBINRUN_ENV__: JSON.stringify(robinrunEnv),
-  __ROBINRUN_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(robinrunBuiltinProviderConfigJson),
+  __ROBINDONE_VERSION__: JSON.stringify(version),
+  __ROBINDONE_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
+  __ROBINDONE_ENV__: JSON.stringify(robindoneEnv),
+  __ROBINDONE_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(robindoneBuiltinProviderConfigJson),
 };
 
 function createSharedDefines() {
@@ -73,11 +73,11 @@ export default defineConfig({
   target: "node22",
   // workspace 包的 exports 指向 .ts 源码，node 运行时无法直接加载，需要 bundle 进来
   noExternal: [
-    "@robinrun/shared",
-    "@robinrun/rpc",
-    "@robinrun/services",
-    "@robinrun/services/node",
-    "@robinrun/client",
+    "@robindone/shared",
+    "@robindone/rpc",
+    "@robindone/services",
+    "@robindone/services/node",
+    "@robindone/client",
   ],
   // ssh2 / node-pty 含 .node native addon，不能被 esbuild 处理。
   // undici / axios 这类 CJS 依赖被内联进 ESM bundle 后，运行时会走到

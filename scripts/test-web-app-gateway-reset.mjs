@@ -11,7 +11,7 @@ import { pathToFileURL } from "node:url";
 const repoRoot = resolve(import.meta.dirname, "..");
 const startScript = join(repoRoot, "docker/web-app/start.mjs");
 
-const tempDir = await mkdtemp(join(tmpdir(), "robinrun-web-app-gateway-reset-"));
+const tempDir = await mkdtemp(join(tmpdir(), "robindone-web-app-gateway-reset-"));
 const dataDir = join(tempDir, "data");
 const workspaceDir = join(tempDir, "workspace");
 const webDistDir = join(tempDir, "web");
@@ -28,7 +28,7 @@ try {
   await mkdir(webDistDir, { recursive: true });
   await writeFile(
     join(webDistDir, "index.html"),
-    "<!doctype html><html><body>RobinRun test</body></html>\n",
+    "<!doctype html><html><body>RobinDone test</body></html>\n",
   );
   await writeFile(agentEntry, "module.exports = {};\n");
   await writeFile(
@@ -45,7 +45,7 @@ try {
     backendEntry,
     `import { createServer } from "node:http";
 
-const startDelayMs = Number(process.env.ROBINRUN_TEST_BACKEND_START_DELAY_MS || 0);
+const startDelayMs = Number(process.env.ROBINDONE_TEST_BACKEND_START_DELAY_MS || 0);
 
 setTimeout(() => {
   const server = createServer((req, res) => {
@@ -77,14 +77,14 @@ setTimeout(() => {
       ...process.env,
       NODE_OPTIONS: appendNodeImport(process.env.NODE_OPTIONS, injectResetEntry),
       PORT: String(publicPort),
-      ROBINRUN_BACKEND_PORT: String(backendPort),
-      ROBINRUN_DATA_BASE_DIR: dataDir,
-      ROBINRUN_SERVER_ENTRY: backendEntry,
-      ROBINRUN_AGENT_ENTRY: agentEntry,
-      ROBINRUN_SERVER_WORKSPACE: workspaceDir,
-      ROBINRUN_STORAGE_DIR: join(dataDir, ".robinrun"),
-      ROBINRUN_TEST_BACKEND_START_DELAY_MS: "1000",
-      ROBINRUN_WEB_DIST_DIR: webDistDir,
+      ROBINDONE_BACKEND_PORT: String(backendPort),
+      ROBINDONE_DATA_BASE_DIR: dataDir,
+      ROBINDONE_SERVER_ENTRY: backendEntry,
+      ROBINDONE_AGENT_ENTRY: agentEntry,
+      ROBINDONE_SERVER_WORKSPACE: workspaceDir,
+      ROBINDONE_STORAGE_DIR: join(dataDir, ".robindone"),
+      ROBINDONE_TEST_BACKEND_START_DELAY_MS: "1000",
+      ROBINDONE_WEB_DIST_DIR: webDistDir,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

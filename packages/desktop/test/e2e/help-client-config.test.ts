@@ -17,19 +17,23 @@ type DesktopBridge = {
 
 async function command(command: string) {
   await browser.execute(async (value) => {
-    await (window as unknown as { robinrun: DesktopBridge }).robinrun.executeDesktopCommand(value);
+    await (window as unknown as { robindone: DesktopBridge }).robindone.executeDesktopCommand(
+      value,
+    );
   }, command);
 }
 async function available(locale: "zh-CN" | "en-US") {
   return browser.execute(
     async (value) =>
-      (window as unknown as { robinrun: DesktopBridge }).robinrun.canOpenCommunity(value),
+      (window as unknown as { robindone: DesktopBridge }).robindone.canOpenCommunity(value),
     locale,
   );
 }
 async function english() {
   await browser.execute(async () => {
-    await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale("en-US");
+    await (window as unknown as { robindone: DesktopBridge }).robindone.setApplicationLocale(
+      "en-US",
+    );
   });
 }
 
@@ -62,12 +66,12 @@ describe("帮助配置 client/configs", () => {
     external = await browser.electron.mock("shell", "openExternal");
     await external.mockResolvedValue(undefined);
     server = await startHelpConfigFixture(fixture.remote);
-    await seedSettings({ robinrunEndpointOrigin: server.origin });
+    await seedSettings({ robindoneEndpointOrigin: server.origin });
   });
   afterEach(async () => {
     await browser.keys("Escape");
     await browser.electron.restoreAllMocks();
-    await seedSettings({ robinrunEndpointOrigin: originalSettings.robinrunEndpointOrigin });
+    await seedSettings({ robindoneEndpointOrigin: originalSettings.robindoneEndpointOrigin });
     await server?.close();
   });
   after(async () => {
@@ -75,7 +79,7 @@ describe("帮助配置 client/configs", () => {
     else await writeFile(localPath, originalLocal, "utf8");
     await seedSettings(originalSettings);
     await browser.execute(async (locale) => {
-      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale(
+      await (window as unknown as { robindone: DesktopBridge }).robindone.setApplicationLocale(
         locale,
       );
     }, originalSettings.locale ?? "en-US");
@@ -102,7 +106,7 @@ describe("帮助配置 client/configs", () => {
     await expectExternal(fixture.remote.community_urls!["en-US"]!);
     expect(await available("zh-CN")).toBe(true);
     await browser.execute(async () => {
-      await (window as unknown as { robinrun: DesktopBridge }).robinrun.setApplicationLocale(
+      await (window as unknown as { robindone: DesktopBridge }).robindone.setApplicationLocale(
         "zh-CN",
       );
     });
@@ -119,7 +123,7 @@ describe("帮助配置 client/configs", () => {
 
   it("HC-01-copy-device-mid: 真实帮助菜单复制当前设备 MID", async () => {
     const expected = await browser.execute(async () => {
-      return (window as unknown as { robinrun: DesktopBridge }).robinrun.getDeviceId();
+      return (window as unknown as { robindone: DesktopBridge }).robindone.getDeviceId();
     });
     await $('button[aria-label="Help"]').click();
     await $('[role="menuitem"]*=Copy device MID').click();
@@ -156,7 +160,7 @@ describe("帮助配置 client/configs", () => {
       feedback_use_external_form: true,
     });
     try {
-      await seedSettings({ robinrunEndpointOrigin: other.origin });
+      await seedSettings({ robindoneEndpointOrigin: other.origin });
       await command("openFeedback");
       await expectExternal(fixture.remote.feedback_url!);
       expect(other.requests).toHaveLength(1);

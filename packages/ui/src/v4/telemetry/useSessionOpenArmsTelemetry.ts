@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
-import { createSessionTraceId } from "@robinrun/shared";
+import { createSessionTraceId } from "@robindone/shared";
 import type {
   ConversationOpenTiming,
   ConversationSnapshot,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import {
   reportSessionOpenResult,
   reportSessionOpenStart,

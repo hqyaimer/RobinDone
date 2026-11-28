@@ -1,9 +1,9 @@
-import { ModelSelectionFacade, type ProviderRegistryFacadeSource } from "@robinrun/provider";
+import { ModelSelectionFacade, type ProviderRegistryFacadeSource } from "@robindone/provider";
 import {
   isBuiltinModelProviderId,
   isStartPlanModelProviderId,
   OFF_PEAK_PROVIDER_IDS,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { resolveLegacyReasoningLevel } from "./legacy-reasoning-level.js";
 
 /** Host 与受管理 Worker 共用身份分类；解析仍由纯 Provider Facade 负责。 */

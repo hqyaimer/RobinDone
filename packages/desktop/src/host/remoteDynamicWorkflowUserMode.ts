@@ -1,5 +1,5 @@
-import type { DynamicWorkflowMode, RemoteTarget } from "@robinrun/shared";
-import type { IRobinRunAgentService } from "@robinrun/services";
+import type { DynamicWorkflowMode, RemoteTarget } from "@robindone/shared";
+import type { IRobinDoneAgentService } from "@robindone/services";
 
 /**
  * 把动态工作流的用户选择推给远程 Host（docs/dynamic-workflow/launch.md「The user's choice」）。
@@ -12,7 +12,7 @@ import type { IRobinRunAgentService } from "@robinrun/services";
 export async function pushDynamicWorkflowUserModeToRemoteHosts(
   connections: ReadonlyArray<{
     target: RemoteTarget;
-    robinrunAgentService: Pick<IRobinRunAgentService, "syncDynamicWorkflowUserMode">;
+    robindoneAgentService: Pick<IRobinDoneAgentService, "syncDynamicWorkflowUserMode">;
   }>,
   mode: DynamicWorkflowMode | undefined,
   onError: (error: unknown) => void,
@@ -22,7 +22,7 @@ export async function pushDynamicWorkflowUserModeToRemoteHosts(
       .filter((connection) => connection.target.kind !== "server")
       .map(async (connection) => {
         try {
-          await connection.robinrunAgentService.syncDynamicWorkflowUserMode(mode ? { mode } : {});
+          await connection.robindoneAgentService.syncDynamicWorkflowUserMode(mode ? { mode } : {});
         } catch (error) {
           onError(error);
         }

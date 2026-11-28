@@ -1,6 +1,6 @@
-import type { ComposerInitialConfig } from "@/store/robinrunSessionStoreTypes.js";
-import type { ModelSelectionView } from "@robinrun/services";
-import type { SubmissionMode } from "@robinrun/shared/robinrun-protocol-v4";
+import type { ComposerInitialConfig } from "@/store/robindoneSessionStoreTypes.js";
+import type { ModelSelectionView } from "@robindone/services";
+import type { SubmissionMode } from "@robindone/shared/robindone-protocol-v4";
 import {
   readComposerRecent,
   readGlobalComposerMode,

@@ -3,17 +3,17 @@ import type { UtilityProcess as ElectronUtilityProcess } from "electron";
 import os from "node:os";
 import { join } from "node:path";
 import {
-  formatRobinRunAgentProcessName,
-  formatRobinRunGpuProcessName,
-  formatRobinRunHostProcessName,
-  formatRobinRunMainProcessName,
-  formatRobinRunRendererProcessName,
-  formatRobinRunUtilityProcessName,
+  formatRobinDoneAgentProcessName,
+  formatRobinDoneGpuProcessName,
+  formatRobinDoneHostProcessName,
+  formatRobinDoneMainProcessName,
+  formatRobinDoneRendererProcessName,
+  formatRobinDoneUtilityProcessName,
   type HostResourceUsageProcess,
   type ResourceUsageProcess,
   type ResourceUsageSnapshot,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  type RobinDoneProvider,
+} from "@robindone/shared";
 import { logger } from "./logger.js";
 import { configureNetworkCaptureHost, observeNetworkWindow } from "./resourceManagerNetwork.js";
 import { normalizeElectronCpuToMachinePercent } from "./electronCpuNormalization.js";
@@ -113,7 +113,7 @@ const hostProcesses = new Map<string, ElectronUtilityProcess>();
 
 interface RegisteredAgentProcess {
   pid: number;
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
   workspacePath: string;
   command: string;
   args: string[];
@@ -345,7 +345,7 @@ function collectElectronProcesses(): ResourceUsageProcess[] {
   push(
     baseProcess(
       process.pid,
-      formatRobinRunMainProcessName(),
+      formatRobinDoneMainProcessName(),
       "main",
       mainMetrics.cpuPercent,
       mainMetrics.memoryBytes,
@@ -355,7 +355,7 @@ function collectElectronProcesses(): ResourceUsageProcess[] {
   for (const m of metrics) {
     if (m.type === "GPU") {
       const { cpuPercent, memoryBytes } = metricsOf(m.pid);
-      push(baseProcess(m.pid, formatRobinRunGpuProcessName(), "gpu", cpuPercent, memoryBytes));
+      push(baseProcess(m.pid, formatRobinDoneGpuProcessName(), "gpu", cpuPercent, memoryBytes));
     }
   }
 
@@ -368,7 +368,7 @@ function collectElectronProcesses(): ResourceUsageProcess[] {
     push(
       baseProcess(
         rendererPid,
-        formatRobinRunRendererProcessName(win.getTitle() || `Window ${win.id}`),
+        formatRobinDoneRendererProcessName(win.getTitle() || `Window ${win.id}`),
         "renderer",
         cpuPercent,
         memoryBytes,
@@ -405,7 +405,13 @@ function collectElectronProcesses(): ResourceUsageProcess[] {
     if (child.pid == null) continue;
     const { cpuPercent, memoryBytes } = metricsOf(child.pid);
     push(
-      baseProcess(child.pid, formatRobinRunHostProcessName(label), "host", cpuPercent, memoryBytes),
+      baseProcess(
+        child.pid,
+        formatRobinDoneHostProcessName(label),
+        "host",
+        cpuPercent,
+        memoryBytes,
+      ),
     );
   }
 
@@ -416,8 +422,8 @@ function collectElectronProcesses(): ResourceUsageProcess[] {
       baseProcess(
         m.pid,
         m.type === "Utility"
-          ? formatRobinRunUtilityProcessName(m.name || String(m.pid))
-          : formatRobinRunUtilityProcessName(m.type, "process"),
+          ? formatRobinDoneUtilityProcessName(m.name || String(m.pid))
+          : formatRobinDoneUtilityProcessName(m.type, "process"),
         "utility",
         cpuPercent,
         memoryBytes,
@@ -447,7 +453,7 @@ function collectUnsampledAgentProcesses(sampledPids: Set<number>): ResourceUsage
       if (sampledPids.has(agent.pid)) continue;
       rows.push({
         pid: agent.pid,
-        name: formatRobinRunAgentProcessName(agent.provider, agent.workspacePath),
+        name: formatRobinDoneAgentProcessName(agent.provider, agent.workspacePath),
         category: "base",
         groupKey: "cli",
         groupLabel: "cli",

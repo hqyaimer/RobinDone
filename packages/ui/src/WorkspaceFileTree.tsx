@@ -6,8 +6,8 @@ import { PreviewPane } from "@/PreviewPane.js";
 import { WorkspaceFileTree } from "@/workspace-file-tree/WorkspaceFileTree.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import type { FileManagerTarget } from "@/lib/workspaceSidePane.js";
 
@@ -37,7 +37,7 @@ export function FileManagerPane({
   onNavigate,
   ...previewProps
 }: FileManagerPaneProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [headerContainer, setHeaderContainer] = useState<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isNarrow, setIsNarrow] = useState(mobileOverlay);
@@ -51,10 +51,10 @@ export function FileManagerPane({
     return () => observer.disconnect();
   }, []);
   const workspaceKey = target.workspaceIdentity?.trim() || target.workspacePath;
-  const storedNavigationPreferenceOpen = useRobinRunStore(
+  const storedNavigationPreferenceOpen = useRobinDoneStore(
     (state) => state.fileManagerNavigationOpenByWorkspace[workspaceKey],
   );
-  const setNavigationPreferenceOpen = useRobinRunStore(
+  const setNavigationPreferenceOpen = useRobinDoneStore(
     (state) => state.setFileManagerNavigationOpen,
   );
   // 空白文件标签需要先显示目录供用户选择；仅覆盖当前标签，不改写工作区的历史偏好。

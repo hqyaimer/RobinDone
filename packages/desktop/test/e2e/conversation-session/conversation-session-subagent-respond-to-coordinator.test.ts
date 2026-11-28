@@ -9,7 +9,7 @@ import { join } from "node:path";
 import {
   TID_TOOL_SUMMARY_TRIGGER,
   TID_V4_SUBAGENT_OPEN_SIDE_PANE,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import type { E2ENetworkCaptureArtifact } from "../helpers/network-capture-proxy.js";
 import {
@@ -255,7 +255,7 @@ describe("会话区 BG25/O18/O19 coordinator 与 TaskOutput 专属卡片 E2E", (
     this.timeout(E2E_TIMEOUT_MS);
 
     // Bug 原因：beforeEach 的全局新建会按当前导航决定 cwd。单独运行时它分配独立目录，
-    // child Bash 按相对路径等待 release 文件，而测试写在 RobinRunProject 下，child 永远等不到；
+    // child Bash 按相对路径等待 release 文件，而测试写在 RobinDoneProject 下，child 永远等不到；
     // 排在 O18 之后才因上一个用例留在夹具项目而通过。这里显式回到夹具项目草稿。
     await prepareV4ConversationE2E();
     await selectCurrentV4FullAccessMode();

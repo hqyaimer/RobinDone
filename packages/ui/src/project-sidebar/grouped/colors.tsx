@@ -1,4 +1,4 @@
-import type { RobinRunTaskGroupColor } from "@/project-sidebar/grouped/types.js";
+import type { RobinDoneTaskGroupColor } from "@/project-sidebar/grouped/types.js";
 
 import { Hash, type LucideIcon } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
@@ -12,7 +12,7 @@ function TaskGroupColorMark({
   color,
   icon: Icon = Hash,
 }: {
-  color: RobinRunTaskGroupColor;
+  color: RobinDoneTaskGroupColor;
   icon?: LucideIcon;
 }) {
   return (
@@ -27,7 +27,7 @@ function TaskGroupColorMark({
   );
 }
 
-function TaskGroupColorDot({ color }: { color: RobinRunTaskGroupColor }) {
+function TaskGroupColorDot({ color }: { color: RobinDoneTaskGroupColor }) {
   return <span className={cn("size-2.5 shrink-0 rounded-full", TASK_GROUP_COLOR_CLASS[color])} />;
 }
 

@@ -7,8 +7,8 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import type { RobinRunElicitationQuestion, RobinRunElicitationRequest } from "@robinrun/shared";
-import type { InteractionAutoResolution } from "@robinrun/shared/robinrun-protocol-v4";
+import type { RobinDoneElicitationQuestion, RobinDoneElicitationRequest } from "@robindone/shared";
+import type { InteractionAutoResolution } from "@robindone/shared/robindone-protocol-v4";
 import { CheckIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
@@ -16,11 +16,11 @@ import { cn } from "@/components/lib/utils.js";
 import { Textarea } from "@/components/ui/textarea.js";
 import { InteractionRequestOriginBadge } from "@/InteractionRequestOriginBadge.js";
 import { isImeComposingKeyEvent } from "@/lib/imeComposition.js";
-import type { ElicitationFormDraft } from "@/store/robinrunSessionStoreTypes.js";
-import { useRobinRunIntl } from "./i18n/IntlProvider.js";
+import type { ElicitationFormDraft } from "@/store/robindoneSessionStoreTypes.js";
+import { useRobinDoneIntl } from "./i18n/IntlProvider.js";
 
 interface ElicitationDialogProps {
-  request: RobinRunElicitationRequest;
+  request: RobinDoneElicitationRequest;
   autoResolution?: InteractionAutoResolution;
   onRespond: (
     requestId: string,
@@ -102,7 +102,7 @@ function useElicitationCountdownSeconds(autoResolution: InteractionAutoResolutio
   return getElicitationCountdownSeconds(autoResolution, clockNow);
 }
 
-export interface NormalizedElicitationQuestion extends RobinRunElicitationQuestion {
+export interface NormalizedElicitationQuestion extends RobinDoneElicitationQuestion {
   key: string;
 }
 
@@ -162,7 +162,7 @@ export function resolveElicitationCustomInputKeyAction(event: {
 }
 
 export function normalizeElicitationQuestions(
-  request: RobinRunElicitationRequest,
+  request: RobinDoneElicitationRequest,
 ): NormalizedElicitationQuestion[] {
   const sourceQuestions =
     request.questions && request.questions.length > 0
@@ -193,7 +193,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isPlanApprovalElicitationRequest(request: RobinRunElicitationRequest): boolean {
+function isPlanApprovalElicitationRequest(request: RobinDoneElicitationRequest): boolean {
   const schema = request.schema;
   return (
     isRecord(schema) && schema.interaction === "plan_approval" && schema.toolName === "ExitPlanMode"
@@ -202,7 +202,7 @@ function isPlanApprovalElicitationRequest(request: RobinRunElicitationRequest): 
 
 export function createInitialElicitationDrafts(
   questions: readonly NormalizedElicitationQuestion[],
-  request: RobinRunElicitationRequest,
+  request: RobinDoneElicitationRequest,
 ): DraftState {
   return Object.fromEntries(
     questions.map((question, index) => {
@@ -217,7 +217,7 @@ export function createInitialElicitationDrafts(
 }
 
 function normalizeInitialQuestionIndex(
-  request: RobinRunElicitationRequest,
+  request: RobinDoneElicitationRequest,
   questions: readonly NormalizedElicitationQuestion[],
 ) {
   if (questions.length === 0) {
@@ -348,7 +348,7 @@ function ElicitationDialogContent({
   initialFormDraft,
   onFormDraftChange,
 }: ElicitationDialogProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const questions = useMemo(() => normalizeElicitationQuestions(request), [request]);
   const [questionIndex, setQuestionIndex] = useState(
     () => initialFormDraft?.questionIndex ?? normalizeInitialQuestionIndex(request, questions),

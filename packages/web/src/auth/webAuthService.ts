@@ -1,4 +1,4 @@
-import { ZAI_PROVIDER_ID, type UserInfo } from "@robinrun/shared";
+import { ZAI_PROVIDER_ID, type UserInfo } from "@robindone/shared";
 import {
   BrowserOAuthCredentialRepo,
   type WebOAuthProviderId,
@@ -183,8 +183,8 @@ export class WebAuthService {
     return this.repo.loadCachedSessionState();
   }
 
-  getRobinRunJwtToken(): string | null {
-    return this.repo.loadRobinRunJwtToken();
+  getRobinDoneJwtToken(): string | null {
+    return this.repo.loadRobinDoneJwtToken();
   }
 
   /** 设备页账号行的展示资料；只读，不参与登录判断。 */

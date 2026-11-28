@@ -4,12 +4,12 @@ import type {
   WebRemoteControlEntryOptions,
   WebRemoteControlDeviceGroup,
 } from "#src/web-remote-control/contract.js";
-import type { WebRemoteControlRelayV2Device } from "@robinrun/shared/web-remote-relay";
+import type { WebRemoteControlRelayV2Device } from "@robindone/shared/web-remote-relay";
 import {
   parseWebRemoteControlExternalQrParams,
   type WebRemoteControlFailure,
-} from "@robinrun/shared";
-import { WebRemoteControlV2ConnectionError } from "@robinrun/shared/web-remote-relay";
+} from "@robindone/shared";
+import { WebRemoteControlV2ConnectionError } from "@robindone/shared/web-remote-relay";
 import type { WebOAuthProviderId } from "#src/auth/browserOAuthCredentialRepo.js";
 import { groupWebRemoteControlDevices } from "#src/web-remote-control/domain/webRemoteControlDeviceGroups.js";
 import {
@@ -28,8 +28,8 @@ export function isWebRemoteControlOAuthCallback(url: URL): boolean {
   );
 }
 
-const LAST_DEVICE_KEY = "robinrun-web-remote-last-device-sid";
-const LAST_DEVICE_MID_KEY = "robinrun-web-remote-last-device-mid";
+const LAST_DEVICE_KEY = "robindone-web-remote-last-device-sid";
+const LAST_DEVICE_MID_KEY = "robindone-web-remote-last-device-mid";
 
 /**
  * 最近设备的自动落点：最近 SID 在线优先；否则同一台电脑（最近 MID）恰好一个在线 SID 时接上它。
@@ -90,7 +90,7 @@ export class WebRemoteControlEntry {
       this.options.onView({ kind: "callback" });
       return;
     }
-    if (!this.options.auth.getRobinRunJwtToken()) {
+    if (!this.options.auth.getRobinDoneJwtToken()) {
       this.options.onView({ kind: "login" });
       return;
     }
@@ -140,7 +140,7 @@ export class WebRemoteControlEntry {
     const list = this.list;
     if (!list) return;
     if (list.request) return list.request;
-    const jwt = this.options.auth.getRobinRunJwtToken();
+    const jwt = this.options.auth.getRobinDoneJwtToken();
     if (!jwt) return this.switchAccount();
     if (list.acceptedJwt && list.acceptedJwt !== jwt) return this.start();
     const { signal } = this.scope;
@@ -151,7 +151,7 @@ export class WebRemoteControlEntry {
         const devices = await this.options.devices(jwt, signal);
         if (signal.aborted) return;
         // 账号变更后的响应不能为新账号提供设备或自动连接依据。
-        if (this.options.auth.getRobinRunJwtToken() !== jwt) return this.start();
+        if (this.options.auth.getRobinDoneJwtToken() !== jwt) return this.start();
         list.acceptedJwt = jwt;
         // 先读缓存补全离线记录的名字/平台，再把本次在线记录写回；它们只是展示偏好，不进入 admission。
         const knownDevices = readKnownDevices(this.options.storage);
@@ -166,7 +166,7 @@ export class WebRemoteControlEntry {
         else this.options.onView(list.view);
       } catch (error) {
         if (signal.aborted) return;
-        if (this.options.auth.getRobinRunJwtToken() !== jwt) return this.start();
+        if (this.options.auth.getRobinDoneJwtToken() !== jwt) return this.start();
         if (
           error instanceof WebRemoteControlV2ConnectionError &&
           error.reason === "auth-required"
@@ -185,7 +185,7 @@ export class WebRemoteControlEntry {
 
   selectDevice(sid: string): void {
     if (!this.list || this.list.view.loading || this.list.view.error) return;
-    if (this.list.acceptedJwt !== this.options.auth.getRobinRunJwtToken()) {
+    if (this.list.acceptedJwt !== this.options.auth.getRobinDoneJwtToken()) {
       void this.start();
       return;
     }
@@ -227,13 +227,13 @@ export class WebRemoteControlEntry {
   ): Promise<void> {
     this.reset();
     const { signal } = this.scope;
-    const jwt = this.options.auth.getRobinRunJwtToken();
+    const jwt = this.options.auth.getRobinDoneJwtToken();
     if (!jwt) return this.switchAccount();
     try {
       const devices = await this.options.devices(jwt, signal);
       if (signal.aborted) return;
       // 与列表一致：账号变更后的响应不能作为接续依据。
-      if (this.options.auth.getRobinRunJwtToken() !== jwt) return this.start();
+      if (this.options.auth.getRobinDoneJwtToken() !== jwt) return this.start();
       const groups = groupWebRemoteControlDevices(
         devices,
         this.options.locale,
@@ -254,7 +254,7 @@ export class WebRemoteControlEntry {
       if (device) return this.admit(device, false);
     } catch (error) {
       if (signal.aborted) return;
-      if (this.options.auth.getRobinRunJwtToken() !== jwt) return this.start();
+      if (this.options.auth.getRobinDoneJwtToken() !== jwt) return this.start();
       if (error instanceof WebRemoteControlV2ConnectionError && error.reason === "auth-required")
         return this.switchAccount();
     }
@@ -290,14 +290,14 @@ export class WebRemoteControlEntry {
       params,
       signal,
       getToken: async (tokenSignal) => {
-        const jwt = this.options.auth.getRobinRunJwtToken();
+        const jwt = this.options.auth.getRobinDoneJwtToken();
         if (!jwt) throw new WebRemoteControlV2ConnectionError("auth-required");
         try {
           return await this.options.token(jwt, tokenSignal);
         } catch (error) {
           // Bugfix: 401 只否定这次请求用的 JWT。请求在途时其他标签页写入了新 JWT，旧实现仍按 401
           // 登出，把新登录一起清掉并回登录页；这里改为可重试，transport 下一轮读取新 JWT 重新申请。
-          const current = this.options.auth.getRobinRunJwtToken();
+          const current = this.options.auth.getRobinDoneJwtToken();
           if (
             error instanceof WebRemoteControlV2ConnectionError &&
             error.reason === "auth-required" &&

@@ -1,10 +1,10 @@
-import type { ModelSelectionView, ProviderSettingsView } from "@robinrun/services";
+import type { ModelSelectionView, ProviderSettingsView } from "@robindone/services";
 import {
   resolveModelProviderFamilySpecByProviderId,
   type ProviderFamilyDomain,
   type ProviderFamilyConnectionSelection,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  type RobinDoneProvider,
+} from "@robindone/shared";
 import type { ModelSelectGroup, ModelSelectGroupItem } from "@/ModelConfigSelect.js";
 import {
   buildRegistryModelSelectGroups,
@@ -56,7 +56,7 @@ export function buildComposerPlanGroups(
   groups: readonly ModelSelectGroup[],
   products: readonly TeamProduct[],
   settingsView?: ProviderSettingsView | null,
-  agentProvider: RobinRunProvider = "glm",
+  agentProvider: RobinDoneProvider = "glm",
   labels: ModelProviderGroupLabelOptions = {},
   selections?: Partial<Record<ProviderFamilyDomain, ProviderFamilyConnectionSelection>>,
 ): ComposerPlanGroup[] {

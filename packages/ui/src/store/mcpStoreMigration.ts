@@ -1,4 +1,4 @@
-import type { McpServerConfig, NativeMcpServerRecord } from "@robinrun/shared";
+import type { McpServerConfig, NativeMcpServerRecord } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import {
   fetchNativeMcpServers,
@@ -16,15 +16,15 @@ interface CommonMcpMigrationResult extends MigrateLegacyResult {
   changed: boolean;
 }
 
-function isRobinRunAgentUserServer(server: NativeMcpServerRecord): boolean {
+function isRobinDoneAgentUserServer(server: NativeMcpServerRecord): boolean {
   return (
-    server.source === "robinrunagentmcp" &&
+    server.source === "robindoneagentmcp" &&
     server.scope === "user" &&
-    (!server.location || server.location.source === "robinrun")
+    (!server.location || server.location.source === "robindone")
   );
 }
 
-export async function importLegacyCommonServersToRobinRunAgent(
+export async function importLegacyCommonServersToRobinDoneAgent(
   platform: McpPlatformService | null,
   legacyServers: Record<string, McpServerConfig>,
   nativeServers: NativeMcpServerRecord[],
@@ -44,7 +44,7 @@ export async function importLegacyCommonServersToRobinRunAgent(
   }
 
   const existingNames = new Set(
-    nativeServers.filter(isRobinRunAgentUserServer).map((server) => server.name),
+    nativeServers.filter(isRobinDoneAgentUserServer).map((server) => server.name),
   );
   let importedCount = 0;
   let skippedCount = 0;
@@ -58,7 +58,7 @@ export async function importLegacyCommonServersToRobinRunAgent(
     try {
       const persisted = await persistCliMcpToUserDirectory(platform, {
         action: "upsert",
-        source: "robinrunagentmcp",
+        source: "robindoneagentmcp",
         name,
         config,
       });
@@ -98,7 +98,7 @@ export async function importLegacyCommonServersToRobinRunAgent(
   };
 }
 
-export async function migrateStoredCommonMcpToRobinRunAgent(
+export async function migrateStoredCommonMcpToRobinDoneAgent(
   platform: McpPlatformService | null,
   nativeServers: NativeMcpServerRecord[],
   workspacePath?: string,
@@ -109,14 +109,14 @@ export async function migrateStoredCommonMcpToRobinRunAgent(
   }
 
   // 旧通用 MCP 保存在 localStorage，不迁移就直接去掉 common 读取会让用户配置从设置页和运行时消失。
-  const migration = await importLegacyCommonServersToRobinRunAgent(
+  const migration = await importLegacyCommonServersToRobinDoneAgent(
     platform,
     legacyServers,
     nativeServers,
-    "localStorage:robinrun-mcp-config",
+    "localStorage:robindone-mcp-config",
   );
   if (migration.completed) {
-    // 只有确认写入 robinrun agent 目录后才清理旧数据，避免 Web 端没有 desktop bridge 时丢配置。
+    // 只有确认写入 robindone agent 目录后才清理旧数据，避免 Web 端没有 desktop bridge 时丢配置。
     clearLegacyCommonMcpServers();
   }
   if (!migration.changed) {
@@ -124,7 +124,7 @@ export async function migrateStoredCommonMcpToRobinRunAgent(
   }
 
   logger.info(
-    `[mcpStore] migrated ${migration.importedCount} legacy common MCP servers to robinrun agent config`,
+    `[mcpStore] migrated ${migration.importedCount} legacy common MCP servers to robindone agent config`,
   );
   return fetchNativeMcpServers(platform, { workspacePath });
 }

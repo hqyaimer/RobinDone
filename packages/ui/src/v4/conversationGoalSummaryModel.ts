@@ -1,4 +1,4 @@
-import type { GoalState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { GoalState } from "@robindone/shared/robindone-protocol-v4";
 
 const INTERNAL_GOAL_VERIFICATION_FALLBACK_NEXT_ACTION =
   "Continue verifying and completing the goal.";

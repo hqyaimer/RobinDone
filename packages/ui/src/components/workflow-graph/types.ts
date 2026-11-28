@@ -1,4 +1,4 @@
-import type { ToolCallCreateWorkflowCausalityGraph } from "@robinrun/shared/robinrun-protocol-v4";
+import type { ToolCallCreateWorkflowCausalityGraph } from "@robindone/shared/robindone-protocol-v4";
 
 /**
  * The graph the renderer consumes is exactly the bounded display payload from the

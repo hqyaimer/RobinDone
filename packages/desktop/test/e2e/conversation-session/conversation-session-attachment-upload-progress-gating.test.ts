@@ -7,7 +7,7 @@ import {
   TID_V4_ATTACHMENT_UPLOAD_PROGRESS,
   TID_V4_COMPOSER_INPUT,
   TID_V4_COMPOSER_SEND,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import {
   prepareV4ConversationE2E,

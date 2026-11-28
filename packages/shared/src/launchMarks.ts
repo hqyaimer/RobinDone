@@ -11,7 +11,7 @@ export interface LaunchMarks {
 }
 
 /** 主窗口 loadURL query string 中携带 launch marks 的参数名 */
-export const LAUNCH_MARKS_QUERY_KEY = "robinrunLaunchMarks";
+export const LAUNCH_MARKS_QUERY_KEY = "robindoneLaunchMarks";
 
 export function serializeLaunchMarks(marks: LaunchMarks): string {
   return JSON.stringify(marks);

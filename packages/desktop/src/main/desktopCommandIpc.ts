@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import { DesktopCommandIds, PlatformChannels, type DesktopCommandId } from "@robinrun/shared";
+import { DesktopCommandIds, PlatformChannels, type DesktopCommandId } from "@robindone/shared";
 
 export function registerDesktopCommandIpcHandler(options: {
   executeDesktopCommand: (

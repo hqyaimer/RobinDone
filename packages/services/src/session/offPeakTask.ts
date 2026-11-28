@@ -2,11 +2,11 @@ import type {
   OffPeakCodingPlanSupport,
   OffPeakTaskCreateResult,
   OffPeakTakeNumberAvailability,
-  RobinRunOffPeakTask,
-  RobinRunOffPeakTaskCreateParams,
+  RobinDoneOffPeakTask,
+  RobinDoneOffPeakTaskCreateParams,
   ModelSelection,
-} from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+} from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 // 闲时任务管理服务通道（与 automation 服务面互不复用）。
@@ -27,19 +27,19 @@ export interface IOffPeakTaskService {
   /** 服务端取号额度即时快照；仅控制新建入口，POST /ticket 仍是最终准入权威。 */
   getTakeNumberAvailability(): Promise<OffPeakTakeNumberAvailability>;
   /** 创建即取号（成功才落库）；失败返回稳定分类，不跨 RPC 传 raw error。 */
-  createTask(params: RobinRunOffPeakTaskCreateParams): Promise<OffPeakTaskCreateResult>;
-  cancelTask(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null>;
-  pauseTask(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null>;
-  continueTask(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null>;
+  createTask(params: RobinDoneOffPeakTaskCreateParams): Promise<OffPeakTaskCreateResult>;
+  cancelTask(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null>;
+  pauseTask(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null>;
+  continueTask(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null>;
   deleteTask(offPeakTaskId: string): Promise<void>;
   /** 仅隐藏本地 History 行；不删除 task/session/执行字段。 */
-  deleteHistory(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null>;
+  deleteHistory(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null>;
   updateTask(
     offPeakTaskId: string,
     params: OffPeakUpdateTaskParams,
-  ): Promise<RobinRunOffPeakTask | null>;
-  list(): Promise<RobinRunOffPeakTask[]>;
-  get(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null>;
+  ): Promise<RobinDoneOffPeakTask | null>;
+  list(): Promise<RobinDoneOffPeakTask[]>;
+  get(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null>;
 }
 
 export const IOffPeakTaskService = createServiceDescriptor<IOffPeakTaskService>(

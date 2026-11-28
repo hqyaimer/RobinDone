@@ -1,12 +1,12 @@
-import { PERMISSION_FULL_ACCESS_OPTION_ID } from "@robinrun/shared/robinrun-protocol-v4";
-import type { RobinRunPermissionOption } from "@robinrun/shared";
+import { PERMISSION_FULL_ACCESS_OPTION_ID } from "@robindone/shared/robindone-protocol-v4";
+import type { RobinDonePermissionOption } from "@robindone/shared";
 
 export {
   getPermissionRequestPreview,
   type PermissionRequestFileChange,
   type PermissionRequestPreview,
   type PermissionRequestScope,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type PermissionOptionDisplayKind =
   | "allowOnce"
@@ -53,7 +53,7 @@ export function getPermissionOptionDisplayKind(kind: string): PermissionOptionDi
 }
 
 export function shouldPreferPermissionOptionName(
-  option: Pick<RobinRunPermissionOption, "kind" | "name">,
+  option: Pick<RobinDonePermissionOption, "kind" | "name">,
 ): boolean {
   const normalizedName = normalizeInlineText(option.name).toLowerCase();
   if (normalizedName.length === 0) {
@@ -84,8 +84,8 @@ function getPermissionOptionSortPriority(kind: string): number {
 }
 
 export function sortPermissionOptions(
-  options: readonly RobinRunPermissionOption[],
-): RobinRunPermissionOption[] {
+  options: readonly RobinDonePermissionOption[],
+): RobinDonePermissionOption[] {
   return options
     .map((option, index) => ({ option, index }))
     .sort((left, right) => {

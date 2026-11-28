@@ -1,10 +1,10 @@
 import { thoughtLevelLabelId } from "@/chat-input-toolbar/thoughtLevelLabels.js";
 export { thoughtLevelLabelId } from "@/chat-input-toolbar/thoughtLevelLabels.js";
-import type { RobinRunConfigOption, RobinRunProvider } from "@robinrun/shared";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { RobinDoneConfigOption, RobinDoneProvider } from "@robindone/shared";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getConfigOptionEntryLabel } from "@/chat-input-toolbar/display.js";
 
-export type ThoughtLevelEntry = NonNullable<RobinRunConfigOption["options"]>[number];
+export type ThoughtLevelEntry = NonNullable<RobinDoneConfigOption["options"]>[number];
 
 const NO_THOUGHT_LEVEL_VALUES = new Set([
   "disabled",
@@ -26,7 +26,7 @@ export function isNoThoughtLevel(entry: Pick<ThoughtLevelEntry, "value">): boole
 }
 
 export function getNextThoughtLevelValue(
-  option: Pick<RobinRunConfigOption, "type" | "currentValue" | "options">,
+  option: Pick<RobinDoneConfigOption, "type" | "currentValue" | "options">,
 ): string | null {
   if (option.type !== "select" || !option.options || option.options.length < 2) {
     return null;
@@ -42,9 +42,9 @@ export function getNextThoughtLevelValue(
 }
 
 export function getThoughtLevelLabel(
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
-  provider: RobinRunProvider | undefined,
-  option: RobinRunConfigOption,
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
+  provider: RobinDoneProvider | undefined,
+  option: RobinDoneConfigOption,
   entry: ThoughtLevelEntry,
 ): string {
   const labelId = thoughtLevelLabelId(entry.value);

@@ -1,5 +1,5 @@
-import type { ISubagentsService } from "@robinrun/services";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { ISubagentsService } from "@robindone/services";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { getServiceAuthorityId } from "@/store/serviceAuthorityKey.js";
 
 const inFlightAgentLoads = new Map<string, ReturnType<ISubagentsService["list"]>>();
@@ -7,7 +7,7 @@ let latestAgentLoadRequestId = 0;
 
 function getAgentLoadKey(
   workspacePath: string,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   subagentsService: ISubagentsService,
   workspaceIdentity?: string,
 ): string {
@@ -18,7 +18,7 @@ function getAgentLoadKey(
 
 export function loadAgentsOnce(
   workspacePath: string,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   subagentsService: ISubagentsService,
   workspaceIdentity?: string,
   options: { bypassCache?: boolean } = {},

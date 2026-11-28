@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useOptionalPlatform } from "@/hooks/usePlatform.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { attachPluginUiToolResults } from "@/plugin-ui/adapters/pluginUiBackground.js";
 
 export function PluginUiBackgroundHost() {
   const platform = useOptionalPlatform();
   const services = useOptionalServices();
-  const { locale } = useRobinRunIntl();
+  const { locale } = useRobinDoneIntl();
   const latestLocale = useRef(locale);
   latestLocale.current = locale;
   useEffect(() => {

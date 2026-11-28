@@ -1,8 +1,8 @@
 import { createContext } from "react";
 import type {
-  RobinRunModelTrajectoryMessage,
-  RobinRunModelTrajectoryRecord,
-} from "@robinrun/services";
+  RobinDoneModelTrajectoryMessage,
+  RobinDoneModelTrajectoryRecord,
+} from "@robindone/services";
 import {
   trajectoryToolCallInputs,
   trajectoryToolMetadata,
@@ -30,8 +30,8 @@ export interface TrajectorySearchIndex {
 
 export interface TrajectorySearchTimelineItem {
   key: string;
-  record: RobinRunModelTrajectoryRecord;
-  inputMessages: RobinRunModelTrajectoryMessage[];
+  record: RobinDoneModelTrajectoryRecord;
+  inputMessages: RobinDoneModelTrajectoryMessage[];
 }
 
 interface SearchTarget {
@@ -101,7 +101,7 @@ function messageTargets(
   callKey: string,
   callIndex: number,
   expansionKey: string,
-  message: RobinRunModelTrajectoryMessage,
+  message: RobinDoneModelTrajectoryMessage,
 ): SearchTarget[] {
   const metadata = trajectoryToolMetadata(message);
   const content = message.parts.some((part) => part.kind === "tool-result")

@@ -8,9 +8,9 @@ import {
   useRef,
 } from "react";
 import type { ReactNode } from "react";
-import type { Locale, LocalePreference } from "@robinrun/shared";
-import { DEFAULT_LOCALE } from "@robinrun/shared";
-import type { BroadcastMessage, IBroadcastService, ISettingService } from "@robinrun/services";
+import type { Locale, LocalePreference } from "@robindone/shared";
+import { DEFAULT_LOCALE } from "@robindone/shared";
+import type { BroadcastMessage, IBroadcastService, ISettingService } from "@robindone/services";
 import {
   readNavigatorLanguage,
   readSafeLocalStorage,
@@ -30,7 +30,7 @@ export interface IntlInstance {
   formatMessage(descriptor: { id: string }, values?: Record<string, string | number>): string;
 }
 
-const LOCALE_PREFERENCE_KEY = "robinrun-locale-preference";
+const LOCALE_PREFERENCE_KEY = "robindone-locale-preference";
 const STATE_LOCALE_CHANNEL = "state:locale";
 
 interface LocaleBroadcastPayload {
@@ -140,7 +140,7 @@ const IntlContext = createContext<IntlContextValue | null>(null);
  * 国际化 Provider —— 管理当前语言和 intl 实例。
  * 如果传入 settingService，会从设置中读取初始语言并在切换时持久化。
  */
-export function RobinRunIntlProvider({
+export function RobinDoneIntlProvider({
   children,
   settingService,
   broadcastService,
@@ -365,10 +365,10 @@ export function RobinRunIntlProvider({
 }
 
 /** 获取 intl 上下文 */
-export function useRobinRunIntl(): IntlContextValue {
+export function useRobinDoneIntl(): IntlContextValue {
   const ctx = useContext(IntlContext);
   if (!ctx) {
-    throw new Error("useRobinRunIntl 必须在 RobinRunIntlProvider 内使用");
+    throw new Error("useRobinDoneIntl 必须在 RobinDoneIntlProvider 内使用");
   }
   return ctx;
 }

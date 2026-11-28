@@ -6,8 +6,8 @@ import type {
   PluginMarketplaceSummary,
   PluginScope,
   PluginsCapability,
-} from "@robinrun/shared";
-import type { IPluginsService } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IPluginsService } from "@robindone/services";
 import { logger } from "@/logger.js";
 
 function buildPluginOperationId(

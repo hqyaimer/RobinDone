@@ -1,8 +1,8 @@
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatRemoteConnectionError } from "@/lib/remoteConnectionPresentation.js";
 import { getRemoteConnectionFailureCode } from "@/lib/remoteWorkspaceServiceError.js";
-import { resolveWorkspaceKey } from "@robinrun/shared";
+import { resolveWorkspaceKey } from "@robindone/shared";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
@@ -19,7 +19,7 @@ export function useRemoteProjectConnectionPresentation(scope: {
   workspacePath: string;
   workspaceIdentity?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const workspaceKey = resolveWorkspaceKey(scope);
   const tab = useTabStore((state) =>
     state.tabs.find(

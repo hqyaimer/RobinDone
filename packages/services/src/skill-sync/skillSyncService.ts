@@ -3,7 +3,7 @@ import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { SKILL_DATA_SYNC_MAX_ITEM_BYTES } from "@robinrun/shared";
+import { SKILL_DATA_SYNC_MAX_ITEM_BYTES } from "@robindone/shared";
 import type { ISkillSyncService } from "./skillSync.js";
 import {
   MAX_SKILL_SCAN_DEPTH,
@@ -33,8 +33,8 @@ export function resolveUserHomeDir(): string {
   return process.env.HOME?.trim() || process.env.USERPROFILE?.trim() || homedir();
 }
 
-export function getUserRobinrunSkillRoot(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "skills");
+export function getUserRobindoneSkillRoot(): string {
+  return join(resolveUserHomeDir(), ".robindone", "skills");
 }
 
 function getUserAgentsSkillRoot(): string {
@@ -42,32 +42,32 @@ function getUserAgentsSkillRoot(): string {
 }
 
 /**
- * 用户级技能候选：`~/.robinrun/skills` 优先，`~/.agents/skills` 中同目录名或同 name 的项剔除，再按 realpath 去重。
+ * 用户级技能候选：`~/.robindone/skills` 优先，`~/.agents/skills` 中同目录名或同 name 的项剔除，再按 realpath 去重。
  * 文件数与字节签名由数据同步的 list 自己计算。
  */
 export async function collectUserSkillCandidates(): Promise<UserSkillCandidate[]> {
   const seenSkillRealpaths = new Set<string>();
-  const userRobinrunSkillRoot = getUserRobinrunSkillRoot();
-  const rawRobinrunCandidates = await collectUserSkillCandidatesInRoot(userRobinrunSkillRoot);
-  const robinrunDirectoryNames =
-    await collectCoveredSkillDirectoryNamesInRoot(userRobinrunSkillRoot);
-  const robinrunSkillNameKeys = new Set(
-    rawRobinrunCandidates.map((candidate) => normalizeSkillNameKey(candidate.name)),
+  const userRobindoneSkillRoot = getUserRobindoneSkillRoot();
+  const rawRobindoneCandidates = await collectUserSkillCandidatesInRoot(userRobindoneSkillRoot);
+  const robindoneDirectoryNames =
+    await collectCoveredSkillDirectoryNamesInRoot(userRobindoneSkillRoot);
+  const robindoneSkillNameKeys = new Set(
+    rawRobindoneCandidates.map((candidate) => normalizeSkillNameKey(candidate.name)),
   );
-  const robinrunCandidates = await dedupeCandidatesByCanonicalSkillPath(
-    rawRobinrunCandidates,
+  const robindoneCandidates = await dedupeCandidatesByCanonicalSkillPath(
+    rawRobindoneCandidates,
     seenSkillRealpaths,
   );
   const agentsCandidates = await dedupeCandidatesByCanonicalSkillPath(
     (await collectUserSkillCandidatesInRoot(getUserAgentsSkillRoot())).filter(
       (candidate) =>
-        !robinrunDirectoryNames.has(candidate.directoryName) &&
-        !robinrunSkillNameKeys.has(normalizeSkillNameKey(candidate.name)),
+        !robindoneDirectoryNames.has(candidate.directoryName) &&
+        !robindoneSkillNameKeys.has(normalizeSkillNameKey(candidate.name)),
     ),
     seenSkillRealpaths,
   );
 
-  return [...robinrunCandidates, ...agentsCandidates].sort((left, right) =>
+  return [...robindoneCandidates, ...agentsCandidates].sort((left, right) =>
     left.directoryName.localeCompare(right.directoryName),
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, type ComponentProps } from "react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { mapToolStatus } from "@/lib/mapToolStatus.js";
 import { buildToolDisplayModel } from "@/lib/toolDisplay.js";
 import { getToolCallErrorText } from "@/lib/toolError.js";
@@ -40,7 +40,7 @@ export function ToolPresentation({
     >["renderAssistantMessage"];
     renderCuaReasoning?: ComponentProps<typeof CuaGroupToolCallBlock>["renderReasoning"];
   }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const capabilities = useToolPresentationCapabilities();
   const { childToolCalls } = toolCallNode;
   const normalizedNode = useMemo(() => {

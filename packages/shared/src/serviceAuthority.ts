@@ -1,4 +1,4 @@
-export const SERVICE_AUTHORITY_MODE_ENV = "ROBINRUN_SERVICE_AUTHORITY_MODE";
+export const SERVICE_AUTHORITY_MODE_ENV = "ROBINDONE_SERVICE_AUTHORITY_MODE";
 
 export const serviceAuthorityModes = [
   "desktop-local",

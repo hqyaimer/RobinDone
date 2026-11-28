@@ -12,7 +12,7 @@ export async function startConversationModelProviderReplayServer(
   caseName: string,
 ): Promise<UpstreamReplayServer> {
   const captureDir = resolve(
-    process.env.ROBINRUN_E2E_NETWORK_CAPTURE_DIR?.trim() ||
+    process.env.ROBINDONE_E2E_NETWORK_CAPTURE_DIR?.trim() ||
       resolve(homedir(), "..", ".e2e-network-capture"),
   );
   const server = await startUpstreamReplayServer({

@@ -24,19 +24,19 @@
 运行方式：
 
 ```bash
-ROBINRUN_E2E_MANUAL_REVIEW=1 pnpm --filter @robinrun/desktop test:e2e
+ROBINDONE_E2E_MANUAL_REVIEW=1 pnpm --filter @robindone/desktop test:e2e
 ```
 
 指定单条：
 
 ```bash
-ROBINRUN_E2E_MANUAL_REVIEW=1 pnpm --filter @robinrun/desktop test:e2e -- --spec './test/e2e/conversation-session/manual-review/pending/<case>.test.ts'
+ROBINDONE_E2E_MANUAL_REVIEW=1 pnpm --filter @robindone/desktop test:e2e -- --spec './test/e2e/conversation-session/manual-review/pending/<case>.test.ts'
 ```
 
 已有 case-local fixture 的 pending spec 可以在转正前执行合同检查：
 
 ```bash
-pnpm --filter @robinrun/desktop e2e:fixture:check -- --spec \
+pnpm --filter @robindone/desktop e2e:fixture:check -- --spec \
   './test/e2e/conversation-session/manual-review/pending/<case>.test.ts'
 ```
 

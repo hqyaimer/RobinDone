@@ -7,14 +7,18 @@
 import { BrowserWindow, ipcMain, shell, type IpcMainInvokeEvent, type WebContents } from "electron";
 import { homedir } from "node:os";
 import { isAbsolute, relative, resolve } from "node:path";
-import { PlatformChannels, type StorageCleanRequest, type StorageRootSpec } from "@robinrun/shared";
+import {
+  PlatformChannels,
+  type StorageCleanRequest,
+  type StorageRootSpec,
+} from "@robindone/shared";
 import {
   createFsStorageCleaner,
   createStorageRootsResolver,
   createStorageService,
   getDataBaseDir,
   type IStorageService,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import { logger } from "./logger.js";
 import { createStorageScanWorkerRunner } from "./storageScanWorkerClient.js";
 

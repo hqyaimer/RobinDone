@@ -4,7 +4,7 @@
    复用聚合器投递链同一套机制（触发器文件夹即面板事件的处理台账）；不经聚合器——串行
    与不合并由面板服务的唤醒队列保证（验收 #2），这里按来即投。绑定会话忙时依赖
    sendPrompt 的 automation 输入排队（同触发器忙语义），不做 hold。 */
-import { makeTriggerSessionKey } from "@robinrun/shared";
+import { makeTriggerSessionKey } from "@robindone/shared";
 import type { TriggerDispatchPort } from "./contract.js";
 import { resolveBatchTriggerFromRegistry } from "./event-aggregator.js";
 import {

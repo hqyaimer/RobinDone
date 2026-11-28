@@ -1,4 +1,4 @@
-import type { PipSessionEvent } from "@robinrun/robinrun-cua/pip-session";
+import type { PipSessionEvent } from "@robindone/robindone-cua/pip-session";
 
 type FocusEvent = Extract<PipSessionEvent, { kind: "focus-changed" }>;
 

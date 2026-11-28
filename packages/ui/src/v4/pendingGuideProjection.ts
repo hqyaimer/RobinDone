@@ -1,4 +1,4 @@
-import type { QueueItem, QueueState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { QueueItem, QueueState } from "@robindone/shared/robindone-protocol-v4";
 
 export interface PendingGuideQueueProjection {
   pendingGuides: readonly QueueItem[];

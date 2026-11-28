@@ -7,7 +7,7 @@ import {
   dispatchAgentContactToTaskService,
   type AgentContactDispatchHostRequest,
   type AgentContactDispatchTaskService,
-} from "#src/robinrun-agent/agentContactDispatch.js";
+} from "#src/robindone-agent/agentContactDispatch.js";
 
 function makeTaskService(overrides?: Partial<AgentContactDispatchTaskService>) {
   const calls = {

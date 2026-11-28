@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import { delimiter } from "node:path";
 import {
-  buildRobinRunToolEnvPassthroughEnv,
-  sanitizeRobinRunRuntimeEnvInPlace,
-} from "@robinrun/shared";
+  buildRobinDoneToolEnvPassthroughEnv,
+  sanitizeRobinDoneRuntimeEnvInPlace,
+} from "@robindone/shared";
 import { appendPathEntries, buildRuntimeToolEnvPatch } from "./runtimeToolResolver.js";
 import {
   buildShellBootstrapPath,
@@ -124,7 +124,7 @@ export function buildLoginShellEnvPatch(
 
   return {
     ...patch,
-    ...buildRobinRunToolEnvPassthroughEnv(snapshot),
+    ...buildRobinDoneToolEnvPassthroughEnv(snapshot),
   };
 }
 
@@ -167,7 +167,7 @@ export function buildRuntimeProcessEnvPatch(
   const normalizedBaseEnv = normalizeRuntimeProcessEnv(baseEnv, platform);
   const loginShellPath = loginShellSnapshot?.PATH?.trim() || null;
   const loginShellEnvPatch = loginShellSnapshot ? buildLoginShellEnvPatch(loginShellSnapshot) : {};
-  const toolEnvPassthroughPatch = buildRobinRunToolEnvPassthroughEnv({
+  const toolEnvPassthroughPatch = buildRobinDoneToolEnvPassthroughEnv({
     ...normalizedBaseEnv,
     ...loginShellEnvPatch,
   });
@@ -188,7 +188,7 @@ export function buildRuntimeProcessEnvPatch(
     ...toolEnvPassthroughPatch,
     ...runtimeToolEnvPatch,
     // Python on Windows inherits the active code page (often GBK/936) when no explicit
-    // encoding is set. RobinRun/Bash tool output is consumed as UTF-8, so force Python
+    // encoding is set. RobinDone/Bash tool output is consumed as UTF-8, so force Python
     // subprocesses spawned by agents to emit UTF-8.
     ...PYTHON_UTF8_ENV_PATCH,
   };
@@ -264,7 +264,7 @@ export function initializeRuntimeProcessEnv(
   const runtimeProcessEnvPatch =
     preparedRuntimeProcessEnvPatch ?? buildRuntimeProcessEnvPatch(normalizedProcessEnv);
   // host/agent 运行时不能直接继承用户 shell 里的 NODE_ENV、http_proxy 或证书变量。
-  // 网络变量会先封存为 ROBINRUN_TOOL_ENV_PASSTHROUGH_JSON，只有 Bash/tool 子进程边界才恢复原名。
-  sanitizeRobinRunRuntimeEnvInPlace(process.env);
+  // 网络变量会先封存为 ROBINDONE_TOOL_ENV_PASSTHROUGH_JSON，只有 Bash/tool 子进程边界才恢复原名。
+  sanitizeRobinDoneRuntimeEnvInPlace(process.env);
   Object.assign(process.env, runtimeProcessEnvPatch);
 }

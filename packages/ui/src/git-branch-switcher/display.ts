@@ -4,7 +4,7 @@ import type {
   GitBranchMutationResult,
   GitFileChange,
   GitHeadRefType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface GitDirtySectionLike {
   changes: Array<{

@@ -5,8 +5,8 @@ import {
   buildRemoteWorkspaceIdentity,
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
-} from "@robinrun/shared";
-import type { RemoteProjectHost } from "@robinrun/services";
+} from "@robindone/shared";
+import type { RemoteProjectHost } from "@robindone/services";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
 import { RemoteConnectionProgressProvider } from "@/remote-connection-flow/ui/RemoteConnectionProgress.js";
 /* eslint-disable max-lines -- Root 当前集中编排启动、workspace shell wiring 和 Web 远控同步，先保持入口收口避免跨层状态拆散。 */
@@ -22,8 +22,8 @@ import {
   APP_RUNTIME_PREFERENCES_CHANGED_BROADCAST_CHANNEL,
   DesktopCommandIds,
   appRuntimePreferencesChangedBroadcastPayloadSchema,
-} from "@robinrun/shared";
-import type { RobinRunProjectEntry } from "@robinrun/shared";
+} from "@robindone/shared";
+import type { RobinDoneProjectEntry } from "@robindone/shared";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { Button } from "@/components/ui/button.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
@@ -44,19 +44,19 @@ import {
   useWebRemoteControlRendererActions,
 } from "@/project-sidebar/index.js";
 import { useTabPersistence, type WorkspacePersistenceGate } from "@/hooks/useTabPersistence.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「OAuth token 刷新」——依赖上游 OAuth 会话，恢复时取消本段注释
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「OAuth token 刷新」——依赖上游 OAuth 会话，恢复时取消本段注释
 // import { useTokenRefresh } from "@/hooks/useTokenRefresh.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { useWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { SSHDialog } from "@/SSHDialog.js";
 import { SettingsPage } from "@/SettingsPage.js";
 import { setPendingSettingsSectionIntent } from "@/lib/settingsNavigation.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「套餐升级弹窗 / Rewards / 登录欢迎页」——依赖上游 OAuth/SaaS，恢复时取消本段注释
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「套餐升级弹窗 / Rewards / 登录欢迎页」——依赖上游 OAuth/SaaS，恢复时取消本段注释
 // import { CodingPlanUpgradeDialogProvider } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 // import { RewardsProvider } from "@/rewards/RewardsProvider.js";
 // import { WelcomeScreen, type LoginCompleteReason } from "@/WelcomeScreen.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { setDefaultFileDisplayBasePath } from "@/lib/fileDisplay.js";
 import { readRendererLaunchTimings, shouldReportLaunchToInput } from "@/lib/launchToInputReport.js";
 import { reportUiLaunchToInput } from "@/lib/uiPerfArmsTelemetry.js";
@@ -68,9 +68,9 @@ import {
   shouldShowRootStartupLoading,
   shouldOpenFallbackWorkspaceAfterCreate,
 } from "@/lib/rootStartupGate.js";
-import { StoreProvider, useRobinRunStore } from "@/store/StoreProvider.js";
+import { StoreProvider, useRobinDoneStore } from "@/store/StoreProvider.js";
 import { setMcpStorePlatform } from "@/store/mcpStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { TabStoreProvider, useTabStore, useTabStoreApi } from "@/store/TabStoreProvider.js";
 import { isSettingsTab, isWorkspaceTab, type WorkspaceTabState } from "@/store/tabStore.js";
 import { logger } from "@/logger.js";
@@ -78,9 +78,9 @@ import { RootShell } from "@/root/RootShell.js";
 import { RootWorkspaceContent } from "@/root/RootWorkspaceContent.js";
 import { resolveConversationWorkspaceTarget } from "@/conversation-workspace-target/index.js";
 import { resolveRootWorkspaceShellTarget } from "@/root/rootWorkspaceShellTarget.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「首启职业引导壳」——上游营销引导，恢复时取消本段注释
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「首启职业引导壳」——上游营销引导，恢复时取消本段注释
 // import { OccupationOnboarding } from "@/onboarding/OccupationOnboarding.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { OnboardingDialog } from "@/onboarding/OnboardingDialog.js";
 import { useRemoteWorkspaceHistory } from "@/root/useRemoteWorkspaceHistory.js";
 import { useRemoteWorkspaceTabLifecycle } from "@/root/useRemoteWorkspaceTabLifecycle.js";
@@ -88,15 +88,15 @@ import { RemoteWorkspaceControllerProvider } from "@/remote/useRemoteWorkspaceCo
 import { useRootProviderStateRefresh } from "@/root/useRootProviderStateRefresh.js";
 import { useModelSelectionServiceView } from "@/hooks/useModelSelectionView.js";
 import { useRootProviderSettingsSnapshot } from "@/root/useRootProviderSettingsSnapshot.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Web 远控认证同步 / OAuth 启动恢复链」——依赖上游 OAuth/JWT，恢复时取消本段注释
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Web 远控认证同步 / OAuth 启动恢复链」——依赖上游 OAuth/JWT，恢复时取消本段注释
 // import { useWebRemoteControlAuthSync } from "@/web-remote-control/app/useWebRemoteControlAuthSync.js";
 // import { useRootOAuthEffects } from "@/root/useRootOAuthEffects.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-import { consumeRobinrunJwtInvalidRestartMarker } from "@/root/robinrunJwtInvalidRestartMarker.js";
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+import { consumeRobindoneJwtInvalidRestartMarker } from "@/root/robindoneJwtInvalidRestartMarker.js";
 import { useDesktopNativeThemeSync } from "@/root/useDesktopNativeThemeSync.js";
 import { useRootPlatformEffects } from "@/root/useRootPlatformEffects.js";
 import { useRootWorkspaceActions } from "@/root/useRootWorkspaceActions.js";
-import { RobinRunLauncher } from "@/robinrun/RobinRunLauncher.js";
+import { RobinDoneLauncher } from "@/robindone/RobinDoneLauncher.js";
 import { useBotBroadcastEffects } from "@/root/useBotBroadcastEffects.js";
 import { registerBaseWorkspaceServices } from "@/store/remoteWorkspaceSessionStore.js";
 import type { RootProps } from "@/root/types.js";
@@ -116,9 +116,9 @@ import {
   markCodeCommentRemoved,
 } from "@/lib/codeCommentContext.js";
 import { useCodeCommentPreviewStore } from "@/store/codeCommentPreviewStore.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「营销触达」——上游营销轮询，恢复时取消本段注释
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「营销触达」——上游营销轮询，恢复时取消本段注释
 // import { MarketingTouchProvider } from "@/components/marketing-touch/MarketingTouchProvider.js";
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 import { setUiPerfArmsReporter } from "@/lib/uiPerfArmsTelemetry.js";
 import { setSessionOpenArmsReporter } from "@/lib/sessionOpenArmsTelemetry.js";
 import { setSendFunnelArmsReporter } from "@/lib/sendFunnelArmsTelemetry.js";
@@ -176,7 +176,7 @@ export function Root(props: RootProps) {
           <PlatformProvider platform={props.platform}>
             <StoreProvider
               broadcastService={props.services.broadcastService}
-              /* RobinRun(2026-11-22): [hide-upstream-account] 登录链路已隐藏：OAuth 会话恢复不再运行，
+              /* RobinDone(2026-11-22): [hide-upstream-account] 登录链路已隐藏：OAuth 会话恢复不再运行，
                  初始即视为"无恢复中会话"，避免启动门禁永远等待（恢复时改回 true） */
               initialIsRestoringOAuthSession={false}
             >
@@ -187,7 +187,7 @@ export function Root(props: RootProps) {
                       <AssistantCodeCommentFeatureProvider
                         enabled={props.assistantCodeCommentCardsEnabled}
                       >
-                        {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「套餐升级弹窗 / Rewards / 营销触达」三个
+                        {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏「套餐升级弹窗 / Rewards / 营销触达」三个
                             Provider 包裹——均依赖上游 OAuth/SaaS。摘除升级弹窗 Provider 后，全部
                             openCodingPlanUpgrade 调用点经可选 context 自动降级为 no-op（不崩）。
                             恢复时取消下方注释并还原包裹层级 */}
@@ -201,7 +201,7 @@ export function Root(props: RootProps) {
                         {/*     </MarketingTouchProvider> */}
                         {/*   </RewardsProvider> */}
                         {/* </CodingPlanUpgradeDialogProvider> */}
-                        {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束 */}
+                        {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束 */}
                       </AssistantCodeCommentFeatureProvider>
                     </WebRemoteControlFeatureProvider>
                   </DiffsWorkerPoolProvider>
@@ -278,38 +278,38 @@ function RootInner({
   // 工作区级 ServiceProvider 内（远程 Host 的 accessor），由它们取数会拿到另一台 Host 的答案。
   useDynamicWorkflowAvailabilityLoader(services.codingPlanSubscriptionService);
 
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const handleRemoteConnectionTargetChange = useSourceServerUpdateNotifications({
     enabled: isDesktop === true,
     management: services.sourceServerManagementService,
   });
-  const theme = useRobinRunStore((state) => state.theme);
-  const user = useRobinRunStore((state) => state.user);
-  const isRestoringOAuthSession = useRobinRunStore((state) => state.isRestoringOAuthSession);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Web 远控认证同步」——把登录态广播给远控配对通道，恢复时取消本段注释
+  const theme = useRobinDoneStore((state) => state.theme);
+  const user = useRobinDoneStore((state) => state.user);
+  const isRestoringOAuthSession = useRobinDoneStore((state) => state.isRestoringOAuthSession);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Web 远控认证同步」——把登录态广播给远控配对通道，恢复时取消本段注释
   // useWebRemoteControlAuthSync(platform, services.oauthService, user?.id, isRestoringOAuthSession);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-  const setUser = useRobinRunStore((state) => state.setUser);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「OAuth 恢复落定」——初始值已置 false 且无恢复链，恢复时取消本段注释
-  // const setIsRestoringOAuthSession = useRobinRunStore((state) => state.setIsRestoringOAuthSession);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-  const setOAuthError = useRobinRunStore((state) => state.setOAuthError);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「OAuth 轮询状态」——仅 useRootOAuthEffects 消费，恢复时取消本段注释
-  // const oauthPollingActive = useRobinRunStore((state) => state.oauthPollingActive);
-  // const setOAuthPollingActive = useRobinRunStore((state) => state.setOAuthPollingActive);
-  // const markOAuthSuccess = useRobinRunStore((state) => state.markOAuthSuccess);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+  const setUser = useRobinDoneStore((state) => state.setUser);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「OAuth 恢复落定」——初始值已置 false 且无恢复链，恢复时取消本段注释
+  // const setIsRestoringOAuthSession = useRobinDoneStore((state) => state.setIsRestoringOAuthSession);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+  const setOAuthError = useRobinDoneStore((state) => state.setOAuthError);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「OAuth 轮询状态」——仅 useRootOAuthEffects 消费，恢复时取消本段注释
+  // const oauthPollingActive = useRobinDoneStore((state) => state.oauthPollingActive);
+  // const setOAuthPollingActive = useRobinDoneStore((state) => state.setOAuthPollingActive);
+  // const markOAuthSuccess = useRobinDoneStore((state) => state.markOAuthSuccess);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const {
     settings: appSettings,
     loading: settingsLoading,
     refresh: refreshAppSettings,
     update: updateAppSettings,
   } = useSettings();
-  // RobinRun 去启动台裁决（2026-11-15）：注册表是冷启动“自动打开最近项目”的唯一候选来源。
+  // RobinDone 去启动台裁决（2026-11-15）：注册表是冷启动“自动打开最近项目”的唯一候选来源。
   // null 表示 settings 尚未就绪（启动加载屏继续等待）；读取失败时按空注册表回落首建启动台，
   // 不把启动卡死在加载屏。
-  const robinrunProjectRegistry = useMemo<RobinRunProjectEntry[] | null>(() => {
-    if (appSettings) return appSettings.robinrunProjects ?? [];
+  const robindoneProjectRegistry = useMemo<RobinDoneProjectEntry[] | null>(() => {
+    if (appSettings) return appSettings.robindoneProjects ?? [];
     return settingsLoading ? null : [];
   }, [appSettings, settingsLoading]);
   // docs/dynamic-workflow/launch.md「The user's choice」：设置里的动态工作流选择变化后，通知本窗口
@@ -317,18 +317,18 @@ function RootInner({
   useDynamicWorkflowUserModeSync({
     settingsLoaded: Boolean(appSettings),
     userMode: appSettings?.dynamicWorkflowMode,
-    robinrunAgentService: services.robinrunAgentService,
+    robindoneAgentService: services.robindoneAgentService,
     codingPlanSubscriptionService: services.codingPlanSubscriptionService,
   });
   const [welcomeScreenOpenReason, setWelcomeScreenOpenReason] =
     useState<WelcomeScreenOpenReason | null>(() =>
-      consumeRobinrunJwtInvalidRestartMarker() ? "session-expired" : null,
+      consumeRobindoneJwtInvalidRestartMarker() ? "session-expired" : null,
     );
   const [providerFamilyDomainMigrationComplete, setProviderFamilyDomainMigrationComplete] =
     useState(false);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登录入口请求」——provider 连接请求拉起登录页，恢复时取消本段注释
-  // const loginEntryRequest = useRobinRunStore((state) => state.loginEntryRequest);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「登录入口请求」——provider 连接请求拉起登录页，恢复时取消本段注释
+  // const loginEntryRequest = useRobinDoneStore((state) => state.loginEntryRequest);
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const rootModelSelectionRead = useModelSelectionServiceView(services.modelSelectionService);
   const rootModelSelectionView =
     rootModelSelectionRead.state.status === "ready" ? rootModelSelectionRead.state.view : null;
@@ -359,7 +359,7 @@ function RootInner({
   const { connectionLogs: remoteConnectionLogs, resetConnectionLogs: resetRemoteConnectionLogs } =
     useRemoteConnectionLogs(remoteConnectionRequestId);
   const [isBootstrappingInitialWorkspace, setIsBootstrappingInitialWorkspace] = useState(
-    // RobinRun（2026-11-15 去启动台裁决）：桌面主链路冷启动一律先停在启动加载屏，
+    // RobinDone（2026-11-15 去启动台裁决）：桌面主链路冷启动一律先停在启动加载屏，
     // 等自动打开最近项目的 effect 落地（打开成功 / 零项目回落首建页）再放行；
     // 手机远控根与带注入路径的入口保持原判定。
     Boolean(initialWorkspaceAbsPath) || (isDesktop === true && !webRemoteControlWorkspaceSwitcher),
@@ -389,9 +389,11 @@ function RootInner({
           return;
         }
         void refreshAppSettings();
-        void services.robinrunAgentService.syncAppRuntimePreferences(parsed.data).catch((error) => {
-          logger.warn("[settings] 同步跨窗口运行时偏好失败", error);
-        });
+        void services.robindoneAgentService
+          .syncAppRuntimePreferences(parsed.data)
+          .catch((error) => {
+            logger.warn("[settings] 同步跨窗口运行时偏好失败", error);
+          });
         void services.botsService.syncAppRuntimePreferences(parsed.data).catch((error) => {
           logger.warn("[settings] 同步跨窗口 Bot 运行时偏好失败", error);
         });
@@ -430,14 +432,14 @@ function RootInner({
     refreshAppSettings,
     services.botsService,
     services.broadcastService,
-    services.robinrunAgentService,
+    services.robindoneAgentService,
   ]);
 
   useEffect(() => {
     if (!appSettings) {
       return;
     }
-    void services.robinrunAgentService
+    void services.robindoneAgentService
       .syncAppRuntimePreferences({
         askUserQuestionAutoResolutionEnabled:
           appSettings.askUserQuestionAutoResolutionEnabled !== false,
@@ -459,7 +461,7 @@ function RootInner({
     appSettings?.askUserQuestionAutoResolutionEnabled,
     appSettings?.modelIoFullRetentionEnabled,
     services.botsService,
-    services.robinrunAgentService,
+    services.robindoneAgentService,
   ]);
 
   const tabs = useTabStore((state) => state.tabs);
@@ -640,10 +642,10 @@ function RootInner({
       refreshProviderState,
       readModelSelectionView: readRootModelSelectionView,
       setLoginEntryOpen: () => {
-        // RobinRun M1：启动登录门禁整体停用——未配置 provider 不再强制登录，
+        // RobinDone M1：启动登录门禁整体停用——未配置 provider 不再强制登录，
         // 冷启动直接进项目启动台，LLM 在设置页按需自由配置。
         // 手动登录入口（provider-request / manual-login / session-expired）不受影响；
-        // 未来 RobinRun 自有账号体系在此接入。
+        // 未来 RobinDone 自有账号体系在此接入。
       },
     });
   const isResolvingProviderStartupState = shouldResolveProviderStartupState({
@@ -653,7 +655,7 @@ function RootInner({
   });
   const isStartupProviderLoginEntryOpen = welcomeScreenOpenReason === "startup-provider-required";
   // 首次安装时 provider 登录入口判定晚于 workspace 注入，ChatView 会先 mount 并触发草稿预热。
-  // 这里把 provider 启动检查纳入 workspace 恢复门禁，避免未连接账号前启动 RobinRun session。
+  // 这里把 provider 启动检查纳入 workspace 恢复门禁，避免未连接账号前启动 RobinDone session。
   const canRestoreWorkspaceSession =
     !isResolvingStartupAuthState &&
     !isResolvingProviderStartupState &&
@@ -714,19 +716,19 @@ function RootInner({
   const handleOpenDirectoryBrowser = useCallback(() => {
     setDirectoryBrowserOpen(true);
   }, []);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「JWT 失效重登」——无登录态后永不触发，恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「JWT 失效重登」——无登录态后永不触发，恢复时取消本段注释
   // const handleReauthenticationRequired = useCallback(() => {
   //   setWelcomeScreenOpenReason("session-expired");
   // }, []);
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const {
     setWorkspaceActionError,
     startDraftInWorkspace,
     startNewTaskFromActiveWorkspace,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登出」——登录链路已隐藏，恢复时取消本段注释
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「登出」——登录链路已隐藏，恢复时取消本段注释
     // handleLogout,
     // handleEnsureConversationWorkspace,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     handleSelectProject,
     handleSelectConversationWorkspace,
     handleResolveConversationWorkspace,
@@ -752,11 +754,11 @@ function RootInner({
     updateAppSettings,
     setOAuthError,
     setUser,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登出后拉起登录页」——登录链路已隐藏，恢复时取消本段注释
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「登出后拉起登录页」——登录链路已隐藏，恢复时取消本段注释
     // onProviderFamilyDomainClearedAfterLogout: () => {
     //   setWelcomeScreenOpenReason("logout-provider-required");
     // },
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     userId: user?.id,
     onOpenRemoteConnection: allowRemoteWorkspace ? handleOpenRemoteConnection : undefined,
     openRemoteProjectWorkspace: openPreparedRemoteProjectWorkspace,
@@ -778,7 +780,7 @@ function RootInner({
       projectId?: string | null;
     }) => {
       // 桌面重连只恢复连接，不得把已选会话覆盖成草稿；手机仍沿用 replayable 入口。
-      const selectedTask = useRobinRunSessionStore
+      const selectedTask = useRobinDoneSessionStore
         .getState()
         .getWorkspaceState(workspacePath, workspaceIdentity).activeTaskId;
       if (!isDesktop || !restoreSelection || !selectedTask) {
@@ -929,7 +931,7 @@ function RootInner({
         // 再打开首屏门禁，避免 Composer 按未归类范围读取并预热同目录的项目草稿。
         for (const tab of tabStoreApi.getState().tabs) {
           if (!isWorkspaceTab(tab)) continue;
-          const workspace = useRobinRunSessionStore
+          const workspace = useRobinDoneSessionStore
             .getState()
             .getWorkspaceState(tab.workspacePath, tab.workspaceIdentity);
           if (workspace.activeTaskId || workspace.draftProjectId !== undefined) continue;
@@ -945,7 +947,7 @@ function RootInner({
             V4_DRAFT_SCOPE_ROOT,
             scope,
           );
-          useRobinRunSessionStore
+          useRobinDoneSessionStore
             .getState()
             .startDraft(tab.workspacePath, undefined, tab.workspaceIdentity, {
               projectId: scope.projectId,
@@ -1006,11 +1008,11 @@ function RootInner({
     <RequestSecurityWorkspaceBridge workspaceTabs={windowWorkspaceTabs} />
   ) : null;
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「OAuth token 刷新挂载」——现状本就是 no-op，恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「OAuth token 刷新挂载」——现状本就是 no-op，恢复时取消本段注释
   // const { tryRefresh, clearCredentials } = useTokenRefresh();
   // void tryRefresh;
   // void clearCredentials;
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   // 启动阻塞是桌面窗口保护期，手机 Web 远控在进入 Root 前已有配对/加载页。
   // Web 端继续使用该 gate 会在 workspace tab 注入前渲染空 RootShell，露出浏览器白底。
   const isStartupRenderBlocked = shouldShowRootStartupLoading({
@@ -1079,7 +1081,7 @@ function RootInner({
     hasCompletedFullTabRestore: hasCompletedFullRestore,
     intl,
     isRestoringOAuthSession: isResolvingStartupAuthState || providerStartupSyncPending,
-    robinrunProjects: robinrunProjectRegistry,
+    robindoneProjects: robindoneProjectRegistry,
   });
 
   useEffect(() => {
@@ -1102,7 +1104,7 @@ function RootInner({
     });
   }, [platform]);
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「OAuth 启动恢复链」——会话恢复/轮询/deep-link/JWT 失效提示
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「OAuth 启动恢复链」——会话恢复/轮询/deep-link/JWT 失效提示
   // 全部依赖上游 OAuth；摘除后补下方两个一次性副作用维持启动握手。恢复时取消注释并删除补充 effect
   // useRootOAuthEffects({
   //   accountIntentKey: JSON.stringify([
@@ -1122,8 +1124,8 @@ function RootInner({
   //   markOAuthSuccess,
   //   onReauthenticationRequired: handleReauthenticationRequired,
   // });
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
-  // RobinRun(2026-11-22): [hide-upstream-account] 补充副作用：原由 useRootOAuthEffects 的 deep-link effect
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 补充副作用：原由 useRootOAuthEffects 的 deep-link effect
   // 调用 platform.notifyRendererReady()，desktop 主进程 appLaunchCoordinator 依赖此握手放行启动流程。
   useEffect(() => {
     platform.notifyRendererReady();
@@ -1213,7 +1215,7 @@ function RootInner({
   });
 
   useEffect(() => {
-    // RobinRun：桌面端冷启动停在项目启动台，不再兜底创建默认 workspace
+    // RobinDone：桌面端冷启动停在项目启动台，不再兜底创建默认 workspace
     // （conversation workspace 只作为会话库 backing，打开项目时按需处理）。
     // web 端保留上游兜底行为。
     if (isDesktop) {
@@ -1295,7 +1297,7 @@ function RootInner({
     );
   }, [isSettingsTabActive, workspaceShellPath]);
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登录入口拉起 WelcomeScreen」四条路径
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「登录入口拉起 WelcomeScreen」四条路径
   // （provider-request / manual-login / session-expired / logout-provider-required）与登录完成回调。
   // welcomeScreenOpenReason state 保留（启动门禁仍读取），所有 setter 已注释故分支不可达。
   // 恢复时取消本段注释
@@ -1343,7 +1345,7 @@ function RootInner({
   //     workspaceShellPath,
   //   ],
   // );
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   const remoteProjectIntentEpoch = useRef(0);
   const [remoteProjectSelection, setRemoteProjectSelection] = useState<{
     host: RemoteProjectHost;
@@ -1564,10 +1566,10 @@ function RootInner({
     onCreateTask: handleCreateTask,
     onOpenWorkspace: handleOpenWorkspace,
     allowOpenWorkspace,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「设置页登录/登出入口」——恢复时取消本段注释
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「设置页登录/登出入口」——恢复时取消本段注释
     // onLogin: !user ? handleOpenLoginEntry : undefined,
     // onLogout: user ? handleLogout : undefined,
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     user,
   };
 
@@ -1579,7 +1581,7 @@ function RootInner({
         {requestSecurityBridgeNode}
         {remoteConnectionDialog}
         {directoryBrowserDialog}
-        {/* 修复原因：HTML 启动壳已经展示 RobinRun SVG，但 React 接管 root 后旧壳会被整棵替换。
+        {/* 修复原因：HTML 启动壳已经展示 RobinDone SVG，但 React 接管 root 后旧壳会被整棵替换。
             之前阻塞恢复 tab / 初始 workspace 注入时重新渲染纯文字“加载中...”，所以启动被拆成两套 loading。
             这里复用同一套 SVG 启动画面，只把文案保留到 aria-label，保证视觉始终连续且不牺牲可访问性。 */}
         <RootStartupLoading label={loadingLabel} />
@@ -1587,7 +1589,7 @@ function RootInner({
     );
   }
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「登录欢迎页渲染」——所有打开路径已注释，分支不可达。恢复时取消本段注释
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「登录欢迎页渲染」——所有打开路径已注释，分支不可达。恢复时取消本段注释
   // if (welcomeScreenOpenReason) {
   //   return (
   //     <RootShell>
@@ -1599,7 +1601,7 @@ function RootInner({
   //     </RootShell>
   //   );
   // }
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 
   if (!workspaceShellPath && isSettingsTabActive) {
     return (
@@ -1648,13 +1650,13 @@ function RootInner({
         </RootShell>
       );
     }
-    // RobinRun（2026-11-15 去启动台裁决）：冷启动由“自动打开最近项目”effect 接管，
+    // RobinDone（2026-11-15 去启动台裁决）：冷启动由“自动打开最近项目”effect 接管，
     // 有项目时不再出现启动台。这里只剩三种残留态：
     // 1) settings 未就绪或自动打开仍在进行 → 维持启动加载屏（屏障由 isBootstrappingInitialWorkspace 驱动）；
-    // 2) 注册表为空 / 候选目录全部失效 → 启动台退役为“仅首建页”（RobinRunLauncher）；
+    // 2) 注册表为空 / 候选目录全部失效 → 启动台退役为“仅首建页”（RobinDoneLauncher）；
     // 3) 手机远控根（web-remote-replayable）不渲染桌面启动台，保持原行为。
     if (isDesktop && !webRemoteControlWorkspaceSwitcher) {
-      if (isBootstrappingInitialWorkspace || robinrunProjectRegistry === null) {
+      if (isBootstrappingInitialWorkspace || robindoneProjectRegistry === null) {
         const loadingLabel = intl.formatMessage({ id: "common.loading" });
         return (
           <RootShell>
@@ -1669,7 +1671,7 @@ function RootInner({
       return (
         <RootShell>
           {requestSecurityBridgeNode}
-          <RobinRunLauncher
+          <RobinDoneLauncher
             onOpenProject={handleSelectProject}
             onOpenWorkspaceViaPicker={() => void handleOpenWorkspace()}
           />
@@ -1685,7 +1687,7 @@ function RootInner({
       {requestSecurityBridgeNode}
       {remoteConnectionDialog}
       {directoryBrowserDialog}
-      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏「首启职业引导壳」——上游营销引导（判定依赖账号记录），
+      {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏「首启职业引导壳」——上游营销引导（判定依赖账号记录），
           摘壳后 children 原样渲染，行为等价于"永不弹引导"。恢复时取消包裹注释 */}
       {/* <OccupationOnboarding
         showWindowControls={Boolean(isWindowsDesktop || (isDesktop && !isMacDesktop))}
@@ -1741,10 +1743,10 @@ function RootInner({
               remoteWorkspaceSessions={remoteWorkspaceSessions}
               allowRemoteWorkspace={allowRemoteWorkspace}
               handleBackFromSettings={handleBackFromSettings}
-              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「工作区登录/登出入口」——恢复时取消本段注释
+              // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「工作区登录/登出入口」——恢复时取消本段注释
               // handleLogout={user ? handleLogout : undefined}
               // onLogin={!user ? handleOpenLoginEntry : undefined}
-              // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+              // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
               user={user}
               reconnectingRemoteWorkspaceKeys={reconnectingRemoteWorkspaceKeys}
               remoteWorkspaceRecoveryByWorkspaceKey={remoteWorkspaceRecoveryByWorkspaceKey}
@@ -1766,7 +1768,7 @@ function RootInner({
         </RemoteWorkspaceControllerProvider>
       )}
       {onboardingDialog}
-      {/* RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束（OccupationOnboarding 闭标签） */}
+      {/* RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束（OccupationOnboarding 闭标签） */}
       {/* </OccupationOnboarding> */}
     </RootShell>
   );

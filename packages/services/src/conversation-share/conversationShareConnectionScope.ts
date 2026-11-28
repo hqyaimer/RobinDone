@@ -1,15 +1,15 @@
-import { Event as RpcEvent } from "@robinrun/rpc";
+import { Event as RpcEvent } from "@robindone/rpc";
 import type { IConversationShareService } from "#src/conversation-share/conversationShare.js";
-import type { IRobinRunAgentService } from "#src/robinrun-agent/robinrunAgent.js";
+import type { IRobinDoneAgentService } from "#src/robindone-agent/robindoneAgent.js";
 import {
-  readTrustedRobinRunAgentV4Connection,
-  withTrustedRobinRunAgentV4Connection,
-  type RobinRunAgentV4ConnectionContext,
-} from "#src/robinrun-agent/robinrunAgentConnectionScope.js";
+  readTrustedRobinDoneAgentV4Connection,
+  withTrustedRobinDoneAgentV4Connection,
+  type RobinDoneAgentV4ConnectionContext,
+} from "#src/robindone-agent/robindoneAgentConnectionScope.js";
 import { conversationShareConnectionScopeFactory } from "#src/conversation-share/conversationShareService.js";
 
 type ConversationShareAgentService = Pick<
-  IRobinRunAgentService,
+  IRobinDoneAgentService,
   | "conversationRowsRangeV4"
   | "conversationFileChangesV4"
   | "conversationAttachmentReadV4"
@@ -35,14 +35,14 @@ export function scopeConversationShareServiceForAttachment(
   service: IConversationShareService,
   clientMode: "desktop-continuous" | "web-remote-replayable",
   agentService?: ConversationShareAgentService,
-  connection?: RobinRunAgentV4ConnectionContext,
+  connection?: RobinDoneAgentV4ConnectionContext,
 ): IConversationShareService {
   if (clientMode === "desktop-continuous") {
     // R3 Share 运行在 Source：沿同一受信 transport 传递 Desktop attachment 身份，
     // 不读取控制端 JWT，也不为 Share 另建 hello/connection/subscription。
     if (connection?.role === "trusted-host-relay") {
       const forInput = (input: unknown) => {
-        const downstream = readTrustedRobinRunAgentV4Connection(input);
+        const downstream = readTrustedRobinDoneAgentV4Connection(input);
         if (
           !downstream ||
           downstream.clientMode !== "desktop-continuous" ||
@@ -56,19 +56,19 @@ export function scopeConversationShareServiceForAttachment(
         const scopedAgent: ConversationShareAgentService = {
           conversationRowsRangeV4: (params) =>
             agentService.conversationRowsRangeV4(
-              withTrustedRobinRunAgentV4Connection(params, downstream),
+              withTrustedRobinDoneAgentV4Connection(params, downstream),
             ),
           conversationFileChangesV4: (params) =>
             agentService.conversationFileChangesV4(
-              withTrustedRobinRunAgentV4Connection(params, downstream),
+              withTrustedRobinDoneAgentV4Connection(params, downstream),
             ),
           conversationAttachmentReadV4: (params) =>
             agentService.conversationAttachmentReadV4(
-              withTrustedRobinRunAgentV4Connection(params, downstream),
+              withTrustedRobinDoneAgentV4Connection(params, downstream),
             ),
           conversationAttachmentStatV4: (params) =>
             agentService.conversationAttachmentStatV4(
-              withTrustedRobinRunAgentV4Connection(params, downstream),
+              withTrustedRobinDoneAgentV4Connection(params, downstream),
             ),
         };
         return service[conversationShareConnectionScopeFactory](scopedAgent);
@@ -90,17 +90,17 @@ export function scopeConversationShareServiceForAttachment(
       return {
         getCapabilities: () => service.getCapabilities(),
         preflight: (input) =>
-          service.preflight(withTrustedRobinRunAgentV4Connection(input, connection)),
+          service.preflight(withTrustedRobinDoneAgentV4Connection(input, connection)),
         publish: (input, id) =>
-          service.publish(withTrustedRobinRunAgentV4Connection(input, connection), id),
+          service.publish(withTrustedRobinDoneAgentV4Connection(input, connection), id),
         onDynamicPublishProgress: (id) => service.onDynamicPublishProgress(id),
         importShare: (input, id) =>
-          service.importShare(withTrustedRobinRunAgentV4Connection(input, connection), id),
+          service.importShare(withTrustedRobinDoneAgentV4Connection(input, connection), id),
         onDynamicImportProgress: (id) => service.onDynamicImportProgress(id),
         getImportedConversation: (input) => service.getImportedConversation(input),
         getPreview: (code) => service.getPreview(code),
         getContinuation: (input) =>
-          service.getContinuation(withTrustedRobinRunAgentV4Connection(input, connection)),
+          service.getContinuation(withTrustedRobinDoneAgentV4Connection(input, connection)),
       };
     }
     if (agentService) return service[conversationShareConnectionScopeFactory](agentService);

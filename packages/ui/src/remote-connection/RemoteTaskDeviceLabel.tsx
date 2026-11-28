@@ -1,8 +1,8 @@
 import { useRemoteProjectPresentationFacts } from "@/hooks/RemoteProjectPresentationContext.js";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 import { useRemoteDevicePresentationInput } from "@/hooks/useSourceServerStatuses.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { resolveRemoteConnectionPresentation } from "@/lib/remoteConnectionPresentation.js";
 import {
   resolveTaskSourceLabel,
@@ -16,7 +16,7 @@ export function RemoteTaskDeviceLabel({
   task: TaskSourceAttributionInput;
   className?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const sourceServerId =
     task.sourceServerId ??
     parseRemoteWorkspaceIdentity(task.workspaceIdentity ?? "")?.sourceServerId;

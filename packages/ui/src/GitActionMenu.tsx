@@ -13,8 +13,8 @@ import type {
   GitCommitMessageConversationContext,
   GitIdentity,
   GitRepositorySummary,
-  RobinRunTaskChangeSummary,
-} from "@robinrun/shared";
+  RobinDoneTaskChangeSummary,
+} from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { Command, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command.js";
@@ -46,7 +46,7 @@ import {
   getCurrentSessionFilePaths,
 } from "@/git-action-menu/currentSessionFileScope.js";
 import { useServices } from "@/hooks/useServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getErrorMessage } from "@/lib/errorMessage.js";
 import { runUserAction } from "@/lib/userActionTelemetry.js";
 import { formatCommandShortcutLabel, matchesPrimaryShortcut } from "@/lib/keyboardShortcuts.js";
@@ -66,7 +66,7 @@ interface GitActionMenuProps {
   workspacePath: string;
   workspaceIdentity?: string;
   gitSummary: GitRepositorySummary;
-  activeTaskChangeSummary?: RobinRunTaskChangeSummary | null;
+  activeTaskChangeSummary?: RobinDoneTaskChangeSummary | null;
   commitMessageConversationContext?: GitCommitMessageConversationContext | null;
   onRefreshGit: () => void;
   className?: string;
@@ -103,7 +103,7 @@ function isCommitMessageTextAreaTarget(target: EventTarget | null): target is HT
 interface GitCommitDialogState {
   summary: GitRepositorySummary;
   identity: GitIdentity | null;
-  activeTaskChangeSummary: RobinRunTaskChangeSummary | null;
+  activeTaskChangeSummary: RobinDoneTaskChangeSummary | null;
   stagedFiles: GitCommitPreviewFile[];
   unstagedFiles: GitCommitPreviewFile[];
 }
@@ -206,7 +206,7 @@ function GitCommitDialog({
   onSubmitAndPush,
   onPushOnly,
 }: GitCommitDialogProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [selectedActionId, setSelectedActionId] = useState<CommitDialogActionId>("commit");
   const messageTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageInputFocusedOnOpenRef = useRef(false);
@@ -601,7 +601,7 @@ function GitPushDialog({
   onOpenChange,
   onSubmit,
 }: GitPushDialogProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const numberFormatter = new Intl.NumberFormat(locale);
   const [errorCopied, setErrorCopied] = useState(false);
   const descriptionId = gitSummary.trackingBranchName
@@ -831,7 +831,7 @@ export function GitActionMenu({
   triggerLayout = "header",
 }: GitActionMenuProps) {
   const { gitService } = useServices();
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [commitDialogOpen, setCommitDialogOpen] = useState(false);
   const [commitDialogLoading, setCommitDialogLoading] = useState(false);
   const [commitDialogState, setCommitDialogState] = useState<GitCommitDialogState | null>(null);

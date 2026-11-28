@@ -306,13 +306,13 @@ describe("native search build", () => {
     ).toBe("https://example.test/ripgrep");
     expect(
       resolveNativeSearchRipgrepDownloadBaseUrl({
-        ROBINRUN_DEPS_BASE_URL: "https://deps.example.test/zcode/deps/",
+        ROBINDONE_DEPS_BASE_URL: "https://deps.example.test/zcode/deps/",
       }),
     ).toBe("https://deps.example.test/zcode/deps/native-search-tools/ripgrep-v14.1.1-1");
   });
 
   it("producer 按下载契约生成稳定的 tar.gz 与 Windows zip", async () => {
-    const root = mkdtempSync(join(tmpdir(), "robinrun-native-search-package-test-"));
+    const root = mkdtempSync(join(tmpdir(), "robindone-native-search-package-test-"));
     try {
       for (const [platform, arch] of [
         ["darwin", "arm64"],
@@ -371,7 +371,7 @@ describe("native search build", () => {
   });
 
   it("producer 可以生成候选归档，固定摘要由发布边界校验", async () => {
-    const root = mkdtempSync(join(tmpdir(), "robinrun-native-search-unpinned-release-test-"));
+    const root = mkdtempSync(join(tmpdir(), "robindone-native-search-unpinned-release-test-"));
     try {
       const prebuiltPlan = resolveNativeSearchPrebuiltPlan({
         platform: "linux",
@@ -399,7 +399,7 @@ describe("native search build", () => {
   });
 
   it("Windows zip producer 在不同时区生成相同字节", () => {
-    const root = mkdtempSync(join(tmpdir(), "robinrun-native-search-zip-timezone-test-"));
+    const root = mkdtempSync(join(tmpdir(), "robindone-native-search-zip-timezone-test-"));
     try {
       const prebuiltPlan = resolveNativeSearchPrebuiltPlan({
         platform: "win32",
@@ -548,7 +548,7 @@ describe("native search build", () => {
     ["win32", "x64", "ugrep", "ugrep.exe"],
     ["win32", "x64", "ripgrep", "rg.exe"],
   ] as const)("为 %s-%s 生成 %s sidecar 路径", (platform, arch, toolId, binaryName) => {
-    const outputDir = join(tmpdir(), `robinrun-native-search-${platform}-${arch}`);
+    const outputDir = join(tmpdir(), `robindone-native-search-${platform}-${arch}`);
     const plan = resolveNativeSearchBuildPlan({ platform, arch, outputDir });
 
     expect(plan.platformKey).toBe(`${platform}-${arch}`);
@@ -617,8 +617,8 @@ describe("native search build", () => {
   });
 
   it("bfs 构建 flags 不记录随机临时目录", () => {
-    const sourcePath = "/tmp/robinrun-native-search-build-random/sources/bfs";
-    const prefix = "/tmp/robinrun-native-search-build-random/prefix";
+    const sourcePath = "/tmp/robindone-native-search-build-random/sources/bfs";
+    const prefix = "/tmp/robindone-native-search-build-random/prefix";
     const config = resolveNativeUnixBuildConfig({
       platform: "darwin",
       arch: "arm64",
@@ -636,7 +636,7 @@ describe("native search build", () => {
     expect(env.EXTRA_LDLIBS).toBe("-lonig");
     expect(env.PKG_CONFIG).toBe("true");
     expect(env.VERSION).toBe("4.1.1");
-    expect(Object.values(env).join(" ")).not.toContain("robinrun-native-search-build-random");
+    expect(Object.values(env).join(" ")).not.toContain("robindone-native-search-build-random");
   });
 
   it("Linux verifier 应拒绝 bfs/ugrep 动态依赖 C++ runtime", () => {
@@ -800,7 +800,7 @@ describe("native search build", () => {
     expect(x64Config).not.toHaveProperty("cargo");
     expect(arm64Config).not.toHaveProperty("cargo");
     expect(windowsNativeSearchCmake).toMatch(
-      /target_compile_options\(robinrun_ugrep_contract INTERFACE[\s\S]*?\/utf-8[\s\S]*?\n\)/,
+      /target_compile_options\(robindone_ugrep_contract INTERFACE[\s\S]*?\/utf-8[\s\S]*?\n\)/,
     );
     expect(() =>
       resolveNativeWindowsBuildConfig({
@@ -813,7 +813,7 @@ describe("native search build", () => {
   });
 
   it("Windows verifier 读取 PE machine/import table 并拒绝动态 CRT", () => {
-    const root = mkdtempSync(join(tmpdir(), "robinrun-native-search-pe-test-"));
+    const root = mkdtempSync(join(tmpdir(), "robindone-native-search-pe-test-"));
     try {
       const validPath = join(root, "valid-ugrep.exe");
       const validArm64Path = join(root, "valid-arm64-ugrep.exe");
@@ -888,7 +888,7 @@ describe("native search build", () => {
   });
 
   it("下载侧静态 verifier 应按 Mach-O、ELF 与 PE header 拒绝错误目标架构", () => {
-    const root = mkdtempSync(join(tmpdir(), "robinrun-native-search-target-verifier-test-"));
+    const root = mkdtempSync(join(tmpdir(), "robindone-native-search-target-verifier-test-"));
     try {
       const machoPath = join(root, "darwin-arm64");
       const elfPath = join(root, "linux-x64");

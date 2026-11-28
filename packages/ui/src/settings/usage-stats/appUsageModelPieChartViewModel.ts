@@ -1,4 +1,4 @@
-import type { AppUsageSnapshot } from "@robinrun/shared";
+import type { AppUsageSnapshot } from "@robindone/shared";
 import type { ChartConfig } from "@/components/ui/chart.js";
 import { getAppUsageModelChartColor } from "@/settings/usage-stats/appUsageChartPalette.js";
 

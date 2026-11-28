@@ -1,9 +1,9 @@
 import type { BrowserWindow, NativeImage } from "electron";
 import {
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-  buildRobinRunEndpointUrls,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
+  buildRobinDoneEndpointUrls,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface ArchitectureMismatch {
   /** 当前运行的二进制架构，例如 x64。 */
@@ -50,10 +50,10 @@ export function detectArchitectureMismatch(
 
 export function resolveArchitectureDownloadUrl(
   locale: Locale,
-  endpointOrigin = DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+  endpointOrigin = DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
 ): string {
   // 与 changelog 等外链保持一致，按应用语言分流到官网下载页。
-  const origin = buildRobinRunEndpointUrls(endpointOrigin).origin;
+  const origin = buildRobinDoneEndpointUrls(endpointOrigin).origin;
   return locale === "zh-CN" ? `${origin}/cn` : `${origin}/en`;
 }
 

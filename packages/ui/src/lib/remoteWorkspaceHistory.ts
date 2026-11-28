@@ -5,8 +5,11 @@ import type {
   RemoteTarget,
   RemoteTargetSnapshot,
   RemoteWorkspaceSessionEntry,
-} from "@robinrun/shared";
-import { buildServerRemoteWorkspaceIdentity, parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+} from "@robindone/shared";
+import {
+  buildServerRemoteWorkspaceIdentity,
+  parseRemoteWorkspaceIdentity,
+} from "@robindone/shared";
 import type { WindowTabState } from "@/store/tabStore.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 

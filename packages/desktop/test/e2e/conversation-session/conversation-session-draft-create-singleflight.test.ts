@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
-import { TID_V4_COMPOSER_SEND, TID_V4_SESSION_PANE, testId } from "@robinrun/shared/test-ids";
+import { TID_V4_COMPOSER_SEND, TID_V4_SESSION_PANE, testId } from "@robindone/shared/test-ids";
 import {
   getV4PaneSnapshot,
   prepareV4ConversationE2E,
@@ -118,11 +118,11 @@ describe("A01 草稿首发与预热共享一次创建", () => {
     expect(pane.timelineText).toContain("E2E_DRAFT_SINGLEFLIGHT_FIRST");
     await waitForV4ComposerText("E2E_PD08_NEXT_INPUT", "首发交接丢失下一条正文");
     await writeFile(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "draft-create-commands.json"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "draft-create-commands.json"),
       JSON.stringify({ pending, commands, pane }, null, 2),
     );
     await browser.saveScreenshot(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "draft-first-send.png"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "draft-first-send.png"),
     );
   });
 });

@@ -6,7 +6,7 @@ import {
   triggerBrowserRuntimeStateFileName,
   triggerBrowserRuntimeStateSchema,
   type TriggerBrowserRuntimeStateFile,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 
 /**
@@ -31,14 +31,14 @@ const logger = createServiceLogger("trigger-engine-browser-runtime");
  */
 export const BROWSER_BUILD_ID = "chrome.143.0.7490.0" as const;
 
-/** 缓存根（~/.robinrun/runtimes/browsers/；ROBINRUN_DESKTOP_HOME_DIR 惯例对齐 python-runtime）。 */
+/** 缓存根（~/.robindone/runtimes/browsers/；ROBINDONE_DESKTOP_HOME_DIR 惯例对齐 python-runtime）。 */
 export function browserRuntimeCacheRoot(): string {
-  const home = process.env.ROBINRUN_DESKTOP_HOME_DIR ?? homedir();
-  return join(home, ".robinrun", "runtimes", "browsers");
+  const home = process.env.ROBINDONE_DESKTOP_HOME_DIR ?? homedir();
+  return join(home, ".robindone", "runtimes", "browsers");
 }
 
 /** 镜像 base URL（占位替换下载路径）；默认官方源 googleapis——国内直连大文件常龟速/停滞。 */
-export const BROWSER_DOWNLOAD_BASEURL_ENV = "ROBINRUN_BROWSER_DOWNLOAD_BASEURL";
+export const BROWSER_DOWNLOAD_BASEURL_ENV = "ROBINDONE_BROWSER_DOWNLOAD_BASEURL";
 /** 国内镜像（npmmirror 的 chrome-for-testing，路径布局与官方一致，2026-11-25 实测 200 OK）。 */
 export const BROWSER_DOWNLOAD_MIRROR_HINT = "https://cdn.npmmirror.com/binaries/chrome-for-testing";
 /** 下载总超时：超时按失败收口回退系统 Chrome，不让 open_login 无限悬挂（2026-11-25
@@ -74,7 +74,7 @@ function systemChromeCandidates(): string[] {
     const programFilesX86 = process.env["ProgramFiles(x86)"] ?? "C:\\Program Files (x86)";
     const localAppData = process.env["LOCALAPPDATA"] ?? "";
     return [
-      process.env.ROBINRUN_CHROME_EXECUTABLE ?? "",
+      process.env.ROBINDONE_CHROME_EXECUTABLE ?? "",
       join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
       join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
       join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
@@ -87,7 +87,7 @@ function systemChromeCandidates(): string[] {
     ];
   }
   return [
-    process.env.ROBINRUN_CHROME_EXECUTABLE ?? "",
+    process.env.ROBINDONE_CHROME_EXECUTABLE ?? "",
     "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable",
     "/usr/bin/chromium",
@@ -138,9 +138,7 @@ async function defaultInstallBrowser(params: {
     buildId,
     cacheDir: params.cacheDir,
     ...(params.baseUrl !== undefined ? { baseUrl: params.baseUrl } : {}),
-    ...(params.onProgress !== undefined
-      ? { downloadProgressCallback: params.onProgress }
-      : {}),
+    ...(params.onProgress !== undefined ? { downloadProgressCallback: params.onProgress } : {}),
   });
   return { executablePath: result.executablePath };
 }
@@ -294,5 +292,5 @@ async function writeBrowserRuntimeState(
 }
 
 function browserRuntimeStatePath(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers", "state", triggerBrowserRuntimeStateFileName);
+  return join(workspacePath, ".robindone", "triggers", "state", triggerBrowserRuntimeStateFileName);
 }

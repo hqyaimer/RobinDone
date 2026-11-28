@@ -11,7 +11,7 @@
  *   单一来源（钉死表，两端同步）。
  * - 失败大声失败（非零退出）：出无 python 的包等于静默退化成联网下载，发布不许。
  * - 幂等：staging 目录已带完成标记时跳过下载（CI 重跑/本地重复构建直接复用）。
- * - 国内本地构建可用 ROBINRUN_PYTHON_RUNTIME_MIRROR（与运行时同模板语义）。
+ * - 国内本地构建可用 ROBINDONE_PYTHON_RUNTIME_MIRROR（与运行时同模板语义）。
  */
 
 import { createHash } from "node:crypto";
@@ -39,8 +39,8 @@ const DOWNLOAD_TIMEOUT_MS = 15 * 60_000;
 const DOWNLOAD_MAX_REDIRECTS = 5;
 const DOWNLOAD_ATTEMPTS_PER_URL = 3;
 const EXTRACT_TIMEOUT_MS = 10 * 60_000;
-const COMPLETE_MARKER_FILE = ".robinrun-complete";
-const MIRROR_ENV = "ROBINRUN_PYTHON_RUNTIME_MIRROR";
+const COMPLETE_MARKER_FILE = ".robindone-complete";
+const MIRROR_ENV = "ROBINDONE_PYTHON_RUNTIME_MIRROR";
 
 const target = getTargetPlatform();
 const triple = resolvePythonHostTriple(target.os, target.arch);
@@ -76,11 +76,7 @@ function downloadToFile(url, destPath) {
   return new Promise((resolvePromise, reject) => {
     const handleResponse = (targetUrl, response, redirectsLeft) => {
       const location = response.headers.location;
-      if (
-        response.statusCode >= 300 &&
-        response.statusCode < 400 &&
-        typeof location === "string"
-      ) {
+      if (response.statusCode >= 300 && response.statusCode < 400 && typeof location === "string") {
         response.resume();
         if (redirectsLeft <= 0) {
           reject(new Error(`too many redirects downloading ${targetUrl}`));
@@ -117,9 +113,13 @@ function downloadToFile(url, destPath) {
     };
     const attempt = (targetUrl, redirectsLeft) => {
       const transport = targetUrl.startsWith("http:") ? httpGet : httpsGet;
-      const request = transport(targetUrl, { headers: { "user-agent": "RobinRun" } }, (response) => {
-        handleResponse(targetUrl, response, redirectsLeft);
-      });
+      const request = transport(
+        targetUrl,
+        { headers: { "user-agent": "RobinDone" } },
+        (response) => {
+          handleResponse(targetUrl, response, redirectsLeft);
+        },
+      );
       request.on("error", reject);
       const timer = setTimeout(() => {
         request.destroy(new Error(`download timed out after ${DOWNLOAD_TIMEOUT_MS / 60_000} min`));
@@ -166,13 +166,14 @@ function runTar(args) {
     child.on("close", (code) => {
       clearTimeout(timer);
       if (code === 0) resolvePromise();
-      else reject(new Error(`tar extract failed (code ${code}): ${stderrTail.trim() || "no output"}`));
+      else
+        reject(new Error(`tar extract failed (code ${code}): ${stderrTail.trim() || "no output"}`));
     });
   });
 }
 
 const urls = buildDownloadUrls();
-const staging = await mkdtemp(join(tmpdir(), "robinrun-py-bundle-"));
+const staging = await mkdtemp(join(tmpdir(), "robindone-py-bundle-"));
 try {
   const archivePath = join(staging, asset.archive);
   let lastError;
@@ -217,7 +218,9 @@ try {
   await writeFile(join(finalDir, COMPLETE_MARKER_FILE), `${PYTHON_RUNTIME_ID}\n`, "utf8");
   const interpreterRel = process.platform === "win32" ? "python.exe" : join("bin", "python3");
   if (!existsSync(join(finalDir, interpreterRel))) {
-    throw new Error(`staged python runtime is missing interpreter: ${join(finalDir, interpreterRel)}`);
+    throw new Error(
+      `staged python runtime is missing interpreter: ${join(finalDir, interpreterRel)}`,
+    );
   }
   console.log(`[prepare-python-runtime] staged ${PYTHON_RUNTIME_ID} (${triple}) at ${finalDir}`);
 } finally {

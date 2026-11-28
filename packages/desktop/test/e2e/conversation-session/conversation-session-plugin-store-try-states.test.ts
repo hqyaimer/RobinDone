@@ -1,6 +1,6 @@
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { TID_V4_COMPOSER_INPUT } from "@robinrun/shared/test-ids";
+import { TID_V4_COMPOSER_INPUT } from "@robindone/shared/test-ids";
 import { clearAppData, setInputValueByTestIdDom } from "../helpers/desktop-app.js";
 import {
   ELECTRON_WINDOW_RECORDING_CAPTURE_MODE,
@@ -196,10 +196,10 @@ async function seedLifecycleMarketplaceCache(marketplaceRoot: string): Promise<v
           // install/enable 操作看似卡死。该隔离 HOME 只需声明已刷新，PLG12 不验证公网目录。
           {
             addedAt: "2026-07-31T00:00:00.000Z",
-            description: "Deterministic offline RobinRun marketplace marker",
-            id: "robinrun-plugins-official",
+            description: "Deterministic offline RobinDone marketplace marker",
+            id: "robindone-plugins-official",
             lastUpdated: "2099-01-01T00:00:00.000Z",
-            name: "robinrun-plugins-official",
+            name: "robindone-plugins-official",
             pluginCount: 1,
             source: {
               source: "url",
@@ -255,9 +255,9 @@ async function waitForEnabledSwitchState(enabled: boolean): Promise<void> {
     () =>
       (
         window as Window & {
-          __robinrunTabStoreE2E?: { getState(): { activeWorkspacePath?: string | null } };
+          __robindoneTabStoreE2E?: { getState(): { activeWorkspacePath?: string | null } };
         }
-      ).__robinrunTabStoreE2E?.getState().activeWorkspacePath,
+      ).__robindoneTabStoreE2E?.getState().activeWorkspacePath,
   );
   if (!workspacePath) throw new Error("Plugin 试用没有当前 workspace");
   await browser.waitUntil(

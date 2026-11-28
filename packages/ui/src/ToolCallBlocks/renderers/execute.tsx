@@ -2,11 +2,11 @@ import { ExecuteCommand } from "@/ToolCallBlocks/renderers/ExecuteCommand.js";
 import {
   bashOutputDisplaySchema,
   executionOutputPreviewSchema,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { ExecuteOutput } from "@/ToolCallBlocks/renderers/ExecuteOutput.js";
 import { SquareTerminalIcon } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ToolSnapshotFieldNotice } from "@/ToolCallBlocks/ToolSnapshotFieldNotice.js";
 import { ToolLayout } from "../ToolLayout.js";
 import type { ToolCallBlockRenderContext } from "../shared.js";
@@ -267,7 +267,7 @@ function extractExecuteResultText(output: unknown): string | null {
 }
 
 export function ExecuteToolCallBlock(context: ToolCallBlockRenderContext) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { toolCallNode, isRunning, statusLabel, errorText, isOfficeMode = false } = context;
   const { toolCall } = toolCallNode;
   const secondaryText = getExecuteSecondaryText(toolCall.input);

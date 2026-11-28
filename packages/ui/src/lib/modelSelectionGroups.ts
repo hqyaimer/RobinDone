@@ -1,13 +1,13 @@
 import {
-  isRobinRunAgentProvider,
+  isRobinDoneAgentProvider,
   resolveModelProviderFamilySpecByProviderId,
-  robinrunProviderAccountAccessSchema,
-  type RobinRunProviderAccountAccess,
-  type RobinRunProvider,
-} from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/services";
+  robindoneProviderAccountAccessSchema,
+  type RobinDoneProviderAccountAccess,
+  type RobinDoneProvider,
+} from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/services";
 import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
 
 export interface ModelProviderGroupLabelOptions {
@@ -22,16 +22,16 @@ export interface ModelProviderGroupLabelOptions {
 }
 
 function supportsRegistryApiFormat(
-  selectedProvider: RobinRunProvider,
+  selectedProvider: RobinDoneProvider,
   apiFormat: string | null | undefined,
 ): boolean {
   if (!apiFormat) return false;
-  // 仅剩 glm（RobinRun Agent）provider；三方 CLI 的 api format 差异已随 provider 下线。
-  return isRobinRunAgentProvider(selectedProvider);
+  // 仅剩 glm（RobinDone Agent）provider；三方 CLI 的 api format 差异已随 provider 下线。
+  return isRobinDoneAgentProvider(selectedProvider);
 }
 
 export function buildRegistryModelSelectGroups(
-  selectedProvider: RobinRunProvider,
+  selectedProvider: RobinDoneProvider,
   view: ModelSelectionView,
   labels: ModelProviderGroupLabelOptions = {},
 ): ModelSelectGroup[] {
@@ -40,7 +40,7 @@ export function buildRegistryModelSelectGroups(
       return [];
     }
 
-    const accountAccess = robinrunProviderAccountAccessSchema.safeParse(provider.config.access);
+    const accountAccess = robindoneProviderAccountAccessSchema.safeParse(provider.config.access);
     const accountPresentation = accountAccess.success
       ? getRegistryAccountProviderGroupPresentation(provider.providerId, accountAccess.data, labels)
       : null;
@@ -79,7 +79,7 @@ export function buildRegistryModelSelectGroups(
 
 function getRegistryAccountProviderGroupPresentation(
   providerId: string,
-  access: RobinRunProviderAccountAccess,
+  access: RobinDoneProviderAccountAccess,
   labels: ModelProviderGroupLabelOptions,
 ): Pick<ModelSelectGroup, "label" | "labelBadge"> {
   const familySpec = resolveModelProviderFamilySpecByProviderId(providerId);

@@ -3,9 +3,9 @@ import type {
   BotInboundAttachment,
   BotsConfigFile,
   BotsStateFile,
-  RobinRunProtocolTrace,
-} from "@robinrun/shared";
-import { PROTOCOL_V4_LIMITS } from "@robinrun/shared/robinrun-protocol-v4";
+  RobinDoneProtocolTrace,
+} from "@robindone/shared";
+import { PROTOCOL_V4_LIMITS } from "@robindone/shared/robindone-protocol-v4";
 
 export interface TopicResourceRequest {
   taskId: string;
@@ -16,7 +16,7 @@ export interface TopicResourceRequest {
   workspaceIdentity?: string;
   resourceIndex?: number;
   signal?: AbortSignal;
-  trace?: RobinRunProtocolTrace;
+  trace?: RobinDoneProtocolTrace;
   remoteSessionId?: string;
 }
 

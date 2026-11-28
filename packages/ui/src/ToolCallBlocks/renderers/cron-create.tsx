@@ -1,9 +1,9 @@
 import { ClockIcon } from "lucide-react";
-import { TID_CRON_CREATE_CARD, TID_CRON_CREATE_OPEN } from "@robinrun/shared/test-ids";
-import type { RobinRunAutomationScheduleRule } from "@robinrun/shared";
+import { TID_CRON_CREATE_CARD, TID_CRON_CREATE_OPEN } from "@robindone/shared/test-ids";
+import type { RobinDoneAutomationScheduleRule } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { describeAutomationCardSchedule } from "@/settings/automationCardSchedule.js";
 import type { ToolCallBlockRenderContext } from "@/ToolCallBlocks/shared.js";
 import { FallbackToolCallBlock } from "@/ToolCallBlocks/renderers/fallback.js";
@@ -13,14 +13,14 @@ export interface CronCreateAutomationSummary {
   title?: string;
   cronExpr?: string;
   /** 权威重复规则；卡片优先用它展示 cron 无法表达的真实间隔（如每50小时、每40天）。 */
-  scheduleRule?: RobinRunAutomationScheduleRule;
+  scheduleRule?: RobinDoneAutomationScheduleRule;
   recurring?: boolean;
   maxRuns?: number;
 }
 
 const SCHEDULE_RULE_UNITS = new Set(["minute", "hourly", "daily", "weekly", "monthly", "yearly"]);
 
-function isScheduleRule(value: unknown): value is RobinRunAutomationScheduleRule {
+function isScheduleRule(value: unknown): value is RobinDoneAutomationScheduleRule {
   // 宽松结构校验：输出可能来自协议或历史工具结果，字段宽松地放行后由 describe 层兜底。
   if (!isPlainRecord(value)) return false;
   if (typeof value.unit !== "string" || !SCHEDULE_RULE_UNITS.has(value.unit)) return false;
@@ -105,7 +105,7 @@ export function readCronCreateAutomationOutputSummary(
 
   // 读取权威 scheduleRule 与循环/次数信息，供卡片展示 cron 无法表达的真实间隔。
   const scheduleRule = isScheduleRule(automation.scheduleRule)
-    ? (automation.scheduleRule as RobinRunAutomationScheduleRule)
+    ? (automation.scheduleRule as RobinDoneAutomationScheduleRule)
     : undefined;
   const recurring = typeof automation.recurring === "boolean" ? automation.recurring : undefined;
   const maxRuns =
@@ -155,7 +155,7 @@ export function CronCreateAutomationCard({
   automation: CronCreateAutomationSummary;
   onOpenAutomationsMain?: (automationId?: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const title =
     automation.title ?? intl.formatMessage({ id: "automations.chatCreated.defaultTitle" });
   const schedule = automation.cronExpr

@@ -105,7 +105,7 @@ app
     let htmlReads = 0;
     session
       .fromPartition(handle.partition)
-      .webRequest.onCompleted({ urls: ["robinrun-sandbox://*/*"] }, (event) => {
+      .webRequest.onCompleted({ urls: ["robindone-sandbox://*/*"] }, (event) => {
         if (event.url.includes("/index.html")) htmlReads++;
       });
     ipcMain.handle("fixture-handle", () => {

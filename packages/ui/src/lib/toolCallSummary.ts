@@ -3,10 +3,10 @@ export {
   getCompactToolCallSummary,
   isCompactToolCallFinishedState,
   isCompactToolCallRunningState,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 export type {
   CompactToolCallState,
   ToolCallChangeStat,
   ToolCallSummary,
   ToolCallSummarySource,
-} from "@robinrun/shared";
+} from "@robindone/shared";

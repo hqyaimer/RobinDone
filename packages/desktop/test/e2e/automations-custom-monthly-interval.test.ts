@@ -19,7 +19,7 @@ import {
   TID_AUTOMATION_SCHEDULE_ADD,
   TID_AUTOMATIONS_LIST,
   TID_AUTOMATIONS_OPEN,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -205,7 +205,7 @@ async function waitForAutomationRecordByTitle(title: string): Promise<Automation
 
 function readAutomationRecordByTitle(title: string): AutomationRecord | null {
   // Node 内置 SQLite 当前仅提供同步 DatabaseSync；E2E 每次只读一行并立即关闭。
-  const database = new DatabaseSync(join(homedir(), ".robinrun", "v2", "tasks-index.sqlite"), {
+  const database = new DatabaseSync(join(homedir(), ".robindone", "v2", "tasks-index.sqlite"), {
     readOnly: true,
   });
   try {

@@ -1,4 +1,4 @@
-import { ServiceChannels, type MarketingTouchSnapshot } from "@robinrun/shared";
+import { ServiceChannels, type MarketingTouchSnapshot } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 
 export interface IMarketingTouchService {

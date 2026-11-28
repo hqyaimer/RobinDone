@@ -9,9 +9,9 @@ import {
   type SessionSummary,
   type SessionsIndexTopicFrame,
   type TopicFrameDeliveryKind,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import { isRobinRunFileLockTimeoutError } from "@robinrun/shared";
-import { ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE } from "@robinrun/services";
+} from "@robindone/shared/robindone-protocol-v4";
+import { isRobinDoneFileLockTimeoutError } from "@robindone/shared";
+import { ROBINDONE_AGENT_RUNTIME_UNAVAILABLE_CODE } from "@robindone/services";
 import { logger } from "@/logger.js";
 import type { SessionsIndexTransport } from "@/v4/agentSessionsIndexTransport.js";
 
@@ -41,7 +41,7 @@ const TRANSIENT_SUBSCRIBE_RETRY_DELAYS_MS = [250, 1_000, 3_000] as const;
 const ERROR_RECOVERY_RETRY_DELAYS_MS = [5_000, 15_000, 60_000] as const;
 
 function isTransientSubscribeError(error: unknown): boolean {
-  if (isRobinRunFileLockTimeoutError(error)) {
+  if (isRobinDoneFileLockTimeoutError(error)) {
     return true;
   }
   const code =
@@ -63,7 +63,7 @@ function isRuntimeUnavailableError(error: unknown): boolean {
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
-    (error as { code?: unknown }).code === ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE
+    (error as { code?: unknown }).code === ROBINDONE_AGENT_RUNTIME_UNAVAILABLE_CODE
   );
 }
 

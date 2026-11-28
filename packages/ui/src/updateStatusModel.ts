@@ -2,7 +2,7 @@ import type {
   ElectronReleaseChannel,
   PostUpdateReleaseNotesPayload,
   UpdateStatePayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export type UpdateStatusDialogPhase = "before-download" | "downloading" | "downloaded";
 

@@ -5,7 +5,7 @@ export interface DevicePlatformIconProps {
   platform?: string;
   className?: string;
 }
-export interface RobinRunAppLogoProps {
+export interface RobinDoneAppLogoProps {
   className?: string;
 }
 export type BottomSheetProps = ComponentProps<typeof Dialog.Root>;

@@ -98,7 +98,7 @@ export function createCustomAboutDialogHtml(input: CustomAboutDialogHtmlInput): 
         justify-content: center;
         overflow: hidden;
         /* 2026-11-26 品牌替换：黑底白 Z 字标改为白底圆角瓦片 + 知更鸟 app 图标，
-         * 与启动徽章（RobinRunStartupLogoBadge）同款视觉。 */
+         * 与启动徽章（RobinDoneStartupLogoBadge）同款视觉。 */
         border: 1px solid rgba(0, 0, 0, 0.1);
         border-radius: 12px;
         background: #ffffff;
@@ -180,9 +180,11 @@ export function createCustomAboutDialogHtml(input: CustomAboutDialogHtmlInput): 
           <div class="app-icon" aria-hidden="true">
             <!-- 2026-11-26 品牌替换：内联 ZCode Z 字标（改名遗漏）换成知更鸟 app 图标
                  （icon.png 经 data URL 内嵌；CSP img-src 只放行 data:）。 -->
-            ${input.appIconDataUrl
-              ? `<img src="${input.appIconDataUrl}" class="app-logo" alt="" draggable="false" />`
-              : ""}
+            ${
+              input.appIconDataUrl
+                ? `<img src="${input.appIconDataUrl}" class="app-logo" alt="" draggable="false" />`
+                : ""
+            }
           </div>
           <h1 id="about-title" class="title">
             ${escapeHtml(input.applicationName)}<br />

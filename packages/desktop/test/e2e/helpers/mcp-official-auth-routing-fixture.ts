@@ -91,17 +91,17 @@ export async function prepareOfficialMcpAuthRoutingFixture(options: {
     if (!address || typeof address === "string") throw new Error("Missing MCP fixture address");
     const baseUrl = `http://127.0.0.1:${address.port}`;
     const envPatch = {
-      ROBINRUN_E2E_OFFICIAL_AUTH_ROUTING_URL: baseUrl,
-      ROBINRUN_OFFICIAL_MCP_DEV_TRUSTED_ORIGINS: baseUrl,
+      ROBINDONE_E2E_OFFICIAL_AUTH_ROUTING_URL: baseUrl,
+      ROBINDONE_OFFICIAL_MCP_DEV_TRUSTED_ORIGINS: baseUrl,
     };
     previous = Object.fromEntries(Object.keys(envPatch).map((key) => [key, process.env[key]]));
     Object.assign(process.env, envPatch);
     const storageRoot = dirname(dirname(options.credentialsFile));
     const pluginId = `${OFFICIAL_AUTH_ROUTING_PLUGIN}@e2e-fixture`;
     const pluginRoot = join(storageRoot, "cli", "e2e-fixtures", OFFICIAL_AUTH_ROUTING_PLUGIN);
-    await mkdir(join(pluginRoot, ".robinrun-plugin"), { recursive: true });
+    await mkdir(join(pluginRoot, ".robindone-plugin"), { recursive: true });
     await writeFile(
-      join(pluginRoot, ".robinrun-plugin", "plugin.json"),
+      join(pluginRoot, ".robindone-plugin", "plugin.json"),
       JSON.stringify({
         name: OFFICIAL_AUTH_ROUTING_PLUGIN,
         version: "0.0.0",
@@ -110,7 +110,7 @@ export async function prepareOfficialMcpAuthRoutingFixture(options: {
             type: "http",
             url: `${baseUrl}/mcp`,
             protocolVersion: "legacy",
-            auth: { type: "robinrun_official", provider: "jwt_token" },
+            auth: { type: "robindone_official", provider: "jwt_token" },
           },
         },
       }),

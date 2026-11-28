@@ -3,7 +3,7 @@ import { formatRemoteConnectionError } from "@/lib/remoteConnectionPresentation.
 import { isRemoteConversationWorkspace } from "@/conversation-workspace-target/purpose.js";
 /* eslint-disable max-lines -- 聚合命令、任务、文件三类搜索结果，后续可按 result section 拆分。 */
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { unpackWorkspaceFileEntries } from "@robinrun/shared/workspaceFileEntriesCodec";
+import { unpackWorkspaceFileEntries } from "@robindone/shared/workspaceFileEntriesCodec";
 import { fetchWorkspaceFileEntriesPacked } from "@/workspace-file-search/fetchWorkspaceFileEntries.js";
 import { Command as CommandPrimitive } from "cmdk";
 import {
@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import type {
   WorkspaceFileEntry,
-  RobinRunTaskChangeSummary,
-  RobinRunTaskMeta,
-} from "@robinrun/shared";
+  RobinDoneTaskChangeSummary,
+  RobinDoneTaskMeta,
+} from "@robindone/shared";
 import {
   Command,
   CommandDialog,
@@ -34,7 +34,7 @@ import { cn } from "@/components/lib/utils.js";
 import { toast } from "@/components/ui/toast.js";
 import { useGlobalTaskList } from "@/hooks/useGlobalTaskList.js";
 import { useServices } from "@/hooks/useServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { FileDisplayIcon, resolveFileDisplayDescriptor } from "@/lib/fileDisplay.js";
 import { formatTaskRelativeTime } from "@/lib/taskListItemPresentation.js";
 import { toWorkspaceRelativePath } from "@/lib/taskChangeSummary.js";
@@ -82,11 +82,11 @@ const commandCenterListClassName = cn(
 );
 
 type CommandCenterSectionId = "commands" | "conversations" | "files";
-type TaskSearchResultItem = RobinRunTaskMeta & {
+type TaskSearchResultItem = RobinDoneTaskMeta & {
   searchSnippet?: string;
   searchSnippets?: string[];
 };
-type TaskChangedFileSummary = RobinRunTaskChangeSummary["files"][number];
+type TaskChangedFileSummary = RobinDoneTaskChangeSummary["files"][number];
 type TaskSearchResultRow = {
   key: string;
   task: TaskSearchResultItem;
@@ -152,7 +152,7 @@ function getUniqueTaskSearchSnippets(task: TaskSearchResultItem): string[] {
   return uniqueSnippets;
 }
 
-function getTaskTitle(task: RobinRunTaskMeta, untitledLabel: string): string {
+function getTaskTitle(task: RobinDoneTaskMeta, untitledLabel: string): string {
   return task.title.trim() || untitledLabel;
 }
 
@@ -421,7 +421,7 @@ export const CommandCenterDialog = memo(function CommandCenterDialogComponent({
   workspaceAbsPath: string;
   workspaceIdentity?: string;
   activeTaskId?: string | null;
-  activeTaskChangeSummary?: RobinRunTaskChangeSummary | null;
+  activeTaskChangeSummary?: RobinDoneTaskChangeSummary | null;
   workspaceTabs: WorkspaceTabState[];
   onOpenChange: (open: boolean) => void;
   onSelectTask: (
@@ -435,7 +435,7 @@ export const CommandCenterDialog = memo(function CommandCenterDialogComponent({
   onOpenCodeViewer: (source: CodeViewerSource) => void;
 }) {
   const { fileService } = useServices();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const workspaceKey = workspaceIdentity?.trim() || workspaceAbsPath;
   const [rawQuery, setRawQuery] = useState("");
   const [manualScope, setManualScope] = useState<CommandCenterSearchScope>("all");
@@ -704,7 +704,7 @@ export const CommandCenterDialog = memo(function CommandCenterDialogComponent({
   );
 
   const selectRecentTask = useCallback(
-    (task: RobinRunTaskMeta) => {
+    (task: RobinDoneTaskMeta) => {
       onSelectTask(task.workspacePath, task.taskId, task.workspaceIdentity);
       closeDialog();
     },
@@ -788,7 +788,7 @@ export const CommandCenterDialog = memo(function CommandCenterDialogComponent({
     rows = recentTaskPreviewRows,
     showEmpty = false,
   }: {
-    rows?: RobinRunTaskMeta[];
+    rows?: RobinDoneTaskMeta[];
     showEmpty?: boolean;
   } = {}) => {
     if (hasSearchQuery || (rows.length === 0 && !showEmpty)) {

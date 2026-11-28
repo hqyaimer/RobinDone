@@ -1,21 +1,21 @@
 import {
   ApiError,
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-  normalizeRobinRunEndpointOrigin,
-  rewriteRobinRunEndpointUrl,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
+  normalizeRobinDoneEndpointOrigin,
+  rewriteRobinDoneEndpointUrl,
   type ApiClient,
   type ApiRequestInit,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
-import { buildRobinRunSourceHeaders } from "../sourceHeaders.js";
+import { buildRobinDoneSourceHeaders } from "../sourceHeaders.js";
 import { withRequestIdHeader } from "./requestIdHeaders.js";
 
 const log = createServiceLogger("node-api-client");
 
 interface NodeApiClientOptions {
   fetchImpl?: typeof fetch;
-  onRobinrunJwtInvalid?: (input: string | URL, headers: Headers) => void;
-  isRobinrunJwtRequest?: (input: string | URL, headers: Headers) => boolean | Promise<boolean>;
+  onRobindoneJwtInvalid?: (input: string | URL, headers: Headers) => void;
+  isRobindoneJwtRequest?: (input: string | URL, headers: Headers) => boolean | Promise<boolean>;
   isBusinessUnauthorizedRequest?: (
     input: string | URL,
     headers: Headers,
@@ -25,7 +25,7 @@ interface NodeApiClientOptions {
     input: string | URL,
     headers: Headers,
   ) => Promise<{ url: string; authorization: string; emptyBodyMeansInvalid: boolean } | null>;
-  resolveRobinRunEndpointOrigin?: () => Promise<string> | string;
+  resolveRobinDoneEndpointOrigin?: () => Promise<string> | string;
   /** 宿主内存里的实时界面语言；同步读取，未注入或无值时 X-Client-Language 回退进程 Intl locale。 */
   resolveClientLanguage?: () => string | undefined;
 }
@@ -135,25 +135,25 @@ function readHeaderKeys(headers: RequestInit["headers"] | undefined): string[] {
 
 function isRequestForEndpoint(input: string | URL, endpointOrigin: string): boolean {
   try {
-    return new URL(resolveUrl(input)).origin === normalizeRobinRunEndpointOrigin(endpointOrigin);
+    return new URL(resolveUrl(input)).origin === normalizeRobinDoneEndpointOrigin(endpointOrigin);
   } catch {
     return false;
   }
 }
 
-function withRobinRunEndpointHeaders(
+function withRobinDoneEndpointHeaders(
   headers: RequestInit["headers"] | undefined,
   endpointOrigin: string,
   clientLanguage: string | undefined,
 ): RequestInit["headers"] {
-  const next = new Headers(buildRobinRunSourceHeaders({ clientLanguage }));
+  const next = new Headers(buildRobinDoneSourceHeaders({ clientLanguage }));
   if (headers) {
     new Headers(headers).forEach((value, key) => {
       next.set(key, value);
     });
   }
 
-  if (next.get("HTTP-Referer") === DEFAULT_ROBINRUN_ENDPOINT_ORIGIN) {
+  if (next.get("HTTP-Referer") === DEFAULT_ROBINDONE_ENDPOINT_ORIGIN) {
     next.set("HTTP-Referer", endpointOrigin);
   }
   return next;
@@ -169,17 +169,17 @@ function resolveRequestHeaders(
     return headers;
   }
 
-  // RobinRun 后端请求以前只有部分业务路径手动补来源头。
+  // RobinDone 后端请求以前只有部分业务路径手动补来源头。
   // 统一在 ApiClient 出口按 endpoint origin 注入，避免 OAuth/config/billing/snapshot 等链路遗漏。
-  return withRobinRunEndpointHeaders(headers, endpointOrigin, clientLanguage);
+  return withRobinDoneEndpointHeaders(headers, endpointOrigin, clientLanguage);
 }
 
 export class NodeApiClient implements ApiClient {
   private readonly fetchImpl?: typeof fetch;
-  private readonly resolveRobinRunEndpointOrigin?: () => Promise<string> | string;
+  private readonly resolveRobinDoneEndpointOrigin?: () => Promise<string> | string;
   private readonly resolveClientLanguage?: NodeApiClientOptions["resolveClientLanguage"];
-  private readonly onRobinrunJwtInvalid?: (input: string | URL, headers: Headers) => void;
-  private readonly isRobinrunJwtRequest?: NodeApiClientOptions["isRobinrunJwtRequest"];
+  private readonly onRobindoneJwtInvalid?: (input: string | URL, headers: Headers) => void;
+  private readonly isRobindoneJwtRequest?: NodeApiClientOptions["isRobindoneJwtRequest"];
   private readonly isBusinessUnauthorizedRequest?: NodeApiClientOptions["isBusinessUnauthorizedRequest"];
   private readonly businessUnauthorizedObservationTimeoutMs: number;
   private readonly resolveBusinessCredentialValidationRequest?: NodeApiClientOptions["resolveBusinessCredentialValidationRequest"];
@@ -194,15 +194,15 @@ export class NodeApiClient implements ApiClient {
 
   constructor(options: NodeApiClientOptions = {}) {
     this.fetchImpl = options.fetchImpl;
-    this.onRobinrunJwtInvalid = options.onRobinrunJwtInvalid;
-    this.isRobinrunJwtRequest = options.isRobinrunJwtRequest;
+    this.onRobindoneJwtInvalid = options.onRobindoneJwtInvalid;
+    this.isRobindoneJwtRequest = options.isRobindoneJwtRequest;
     this.isBusinessUnauthorizedRequest = options.isBusinessUnauthorizedRequest;
     this.resolveBusinessCredentialValidationRequest =
       options.resolveBusinessCredentialValidationRequest;
     this.businessUnauthorizedObservationTimeoutMs =
       options.businessUnauthorizedObservationTimeoutMs ??
       DEFAULT_BUSINESS_UNAUTHORIZED_OBSERVATION_TIMEOUT_MS;
-    this.resolveRobinRunEndpointOrigin = options.resolveRobinRunEndpointOrigin;
+    this.resolveRobinDoneEndpointOrigin = options.resolveRobinDoneEndpointOrigin;
     this.resolveClientLanguage = options.resolveClientLanguage;
   }
 
@@ -282,11 +282,11 @@ export class NodeApiClient implements ApiClient {
   }
 
   async request(input: string | URL, init?: ApiRequestInit): Promise<Response> {
-    const endpointOrigin = this.resolveRobinRunEndpointOrigin
-      ? await this.resolveRobinRunEndpointOrigin()
+    const endpointOrigin = this.resolveRobinDoneEndpointOrigin
+      ? await this.resolveRobinDoneEndpointOrigin()
       : undefined;
-    const activeEndpointOrigin = endpointOrigin ?? DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
-    const requestInput = rewriteRobinRunEndpointUrl(input, activeEndpointOrigin);
+    const activeEndpointOrigin = endpointOrigin ?? DEFAULT_ROBINDONE_ENDPOINT_ORIGIN;
+    const requestInput = rewriteRobinDoneEndpointUrl(input, activeEndpointOrigin);
     const url = resolveUrl(requestInput);
     const method = resolveMethod(init);
     const timeoutMs = init?.timeoutMs;
@@ -322,7 +322,7 @@ export class NodeApiClient implements ApiClient {
       );
       if (isRequestForEndpoint(requestInput, activeEndpointOrigin)) {
         // 调试说明：这里只记录 header key，避免 Authorization / token 等敏感值落盘。
-        log.debug(undefined, "robinrun endpoint request headers prepared", {
+        log.debug(undefined, "robindone endpoint request headers prepared", {
           headerKeys: readHeaderKeys(requestHeaders),
           method,
           url,
@@ -333,16 +333,16 @@ export class NodeApiClient implements ApiClient {
         headers: requestHeaders,
         ...(signal ? { signal } : {}),
       });
-      if ([200, 401, 403].includes(response.status) && this.onRobinrunJwtInvalid) {
+      if ([200, 401, 403].includes(response.status) && this.onRobindoneJwtInvalid) {
         try {
           await waitWithAbort(
             (async () => {
               const requestHeadersForObservation = new Headers(requestHeaders);
-              const isCurrentRobinRunJwtRequest = await this.isRobinrunJwtRequest?.(
+              const isCurrentRobinDoneJwtRequest = await this.isRobindoneJwtRequest?.(
                 requestInput,
                 requestHeadersForObservation,
               );
-              if (isCurrentRobinRunJwtRequest) {
+              if (isCurrentRobinDoneJwtRequest) {
                 let invalid = response.status === 401;
                 if (
                   !invalid &&
@@ -370,14 +370,14 @@ export class NodeApiClient implements ApiClient {
                     );
                 }
                 if (invalid && !signal?.aborted)
-                  this.onRobinrunJwtInvalid?.(requestInput, requestHeadersForObservation);
+                  this.onRobindoneJwtInvalid?.(requestInput, requestHeadersForObservation);
               }
             })(),
             signal,
           );
         } catch (error) {
           if (signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
-          log.warn("robinrun jwt invalid response observation failed", { error });
+          log.warn("robindone jwt invalid response observation failed", { error });
         }
       }
       if (signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");

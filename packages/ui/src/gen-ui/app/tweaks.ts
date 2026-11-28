@@ -6,7 +6,7 @@ import {
   type GenUiTweakAnnotation,
   type GenUiTweak,
   type GenUiTweakValues,
-} from "@robinrun/shared/gen-ui";
+} from "@robindone/shared/gen-ui";
 
 type Registration = Extract<GenUiTweakMessage, { type: "register" | "update" }>;
 

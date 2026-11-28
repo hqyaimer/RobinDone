@@ -1,7 +1,7 @@
 import { Duplex } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
-import { isPublicRobinRunErrorCode, type PublicRobinRunErrorCode } from "@robinrun/shared";
-import type { StdioStream } from "@robinrun/server/remote/backend.js";
+import { isPublicRobinDoneErrorCode, type PublicRobinDoneErrorCode } from "@robindone/shared";
+import type { StdioStream } from "@robindone/server/remote/backend.js";
 
 export interface RemoteExecResult {
   exitCode: number;
@@ -50,10 +50,10 @@ export function readStructuredCommandError(value: string): string | null {
 }
 
 /** 读取 Server CLI --json 失败结果里的公开错误码；没有或不是公开码时返回 null。 */
-export function readStructuredCommandCode(value: string): PublicRobinRunErrorCode | null {
+export function readStructuredCommandCode(value: string): PublicRobinDoneErrorCode | null {
   try {
     const code = readLastJsonLine(value).code;
-    return isPublicRobinRunErrorCode(code) ? code : null;
+    return isPublicRobinDoneErrorCode(code) ? code : null;
   } catch {
     return null;
   }
@@ -71,7 +71,7 @@ export function readUniqueVersion(value: string): string | undefined {
     if (version) versions.add(version);
   }
   const labelled = new RegExp(
-    `\\b(?:robinrun|source[ -]server)\\b[^\\n]*?\\bversion\\s*[:=]?\\s*v?${semver}\\b`,
+    `\\b(?:robindone|source[ -]server)\\b[^\\n]*?\\bversion\\s*[:=]?\\s*v?${semver}\\b`,
     "giu",
   );
   for (const match of value.matchAll(labelled)) {

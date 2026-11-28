@@ -1,4 +1,4 @@
-import { formatLogPrefix, type TraceId } from "@robinrun/shared";
+import { formatLogPrefix, type TraceId } from "@robindone/shared";
 import { isEffectiveDevelopmentNodeEnv } from "#src/runtime-tools/nodeEnv.js";
 
 interface ServiceLogSink {
@@ -39,8 +39,8 @@ export function createServiceLogger(
     traceId: TraceId | undefined,
     ...args: unknown[]
   ): void {
-    // 服务层日志过去常被复用到 RobinRun Agent 命名 logger，导致新 RobinRun 路径继续依赖 RobinRun Agent 目录。
-    // 这里把通用分级日志抽到独立模块，后续删除 RobinRun Agent runtime 时不会牵连非 RobinRun Agent 服务。
+    // 服务层日志过去常被复用到 RobinDone Agent 命名 logger，导致新 RobinDone 路径继续依赖 RobinDone Agent 目录。
+    // 这里把通用分级日志抽到独立模块，后续删除 RobinDone Agent runtime 时不会牵连非 RobinDone Agent 服务。
     if (level === "debug" && !resolveDebugEnabled()) {
       return;
     }

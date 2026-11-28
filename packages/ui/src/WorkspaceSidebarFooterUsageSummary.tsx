@@ -7,8 +7,8 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   normalizeProviderFamilyDomain,
   resolveModelProviderFamilyIdByProviderId,
-} from "@robinrun/shared";
-import { TID_SIDEBAR_CODING_PLAN_USAGE_BUTTON } from "@robinrun/shared/test-ids";
+} from "@robindone/shared";
+import { TID_SIDEBAR_CODING_PLAN_USAGE_BUTTON } from "@robindone/shared/test-ids";
 import { BarChart3Icon, RocketIcon } from "lucide-react";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu.js";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@/CodingPlanUsageRemainingPanel.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useUsageEntitlement } from "@/hooks/useUsageEntitlement.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import {
   resolveEntitledAccountProviderAccess,
@@ -40,9 +40,9 @@ import {
   resolveSidebarCurrentCodingPlanUsageSource,
 } from "@/lib/codingPlanUsageSources.js";
 import {
-  selectWorkspaceRobinRunState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
+  selectWorkspaceRobinDoneState,
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
 import { parseCustomProviderIdFromSupplierKey } from "@/lib/modelConfigSync.js";
 import { setPendingSettingsUsageIntent } from "@/lib/settingsNavigation.js";
 import {
@@ -103,9 +103,9 @@ export function useWorkspaceSidebarFooterUsageSummaryState({
     providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
   // 首次读取失败也不能被解释成“已经加载且没有套餐”；只有 Ready 才能消费 Provider 事实。
   const providerSourcesLoading = providerSettingsRead.state.status !== "ready";
-  const selectedSupplierKey = useRobinRunSessionStore((state) =>
+  const selectedSupplierKey = useRobinDoneSessionStore((state) =>
     workspacePath
-      ? selectWorkspaceRobinRunState(state, workspacePath, workspaceIdentity).selectedSupplierKey
+      ? selectWorkspaceRobinDoneState(state, workspacePath, workspaceIdentity).selectedSupplierKey
       : "",
   );
   const availableCodingPlanProviders = useMemo(
@@ -431,7 +431,7 @@ export function WorkspaceSidebarFooterUsageSummaryContent({
     funnelContext: CodingPlanFunnelContext,
   ) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const entryGate = useCodingPlanEntryGate();
   const { providerEntitlements, upgradeTargetProviderId } = state;
   const upgradeProviderSnapshot =
@@ -490,7 +490,7 @@ export function WorkspaceSidebarFooterPlanBadge({
 }: {
   state: WorkspaceSidebarFooterUsageSummaryState;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const label =
     state.profilePlanBadge?.audience === "team"
       ? intl.formatMessage({ id: "sidebar.usage.plan.audienceTeam" })

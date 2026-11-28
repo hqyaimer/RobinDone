@@ -68,7 +68,7 @@ const artifacts = [1, 2].map((index) => ({
   producer_product_turn_id: base.productTurnId,
   artifact_version: 1,
   state: "current",
-  ref: `robinrun-artifact://share/share-artifact-${index}`,
+  ref: `robindone-artifact://share/share-artifact-${index}`,
   artifact_type: "text",
   display_name: `report-${index}.md`,
   extension: "md",
@@ -105,7 +105,7 @@ try {
           reducedMotion: "reduce",
         });
         await context.addInitScript(
-          (value) => localStorage.setItem("robinrun-theme", value),
+          (value) => localStorage.setItem("robindone-theme", value),
           theme,
         );
         const page = await context.newPage();

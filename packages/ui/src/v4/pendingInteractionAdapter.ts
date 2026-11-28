@@ -1,14 +1,14 @@
 import type {
-  RobinRunPermissionOption,
-  RobinRunPermissionRequest,
-  RobinRunPermissionResponse,
-  RobinRunElicitationRequest,
-} from "@robinrun/shared";
+  RobinDonePermissionOption,
+  RobinDonePermissionRequest,
+  RobinDonePermissionResponse,
+  RobinDoneElicitationRequest,
+} from "@robindone/shared";
 import type {
   PendingInteraction,
   PermissionRequestPayload,
   UserInputRequestPayload,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 const LEGACY_PERMISSION_RULE_INPUT_KEYS = [
   "command",
@@ -21,7 +21,7 @@ const LEGACY_PERMISSION_RULE_INPUT_KEYS = [
 function permissionKindToResponse(
   kind: string,
   payload: PermissionRequestPayload,
-): RobinRunPermissionResponse {
+): RobinDonePermissionResponse {
   if (kind === "deny" || kind === "rejectOnce" || kind === "rejectAlways") {
     return { decision: "deny" };
   }
@@ -54,16 +54,16 @@ function permissionKindToResponse(
   return { decision: "allow" };
 }
 
-/** v4 permission payload → 旧 PermissionDialog 可消费的 RobinRunPermissionRequest。 */
+/** v4 permission payload → 旧 PermissionDialog 可消费的 RobinDonePermissionRequest。 */
 export function pendingPermissionToLegacyRequest(
   sessionId: string,
   interaction: PendingInteraction & { payload: PermissionRequestPayload },
-): RobinRunPermissionRequest {
+): RobinDonePermissionRequest {
   const { payload } = interaction;
   const advertisedOptions = payload.fullAccessOption
     ? [...payload.options, payload.fullAccessOption]
     : payload.options;
-  const options: RobinRunPermissionOption[] = advertisedOptions.map((option) => ({
+  const options: RobinDonePermissionOption[] = advertisedOptions.map((option) => ({
     optionId: option.optionId,
     kind: option.kind,
     name: option.label,
@@ -116,7 +116,7 @@ export function pendingUserInputToViewModel(
 export function pendingUserInputToElicitationRequest(
   sessionId: string,
   interaction: PendingInteraction & { payload: UserInputRequestPayload },
-): RobinRunElicitationRequest | null {
+): RobinDoneElicitationRequest | null {
   const { payload } = interaction;
   if (!payload.questions || payload.questions.length === 0) {
     return null;

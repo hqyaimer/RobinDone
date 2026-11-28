@@ -7,7 +7,7 @@ import {
   type DatabaseStartupState,
   type DatabaseMigrationFacts,
   type StartupDiskSummary,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type Report = (
   phase: DatabaseStartupState["phase"],

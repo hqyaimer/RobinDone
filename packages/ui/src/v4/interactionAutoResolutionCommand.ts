@@ -1,4 +1,4 @@
-import type { CommandAck, CommandEnvelope } from "@robinrun/shared/robinrun-protocol-v4";
+import type { CommandAck, CommandEnvelope } from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 import { createCommandEnvelope } from "@/v4/commandFactory.js";
 import { pendingCommandRegistry } from "@/v4/pendingCommandRegistry.js";

@@ -1,4 +1,4 @@
-import type { WebRemoteControlMobileDeviceInfo } from "@robinrun/shared";
+import type { WebRemoteControlMobileDeviceInfo } from "@robindone/shared";
 
 interface NavigatorLike {
   userAgent?: string;

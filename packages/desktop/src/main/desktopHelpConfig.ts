@@ -1,10 +1,10 @@
 import { net } from "electron";
 import {
   buildHelpAppConfigUrl,
-  buildRobinRunSourceHeadersFromContext,
+  buildRobinDoneSourceHeadersFromContext,
   createHelpAppConfigReader,
-  ROBINRUN_ENV,
-} from "@robinrun/shared";
+  ROBINDONE_ENV,
+} from "@robindone/shared";
 
 export function createDesktopHelpConfigReader(options: {
   resolveEndpointOrigin: () => Promise<string>;
@@ -24,14 +24,14 @@ export function createDesktopHelpConfigReader(options: {
         options.appVersion,
         `${process.platform}-${process.arch}`,
       ),
-      buildRobinRunSourceHeadersFromContext({
+      buildRobinDoneSourceHeadersFromContext({
         endpointOrigin,
         appVersion: options.appVersion,
         clientLanguage: options.getClientLanguage(),
         deviceMid: options.deviceMid,
         platform: process.platform,
         arch: process.arch,
-        releaseChannel: ROBINRUN_ENV,
+        releaseChannel: ROBINDONE_ENV,
         sourceTitle: "electron",
       }),
     );

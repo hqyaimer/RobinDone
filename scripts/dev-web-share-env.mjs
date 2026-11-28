@@ -11,14 +11,14 @@ if (mode !== "test" && mode !== "mock") {
 const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const env = {
   ...process.env,
-  ROBINRUN_ENV: "test",
-  VITE_ROBINRUN_BASE_URL: TEST_SHARE_ENDPOINT_ORIGIN,
+  ROBINDONE_ENV: "test",
+  VITE_ROBINDONE_BASE_URL: TEST_SHARE_ENDPOINT_ORIGIN,
   VITE_DEV_ORIGIN: "http://localhost:5173",
   VITE_CONVERSATION_SHARE_PREVIEW_MOCK: mode === "mock" ? "true" : "false",
 };
 const args = [
   "--filter",
-  "@robinrun/web-share",
+  "@robindone/web-share",
   "exec",
   "vite",
   "dev",

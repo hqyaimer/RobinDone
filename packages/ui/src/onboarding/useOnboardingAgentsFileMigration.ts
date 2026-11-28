@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   SettingsSyncClaudeAgentsFileCopyResult,
   SettingsSyncClaudeAgentsFileMigrationStatus,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 
@@ -72,7 +72,7 @@ export function useOnboardingAgentsFileMigration(params: {
   );
 
   const copy = useCallback(async () => {
-    const result = await settingsSyncService.copyClaudeAgentsFileToRobinrunAgentsFile({
+    const result = await settingsSyncService.copyClaudeAgentsFileToRobindoneAgentsFile({
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity,
       overwrite: true,

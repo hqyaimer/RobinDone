@@ -7,7 +7,7 @@ import {
    sqlite schema、状态机守卫写入与调度认领，稳定后再按读写职责拆分。 */
 /* off-peak 任务仓库：off_peak_tasks 的 sqlite schema、状态机守卫写入与调度认领。
    与 automation 共用 tasks-index.sqlite 与 Repo 模式，但表/状态机/常量全部独立，
-   禁止往 automations 表或 RobinRunAutomation 类型上加字段。 */
+   禁止往 automations 表或 RobinDoneAutomation 类型上加字段。 */
 import { mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
@@ -16,11 +16,11 @@ import {
   OFF_PEAK_TERMINAL_STATUSES,
   modelSelectionSchema,
   resolveWorkspaceKey,
-  type RobinRunOffPeakTask,
-  type RobinRunOffPeakTaskCreateParams,
-  type RobinRunOffPeakTaskStatus,
-  type RobinRunTaskMode,
-} from "@robinrun/shared";
+  type RobinDoneOffPeakTask,
+  type RobinDoneOffPeakTaskCreateParams,
+  type RobinDoneOffPeakTaskStatus,
+  type RobinDoneTaskMode,
+} from "@robindone/shared";
 import { getTasksIndexDatabasePath } from "#src/paths.js";
 import { runTasksDatabaseMigrations } from "#src/session/tasksDatabase/migrations.js";
 
@@ -74,7 +74,7 @@ interface OffPeakTaskRow {
   updated_at: number;
 }
 
-function rowToTask(row: OffPeakTaskRow): RobinRunOffPeakTask {
+function rowToTask(row: OffPeakTaskRow): RobinDoneOffPeakTask {
   const modelSelection = readOffPeakModelSelection(row);
   return {
     offPeakTaskId: row.off_peak_task_id,
@@ -84,7 +84,7 @@ function rowToTask(row: OffPeakTaskRow): RobinRunOffPeakTask {
     sessionId: row.session_id ?? undefined,
     ...(row.session_title ? { sessionTitle: row.session_title } : {}),
     prompt: row.prompt,
-    permissionMode: row.permission_mode as RobinRunTaskMode,
+    permissionMode: row.permission_mode as RobinDoneTaskMode,
     ...(modelSelection ? { modelSelection } : {}),
     ...(!modelSelection
       ? {
@@ -106,7 +106,7 @@ function rowToTask(row: OffPeakTaskRow): RobinRunOffPeakTask {
             .max(256)
             .parse(JSON.parse(row.additional_directories)),
         }),
-    status: row.status as RobinRunOffPeakTaskStatus,
+    status: row.status as RobinDoneOffPeakTaskStatus,
     queuedAt: row.queued_at,
     startedAt: row.started_at ?? undefined,
     endedAt: row.ended_at ?? undefined,
@@ -125,7 +125,7 @@ function rowToTask(row: OffPeakTaskRow): RobinRunOffPeakTask {
 
 function readOffPeakModelSelection(
   row: OffPeakTaskRow,
-): RobinRunOffPeakTask["modelSelection"] | null {
+): RobinDoneOffPeakTask["modelSelection"] | null {
   if (row.model_selection) {
     try {
       const parsed = modelSelectionSchema.safeParse(JSON.parse(row.model_selection));
@@ -139,7 +139,7 @@ function readOffPeakModelSelection(
 }
 
 function serializeOffPeakModelSelection(
-  selection: NonNullable<RobinRunOffPeakTask["modelSelection"]>,
+  selection: NonNullable<RobinDoneOffPeakTask["modelSelection"]>,
 ): string {
   const options = selection.options;
   return JSON.stringify(
@@ -269,7 +269,7 @@ export class OffPeakTaskRepo {
    * 取号结果经 options 一并写入；mock 先行阶段允许不带服务端字段。
    */
   async create(
-    params: RobinRunOffPeakTaskCreateParams,
+    params: RobinDoneOffPeakTaskCreateParams,
     options?: {
       /** 测试注入用；缺省 Date.now()。 */
       now?: number;
@@ -281,7 +281,7 @@ export class OffPeakTaskRepo {
       /** 取号即 ready（低峰空闲时服务端可直接晋级）时随建随派。 */
       schedulable?: boolean;
     },
-  ): Promise<RobinRunOffPeakTask> {
+  ): Promise<RobinDoneOffPeakTask> {
     await this.ensureReady();
     const now = options?.now ?? Date.now();
     const offPeakTaskId = options?.offPeakTaskId ?? `offpeak-${randomUUID()}`;
@@ -339,7 +339,7 @@ export class OffPeakTaskRepo {
   async list(scope?: {
     workspacePath?: string;
     workspaceIdentity?: string;
-  }): Promise<RobinRunOffPeakTask[]> {
+  }): Promise<RobinDoneOffPeakTask[]> {
     await this.ensureReady();
     const workspaceKey = scope?.workspacePath
       ? resolveWorkspaceKey({
@@ -364,7 +364,7 @@ export class OffPeakTaskRepo {
     return rows.map(rowToTask);
   }
 
-  async get(offPeakTaskId: string): Promise<RobinRunOffPeakTask | null> {
+  async get(offPeakTaskId: string): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const row = this.getRow(offPeakTaskId);
     return row ? rowToTask(row) : null;
@@ -376,9 +376,9 @@ export class OffPeakTaskRepo {
    */
   async invalidateModelSelection(
     offPeakTaskId: string,
-    modelSelection: NonNullable<RobinRunOffPeakTask["modelSelection"]>,
+    modelSelection: NonNullable<RobinDoneOffPeakTask["modelSelection"]>,
     options?: { now?: number },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const db = this.getDatabase();
     db.exec("BEGIN IMMEDIATE");
@@ -434,7 +434,7 @@ export class OffPeakTaskRepo {
   async markHistoryDeleted(
     offPeakTaskId: string,
     options?: { now?: number },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const row = this.getRow(offPeakTaskId);
     if (!row || row.started_at === null) return row ? rowToTask(row) : null;
@@ -494,10 +494,10 @@ export class OffPeakTaskRepo {
       title?: string;
       prompt?: string;
       permissionMode?: string;
-      modelSelection?: RobinRunOffPeakTask["modelSelection"] | null;
+      modelSelection?: RobinDoneOffPeakTask["modelSelection"] | null;
     },
     options?: { now?: number },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const row = this.getRow(offPeakTaskId);
     if (!row) return null;
@@ -574,7 +574,7 @@ export class OffPeakTaskRepo {
    * 原子 claim_running 0→1。FIFO 序按 queued_at（权威序由服务端取号顺序保证）。
    * 同时回收认领超时（claimed_at 过期）的僵尸认领。
    */
-  async claimDue(now: number): Promise<RobinRunOffPeakTask[]> {
+  async claimDue(now: number): Promise<RobinDoneOffPeakTask[]> {
     await this.ensureReady();
     const db = this.getDatabase();
     db.exec("BEGIN IMMEDIATE");
@@ -591,7 +591,7 @@ export class OffPeakTaskRepo {
           ORDER BY queued_at ASC, created_at ASC`,
         )
         .all() as unknown as OffPeakTaskRow[];
-      const claimed: RobinRunOffPeakTask[] = [];
+      const claimed: RobinDoneOffPeakTask[] = [];
       const claim = db.prepare(
         `UPDATE off_peak_tasks
         SET claim_running = 1, claimed_at = @now, updated_at = @now
@@ -627,7 +627,7 @@ export class OffPeakTaskRepo {
       sessionId?: string;
       serverTicketId?: string;
     },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const res = this.getDatabase()
       .prepare(
@@ -667,9 +667,9 @@ export class OffPeakTaskRepo {
       /** scheduler 派发阶段的确定性错误；存在时原子累计一次派发尝试并留 last_error。 */
       dispatchError?: string;
       /** 过期轮询只能结束它观察到的票和状态，不能覆盖手动 Continue 的新票。 */
-      expectedTask?: Pick<RobinRunOffPeakTask, "status" | "serverTicketId">;
+      expectedTask?: Pick<RobinDoneOffPeakTask, "status" | "serverTicketId">;
     },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const res = this.getDatabase()
       .prepare(
@@ -711,7 +711,7 @@ export class OffPeakTaskRepo {
     offPeakTaskId: string,
     paused: boolean,
     options?: { now?: number },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const res = this.getDatabase()
       .prepare(
@@ -794,7 +794,7 @@ export class OffPeakTaskRepo {
   async requeueForContinuation(
     offPeakTaskId: string,
     options?: { now?: number },
-  ): Promise<RobinRunOffPeakTask | null> {
+  ): Promise<RobinDoneOffPeakTask | null> {
     await this.ensureReady();
     const res = this.getDatabase()
       .prepare(
@@ -809,7 +809,7 @@ export class OffPeakTaskRepo {
   }
 
   /** 全部非终态任务（offPeakTaskSync 轮询输入：有非终态才轮）。 */
-  async listNonTerminal(): Promise<RobinRunOffPeakTask[]> {
+  async listNonTerminal(): Promise<RobinDoneOffPeakTask[]> {
     await this.ensureReady();
     const rows = this.getDatabase()
       .prepare(
@@ -836,7 +836,7 @@ export class OffPeakTaskRepo {
   }
 
   /** 未核销的终态任务：poll 周期捎带补报 + host 启动扫描（不新增计时器）。 */
-  async listUnsettledTerminal(): Promise<RobinRunOffPeakTask[]> {
+  async listUnsettledTerminal(): Promise<RobinDoneOffPeakTask[]> {
     await this.ensureReady();
     const rows = this.getDatabase()
       .prepare(

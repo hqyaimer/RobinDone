@@ -9,7 +9,7 @@ import type {
   GitPushResult,
   GitRepositorySummary,
   GitWorkspaceRepositoryInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface GitLineStat {
   added: number;

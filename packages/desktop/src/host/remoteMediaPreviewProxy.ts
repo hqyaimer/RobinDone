@@ -4,8 +4,8 @@ import type {
   IFileService,
   IMediaPreviewService,
   MediaPreviewPreparation,
-} from "@robinrun/services";
-import { getMediaPreviewFormat, type WindowHostAttachmentScope } from "@robinrun/shared";
+} from "@robindone/services";
+import { getMediaPreviewFormat, type WindowHostAttachmentScope } from "@robindone/shared";
 import {
   isPathWithinWorkspace,
   listen,
@@ -16,7 +16,7 @@ import {
 
 export { waitForDrainOrDisconnect } from "./remoteMediaPreviewProxyHelpers.js";
 
-const MEDIA_ROUTE_PREFIX = "/__robinrun_media/";
+const MEDIA_ROUTE_PREFIX = "/__robindone_media/";
 const DEFAULT_MAX_FILE_BYTES = 512 * 1024 * 1024;
 const DEFAULT_MAX_CONCURRENT_REQUESTS = 2;
 const DEFAULT_CHUNK_BYTES = 1024 * 1024;

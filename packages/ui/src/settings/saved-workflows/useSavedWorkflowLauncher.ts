@@ -9,7 +9,7 @@ import {
   savedWorkflowStartRejectionReasonSchema,
   type CommandAck,
   type SavedWorkflowStartRejectionReason,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { createCommandEnvelope } from "@/v4/commandFactory.js";
 import {
   acquireWorkspaceConnection,

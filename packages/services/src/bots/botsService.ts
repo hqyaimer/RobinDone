@@ -21,42 +21,42 @@ import {
   isGroupOwnerCommand,
   canAnswerGroupQuestion,
 } from "./groupSessions.js";
-/* eslint-disable max-lines -- Bots 服务仍复用原 RPC 文件名，先把鉴权、命令路由、RobinRun Agent 桥接收口集中在同一服务内。 */
+/* eslint-disable max-lines -- Bots 服务仍复用原 RPC 文件名，先把鉴权、命令路由、RobinDone Agent 桥接收口集中在同一服务内。 */
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import type { IDisposable } from "@robinrun/rpc";
-import { completeNewModelSelection } from "@robinrun/provider";
+import type { IDisposable } from "@robindone/rpc";
+import { completeNewModelSelection } from "@robindone/provider";
 import {
   ALL_BOT_WORKSPACES,
   parseRemoteWorkspaceIdentity,
   CONVERSATION_SELECTION_MAX_TEXT_LENGTH,
   generateTraceId,
-  normalizeAgentProviderToRobinRunAgent,
-  ROBINRUN_AGENT_PROVIDER,
+  normalizeAgentProviderToRobinDoneAgent,
+  ROBINDONE_AGENT_PROVIDER,
   BOT_TASK_BROADCAST_CHANNEL,
   BOT_TASK_STREAM_BROADCAST_CHANNEL,
   appendAssistantMessagePart,
-  buildRobinRunAssistantPresentation,
+  buildRobinDoneAssistantPresentation,
   decodeCustomModelValue,
   encodeCustomModelValue,
   getPermissionRequestPreview,
   getSupportedBotReplyGranularities,
   normalizeBotReplyGranularity,
-  type RobinRunConfigOption,
-  type RobinRunElicitationRequest,
-  type RobinRunElicitationQuestion,
-  type RobinRunPermissionOption,
-  type RobinRunPermissionRequest,
-  type RobinRunPromptAttachment,
-  type RobinRunTaskMode,
-  type RobinRunAssistantMessagePart,
-  type RobinRunAutomationBotDeliveryTarget,
-  type RobinRunProvider,
-  type RobinRunStreamEvent,
+  type RobinDoneConfigOption,
+  type RobinDoneElicitationRequest,
+  type RobinDoneElicitationQuestion,
+  type RobinDonePermissionOption,
+  type RobinDonePermissionRequest,
+  type RobinDonePromptAttachment,
+  type RobinDoneTaskMode,
+  type RobinDoneAssistantMessagePart,
+  type RobinDoneAutomationBotDeliveryTarget,
+  type RobinDoneProvider,
+  type RobinDoneStreamEvent,
   type TaskStreamMirrorableEvent,
-  type RobinRunTaskMeta,
+  type RobinDoneTaskMeta,
   type BotActor,
   type BotTaskBroadcastPayload,
   type BotTaskStreamBroadcastPayload,
@@ -82,7 +82,7 @@ import {
   type BotsConfigFile,
   type Locale,
   type SelectionPrompt,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { BotRemoteRuntimeService } from "#src/bot-project-runtime/contract.js";
 import {
   readProjectCatalog,
@@ -94,8 +94,8 @@ import type { IRemoteProjectService } from "#src/remote-projects/contract.js";
 import {
   buildRemoteHostWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
-} from "@robinrun/shared";
-import type { IRobinRunTaskService } from "../session/robinrunTaskService.js";
+} from "@robindone/shared";
+import type { IRobinDoneTaskService } from "../session/robindoneTaskService.js";
 import { resolveProviderModeIdFromConfigOptions } from "#src/session/sessionModeOptions.js";
 import { deriveSessionTitle as deriveTaskTitle } from "#src/session/sessionTitle.js";
 import type { IBroadcastService } from "../broadcast/broadcast.js";
@@ -201,7 +201,7 @@ const botsLogger = createServiceLogger("bots");
 
 function formatBotModelSelectionValue(selection: ModelSelection | undefined): string | undefined {
   if (!selection) return undefined;
-  return selection.providerId === ROBINRUN_AGENT_PROVIDER
+  return selection.providerId === ROBINDONE_AGENT_PROVIDER
     ? selection.modelId
     : encodeCustomModelValue(selection.providerId, selection.modelId);
 }
@@ -218,7 +218,7 @@ function parseBotModelOptionValue(value: string): ModelSelection | undefined {
       modelId: value.slice(separatorIndex + 1),
     };
   }
-  return value.trim() ? { providerId: ROBINRUN_AGENT_PROVIDER, modelId: value.trim() } : undefined;
+  return value.trim() ? { providerId: ROBINDONE_AGENT_PROVIDER, modelId: value.trim() } : undefined;
 }
 
 const BOT_REPLY_GRANULARITY_OPTIONS = [
@@ -314,7 +314,7 @@ function validateBotConfig(config: BotsConfigFile, candidate: BotConfig): void {
 
 interface BotsServiceDeps {
   credentialService: ICredentialService;
-  robinrunTaskService: IRobinRunTaskService;
+  robindoneTaskService: IRobinDoneTaskService;
   projectService: Pick<IProjectService, "readProjects" | "readTree" | "prepareSession">;
   remoteProjectService?: Pick<IRemoteProjectService, "readDirectory">;
   ownerHostId?: string;
@@ -347,7 +347,7 @@ interface PreparedTopicMessage {
 
 interface PreparedBotMessageContent {
   content: string;
-  robinrunAttachments: RobinRunPromptAttachment[];
+  robindoneAttachments: RobinDonePromptAttachment[];
 }
 
 type BotAuthorizedCommand =
@@ -386,7 +386,7 @@ interface BotModelProviderOption {
 }
 
 interface BotTaskSelectionEntry {
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   workspacePath: string;
   workspaceIdentity?: string;
 }
@@ -530,7 +530,7 @@ function createOutbound(
 function groupCardFor(
   actor: BotActor,
   context: BotContextState,
-): import("@robinrun/shared").BotGroupCard {
+): import("@robindone/shared").BotGroupCard {
   const group = context.group!;
   const threadId = actor.threadId ?? group.threadId;
   return {
@@ -544,7 +544,7 @@ function groupCardFor(
 
 function resolveAutomationBotDeliveryTarget(
   actor: BotActor,
-): RobinRunAutomationBotDeliveryTarget | undefined {
+): RobinDoneAutomationBotDeliveryTarget | undefined {
   if (actor.provider !== "feishu" && actor.provider !== "lark" && actor.provider !== "weixin") {
     return undefined;
   }
@@ -589,7 +589,7 @@ const BOT_PERMISSION_OPTION_PRIORITY = {
 } as const satisfies Record<BotPermissionOptionDisplayKind, number>;
 
 function getBotPermissionOptionDisplayKind(
-  option: RobinRunPermissionOption,
+  option: RobinDonePermissionOption,
 ): BotPermissionOptionDisplayKind {
   const text = `${option.optionId} ${option.kind} ${option.name}`.toLowerCase();
   const isAlways =
@@ -607,8 +607,8 @@ function getBotPermissionOptionDisplayKind(
 }
 
 function sortBotPermissionOptions(
-  options: readonly RobinRunPermissionOption[],
-): RobinRunPermissionOption[] {
+  options: readonly RobinDonePermissionOption[],
+): RobinDonePermissionOption[] {
   return [...options].sort((left, right) => {
     const leftPriority = BOT_PERMISSION_OPTION_PRIORITY[getBotPermissionOptionDisplayKind(left)];
     const rightPriority = BOT_PERMISSION_OPTION_PRIORITY[getBotPermissionOptionDisplayKind(right)];
@@ -616,7 +616,10 @@ function sortBotPermissionOptions(
   });
 }
 
-function formatBotPermissionOptionLabel(option: RobinRunPermissionOption, locale?: Locale): string {
+function formatBotPermissionOptionLabel(
+  option: RobinDonePermissionOption,
+  locale?: Locale,
+): string {
   const displayKind = getBotPermissionOptionDisplayKind(option);
   if (locale === "en-US") {
     switch (displayKind) {
@@ -647,8 +650,8 @@ function formatBotPermissionOptionLabel(option: RobinRunPermissionOption, locale
 }
 
 function formatBotPermissionOptionDescription(
-  option: RobinRunPermissionOption,
-  request: Pick<RobinRunPermissionRequest, "title" | "description" | "kind" | "raw">,
+  option: RobinDonePermissionOption,
+  request: Pick<RobinDonePermissionRequest, "title" | "description" | "kind" | "raw">,
   locale?: Locale,
 ): string | undefined {
   const displayKind = getBotPermissionOptionDisplayKind(option);
@@ -696,7 +699,7 @@ function formatBotPermissionOptionDescription(
       : "后续相同权限请求也会直接拒绝";
 }
 
-function isBotPermissionRejectOption(option: RobinRunPermissionOption): boolean {
+function isBotPermissionRejectOption(option: RobinDonePermissionOption): boolean {
   const displayKind = getBotPermissionOptionDisplayKind(option);
   return displayKind === "rejectOnce" || displayKind === "rejectAlways";
 }
@@ -728,7 +731,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const DEFAULT_BOT_ROBINRUN_PROVIDER: RobinRunProvider = ROBINRUN_AGENT_PROVIDER;
+const DEFAULT_BOT_ROBINDONE_PROVIDER: RobinDoneProvider = ROBINDONE_AGENT_PROVIDER;
 // Bot 模式硬锁 yolo：所有 bot task 一律免交互权限，且禁止通过 /mode 切换运行模式。
 const BOT_FORCED_MODE = "yolo";
 const BOT_TYPING_INTERVAL_MS = 4_000;
@@ -756,7 +759,7 @@ export function createBotsService(
     string,
     IDisposable & { automation(runId?: string): void; imInput(): void }
   >();
-  const taskStreamHub = createBotTaskStreamHub<RobinRunStreamEvent | TaskStreamMirrorableEvent>();
+  const taskStreamHub = createBotTaskStreamHub<RobinDoneStreamEvent | TaskStreamMirrorableEvent>();
   const failedPrivateDeliveries = new Map<
     string,
     {
@@ -1469,7 +1472,7 @@ export function createBotsService(
     }
     if (!valid || !bot || !context || !signature || privateWatches.has(botId)) return;
     if (!(await isRemoteWorkspaceConnected(context))) return;
-    const taskService = await resolveRobinRunTaskServiceForContext(context);
+    const taskService = await resolveRobinDoneTaskServiceForContext(context);
     const deleted = await taskService.listDeletedTaskIds?.({
       workspacePath: context.workspacePath,
       workspaceIdentity: context.workspaceIdentity,
@@ -2003,7 +2006,7 @@ export function createBotsService(
       );
     }
     const rawAttachments = (message.attachments ?? []).slice(0, BOT_MAX_ATTACHMENTS_PER_MESSAGE);
-    const robinrunAttachments: RobinRunPromptAttachment[] = [];
+    const robindoneAttachments: RobinDonePromptAttachment[] = [];
     const fileLines: string[] = [];
     for (const rawAttachment of rawAttachments) {
       const resolved = await resolveAttachmentBytes(bot, rawAttachment, message.actor);
@@ -2026,7 +2029,7 @@ export function createBotsService(
       const dataBase64 = Buffer.from(resolved.data).toString("base64");
       if (isGroup) {
         // 旧兼容入口只把文件路径拼进正文，既丢失 V4 附件又破坏末尾引用块；群输入只走标准寄存。
-        robinrunAttachments.push({
+        robindoneAttachments.push({
           kind: cached.kind === "image" || cached.kind === "audio" ? cached.kind : "file",
           filename: cached.filename,
           mimeType: cached.mimeType,
@@ -2037,16 +2040,16 @@ export function createBotsService(
         continue;
       }
       if (cached.kind === "image" || cached.kind === "audio") {
-        robinrunAttachments.push({
+        robindoneAttachments.push({
           kind: cached.kind,
           filename: cached.filename,
           mimeType: cached.mimeType,
           dataBase64,
-          // Bugfix：Bot 已把附件缓存到本地，RobinRunPromptAttachment 也必须携带该路径。
+          // Bugfix：Bot 已把附件缓存到本地，RobinDonePromptAttachment 也必须携带该路径。
           // 只在 prompt 文本里描述路径会让下游附件策略无法选择本地文件读取。
           localPath: cached.localPath,
         });
-        // Bugfix: bot 附件已经被 gateway 下载并缓存到本地。只把图片作为 RobinRun Agent image block 传入时，
+        // Bugfix: bot 附件已经被 gateway 下载并缓存到本地。只把图片作为 RobinDone Agent image block 传入时，
         // 下游 agent 可能把内部临时 URL 再 curl 到 /tmp，导致重复下载、额外权限请求和模型安全拦截。
         // 因此同时把本地缓存路径写进 prompt，明确后续工具操作只能围绕本地文件进行。
         fileLines.push(
@@ -2063,7 +2066,7 @@ export function createBotsService(
       trimmed || (rawAttachments.length > 0 ? msg(locale, "attachmentOnlyPrompt") : "");
     return {
       content: [baseContent, ...fileLines].filter(Boolean).join("\n\n"),
-      robinrunAttachments,
+      robindoneAttachments,
     };
   }
 
@@ -2116,21 +2119,23 @@ export function createBotsService(
     });
   }
 
-  async function resolveRobinRunTaskServiceForContext(
+  async function resolveRobinDoneTaskServiceForContext(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
-  ): Promise<IRobinRunTaskService> {
+  ): Promise<IRobinDoneTaskService> {
     if (!context.workspaceIdentity) {
-      return deps.robinrunTaskService;
+      return deps.robindoneTaskService;
     }
-    const remoteRobinRunTaskService = await deps.remoteWorkspaceService?.getRobinRunTaskService?.({
-      workspacePath: context.workspacePath,
-      workspaceIdentity: context.workspaceIdentity,
-      ...(context.hostId ? { hostId: context.hostId } : {}),
-    });
-    if (remoteRobinRunTaskService) {
-      return remoteRobinRunTaskService;
+    const remoteRobinDoneTaskService = await deps.remoteWorkspaceService?.getRobinDoneTaskService?.(
+      {
+        workspacePath: context.workspacePath,
+        workspaceIdentity: context.workspaceIdentity,
+        ...(context.hostId ? { hostId: context.hostId } : {}),
+      },
+    );
+    if (remoteRobinDoneTaskService) {
+      return remoteRobinDoneTaskService;
     }
-    // Bugfix: 远端 workspace 的 bot 请求不能缺 runtime 时静默走本地 robinrunTaskService。
+    // Bugfix: 远端 workspace 的 bot 请求不能缺 runtime 时静默走本地 robindoneTaskService。
     // 否则 /root 这类远端路径会在 macOS/Windows 本地 host 创建任务，模型和文件系统都错位。
     throw new BotAdminRequiredError(
       "remote",
@@ -2227,7 +2232,7 @@ export function createBotsService(
 
   async function listUserConfigOptions(
     _params: BotUserConfigOptionsParams,
-  ): Promise<RobinRunConfigOption[]> {
+  ): Promise<RobinDoneConfigOption[]> {
     return [];
   }
   async function ensureBotStorageMigrated(): Promise<void> {
@@ -2246,26 +2251,26 @@ export function createBotsService(
   async function listActiveTaskConfigOptions(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
     taskId: string,
-  ): Promise<RobinRunConfigOption[]> {
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
-    return robinrunTaskService.getTaskConfigOptions({ taskId });
+  ): Promise<RobinDoneConfigOption[]> {
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
+    return robindoneTaskService.getTaskConfigOptions({ taskId });
   }
 
   function findSelectConfigOption(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     configId: "model" | "mode" | "thoughtLevel",
-  ): (RobinRunConfigOption & { type: "select" }) | undefined {
+  ): (RobinDoneConfigOption & { type: "select" }) | undefined {
     const category = configId === "thoughtLevel" ? "thought_level" : configId;
     return options.find(
-      (item): item is RobinRunConfigOption & { type: "select" } =>
+      (item): item is RobinDoneConfigOption & { type: "select" } =>
         item.type === "select" && (item.category === category || item.id === category),
     );
   }
 
   function listConfigSelectOptions(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     configId: "model" | "mode" | "thoughtLevel",
-    context: { locale?: Locale; provider?: RobinRunProvider } = {},
+    context: { locale?: Locale; provider?: RobinDoneProvider } = {},
   ): BotModelOption[] {
     const option = findSelectConfigOption(options, configId);
     return (option?.options ?? []).map((item) => {
@@ -2292,14 +2297,14 @@ export function createBotsService(
 
   function getModeDisplayLabel(
     locale: Locale | undefined,
-    provider: RobinRunProvider | undefined,
+    provider: RobinDoneProvider | undefined,
     option: Pick<BotModelOption, "id" | "label">,
   ): string {
     if (!provider) {
       return option.label;
     }
     const isEnglish = locale === "en-US";
-    const labels: Partial<Record<RobinRunProvider, Record<string, string>>> = {
+    const labels: Partial<Record<RobinDoneProvider, Record<string, string>>> = {
       glm: {
         default: isEnglish ? "Default" : "默认",
         yolo: "Yolo",
@@ -2314,7 +2319,7 @@ export function createBotsService(
     context: {
       configId: "model" | "mode" | "thoughtLevel";
       locale?: Locale;
-      provider?: RobinRunProvider;
+      provider?: RobinDoneProvider;
     },
   ): string {
     if (context.configId !== "mode") {
@@ -2366,15 +2371,15 @@ export function createBotsService(
   }
 
   async function listModelProviderOptionsForActiveTask(
-    task: Pick<RobinRunTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
-    _activeProvider: RobinRunProvider,
+    task: Pick<RobinDoneTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
+    _activeProvider: RobinDoneProvider,
   ): Promise<BotModelProviderOption[]> {
     return listModelSelectionProviderOptions(task);
   }
 
   async function listModelOptionsForProviderFromActiveTask(
-    task: Pick<RobinRunTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
-    activeProvider: RobinRunProvider,
+    task: Pick<RobinDoneTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
+    activeProvider: RobinDoneProvider,
     providerId: string,
   ): Promise<BotModelOption[]> {
     return (
@@ -2396,8 +2401,8 @@ export function createBotsService(
   }
 
   async function listAllModelOptionsForActiveTask(
-    task: Pick<RobinRunTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
-    activeProvider: RobinRunProvider,
+    task: Pick<RobinDoneTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
+    activeProvider: RobinDoneProvider,
   ): Promise<BotModelOption[]> {
     return (await listModelProviderOptionsForActiveTask(task, activeProvider)).flatMap(
       (provider) => provider.models,
@@ -2405,8 +2410,8 @@ export function createBotsService(
   }
 
   function readCurrentActiveTaskModel(
-    task: Pick<RobinRunTaskMeta, "model">,
-    options: readonly RobinRunConfigOption[],
+    task: Pick<RobinDoneTaskMeta, "model">,
+    options: readonly RobinDoneConfigOption[],
   ): string | undefined {
     return readConfigSelectCurrentValue(options, "model") ?? task.model;
   }
@@ -2443,9 +2448,9 @@ export function createBotsService(
   }
 
   async function readCurrentModelProviderId(
-    task: Pick<RobinRunTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
-    options: readonly RobinRunConfigOption[],
-    activeProvider: RobinRunProvider,
+    task: Pick<RobinDoneTaskMeta, "model" | "workspacePath" | "workspaceIdentity">,
+    options: readonly RobinDoneConfigOption[],
+    activeProvider: RobinDoneProvider,
   ): Promise<string | undefined> {
     const currentValue = readCurrentActiveTaskModel(task, options);
     if (!currentValue) {
@@ -2463,7 +2468,7 @@ export function createBotsService(
   }
 
   function resolveCustomModelRuntimeModelId(
-    _activeProvider: RobinRunProvider,
+    _activeProvider: RobinDoneProvider,
     customModel: { providerId: string; modelName?: string },
   ): string | undefined {
     if (!customModel.modelName) {
@@ -2473,7 +2478,7 @@ export function createBotsService(
   }
 
   function readConfigSelectCurrentValue(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     configId: "model" | "mode" | "thoughtLevel",
   ): string | undefined {
     const currentValue = findSelectConfigOption(options, configId)?.currentValue;
@@ -2481,9 +2486,9 @@ export function createBotsService(
   }
 
   function resolveSupportedDraftMode(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     mode: string | undefined,
-    provider: RobinRunProvider,
+    provider: RobinDoneProvider,
   ): string | undefined {
     if (!mode) {
       return undefined;
@@ -2498,9 +2503,9 @@ export function createBotsService(
   }
 
   function readConfigSelectCurrentLabel(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     configId: "model" | "mode" | "thoughtLevel",
-    context: { locale?: Locale; provider?: RobinRunProvider } = {},
+    context: { locale?: Locale; provider?: RobinDoneProvider } = {},
   ): string | undefined {
     const currentValue = readConfigSelectCurrentValue(options, configId);
     if (!currentValue) {
@@ -2514,10 +2519,10 @@ export function createBotsService(
   }
 
   function readConfigSelectLabelForValue(
-    options: readonly RobinRunConfigOption[],
+    options: readonly RobinDoneConfigOption[],
     configId: "model" | "mode" | "thoughtLevel",
     value: string | undefined,
-    context: { locale?: Locale; provider?: RobinRunProvider } = {},
+    context: { locale?: Locale; provider?: RobinDoneProvider } = {},
   ): string | undefined {
     if (!value) {
       return undefined;
@@ -2529,16 +2534,16 @@ export function createBotsService(
   }
 
   function readCurrentActiveTaskMode(
-    task: Pick<RobinRunTaskMeta, "mode">,
-    options: readonly RobinRunConfigOption[],
+    task: Pick<RobinDoneTaskMeta, "mode">,
+    options: readonly RobinDoneConfigOption[],
   ): string | undefined {
     return readConfigSelectCurrentValue(options, "mode") ?? task.mode;
   }
 
   async function listProviderConfigOptionsForActiveTask(
-    task: Pick<RobinRunTaskMeta, "workspacePath" | "workspaceIdentity">,
-    activeProvider: RobinRunProvider,
-  ): Promise<RobinRunConfigOption[]> {
+    task: Pick<RobinDoneTaskMeta, "workspacePath" | "workspaceIdentity">,
+    activeProvider: RobinDoneProvider,
+  ): Promise<RobinDoneConfigOption[]> {
     return listUserConfigOptions({
       workspacePath: task.workspacePath,
       workspaceIdentity: task.workspaceIdentity,
@@ -2548,22 +2553,22 @@ export function createBotsService(
 
   function normalizeBotDraftOptions(draftOptions: BotDraftOptions): BotDraftOptions {
     // Bugfix: bot-state 里可能还残留旧三方 CLI 草稿 provider。
-    // 如果直接复用，/new 后首条消息会重新创建第三方 runtime，绕过 RobinRun Agent 单一事实源。
+    // 如果直接复用，/new 后首条消息会重新创建第三方 runtime，绕过 RobinDone Agent 单一事实源。
     return {
       ...draftOptions,
-      provider: normalizeAgentProviderToRobinRunAgent(draftOptions.provider),
+      provider: normalizeAgentProviderToRobinDoneAgent(draftOptions.provider),
     };
   }
 
   async function buildInitializedDraftOptions(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
-    provider?: RobinRunProvider,
+    provider?: RobinDoneProvider,
   ): Promise<BotDraftOptions> {
-    const requestedProvider = normalizeAgentProviderToRobinRunAgent(
-      provider ?? DEFAULT_BOT_ROBINRUN_PROVIDER,
+    const requestedProvider = normalizeAgentProviderToRobinDoneAgent(
+      provider ?? DEFAULT_BOT_ROBINDONE_PROVIDER,
     );
     if (context.workspaceIdentity && !(await isRemoteWorkspaceConnected(context))) {
-      // Bugfix: 远端断连时初始化草稿也不能偷偷申请远端 RobinRun Agent runtime。
+      // Bugfix: 远端断连时初始化草稿也不能偷偷申请远端 RobinDone Agent runtime。
       // 只有 /reconnect 能恢复连接；草稿先保留最小默认值，重连成功后再刷新。
       return { provider: requestedProvider };
     }
@@ -2584,7 +2589,7 @@ export function createBotsService(
     const configOptions = await listActiveTaskConfigOptions(context, context.activeTaskId).catch(
       () => [],
     );
-    const resolvedProvider = normalizeAgentProviderToRobinRunAgent(activeTask.provider);
+    const resolvedProvider = normalizeAgentProviderToRobinDoneAgent(activeTask.provider);
     // Bot 硬锁 yolo：继承当前 task 时也强制 yolo，不沿用原 task 的 mode。
     const forcedMode = resolveSupportedDraftMode(
       configOptions,
@@ -2593,7 +2598,7 @@ export function createBotsService(
     );
     // 继承的是领域选择，不是菜单显示值；显示值中的 $max 曾被误存为 modelId。
     // 由同一工作区的任务服务读取真实选择，保留 Provider、模型和显式思考等级。
-    const taskService = await resolveRobinRunTaskServiceForContext(context);
+    const taskService = await resolveRobinDoneTaskServiceForContext(context);
     const modelSelection = await taskService.getTaskModelSelection({
       taskId: context.activeTaskId,
     });
@@ -2648,7 +2653,7 @@ export function createBotsService(
     context: BotContextState,
     draftOptions: BotDraftOptions,
     resolvedView?: ModelSelectionView | null,
-  ): Promise<RobinRunConfigOption[]> {
+  ): Promise<RobinDoneConfigOption[]> {
     const view =
       resolvedView === undefined
         ? await readModelSelectionView(context, draftOptions.modelSelection)
@@ -2697,13 +2702,13 @@ export function createBotsService(
       draftOptions.provider,
     );
     if ((modeOption?.id && forcedDraftMode) || context.group) {
-      const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
-      await robinrunTaskService.setMode({
+      const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
+      await robindoneTaskService.setMode({
         taskId,
-        mode: (forcedDraftMode ?? "default") as RobinRunTaskMode,
+        mode: (forcedDraftMode ?? "default") as RobinDoneTaskMode,
       });
     } else if (modeOption?.id) {
-      // provider 不支持 yolo（非 RobinRun Agent）：保持其自身默认模式，避免首条消息回调失败。
+      // provider 不支持 yolo（非 RobinDone Agent）：保持其自身默认模式，避免首条消息回调失败。
       botsLogger.debug(
         traceId,
         `skip forced yolo mode unsupported provider=${draftOptions.provider}`,
@@ -3249,7 +3254,7 @@ export function createBotsService(
     typingIntervals.delete(taskId);
   }
 
-  function updateLiveStatusProgress(event: RobinRunStreamEvent): void {
+  function updateLiveStatusProgress(event: RobinDoneStreamEvent): void {
     if (event.type === "agent_message_chunk" || event.type === "agent_thought_chunk") {
       const text = normalizeStatusProgressText(event.content);
       if (!text) {
@@ -3308,7 +3313,7 @@ export function createBotsService(
 
   async function broadcastTaskStreamEvent(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
-    event: RobinRunStreamEvent,
+    event: RobinDoneStreamEvent,
   ): Promise<void> {
     const payload: BotTaskStreamBroadcastPayload = {
       workspacePath: context.workspacePath,
@@ -3511,9 +3516,9 @@ export function createBotsService(
   async function readTaskMeta(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
     taskId: string,
-  ): Promise<RobinRunTaskMeta | null> {
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
-    const tasks = await robinrunTaskService.listTasks({
+  ): Promise<RobinDoneTaskMeta | null> {
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
+    const tasks = await robindoneTaskService.listTasks({
       workspacePath: context.workspacePath,
       workspaceIdentity: context.workspaceIdentity,
     });
@@ -3585,7 +3590,7 @@ export function createBotsService(
 
   async function readContextActiveTaskMeta(
     context: BotContextState,
-  ): Promise<RobinRunTaskMeta | null> {
+  ): Promise<RobinDoneTaskMeta | null> {
     if (!context.activeTaskId) {
       return null;
     }
@@ -3596,7 +3601,7 @@ export function createBotsService(
     return (
       (
         await (
-          await resolveRobinRunTaskServiceForContext(context)
+          await resolveRobinDoneTaskServiceForContext(context)
         )
           .getTaskSnapshot({
             taskId: context.activeTaskId,
@@ -3618,8 +3623,8 @@ export function createBotsService(
     | {
         ok: true;
         taskId: string;
-        task: RobinRunTaskMeta;
-        configOptions: RobinRunConfigOption[];
+        task: RobinDoneTaskMeta;
+        configOptions: RobinDoneConfigOption[];
       }
     | { ok: false; reply: BotOutboundMessage[] }
   > {
@@ -3651,9 +3656,9 @@ export function createBotsService(
   async function broadcastTaskConfigSync(params: {
     context: BotContextState;
     taskId: string;
-    task?: RobinRunTaskMeta | null;
-    provider?: RobinRunProvider;
-    configOptions?: RobinRunConfigOption[];
+    task?: RobinDoneTaskMeta | null;
+    provider?: RobinDoneProvider;
+    configOptions?: RobinDoneConfigOption[];
   }): Promise<void> {
     await broadcastTaskListChange(params.context, params.taskId, "updated", {
       ...(params.task ? { task: params.task } : {}),
@@ -3663,7 +3668,7 @@ export function createBotsService(
   }
 
   function isTerminalTaskMeta(
-    task: RobinRunTaskMeta | null,
+    task: RobinDoneTaskMeta | null,
     eventType: "task_complete" | "task_error",
   ): boolean {
     if (!task) {
@@ -3679,7 +3684,7 @@ export function createBotsService(
     context: Pick<BotContextState, "workspacePath" | "workspaceIdentity" | "hostId">,
     taskId: string,
     eventType: "task_complete" | "task_error",
-  ): Promise<RobinRunTaskMeta | null> {
+  ): Promise<RobinDoneTaskMeta | null> {
     let latestTask = await readTaskMeta(context, taskId).catch(() => null);
     if (isTerminalTaskMeta(latestTask, eventType)) {
       return latestTask;
@@ -3739,7 +3744,7 @@ export function createBotsService(
       // 只信服务记录，外部回调不能声称已接收来跳过首次材料准备。
       materialPayload = {
         ...payload,
-        robinrunTopicHasAcceptedInput: Object.values(topic?.group?.inputs ?? {}).some(
+        robindoneTopicHasAcceptedInput: Object.values(topic?.group?.inputs ?? {}).some(
           (input) => input.admission === "accepted",
         ),
       };
@@ -3748,17 +3753,17 @@ export function createBotsService(
       ? ((await adapter
           .prepareCallbackPayload?.(callbackBot, materialPayload)
           .catch((error: unknown) => ({
-            robinrunCallbackPrepareError: error instanceof Error ? error.message : String(error),
+            robindoneCallbackPrepareError: error instanceof Error ? error.message : String(error),
           }))) ?? payload)
       : payload;
     if (
       isRecord(preparedPayload) &&
-      typeof preparedPayload.robinrunCallbackPrepareError === "string"
+      typeof preparedPayload.robindoneCallbackPrepareError === "string"
     ) {
       return {
         ok: false,
         replies: [],
-        responseBody: { error: preparedPayload.robinrunCallbackPrepareError },
+        responseBody: { error: preparedPayload.robindoneCallbackPrepareError },
         status: 401,
       };
     }
@@ -3777,7 +3782,7 @@ export function createBotsService(
       callbackBot &&
       isFeishuBotProvider(provider) &&
       isRecord(preparedPayload) &&
-      preparedPayload.robinrunBotRemoved === true
+      preparedPayload.robindoneBotRemoved === true
     ) {
       const event = isRecord(preparedPayload.event) ? preparedPayload.event : preparedPayload;
       const chatId = readNestedString(event, "chat_id");
@@ -3803,7 +3808,7 @@ export function createBotsService(
     }
     let parsePayload =
       isFeishuBotProvider(provider) && isRecord(preparedPayload)
-        ? { ...preparedPayload, robinrunProvider: provider }
+        ? { ...preparedPayload, robindoneProvider: provider }
         : preparedPayload;
     if (callbackBot && isFeishuBotProvider(provider) && isRecord(parsePayload)) {
       const event = isRecord(parsePayload.event) ? parsePayload.event : parsePayload;
@@ -3816,7 +3821,7 @@ export function createBotsService(
           states.bots[
             getBotConversationKey({ botId: callbackBot.id, chatType: "group", chatId: cardChatId })
           ];
-        if (group?.group) parsePayload = { ...parsePayload, robinrunChatType: "group" };
+        if (group?.group) parsePayload = { ...parsePayload, robindoneChatType: "group" };
       }
     }
     const parsedInboundMessages = adapter.parseCallback(parsePayload);
@@ -3968,10 +3973,10 @@ export function createBotsService(
         const handledByFeishuSynchronousCardAction =
           isFeishuBotProvider(provider) &&
           isRecord(preparedPayload) &&
-          ((preparedPayload.robinrunFeishuSynchronousCardAction === true &&
+          ((preparedPayload.robindoneFeishuSynchronousCardAction === true &&
             !(
-              isRecord(preparedPayload.robinrunFeishuCardResponseState) &&
-              preparedPayload.robinrunFeishuCardResponseState.deferred === true
+              isRecord(preparedPayload.robindoneFeishuCardResponseState) &&
+              preparedPayload.robindoneFeishuCardResponseState.deferred === true
             ) &&
             Boolean(outbound[0])) ||
             (inboundMessage.groupCardAction === true && outbound[0]?.callbackToastOnly === true));
@@ -4099,14 +4104,14 @@ export function createBotsService(
   }
 
   function createAssistantReplyBlocks(
-    parts: readonly RobinRunAssistantMessagePart[],
+    parts: readonly RobinDoneAssistantMessagePart[],
     toolCalls: ReadonlyMap<string, BotReplyToolCallState>,
     mode: BotReplyGranularity | undefined,
-    changeSummary: RobinRunTaskMeta["changeSummary"] | null | undefined,
+    changeSummary: RobinDoneTaskMeta["changeSummary"] | null | undefined,
   ): BotAssistantReplyBlock[] {
     const blocks: BotAssistantReplyBlock[] = [];
     const resolvedMode = mode ?? getDefaultBotReplyGranularity();
-    const presentation = buildRobinRunAssistantPresentation({
+    const presentation = buildRobinDoneAssistantPresentation({
       content: "",
       toolCalls: [...toolCalls.values()].map((toolCall) => ({
         ...toolCall,
@@ -4147,9 +4152,9 @@ export function createBotsService(
   }
 
   function normalizeBotElicitationQuestions(
-    event: Extract<RobinRunStreamEvent, { type: "elicitation_request" }>,
+    event: Extract<RobinDoneStreamEvent, { type: "elicitation_request" }>,
     locale: Locale | undefined,
-  ): RobinRunElicitationQuestion[] {
+  ): RobinDoneElicitationQuestion[] {
     const schema = isRecord(event.schema) ? event.schema : null;
     const isPlanApproval = schema?.interaction === "plan_approval";
     if (isPlanApproval) {
@@ -4191,7 +4196,7 @@ export function createBotsService(
   }
 
   function readBotElicitationRenderContext(
-    event: Extract<RobinRunStreamEvent, { type: "elicitation_request" }>,
+    event: Extract<RobinDoneStreamEvent, { type: "elicitation_request" }>,
   ): BotPendingElicitation["renderContext"] {
     const schema = isRecord(event.schema) ? event.schema : null;
     if (
@@ -4263,7 +4268,7 @@ export function createBotsService(
   }
 
   function mergeElicitationFormValues(
-    question: RobinRunElicitationQuestion,
+    question: RobinDoneElicitationQuestion,
     selectedValues: readonly string[],
     formValues: readonly string[],
   ): string[] {
@@ -4297,7 +4302,7 @@ export function createBotsService(
   }
 
   function resolveElicitationQuestionValue(
-    question: RobinRunElicitationQuestion,
+    question: RobinDoneElicitationQuestion,
     value: string,
     options: { includeSubmit?: boolean } = {},
   ): string {
@@ -4387,7 +4392,7 @@ export function createBotsService(
 
   function createBotElicitationRequestSnapshot(
     pending: BotPendingElicitation,
-  ): RobinRunElicitationRequest {
+  ): RobinDoneElicitationRequest {
     const currentQuestion = pending.questions[pending.currentQuestionIndex] ?? pending.questions[0];
     const answerDrafts = Object.fromEntries(
       Object.entries(pending.answers).map(([index, values]) => [`answer_${index}`, values]),
@@ -4612,8 +4617,8 @@ export function createBotsService(
     if (pending.handledAt) {
       return [createOutbound(actor, msg(auth.locale, "elicitationHandled"))];
     }
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-    const submitted = await robinrunTaskService.respondElicitation({
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+    const submitted = await robindoneTaskService.respondElicitation({
       taskId: pending.taskId,
       workspacePath: auth.context.workspacePath,
       workspaceIdentity: auth.context.workspaceIdentity,
@@ -4762,7 +4767,7 @@ export function createBotsService(
         answers: { ...pending.answers, [answerKey]: nextValues },
       };
       await writeContext({ ...auth.context, pendingElicitation: nextPending });
-      // Bugfix: 多选题在 Bot 里 toggle 后不会触发 RobinRun Agent response，必须主动同步草稿给 UI。
+      // Bugfix: 多选题在 Bot 里 toggle 后不会触发 RobinDone Agent response，必须主动同步草稿给 UI。
       await broadcastPendingElicitationProgress(auth.context, nextPending);
       return createElicitationReply(actor, nextPending, auth.locale);
     }
@@ -4853,7 +4858,7 @@ export function createBotsService(
     user: BotConfig,
     actor: BotActor,
     context: BotContextState,
-    event: Extract<RobinRunStreamEvent, { type: "elicitation_request" }>,
+    event: Extract<RobinDoneStreamEvent, { type: "elicitation_request" }>,
     mentionedUserIds?: string[],
   ): Promise<void> {
     const locale = await readMessageLocale();
@@ -4877,7 +4882,7 @@ export function createBotsService(
         ? { renderContext: readBotElicitationRenderContext(event) }
         : {}),
     };
-    // Bugfix: Bot 原先只消费 permission_request，没有把 RobinRun Agent 的
+    // Bugfix: Bot 原先只消费 permission_request，没有把 RobinDone Agent 的
     // AskUserQuestion/elicitation_request 转成第三方可回答消息，任务会一直卡在等待用户输入。
     if (context.pendingElicitation) {
       clearPendingElicitationSelection(context.pendingElicitation);
@@ -5011,11 +5016,11 @@ export function createBotsService(
           getWorkspaceKey(context.workspacePath, context.workspaceIdentity),
       );
     };
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
     if (context.group) {
       // Bug 原因：旧会话尚未冷恢复时建立结果订阅会耗尽重试；先读取权威状态，
       // 再监听未来事件，避免新请求执行结束后无人消费结果。这里不提交历史输入。
-      await robinrunTaskService.getBotGroupTaskBlockReason?.({
+      await robindoneTaskService.getBotGroupTaskBlockReason?.({
         taskId: context.activeTaskId,
         workspacePath: context.workspacePath,
         workspaceIdentity: context.workspaceIdentity,
@@ -5122,7 +5127,7 @@ export function createBotsService(
         privateDeliveryFailed = true;
       }
     };
-    let assistantParts: RobinRunAssistantMessagePart[] = [];
+    let assistantParts: RobinDoneAssistantMessagePart[] = [];
     let assistantReplyBuffer = "";
     let sentAnyAssistantReply = false;
     const assistantPartToolIds = new Set<string>();
@@ -5378,7 +5383,7 @@ export function createBotsService(
       }
     };
     const handleStreamEventImpl = async (
-      event: RobinRunStreamEvent | TaskStreamMirrorableEvent,
+      event: RobinDoneStreamEvent | TaskStreamMirrorableEvent,
       shouldBroadcast = true,
     ): Promise<void> => {
       if (disposed) return;
@@ -5649,7 +5654,7 @@ export function createBotsService(
         await broadcastTaskListChange(context, event.taskId, "permission_request", {
           permissionRequest: event,
         });
-        // Bugfix: UI 会把 RobinRun Agent 原始权限选项规整成“允许/始终允许/拒绝”的固定顺序和文案；
+        // Bugfix: UI 会把 RobinDone Agent 原始权限选项规整成“允许/始终允许/拒绝”的固定顺序和文案；
         // 机器人之前直接展示 provider 原始英文 name，还额外加取消按钮，导致同一个权限请求在飞书和 UI 看起来不一致。
         const permissionOptions = sortBotPermissionOptions(event.options);
         const permissionSelection: SelectionPrompt = {
@@ -5785,7 +5790,7 @@ export function createBotsService(
                 ),
           );
         }
-        // Bugfix: RobinRun Agent 终态事件可能先于 task index/meta 落盘广播到 Bots。
+        // Bugfix: RobinDone Agent 终态事件可能先于 task index/meta 落盘广播到 Bots。
         // 如果这里立刻用旧 meta 更新 sidebar，随后列表再刷新到终态 meta，会出现状态/摘要跳一下。
         // 因此终态广播前短重试读取一次稳定 meta，尽量用同一帧完成 UI 增量更新。
         const completedTask = await readTerminalTaskMeta(context, event.taskId, event.type).catch(
@@ -5835,7 +5840,7 @@ export function createBotsService(
         }
         const mode = getMode();
         const locale = await readMessageLocale();
-        const completedSnapshot = await robinrunTaskService
+        const completedSnapshot = await robindoneTaskService
           .getTaskSnapshot({
             taskId: event.taskId,
             workspacePath: context.workspacePath,
@@ -5909,7 +5914,7 @@ export function createBotsService(
       }
     };
     const handleStreamEvent = async (
-      event: RobinRunStreamEvent | TaskStreamMirrorableEvent,
+      event: RobinDoneStreamEvent | TaskStreamMirrorableEvent,
       shouldBroadcast = true,
     ): Promise<void> => {
       try {
@@ -5950,14 +5955,14 @@ export function createBotsService(
     };
     let streamEventQueue: Promise<void> = Promise.resolve();
     const enqueueStreamEvent = (
-      event: RobinRunStreamEvent | TaskStreamMirrorableEvent,
+      event: RobinDoneStreamEvent | TaskStreamMirrorableEvent,
     ): Promise<void> => {
       const shouldBroadcast = !forwardedTaskEvents.has(event);
       forwardedTaskEvents.add(event);
       const nextStreamEvent = streamEventQueue.then(() =>
         handleStreamEvent(event, shouldBroadcast),
       );
-      // Bugfix: RobinRun Agent 事件分发不保证等待 async listener。微信这类离散消息如果并发发送，
+      // Bugfix: RobinDone Agent 事件分发不保证等待 async listener。微信这类离散消息如果并发发送，
       // task_complete 的 Change summary 可能抢在前面正文 flush 之前到达客户端，所以这里按任务串行消费。
       streamEventQueue = nextStreamEvent.catch((error: unknown) => {
         botsLogger.warn(
@@ -5970,7 +5975,7 @@ export function createBotsService(
       return streamEventQueue;
     };
     const dynamicTaskEvent = (
-      robinrunTaskService as Partial<Pick<IRobinRunTaskService, "onDynamicTaskEvent">>
+      robindoneTaskService as Partial<Pick<IRobinDoneTaskService, "onDynamicTaskEvent">>
     ).onDynamicTaskEvent;
     // Bugfix: 远控/共享 host 场景会通过 workspace+task mirror 分发流事件。
     // 这里优先订阅 workspace 级事件，避免只监听本地 taskId relay 时漏掉 channel 回复。
@@ -5991,7 +5996,7 @@ export function createBotsService(
               // 这里使用 bot 专属 continuous 订阅，避免远控恢复逻辑影响飞书/微信等 channel。
               deliveryKind: "bot-channel-continuous",
             })(receive)
-          : robinrunTaskService.onDynamicStreamEvent(context.activeTaskId!)(receive),
+          : robindoneTaskService.onDynamicStreamEvent(context.activeTaskId!)(receive),
       enqueueStreamEvent,
     );
     streamSubscriptions.set(streamSubscriptionKey, {
@@ -6590,8 +6595,8 @@ export function createBotsService(
         }),
       ].join("\n");
     }
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
-    const tasks = await robinrunTaskService.listTasks({
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
+    const tasks = await robindoneTaskService.listTasks({
       workspacePath: context.workspacePath,
       workspaceIdentity: context.workspaceIdentity,
     });
@@ -6599,7 +6604,7 @@ export function createBotsService(
       ? tasks.find((task) => task.taskId === context.activeTaskId)
       : null;
     const activeTaskSnapshot = context.activeTaskId
-      ? await robinrunTaskService
+      ? await robindoneTaskService
           .getTaskSnapshot({
             taskId: context.activeTaskId,
             workspacePath: context.workspacePath,
@@ -6730,7 +6735,7 @@ export function createBotsService(
   ) {
     const messageId = message.actor.providerMessageId!;
     if (!context.group) return {};
-    let topicContext: import("@robinrun/shared").BotTopicHistoryBatch | undefined;
+    let topicContext: import("@robindone/shared").BotTopicHistoryBatch | undefined;
     let historyError: unknown;
 
     const generation = historyGeneration(context);
@@ -6808,7 +6813,7 @@ export function createBotsService(
   ): Promise<BotOutboundMessage[]> {
     if (!context.group || !context.activeTaskId || !isFeishuBotProvider(bot.provider))
       throw new Error("Group context is missing");
-    const service = await resolveRobinRunTaskServiceForContext(context);
+    const service = await resolveRobinDoneTaskServiceForContext(context);
     if (!service.submitBotGroupInput)
       throw new Error("Runtime does not support group input admission");
     const messageId = message.actor.providerMessageId;
@@ -6829,7 +6834,7 @@ export function createBotsService(
     )
       throw new Error("Group authorization changed before input admission");
     let attachmentOffset = 0;
-    const admittedAttachments: RobinRunPromptAttachment[] = [];
+    const admittedAttachments: RobinDonePromptAttachment[] = [];
     // 多个回调可能在首次接收前已各自准备根引用；提交时再按权威记录去重。
     let rootIncluded = Object.values(admissionContext.group.inputs ?? {}).some(
       (input) => input.admission === "accepted",
@@ -6840,7 +6845,7 @@ export function createBotsService(
       const includeQuote = quote && !(isRoot && rootIncluded);
       const attachmentIndexes: number[] = [];
       let hasRootAttachment = false;
-      material.robinrunAttachments.forEach((attachment, index) => {
+      material.robindoneAttachments.forEach((attachment, index) => {
         const resourceMessageId =
           original.attachments?.[index]?.providerMetadata?.resourceMessageId;
         const rootAttachment = !!inputRootMessageId && resourceMessageId === inputRootMessageId;
@@ -6850,7 +6855,7 @@ export function createBotsService(
         attachmentIndexes.push(admittedAttachments.length);
         admittedAttachments.push(attachment);
       });
-      attachmentOffset += material.robinrunAttachments.length;
+      attachmentOffset += material.robindoneAttachments.length;
       if ((isRoot && includeQuote) || hasRootAttachment) rootIncluded = true;
       return {
         messageId: original.actor.providerMessageId!,
@@ -6865,7 +6870,7 @@ export function createBotsService(
     });
     // 历史文本附件在各条原始附件之后追加，保留它且不归给后续消息。
     if (topicBatch)
-      admittedAttachments.push(...prepared.robinrunAttachments.slice(attachmentOffset));
+      admittedAttachments.push(...prepared.robindoneAttachments.slice(attachmentOffset));
     const source = {
       authorizationId: context.group.authorizationId,
       botIdentity: { name: bot.name, ...(message.botOpenId ? { openId: message.botOpenId } : {}) },
@@ -6909,7 +6914,7 @@ export function createBotsService(
         : message.referencedMessage
           ? { conversationQuotes: [message.referencedMessage] }
           : {}),
-      attachments: topicBatch ? admittedAttachments : prepared.robinrunAttachments,
+      attachments: topicBatch ? admittedAttachments : prepared.robindoneAttachments,
       source: {
         ...runtimeSource,
         ...(archive
@@ -7112,7 +7117,7 @@ export function createBotsService(
         },
       ];
     }
-    const taskService = await resolveRobinRunTaskServiceForContext(auth.context);
+    const taskService = await resolveRobinDoneTaskServiceForContext(auth.context);
     if (!taskService.cancelBotGroupInput) throw new Error("Runtime cannot cancel queued input");
     const ack = await taskService.cancelBotGroupInput({
       taskId: input.taskId,
@@ -7147,8 +7152,8 @@ export function createBotsService(
     taskId: string,
     traceId: string,
     content: string,
-    attachments: RobinRunPromptAttachment[],
-    botDeliveryTarget?: RobinRunAutomationBotDeliveryTarget,
+    attachments: RobinDonePromptAttachment[],
+    botDeliveryTarget?: RobinDoneAutomationBotDeliveryTarget,
     modelSelection?: ModelSelection,
   ): void {
     privateImTraces.add(JSON.stringify([taskStreamKey(context, actor), traceId]));
@@ -7159,9 +7164,9 @@ export function createBotsService(
     // Bugfix: Telegram polling 是单循环顺序处理 update。如果这里 await session/prompt，
     // 权限按钮 callback 会一直排队到整轮任务结束，导致用户点 inline keyboard 没反应。
     // 因此 prompt 必须后台跑，polling loop 才能继续接收 /permission 回调。
-    void resolveRobinRunTaskServiceForContext(context)
-      .then((robinrunTaskService) =>
-        robinrunTaskService.sendPrompt({
+    void resolveRobinDoneTaskServiceForContext(context)
+      .then((robindoneTaskService) =>
+        robindoneTaskService.sendPrompt({
           taskId,
           traceId,
           content,
@@ -7205,7 +7210,7 @@ export function createBotsService(
     ]);
     const existing = topicStops.get(key);
     if (existing) return existing;
-    const stopping = resolveRobinRunTaskServiceForContext(context).then(async (service) => {
+    const stopping = resolveRobinDoneTaskServiceForContext(context).then(async (service) => {
       if (!service.stopBotTopicExecution) throw new Error("Topic stop is unavailable");
       await service.stopBotTopicExecution({
         taskId,
@@ -7275,7 +7280,7 @@ export function createBotsService(
       );
     }
     if (context?.activeTaskId) {
-      const service = await resolveRobinRunTaskServiceForContext(context);
+      const service = await resolveRobinDoneTaskServiceForContext(context);
       if (!service.invalidateBotTopicInputs)
         throw new Error("Topic preparation cancellation is unavailable");
       await service.invalidateBotTopicInputs({
@@ -7379,7 +7384,7 @@ export function createBotsService(
         readRunningRun: async () => {
           const context = await current();
           if (!context?.activeTaskId) return undefined;
-          const service = await resolveRobinRunTaskServiceForContext(context);
+          const service = await resolveRobinDoneTaskServiceForContext(context);
           if (!service.readBotTopicExecution)
             throw new Error("Topic runtime control is unavailable");
           const execution = await service.readBotTopicExecution({
@@ -7650,7 +7655,7 @@ export function createBotsService(
     }
     let deletedTaskId: string | undefined;
     if (auth.context.mode === "task" && auth.context.activeTaskId) {
-      const taskService = await resolveRobinRunTaskServiceForContext(auth.context);
+      const taskService = await resolveRobinDoneTaskServiceForContext(auth.context);
       const deletedTaskIds = await taskService.listDeletedTaskIds({
         workspacePath: auth.context.workspacePath,
         workspaceIdentity: auth.context.workspaceIdentity,
@@ -7682,7 +7687,9 @@ export function createBotsService(
       preparedMessage = topicBatch
         ? {
             content: message.text,
-            robinrunAttachments: topicBatch.flatMap((entry) => entry.prepared.robinrunAttachments),
+            robindoneAttachments: topicBatch.flatMap(
+              (entry) => entry.prepared.robindoneAttachments,
+            ),
           }
         : await prepareBotMessageContent(auth.bot, message, auth.locale);
       const historyMaterial = history.topicContext;
@@ -7696,7 +7703,7 @@ export function createBotsService(
           ),
           auth.context.group.topicTitle || auth.context.group.name,
         );
-        if (attachment) preparedMessage.robinrunAttachments.push(attachment);
+        if (attachment) preparedMessage.robindoneAttachments.push(attachment);
       }
     } catch (error) {
       return [
@@ -7734,8 +7741,8 @@ export function createBotsService(
             : {}),
         },
       };
-      const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-      const task = await robinrunTaskService.createTask({
+      const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+      const task = await robindoneTaskService.createTask({
         workspacePath: auth.context.workspacePath,
         workspaceIdentity: auth.context.workspaceIdentity,
         projectId: auth.context.projectId ?? null,
@@ -7756,7 +7763,7 @@ export function createBotsService(
               ? [auth.context.group.topicTitle || auth.context.group.threadId]
               : []),
           ].join(" · ")
-        : deriveTaskTitle(preparedMessage.content, preparedMessage.robinrunAttachments);
+        : deriveTaskTitle(preparedMessage.content, preparedMessage.robindoneAttachments);
       const broadcastTask = taskTitle ? { ...task, title: taskTitle } : task;
       const traceId = generateTraceId(task.taskId);
       try {
@@ -7768,7 +7775,7 @@ export function createBotsService(
       } catch (error) {
         // Bugfix: 初始配置失败时旧流程已把 context 切到 task，留下无法继续的空任务。
         // 在持久化 Bot task 状态前完成配置，并删除临时 task，让用户修正配置后可以直接重试。
-        await robinrunTaskService
+        await robindoneTaskService
           .deleteTask({
             taskId: task.taskId,
             workspacePath: auth.context.workspacePath,
@@ -7823,8 +7830,8 @@ export function createBotsService(
         prompt: {
           content: preparedMessage.content,
           attachments:
-            preparedMessage.robinrunAttachments.length > 0
-              ? preparedMessage.robinrunAttachments
+            preparedMessage.robindoneAttachments.length > 0
+              ? preparedMessage.robindoneAttachments
               : undefined,
           messageId: `bot-${traceId}`,
           sentAt: Date.now(),
@@ -7837,7 +7844,7 @@ export function createBotsService(
         task.taskId,
         traceId,
         preparedMessage.content,
-        preparedMessage.robinrunAttachments,
+        preparedMessage.robindoneAttachments,
         resolveAutomationBotDeliveryTarget(message.actor),
         submissionDraftOptions.modelSelection,
       );
@@ -7854,15 +7861,15 @@ export function createBotsService(
         topicBatch,
         isCurrent,
       );
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-    await robinrunTaskService.resumeTask({
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+    await robindoneTaskService.resumeTask({
       taskId: auth.context.activeTaskId,
       workspacePath: auth.context.workspacePath,
       workspaceIdentity: auth.context.workspaceIdentity,
     });
     // Bot 只是同一 Session 的输入端。菜单可能过滤无效值，不能拿它反推原选择，
     // 更不能重新套用 Bot 创建默认值。解析只确定本次输入，不在此改写 Session。
-    const originalSelection = await robinrunTaskService.getTaskModelSelection({
+    const originalSelection = await robindoneTaskService.getTaskModelSelection({
       taskId: auth.context.activeTaskId,
     });
     const selectionView = originalSelection
@@ -7880,8 +7887,8 @@ export function createBotsService(
       prompt: {
         content: preparedMessage.content,
         attachments:
-          preparedMessage.robinrunAttachments.length > 0
-            ? preparedMessage.robinrunAttachments
+          preparedMessage.robindoneAttachments.length > 0
+            ? preparedMessage.robindoneAttachments
             : undefined,
         messageId: `bot-${traceId}`,
         sentAt: Date.now(),
@@ -7894,7 +7901,7 @@ export function createBotsService(
       auth.context.activeTaskId,
       traceId,
       preparedMessage.content,
-      preparedMessage.robinrunAttachments,
+      preparedMessage.robindoneAttachments,
       resolveAutomationBotDeliveryTarget(message.actor),
       effectiveSelection,
     );
@@ -7977,7 +7984,7 @@ export function createBotsService(
     if (context.group) {
       if (context.workspaceIdentity && !(await isRemoteWorkspaceConnected(context)))
         return "groupTaskDisconnected";
-      const taskService = await resolveRobinRunTaskServiceForContext(context);
+      const taskService = await resolveRobinDoneTaskServiceForContext(context);
       if (!taskService.getBotGroupTaskBlockReason)
         throw new Error("Runtime cannot verify group queue state");
       const reason = await taskService.getBotGroupTaskBlockReason({
@@ -8017,8 +8024,8 @@ export function createBotsService(
       // 断连时把内存 running 状态视为不可确认，交给显式 /reconnect 后再恢复查询。
       return null;
     }
-    const robinrunTaskService = await resolveRobinRunTaskServiceForContext(context);
-    const activeTaskSnapshot = await robinrunTaskService
+    const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(context);
+    const activeTaskSnapshot = await robindoneTaskService
       .getTaskSnapshot({
         taskId: context.activeTaskId,
         workspacePath: context.workspacePath,
@@ -8030,7 +8037,7 @@ export function createBotsService(
       activeTaskSnapshot?.meta.status === "error"
     ) {
       // Bugfix: Bots 进程内 runningTasks 可能因重启/流式终态事件丢失而和持久化状态不一致。
-      // RobinRun Agent 历史任务的 status 为空也可能只是旧数据，不代表 UI 仍在运行；只有本进程确实发起
+      // RobinDone Agent 历史任务的 status 为空也可能只是旧数据，不代表 UI 仍在运行；只有本进程确实发起
       // 且尚未观察到终态的 task 才阻止 /task、/new 等上下文切换。
       runningTasks.delete(context.activeTaskId);
       stopTyping(context.activeTaskId);
@@ -8040,7 +8047,7 @@ export function createBotsService(
   }
 
   function warnAutomationDeliveryOnce(params: {
-    target: RobinRunAutomationBotDeliveryTarget;
+    target: RobinDoneAutomationBotDeliveryTarget;
     reason: string;
   }): void {
     const key = `${params.target.provider}:${params.target.botId}:${params.reason}`;
@@ -8442,7 +8449,7 @@ export function createBotsService(
         state.bots[
           getBotConversationKey({ botId: params.botId, chatId: params.chatId, chatType: "group" })
         ];
-      const service = await resolveRobinRunTaskServiceForContext({ ...context, ...workspace });
+      const service = await resolveRobinDoneTaskServiceForContext({ ...context, ...workspace });
       const summaries =
         (await service.readBotTopicSummaries?.({
           taskId: params.taskId,
@@ -8696,7 +8703,7 @@ export function createBotsService(
             if (!alias) continue;
             // 默认会话可能已切换工作区；迁移检查必须使用旧任务自己的完整工作区身份。
             const workspace = group.taskWorkspaces?.[alias.taskId] ?? candidate;
-            const service = await resolveRobinRunTaskServiceForContext({
+            const service = await resolveRobinDoneTaskServiceForContext({
               ...candidate,
               ...workspace,
             });
@@ -8975,7 +8982,7 @@ export function createBotsService(
             }
             const active = await requireActiveTask(message, auth);
             if (!active.ok) return active.reply;
-            const activeProvider = normalizeAgentProviderToRobinRunAgent(active.task.provider);
+            const activeProvider = normalizeAgentProviderToRobinDoneAgent(active.task.provider);
             if (!activeProvider) {
               return [createOutbound(message.actor, msg(auth.locale, "modelProviderMissing"))];
             }
@@ -9064,7 +9071,7 @@ export function createBotsService(
             }
             const active = await requireActiveTask(message, auth);
             if (!active.ok) return active.reply;
-            const activeProvider = normalizeAgentProviderToRobinRunAgent(active.task.provider);
+            const activeProvider = normalizeAgentProviderToRobinDoneAgent(active.task.provider);
             if (!activeProvider) {
               return [createOutbound(message.actor, msg(auth.locale, "modelProviderMissing"))];
             }
@@ -9149,7 +9156,7 @@ export function createBotsService(
             }
             const active = await requireActiveTask(message, auth);
             if (!active.ok) return active.reply;
-            const activeProvider = normalizeAgentProviderToRobinRunAgent(active.task.provider);
+            const activeProvider = normalizeAgentProviderToRobinDoneAgent(active.task.provider);
             if (!activeProvider) {
               return [createOutbound(message.actor, msg(auth.locale, "modelProviderMissing"))];
             }
@@ -9183,8 +9190,8 @@ export function createBotsService(
             if (!targetModelSelection)
               return [createOutbound(message.actor, msg(auth.locale, "modelMissing"))];
             const traceId = generateTraceId(active.taskId);
-            const robinrunTaskService = await resolveRobinRunTaskServiceForContext(active.task);
-            const configOptions = await robinrunTaskService.setModel({
+            const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(active.task);
+            const configOptions = await robindoneTaskService.setModel({
               taskId: active.taskId,
               traceId,
               modelSelection: targetModelSelection,
@@ -9265,7 +9272,7 @@ export function createBotsService(
               commandName === "mode" && active.task.provider
                 ? await listProviderConfigOptionsForActiveTask(
                     active.task,
-                    normalizeAgentProviderToRobinRunAgent(active.task.provider),
+                    normalizeAgentProviderToRobinDoneAgent(active.task.provider),
                   )
                 : active.configOptions;
             const currentValue =
@@ -9276,16 +9283,16 @@ export function createBotsService(
               commandName === "mode"
                 ? readConfigSelectLabelForValue(optionSource, commandName, currentValue, {
                     locale: auth.locale,
-                    provider: normalizeAgentProviderToRobinRunAgent(active.task.provider),
+                    provider: normalizeAgentProviderToRobinDoneAgent(active.task.provider),
                   })
                 : readConfigSelectCurrentLabel(active.configOptions, commandName, {
                     locale: auth.locale,
-                    provider: normalizeAgentProviderToRobinRunAgent(active.task.provider),
+                    provider: normalizeAgentProviderToRobinDoneAgent(active.task.provider),
                   });
             const selectOption = findSelectConfigOption(optionSource, commandName);
             const options = listConfigSelectOptions(optionSource, commandName, {
               locale: auth.locale,
-              provider: normalizeAgentProviderToRobinRunAgent(active.task.provider),
+              provider: normalizeAgentProviderToRobinDoneAgent(active.task.provider),
             });
             if (options.length === 0) {
               return [
@@ -9424,8 +9431,8 @@ export function createBotsService(
               ];
             }
             const traceId = generateTraceId(active.taskId);
-            const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-            const configOptions = await robinrunTaskService.setConfigOption({
+            const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+            const configOptions = await robindoneTaskService.setConfigOption({
               taskId: active.taskId,
               traceId,
               configId: selectOption.id,
@@ -9536,7 +9543,7 @@ export function createBotsService(
               await repo.writeState(state);
             });
             if (auth.context.activeTaskId) {
-              const service = await resolveRobinRunTaskServiceForContext(auth.context);
+              const service = await resolveRobinDoneTaskServiceForContext(auth.context);
               const target = {
                 taskId: auth.context.activeTaskId,
                 workspacePath: auth.context.workspacePath,
@@ -9564,18 +9571,20 @@ export function createBotsService(
               return [createOutbound(message.actor, msg(auth.locale, "noActiveTask"))];
             }
             try {
-              const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
+              const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(
+                auth.context,
+              );
               if (auth.context.group?.threadId) {
-                if (!robinrunTaskService.readBotTopicExecution)
+                if (!robindoneTaskService.readBotTopicExecution)
                   throw new Error("Topic runtime control is unavailable");
-                const executionId = await robinrunTaskService.readBotTopicExecution({
+                const executionId = await robindoneTaskService.readBotTopicExecution({
                   taskId: auth.context.activeTaskId,
                   workspacePath: auth.context.workspacePath,
                   workspaceIdentity: auth.context.workspaceIdentity,
                 });
                 if (executionId) await stopTopicRun(auth.context, executionId.executionId);
               } else
-                await robinrunTaskService.stopGeneration({ taskId: auth.context.activeTaskId });
+                await robindoneTaskService.stopGeneration({ taskId: auth.context.activeTaskId });
             } catch (error) {
               const messageText = error instanceof Error ? error.message : String(error);
               return [
@@ -9610,8 +9619,8 @@ export function createBotsService(
               return [createOutbound(message.actor, msg(auth.locale, "permissionExpired"))];
             if (option.handledAt)
               return [createOutbound(message.actor, msg(auth.locale, "permissionHandled"))];
-            const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-            const submitted = await robinrunTaskService.respondPermission({
+            const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+            const submitted = await robindoneTaskService.respondPermission({
               taskId: auth.context.activeTaskId,
               requestId: option.requestId,
               optionId: option.optionId,
@@ -9690,8 +9699,8 @@ export function createBotsService(
             if (!pendingOption) {
               return [createOutbound(message.actor, msg(auth.locale, "permissionHandled"))];
             }
-            const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-            const submitted = await robinrunTaskService.respondPermission({
+            const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+            const submitted = await robindoneTaskService.respondPermission({
               taskId: auth.context.activeTaskId,
               requestId: command.requestId,
               optionId: command.optionId,
@@ -9718,8 +9727,8 @@ export function createBotsService(
             const pendingOption = auth.context.pendingPermissionOptions?.find(
               (option) => option.requestId === command.requestId && option.command === "deny",
             );
-            const robinrunTaskService = await resolveRobinRunTaskServiceForContext(auth.context);
-            const submitted = await robinrunTaskService.respondPermission({
+            const robindoneTaskService = await resolveRobinDoneTaskServiceForContext(auth.context);
+            const submitted = await robindoneTaskService.respondPermission({
               taskId: auth.context.activeTaskId,
               requestId: command.requestId,
               optionId: "deny",
@@ -9806,7 +9815,7 @@ export function createBotsService(
           pendingTopicKeys.map(async (key) => {
             const context = states[key];
             if (!context?.activeTaskId) return;
-            const taskService = await resolveRobinRunTaskServiceForContext(context);
+            const taskService = await resolveRobinDoneTaskServiceForContext(context);
             await taskService.invalidateBotTopicInputs?.({
               taskId: context.activeTaskId,
               workspacePath: context.workspacePath,

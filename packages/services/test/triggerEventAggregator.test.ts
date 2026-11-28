@@ -6,7 +6,7 @@
 // 可测」（event-aggregator.ts 头注），故在聚合器层单测——引擎级的伪定时器 + 真实 fs
 // 集成用例在这台开发机上本身有抖动（triggerEngineScheduling 头注同款问题），不再叠加。
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry } from "@robindone/shared";
 
 import {
   TriggerEventAggregator,

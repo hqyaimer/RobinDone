@@ -1,7 +1,7 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
-import type { ProjectTree } from "@robinrun/services";
-import { ServiceChannels } from "@robinrun/shared";
-import { TID_TASK_ITEM, testId } from "@robinrun/shared/test-ids";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
+import type { ProjectTree } from "@robindone/services";
+import { ServiceChannels } from "@robindone/shared";
+import { TID_TASK_ITEM, testId } from "@robindone/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import {
   callHandoffHost,
@@ -172,12 +172,12 @@ async function installSidebarIndicatorProbe(taskId: string) {
   const installed = await browser.execute(
     (taskItemTestId) => {
       type ProbeWindow = Window & {
-        __robinrunSidebarIndicatorProbe?: SidebarIndicatorProbe & {
+        __robindoneSidebarIndicatorProbe?: SidebarIndicatorProbe & {
           observer: MutationObserver;
         };
       };
       const probeWindow = window as ProbeWindow;
-      probeWindow.__robinrunSidebarIndicatorProbe?.observer.disconnect();
+      probeWindow.__robindoneSidebarIndicatorProbe?.observer.disconnect();
       const probe = {
         seenTerminal: false,
         loadingReappeared: false,
@@ -199,7 +199,7 @@ async function installSidebarIndicatorProbe(taskId: string) {
         subtree: true,
         attributes: true,
       });
-      probeWindow.__robinrunSidebarIndicatorProbe = probe;
+      probeWindow.__robindoneSidebarIndicatorProbe = probe;
       sample();
       return Boolean(document.querySelector(`[data-testid="${taskItemTestId}"]`));
     },
@@ -212,9 +212,9 @@ async function getSidebarIndicatorProbe(): Promise<SidebarIndicatorProbe | null>
   return browser.execute(() => {
     const probe = (
       window as Window & {
-        __robinrunSidebarIndicatorProbe?: SidebarIndicatorProbe;
+        __robindoneSidebarIndicatorProbe?: SidebarIndicatorProbe;
       }
-    ).__robinrunSidebarIndicatorProbe;
+    ).__robindoneSidebarIndicatorProbe;
     return probe
       ? {
           seenTerminal: probe.seenTerminal,
@@ -227,13 +227,13 @@ async function getSidebarIndicatorProbe(): Promise<SidebarIndicatorProbe | null>
 async function disposeSidebarIndicatorProbe() {
   await browser.execute(() => {
     type ProbeWindow = Window & {
-      __robinrunSidebarIndicatorProbe?: SidebarIndicatorProbe & {
+      __robindoneSidebarIndicatorProbe?: SidebarIndicatorProbe & {
         observer?: MutationObserver;
       };
     };
     const probeWindow = window as ProbeWindow;
-    probeWindow.__robinrunSidebarIndicatorProbe?.observer?.disconnect();
-    delete probeWindow.__robinrunSidebarIndicatorProbe;
+    probeWindow.__robindoneSidebarIndicatorProbe?.observer?.disconnect();
+    delete probeWindow.__robindoneSidebarIndicatorProbe;
   });
 }
 

@@ -214,7 +214,7 @@
         "description": "研究任务",
         "whenToUse": "研究时",
         "scope": "project",
-        "path": ".robinrun/workflows/research.ts",
+        "path": ".robindone/workflows/research.ts",
         "argNames": ["topic"]
       }
     ],

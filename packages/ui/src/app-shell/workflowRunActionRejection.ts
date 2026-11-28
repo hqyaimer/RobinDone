@@ -9,7 +9,7 @@ import {
   BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX,
   WORKFLOW_RUN_RESUME_REJECTED_FAULT_PREFIX,
   type CommandAck,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 export type WorkflowRunAction = "cancel" | "resume";
 

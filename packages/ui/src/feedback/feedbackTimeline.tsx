@@ -3,7 +3,7 @@ import type {
   FeedbackCommentAttachment,
   FeedbackTicketEvent,
   FeedbackTicketEventType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   CheckCircle2,
   CornerDownRight,
@@ -15,7 +15,7 @@ import {
 import { filterUserVisibleComments, formatRelativeTime } from "@/feedback/feedbackUserView.js";
 import { getUserFacingEventSummary } from "@/feedback/feedbackTimelineSummary.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 type MessageFormatter = (descriptor: { id: string }, values?: Record<string, string>) => string;
 
@@ -129,7 +129,7 @@ export function FeedbackTimeline({
   comments: FeedbackComment[];
   showDurations?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const formatMessage = intl.formatMessage;
   const items = getFeedbackTimelineItems(events, comments, formatMessage);
 

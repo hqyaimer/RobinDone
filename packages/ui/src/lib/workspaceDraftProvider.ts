@@ -1,11 +1,11 @@
-import type { RobinRunProvider } from "@robinrun/shared";
-import type { WorkspaceRobinRunUIState } from "@/store/robinrunSessionStore.js";
+import type { RobinDoneProvider } from "@robindone/shared";
+import type { WorkspaceRobinDoneUIState } from "@/store/robindoneSessionStore.js";
 
 interface ResolveWorkspaceSwitchDraftProviderOptions {
-  currentSelectedProvider: RobinRunProvider;
+  currentSelectedProvider: RobinDoneProvider;
   targetWorkspacePath: string;
   targetWorkspaceIdentity?: string;
-  workspaces: Record<string, WorkspaceRobinRunUIState | undefined>;
+  workspaces: Record<string, WorkspaceRobinDoneUIState | undefined>;
 }
 
 export function resolveWorkspaceSwitchDraftProvider({
@@ -13,7 +13,7 @@ export function resolveWorkspaceSwitchDraftProvider({
   targetWorkspacePath,
   targetWorkspaceIdentity,
   workspaces,
-}: ResolveWorkspaceSwitchDraftProviderOptions): RobinRunProvider {
+}: ResolveWorkspaceSwitchDraftProviderOptions): RobinDoneProvider {
   const workspaceKey = targetWorkspaceIdentity?.trim() || targetWorkspacePath;
   const targetWorkspaceState = workspaces[workspaceKey] ?? workspaces[targetWorkspacePath];
 

@@ -1,4 +1,4 @@
-import type { IDisposable, Event } from "@robinrun/rpc";
+import type { IDisposable, Event } from "@robindone/rpc";
 
 export interface RemoteEnvironment {
   platform: string; // "linux" | "darwin"

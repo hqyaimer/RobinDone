@@ -3,7 +3,7 @@ import {
   providerProvisioningTriggerSchema,
   type ProviderProvisioningResult,
   type ProviderProvisioningTrigger,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface ProvisioningSyncEvent {
   kind: "completed" | "warning";

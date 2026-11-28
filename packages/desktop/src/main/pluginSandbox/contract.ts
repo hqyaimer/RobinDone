@@ -4,11 +4,11 @@ import type {
   PluginSandboxHandle,
   PluginSandboxPlatformPort,
   PluginSandboxRegisterInput,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 import { createHash } from "node:crypto";
 
 /** privileged scheme 与 URL / partition 派生规则。 */
-export const PLUGIN_SANDBOX_SCHEME = "robinrun-sandbox";
+export const PLUGIN_SANDBOX_SCHEME = "robindone-sandbox";
 export const PLUGIN_SANDBOX_SHELL_HOST_PREFIX = "shell-";
 export const PLUGIN_SANDBOX_PLUGIN_HOST_PREFIX = "plugin-";
 /**
@@ -29,7 +29,7 @@ export function buildPluginSandboxPartition(input: { appIdentity: string }): str
   return `${PLUGIN_SANDBOX_PARTITION_PREFIX}${hash}`;
 }
 
-export type { PluginSandboxRegisterInput } from "@robinrun/shared/mcp-apps";
+export type { PluginSandboxRegisterInput } from "@robindone/shared/mcp-apps";
 
 export interface PluginSandboxRecord extends PluginSandboxHandle {
   workspacePath?: string;

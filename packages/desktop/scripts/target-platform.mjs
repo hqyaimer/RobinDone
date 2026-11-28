@@ -35,8 +35,8 @@ function normalizeTargetArch(rawArch) {
 }
 
 export function getTargetPlatform() {
-  const targetOs = process.env.ROBINRUN_TARGET_OS ?? process.platform;
-  const targetArch = process.env.ROBINRUN_TARGET_ARCH ?? process.arch;
+  const targetOs = process.env.ROBINDONE_TARGET_OS ?? process.platform;
+  const targetArch = process.env.ROBINDONE_TARGET_ARCH ?? process.arch;
   const os = normalizeTargetOs(targetOs);
   const arch = normalizeTargetArch(targetArch);
 

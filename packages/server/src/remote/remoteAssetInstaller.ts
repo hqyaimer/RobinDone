@@ -3,8 +3,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, posix } from "node:path";
-import type { RemoteAssetInstallMode } from "@robinrun/shared";
-import type { IRemoteBackend, StdioStream } from "@robinrun/server/remote/backend.js";
+import type { RemoteAssetInstallMode } from "@robindone/shared";
+import type { IRemoteBackend, StdioStream } from "@robindone/server/remote/backend.js";
 import {
   REMOTE_BASE,
   buildRemoteExecutableReplaceCommand,
@@ -14,14 +14,14 @@ import {
   type DeployLoggers,
   type RemoteAssetDeployOptions,
   waitForClose,
-} from "@robinrun/server/remote/deployShared.js";
-import { quotePosixPathArg, quotePosixShellArg } from "@robinrun/server/remote/posixShell.js";
+} from "@robindone/server/remote/deployShared.js";
+import { quotePosixPathArg, quotePosixShellArg } from "@robindone/server/remote/posixShell.js";
 import {
   buildComponentArtifactUrlCandidates,
   buildReleaseAssetUrlCandidates,
   buildReleaseBaseCandidates,
   resolveRemoteCdnBaseUrls,
-} from "@robinrun/server/remote/remoteAssetCdn.js";
+} from "@robindone/server/remote/remoteAssetCdn.js";
 import {
   ensureRemoteReleaseDirFromCdn,
   buildRemoteAssetManifestFileCandidates,
@@ -33,17 +33,17 @@ import {
   type RemoteAssetManifest,
   type RemoteAssetManifestComponent,
   type RemoteAssetManifestRef,
-} from "@robinrun/server/remote/remoteAssetCache.js";
-import { createTarGzArchive } from "@robinrun/server/remote/localTarGz.js";
+} from "@robindone/server/remote/remoteAssetCache.js";
+import { createTarGzArchive } from "@robindone/server/remote/localTarGz.js";
 import type {
   RemoteAssetTools,
   RemoteDownloadTool,
   RemoteSha256Tool,
-} from "@robinrun/server/remote/remoteAssetPreflight.js";
+} from "@robindone/server/remote/remoteAssetPreflight.js";
 import {
   resolveRemoteAssetFetch,
   type RemoteAssetNetworkPort,
-} from "@robinrun/server/remote/remoteAssetNetwork.js";
+} from "@robindone/server/remote/remoteAssetNetwork.js";
 
 export interface RemoteAssetInstaller {
   readonly mode: RemoteAssetInstallMode;
@@ -87,7 +87,7 @@ function buildStaleRemoteStagingCleanupCommand(parentDir: string, patterns: stri
     `for candidate in ${candidateExpressions.join(" ")}; do`,
     'test -e "$candidate" || continue',
     // SSH 取消会先释放旧 backend，不能再用旧凭据立即 cleanup。
-    // 新连接只回收超过 24 小时的 RobinRun owner staging，避免误删当前 owner 或正常时长内的活跃部署。
+    // 新连接只回收超过 24 小时的 RobinDone owner staging，避免误删当前 owner 或正常时长内的活跃部署。
     'find "$candidate" -prune -mtime +0 -exec rm -rf {} + 2>/dev/null || true',
     "done",
   ].join("\n");
@@ -433,7 +433,7 @@ export class LocalUploadAssetInstaller implements RemoteAssetInstaller {
     );
     const localTarPath = join(
       tmpdir(),
-      `robinrun-remote-${params.componentId}-${Date.now()}-${randomUUID()}.tar.gz`,
+      `robindone-remote-${params.componentId}-${Date.now()}-${randomUUID()}.tar.gz`,
     );
     await createTarGzArchive(localTarPath, [
       { sourcePath: localPath, archivePath: basename(localPath) },

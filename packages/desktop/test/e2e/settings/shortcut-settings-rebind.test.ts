@@ -7,7 +7,7 @@ import {
   TID_SIDEBAR,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,

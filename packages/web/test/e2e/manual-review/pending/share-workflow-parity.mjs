@@ -37,7 +37,7 @@ async function fixturePreview() {
         producer_product_turn_id: "share-product-turn-1",
         artifact_version: 1,
         state: "current",
-        ref: `robinrun-artifact://share/${artifact.resource_id}`,
+        ref: `robindone-artifact://share/${artifact.resource_id}`,
         artifact_type: "text",
         display_name: `${artifact.title}.md`,
         extension: "md",
@@ -128,7 +128,7 @@ try {
           reducedMotion: "reduce",
         });
         await context.addInitScript(
-          (theme) => localStorage.setItem("robinrun-theme", theme),
+          (theme) => localStorage.setItem("robindone-theme", theme),
           theme,
         );
         const page = await context.newPage();

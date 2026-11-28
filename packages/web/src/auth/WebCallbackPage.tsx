@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@robinrun/ui";
+import { Button } from "@robindone/ui";
 import type { WebAuthCallbackResult, WebAuthService } from "./webAuthService.js";
 import { getWebAuthCopy } from "./webAuthLocale.js";
 

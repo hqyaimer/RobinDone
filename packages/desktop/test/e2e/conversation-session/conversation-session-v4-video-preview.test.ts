@@ -16,8 +16,8 @@ import {
   TID_V4_EDIT_SUBMIT,
   TID_V4_ROW_ATTACHMENTS,
   testId,
-} from "@robinrun/shared/test-ids";
-import { PROTOCOL_V4_LIMITS } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/test-ids";
+import { PROTOCOL_V4_LIMITS } from "@robindone/shared/robindone-protocol-v4";
 import { DEFAULT_WORKSPACE, clearAppData, clickTestIdByDom } from "../helpers/desktop-app.js";
 import { restartIntoWorkspacePreservingProfile } from "../helpers/model-provider-restart.js";
 import {
@@ -31,7 +31,11 @@ import {
   waitForV4TimelineContaining,
 } from "../helpers/v4-conversation.js";
 
-const CASE_ROOT = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "conversation-session-v4-video-preview");
+const CASE_ROOT = join(
+  DEFAULT_WORKSPACE,
+  ".robindone-e2e",
+  "conversation-session-v4-video-preview",
+);
 const PLAYABLE_VIDEO_FILENAME = "e2e-composer-preview.mp4";
 const GALLERY_IMAGE_FILENAME = "e2e-gallery-image.png";
 const UNSUPPORTED_VIDEO_FILENAME = "e2e-unsupported.mov";
@@ -151,11 +155,11 @@ describe("v4 VI06/VI07：image/video 媒体 gallery 与 edit", () => {
     expect(sentCards.map(({ width }) => width)).toEqual([80, 80, 80, 80, 80]);
     expect(sentCards.map(({ height }) => height)).toEqual([80, 80, 80, 80, 80]);
     expect(sentCards.every(({ role }) => role === "button")).toBe(true);
-    expect(sentCards[0]?.src.startsWith("robinrun-media:")).toBe(true);
+    expect(sentCards[0]?.src.startsWith("robindone-media:")).toBe(true);
     expect(sentCards[1]?.src.startsWith("blob:")).toBe(true);
-    expect(sentCards[2]?.src.startsWith("robinrun-media:")).toBe(true);
+    expect(sentCards[2]?.src.startsWith("robindone-media:")).toBe(true);
     expect(sentCards[3]?.src.startsWith("blob:")).toBe(true);
-    expect(sentCards[4]?.src.startsWith("robinrun-media:")).toBe(true);
+    expect(sentCards[4]?.src.startsWith("robindone-media:")).toBe(true);
     expect(localMediaPath(sentCards[0]?.src).split(/[\\/]/)).toContain("video-cache");
     expect(localMediaPath(sentCards[4]?.src)).toBe(largeVideoPath);
     await expectUnauthorizedLocalMediaPathRejected(VIDEO_SOURCE_PATH);
@@ -209,7 +213,7 @@ describe("v4 VI06/VI07：image/video 媒体 gallery 与 edit", () => {
     });
     await waitForV4TimelineContaining("V4_VIDEO_PREVIEW_EDIT_OK", 45_000);
     const editedSentCards = await waitForSentMediaCards(["image", "video", "video", "video"]);
-    expect(editedSentCards[3]?.src.startsWith("robinrun-media:")).toBe(true);
+    expect(editedSentCards[3]?.src.startsWith("robindone-media:")).toBe(true);
     await openSentMedia(3);
     await waitForPlayableVideo(LARGE_VIDEO_FILENAME, editedSentCards[3]?.src);
     await closeMediaPreview();
@@ -491,14 +495,14 @@ async function waitForUnsupportedVideo(filename: string) {
 async function installVideoBlobProbe() {
   await browser.execute(() => {
     const probeWindow = window as Window & {
-      __robinrunVideoBlobProbe?: {
+      __robindoneVideoBlobProbe?: {
         calls: Array<{ size: number; type: string }>;
         original: typeof URL.createObjectURL;
       };
     };
     const original = URL.createObjectURL.bind(URL);
     const calls: Array<{ size: number; type: string }> = [];
-    probeWindow.__robinrunVideoBlobProbe = { calls, original };
+    probeWindow.__robindoneVideoBlobProbe = { calls, original };
     URL.createObjectURL = (object: Blob | MediaSource) => {
       if (object instanceof Blob) calls.push({ size: object.size, type: object.type });
       return original(object);
@@ -511,10 +515,10 @@ async function waitForVideoBlob(mediaType: string) {
     () =>
       browser.execute((expectedMediaType) => {
         const probeWindow = window as Window & {
-          __robinrunVideoBlobProbe?: { calls: Array<{ size: number; type: string }> };
+          __robindoneVideoBlobProbe?: { calls: Array<{ size: number; type: string }> };
         };
         return (
-          probeWindow.__robinrunVideoBlobProbe?.calls.some(
+          probeWindow.__robindoneVideoBlobProbe?.calls.some(
             (call) => call.type === expectedMediaType && call.size > 0,
           ) === true
         );
@@ -526,20 +530,20 @@ async function waitForVideoBlob(mediaType: string) {
 async function readVideoBlobCalls(): Promise<Array<{ size: number; type: string }>> {
   return browser.execute(() => {
     const probeWindow = window as Window & {
-      __robinrunVideoBlobProbe?: { calls: Array<{ size: number; type: string }> };
+      __robindoneVideoBlobProbe?: { calls: Array<{ size: number; type: string }> };
     };
-    return probeWindow.__robinrunVideoBlobProbe?.calls ?? [];
+    return probeWindow.__robindoneVideoBlobProbe?.calls ?? [];
   });
 }
 
 async function restoreVideoBlobProbe() {
   await browser.execute(() => {
     const probeWindow = window as Window & {
-      __robinrunVideoBlobProbe?: { original: typeof URL.createObjectURL };
+      __robindoneVideoBlobProbe?: { original: typeof URL.createObjectURL };
     };
-    const probe = probeWindow.__robinrunVideoBlobProbe;
+    const probe = probeWindow.__robindoneVideoBlobProbe;
     if (probe) URL.createObjectURL = probe.original;
-    delete probeWindow.__robinrunVideoBlobProbe;
+    delete probeWindow.__robindoneVideoBlobProbe;
   });
 }
 
@@ -570,7 +574,7 @@ async function closeMediaPreview() {
 function localMediaPath(src: string | undefined): string {
   if (!src) throw new Error("本地媒体 URL 不存在");
   const url = new URL(src);
-  expect(url.protocol).toBe("robinrun-media:");
+  expect(url.protocol).toBe("robindone-media:");
   const path = url.searchParams.get("path");
   if (!path) throw new Error(`本地媒体 URL 缺少 path: ${src}`);
   return path;
@@ -578,7 +582,7 @@ function localMediaPath(src: string | undefined): string {
 
 async function expectUnauthorizedLocalMediaPathRejected(path: string) {
   const result = await browser.executeAsync((candidatePath, done) => {
-    const url = new URL("robinrun-media://local/preview");
+    const url = new URL("robindone-media://local/preview");
     url.searchParams.set("path", candidatePath);
     // 旧协议会被这个 renderer 自报 MIME 绕过；新协议只认 Main 的精确路径授权集合。
     url.searchParams.set("mediaType", "video/mp4");

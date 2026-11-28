@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
-import type { GitChangeSourceId } from "@robinrun/shared";
+import type { GitChangeSourceId } from "@robindone/shared";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 
 export function useGitActions(options: { workspacePath: string }) {
   const { workspacePath } = options;
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   const announcePlaceholder = useCallback(

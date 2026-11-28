@@ -33,7 +33,7 @@ export interface ProjectListProps {
 }
 
 /**
- * RobinRun 项目列表页（2026-11-15 项目列表导航裁决）：
+ * RobinDone 项目列表页（2026-11-15 项目列表导航裁决）：
  * 一级平铺所有项目（不含智能体/会话），行点击进入该项目；拖拽仅承担项目排序。
  * 与智能体页（TaskGroupedView）互斥渲染，各自持有独立的 DndContext——
  * 列表页的 sortable 全部是 grouped-project 类型，碰撞检测按类型分流后天然只落项目行。

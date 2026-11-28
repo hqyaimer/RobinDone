@@ -85,7 +85,7 @@ const COVERAGE_ENV_VALUE = "1";
 const RENDERER_BASELINE_RELATIVE_PATH = "packages/desktop/out/renderer/e2e-coverage-baseline.json";
 
 export function createE2EUICoverageCollector(options: E2EUICoverageCollectorOptions) {
-  const enabled = process.env.ROBINRUN_E2E_COVERAGE === COVERAGE_ENV_VALUE;
+  const enabled = process.env.ROBINDONE_E2E_COVERAGE === COVERAGE_ENV_VALUE;
   const coverageDir = resolve(options.artifactDir, "coverage");
   const rawDir = resolve(coverageDir, "raw", "renderer");
   const htmlDir = resolve(coverageDir, "ui-renderer-html");
@@ -137,7 +137,7 @@ export function createE2EUICoverageCollector(options: E2EUICoverageCollectorOpti
         activeBrowser,
         options.repoRoot,
       );
-      const workerId = sanitizeCoverageFilePart(process.env.ROBINRUN_E2E_WORKER_ID ?? "worker");
+      const workerId = sanitizeCoverageFilePart(process.env.ROBINDONE_E2E_WORKER_ID ?? "worker");
       const workerRawPath = resolve(rawDir, `${workerId}-${process.pid}.json`);
       const mergedCoverage = createCoverageMap({});
       const mergedPageUrls = new Set(pageUrls);

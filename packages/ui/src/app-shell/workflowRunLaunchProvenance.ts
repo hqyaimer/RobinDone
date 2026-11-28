@@ -1,4 +1,4 @@
-import type { ConversationRow, WorkflowLaunchMeta } from "@robinrun/shared/robinrun-protocol-v4";
+import type { ConversationRow, WorkflowLaunchMeta } from "@robindone/shared/robindone-protocol-v4";
 
 /**
  * 直接启动的来龙去脉：作用域、说明、实参与

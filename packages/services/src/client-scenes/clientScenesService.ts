@@ -1,6 +1,6 @@
-import type { ApiClient } from "@robinrun/shared";
+import type { ApiClient } from "@robindone/shared";
 import { readApiJson } from "../providers/api/apiJson.js";
-import { ROBINRUN_CLIENT_SCENES_URL } from "../providers/api/apiEndpoints.js";
+import { ROBINDONE_CLIENT_SCENES_URL } from "../providers/api/apiEndpoints.js";
 import type { ClientScenesResponse, IClientScenesService } from "./clientScenes.js";
 
 export function createClientScenesService(dependencies: {
@@ -8,7 +8,7 @@ export function createClientScenesService(dependencies: {
 }): IClientScenesService {
   return {
     list: () =>
-      readApiJson<ClientScenesResponse>(dependencies.apiClient, ROBINRUN_CLIENT_SCENES_URL, {
+      readApiJson<ClientScenesResponse>(dependencies.apiClient, ROBINDONE_CLIENT_SCENES_URL, {
         method: "GET",
       }),
   };

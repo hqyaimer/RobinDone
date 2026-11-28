@@ -18,8 +18,8 @@ import type {
   MigrateLegacyCommonMcpResult,
   SaveCliMcpToUserDirectoryRequest,
 } from "./mcp.js";
-import type { RobinRunProvider } from "./robinrun-task-types-core.js";
-import type { SessionWorkflowActivity } from "./robinrun-protocol-v4/sessions-index-workflow-activity.js";
+import type { RobinDoneProvider } from "./robindone-task-types-core.js";
+import type { SessionWorkflowActivity } from "./robindone-protocol-v4/sessions-index-workflow-activity.js";
 import type { WebRemoteControlRpcTransportPayload } from "./web-remote-control-rpc-transport.js";
 import type { WebRemoteControlMobileLogAppPayload } from "#src/web-remote-relay/index.js";
 import type { WorkspacePurpose } from "./workspacePurpose.js";
@@ -409,37 +409,37 @@ export type WebRemoteControlExternalWorkspaceBridge =
 
 export interface WebRemoteControlBootstrapRequestPayload {
   terminalClientSessionId?: string;
-  robinrun_type: "bootstrap-request";
+  robindone_type: "bootstrap-request";
   requestId: string;
 }
 
 export interface WebRemoteControlBootstrapResponsePayload {
-  robinrun_type: "bootstrap-response";
+  robindone_type: "bootstrap-response";
   requestId: string;
   success: true;
   result: WebRemoteControlWindowBootstrapResult;
 }
 
 export interface WebRemoteControlWorkspaceListRequestPayload {
-  robinrun_type: "workspace-list-request";
+  robindone_type: "workspace-list-request";
   requestId: string;
 }
 
 export interface WebRemoteControlWorkspaceListResponsePayload {
-  robinrun_type: "workspace-list-response";
+  robindone_type: "workspace-list-response";
   requestId: string;
   success: true;
   result: WebRemoteControlWorkspaceListResult;
 }
 
 export interface WebRemoteControlWorkspaceListUpdatedPayload {
-  robinrun_type: "workspace-list-updated";
+  robindone_type: "workspace-list-updated";
   result: WebRemoteControlWorkspaceListResult;
 }
 
 export interface WebRemoteControlWorkspaceBridgeOpenPayload {
   terminalClientSessionId?: string;
-  robinrun_type: "workspace-bridge-open";
+  robindone_type: "workspace-bridge-open";
   requestId: string;
   bridgeSessionId: string;
   bridgeGeneration?: number;
@@ -453,7 +453,7 @@ export interface WebRemoteControlWorkspaceBridgeOpenPayload {
 }
 
 export interface WebRemoteControlWorkspaceBridgeReadyPayload {
-  robinrun_type: "workspace-bridge-ready";
+  robindone_type: "workspace-bridge-ready";
   requestId: string;
   bridgeSessionId: string;
   bridgeGeneration?: number;
@@ -462,7 +462,7 @@ export interface WebRemoteControlWorkspaceBridgeReadyPayload {
 }
 
 export interface WebRemoteControlWorkspaceBridgeErrorPayload {
-  robinrun_type: "workspace-bridge-error";
+  robindone_type: "workspace-bridge-error";
   requestId: string;
   bridgeSessionId?: string;
   bridgeGeneration?: number;
@@ -472,20 +472,20 @@ export interface WebRemoteControlWorkspaceBridgeErrorPayload {
 }
 
 export interface WebRemoteControlWorkspaceReconnectRequestPayload {
-  robinrun_type: "workspace-reconnect-request";
+  robindone_type: "workspace-reconnect-request";
   requestId: string;
   workspaceKey: string;
 }
 
 export type WebRemoteControlWorkspaceReconnectResponsePayload =
   | {
-      robinrun_type: "workspace-reconnect-response";
+      robindone_type: "workspace-reconnect-response";
       requestId: string;
       workspaceKey: string;
       success: true;
     }
   | {
-      robinrun_type: "workspace-reconnect-response";
+      robindone_type: "workspace-reconnect-response";
       requestId: string;
       workspaceKey: string;
       success: false;
@@ -493,7 +493,7 @@ export type WebRemoteControlWorkspaceReconnectResponsePayload =
     };
 
 export interface WebRemoteControlMobileViewStatePayload {
-  robinrun_type: "mobile-view-state-update";
+  robindone_type: "mobile-view-state-update";
   viewState: WebRemoteControlMobileViewState;
   deviceInfo?: WebRemoteControlMobileDeviceInfo;
 }
@@ -505,7 +505,7 @@ export interface WebRemoteControlMobileTaskView {
 }
 
 export interface WebRemoteControlMobileTaskViewUpdatePayload {
-  robinrun_type: "mobile-task-view-update";
+  robindone_type: "mobile-task-view-update";
   epoch: string;
   seq: number;
   bridgeSessionId: string;
@@ -514,13 +514,13 @@ export interface WebRemoteControlMobileTaskViewUpdatePayload {
 }
 
 export interface WebRemoteControlMobileTaskViewRequestPayload {
-  robinrun_type: "mobile-task-view-request";
+  robindone_type: "mobile-task-view-request";
   epoch: string;
 }
 
 export type WebRemoteControlPlatformRequestPayload = {
   [K in WebRemoteControlPlatformMethod]: {
-    robinrun_type: "platform-request";
+    robindone_type: "platform-request";
     requestId: string;
     method: K;
     args?: WebRemoteControlPlatformMethodArgsMap[K];
@@ -530,7 +530,7 @@ export type WebRemoteControlPlatformRequestPayload = {
 export type WebRemoteControlPlatformResponsePayload =
   | {
       [K in WebRemoteControlPlatformMethod]: {
-        robinrun_type: "platform-response";
+        robindone_type: "platform-response";
         requestId: string;
         method: K;
         success: true;
@@ -538,7 +538,7 @@ export type WebRemoteControlPlatformResponsePayload =
       };
     }[WebRemoteControlPlatformMethod]
   | {
-      robinrun_type: "platform-response";
+      robindone_type: "platform-response";
       requestId: string;
       method: WebRemoteControlPlatformMethod;
       success: false;
@@ -547,7 +547,7 @@ export type WebRemoteControlPlatformResponsePayload =
 
 /** @deprecated 仅供 legacy adapter 单测/迁移使用；production parser 自 04D-3 起拒绝。 */
 export interface WebRemoteControlRpcFramePayload {
-  robinrun_type: "rpc-frame";
+  robindone_type: "rpc-frame";
   bridgeSessionId: string;
   bridgeGeneration?: number;
   recoveryId?: string;
@@ -556,7 +556,7 @@ export interface WebRemoteControlRpcFramePayload {
 }
 
 export interface WebRemoteControlBridgeDegradedPayload {
-  robinrun_type: "bridge-degraded";
+  robindone_type: "bridge-degraded";
   bridgeSessionId: string;
   bridgeGeneration?: number;
   recoveryId?: string;
@@ -573,7 +573,7 @@ export interface WebRemoteControlBridgeDegradedPayload {
 }
 
 export interface WebRemoteControlAppErrorPayload {
-  robinrun_type: "app-error";
+  robindone_type: "app-error";
   requestId?: string;
   bridgeSessionId?: string;
   reason: WebRemoteControlFailureReason;
@@ -590,7 +590,7 @@ export type WebRemoteControlMobileDiagnosticEvent =
   | "failure";
 
 export interface WebRemoteControlMobileDiagnosticPayload {
-  robinrun_type: "mobile-diagnostic";
+  robindone_type: "mobile-diagnostic";
   event: WebRemoteControlMobileDiagnosticEvent;
   timestamp: number;
   state?: string;
@@ -609,7 +609,7 @@ export interface WebRemoteControlMobileDiagnosticPayload {
 
 export type WebRemoteControlAppPayload =
   | {
-      robinrun_type: "telemetry-report";
+      robindone_type: "telemetry-report";
       event: MobileSessionCreateTelemetry | MobilePluginDiscoveryTelemetry;
     }
   | WebRemoteControlBootstrapRequestPayload
@@ -674,7 +674,7 @@ export interface WebRemoteControlTaskTarget {
   workspaceKind: "local" | "remote";
   createdAt: number;
   updatedAt: number;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   unreadAt?: number;
 }
 

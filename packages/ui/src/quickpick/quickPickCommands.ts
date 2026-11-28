@@ -229,7 +229,7 @@ export function createQuickPickCommands({
     },
   ];
 
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「feedback / community / 产品文档 / login / logout」命令——
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「feedback / community / 产品文档 / login / logout」命令——
   // 前三者触达上游反馈/社群/文档（ZCode 官方内容），后两者依赖上游 OAuth。恢复时取消本段注释
   // commands.push({
   //   id: "feedback",
@@ -290,7 +290,7 @@ export function createQuickPickCommands({
   //     run: handlers.login,
   //   });
   // }
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 
   return commands.filter(
     (command) =>

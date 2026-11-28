@@ -1,9 +1,9 @@
 import {
-  type RobinRunPersistedToolCall,
-  type RobinRunSessionFile,
-  type RobinRunStreamEvent,
-  type RobinRunTaskMeta,
-} from "@robinrun/shared";
+  type RobinDonePersistedToolCall,
+  type RobinDoneSessionFile,
+  type RobinDoneStreamEvent,
+  type RobinDoneTaskMeta,
+} from "@robindone/shared";
 import { buildPerTurnChangeSummaries } from "../session/taskChangeSummary.js";
 
 const MS_IN_SECOND = 1_000;
@@ -11,7 +11,7 @@ const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 const MS_IN_DAY = 24 * MS_IN_HOUR;
 
-export function taskStatus(task: RobinRunTaskMeta): string {
+export function taskStatus(task: RobinDoneTaskMeta): string {
   return task.status ?? "running";
 }
 
@@ -40,8 +40,8 @@ export function formatTaskRunningDuration(durationMs: number): string {
 }
 
 function readRunningTaskStartedAt(
-  snapshot: RobinRunSessionFile | null,
-  task: RobinRunTaskMeta,
+  snapshot: RobinDoneSessionFile | null,
+  task: RobinDoneTaskMeta,
 ): number | null {
   const messages = snapshot?.messages ?? [];
   const assistantStartedAt = messages.findLast(
@@ -57,13 +57,13 @@ function readRunningTaskStartedAt(
   return task.createdAt ?? task.updatedAt ?? null;
 }
 
-export function formatStatusTaskLine(task: RobinRunTaskMeta, label = "Task"): string {
+export function formatStatusTaskLine(task: RobinDoneTaskMeta, label = "Task"): string {
   return `${label}: ${task.title} (${task.taskId})`;
 }
 
 export function readTaskWorkedDurationMs(
-  snapshot: RobinRunSessionFile | null,
-  task: RobinRunTaskMeta,
+  snapshot: RobinDoneSessionFile | null,
+  task: RobinDoneTaskMeta,
 ): number | null {
   const status = taskStatus(task);
   if (status === "running") {
@@ -91,8 +91,8 @@ export function readTaskWorkedDurationMs(
 }
 
 export function readLatestAssistantTurnChangeSummary(
-  snapshot: RobinRunSessionFile | null,
-): RobinRunTaskMeta["changeSummary"] | null {
+  snapshot: RobinDoneSessionFile | null,
+): RobinDoneTaskMeta["changeSummary"] | null {
   if (!snapshot?.fileChanges || snapshot.fileChanges.length === 0) {
     return null;
   }
@@ -143,7 +143,7 @@ function readStatusStringField(value: unknown, keys: readonly string[]): string 
   return null;
 }
 
-function formatStatusToolProgress(tool: RobinRunPersistedToolCall | undefined): string | null {
+function formatStatusToolProgress(tool: RobinDonePersistedToolCall | undefined): string | null {
   if (!tool) {
     return null;
   }
@@ -157,7 +157,7 @@ function formatStatusToolProgress(tool: RobinRunPersistedToolCall | undefined): 
 }
 
 export function formatStatusStreamToolProgress(
-  event: Extract<RobinRunStreamEvent, { type: "tool_call" | "tool_call_update" }>,
+  event: Extract<RobinDoneStreamEvent, { type: "tool_call" | "tool_call_update" }>,
 ): string | null {
   const title = normalizeStatusProgressText(event.title ?? event.kind ?? "tool");
   const detail =
@@ -170,7 +170,7 @@ export function formatStatusStreamToolProgress(
   return detail ? `${title}${status}: ${detail}` : `${title}${status}`;
 }
 
-export function readLatestTaskProgress(snapshot: RobinRunSessionFile | null): string | null {
+export function readLatestTaskProgress(snapshot: RobinDoneSessionFile | null): string | null {
   const messages = snapshot?.messages ?? [];
   for (const latestMessage of [...messages].reverse()) {
     if (latestMessage.role !== "assistant") {

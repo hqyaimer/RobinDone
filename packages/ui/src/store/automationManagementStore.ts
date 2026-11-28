@@ -4,21 +4,21 @@ import {
   AUTOMATION_CREATE_LIMIT,
   AUTOMATION_CREATE_LIMIT_ERROR_CODE,
   isAutomationCreateLimitError,
-  type RobinRunAutomation,
-  type RobinRunAutomationRun,
-  type RobinRunAutomationScheduleRule,
+  type RobinDoneAutomation,
+  type RobinDoneAutomationRun,
+  type RobinDoneAutomationScheduleRule,
   type ModelSelection,
-} from "@robinrun/shared";
-import type { IRobinRunAgentService } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IRobinDoneAgentService } from "@robindone/services";
 import { logger } from "@/logger.js";
 
-// 定时任务(automation)管理 store：走 robinrun-agent RPC（列表 / 创建 / 编辑 / 启停 / 重跑 / 删除 + 运行历史）。
+// 定时任务(automation)管理 store：走 robindone-agent RPC（列表 / 创建 / 编辑 / 启停 / 重跑 / 删除 + 运行历史）。
 // 与 pluginManagementStore 同一范式：按 workspace 缓存，切换时后台刷新避免闪烁。
 
 /** 单条 automation 的运行历史缓存（按 automationId 记 loading/data/error）。 */
 export interface AutomationRunsEntry {
   status: "loading" | "loaded" | "error";
-  runs?: RobinRunAutomationRun[];
+  runs?: RobinDoneAutomationRun[];
   error?: string;
 }
 
@@ -34,7 +34,7 @@ export interface CreateAutomationInput {
   recurring?: boolean;
   maxRuns?: number;
   endAt?: number;
-  scheduleRule?: RobinRunAutomationScheduleRule;
+  scheduleRule?: RobinDoneAutomationScheduleRule;
   // 目标项目;缺省用 store 当前列表所在项目。创建整页可在项目下拉里改。
   workspacePath?: string;
   workspaceIdentity?: string;
@@ -49,14 +49,14 @@ export interface UpdateAutomationInput {
   recurring?: boolean;
   maxRuns?: number | null;
   endAt?: number | null;
-  scheduleRule?: RobinRunAutomationScheduleRule | null;
+  scheduleRule?: RobinDoneAutomationScheduleRule | null;
   scheduleEditedByUser?: boolean;
 }
 
 export interface AutomationManagementState {
   workspacePath: string | null;
   workspaceIdentity: string | null;
-  automations: RobinRunAutomation[];
+  automations: RobinDoneAutomation[];
   loading: boolean;
   error: string | null;
   // 正在进行的写操作标记，用于禁用对应按钮（如 `automation:delete:<id>`）。
@@ -65,39 +65,39 @@ export interface AutomationManagementState {
   initialize: (params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    agentService: IRobinRunAgentService;
+    agentService: IRobinDoneAgentService;
   }) => Promise<void>;
-  refresh: (agentService: IRobinRunAgentService) => Promise<void>;
+  refresh: (agentService: IRobinDoneAgentService) => Promise<void>;
   createAutomation: (
     input: CreateAutomationInput,
-    agentService: IRobinRunAgentService,
-  ) => Promise<RobinRunAutomation | null>;
+    agentService: IRobinDoneAgentService,
+  ) => Promise<RobinDoneAutomation | null>;
   updateAutomation: (
     automationId: string,
     input: UpdateAutomationInput,
-    agentService: IRobinRunAgentService,
+    agentService: IRobinDoneAgentService,
   ) => Promise<boolean>;
-  deleteAutomation: (automationId: string, agentService: IRobinRunAgentService) => Promise<void>;
+  deleteAutomation: (automationId: string, agentService: IRobinDoneAgentService) => Promise<void>;
   setEnabled: (
     automationId: string,
     enabled: boolean,
-    agentService: IRobinRunAgentService,
+    agentService: IRobinDoneAgentService,
   ) => Promise<void>;
-  restartAutomation: (automationId: string, agentService: IRobinRunAgentService) => Promise<void>;
+  restartAutomation: (automationId: string, agentService: IRobinDoneAgentService) => Promise<void>;
   /** 立即运行一次；queued / duplicate / failed 均由调用方 toast。 */
   runAutomationNow: (
     automationId: string,
-    agentService: IRobinRunAgentService,
+    agentService: IRobinDoneAgentService,
   ) => Promise<AutomationRunNowResult>;
   loadRuns: (
     automationId: string,
-    agentService: IRobinRunAgentService,
+    agentService: IRobinDoneAgentService,
     force?: boolean,
   ) => Promise<void>;
   deleteRun: (
     automationId: string,
     runId: string,
-    agentService: IRobinRunAgentService,
+    agentService: IRobinDoneAgentService,
   ) => Promise<void>;
 }
 
@@ -135,7 +135,7 @@ async function loadInto(
   params: {
     workspacePath: string;
     workspaceIdentity: string | null;
-    agentService: IRobinRunAgentService;
+    agentService: IRobinDoneAgentService;
     requestId: number;
   },
 ): Promise<void> {

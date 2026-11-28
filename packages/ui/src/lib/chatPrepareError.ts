@@ -1,14 +1,14 @@
 import {
   normalizeUnknownError,
-  ROBINRUN_AGENT_PROVIDER_NOT_READY_CODE,
-  type RobinRunProvider,
-  type RobinRunError,
-} from "@robinrun/shared";
-import { normalizeRobinRunUiError } from "@/lib/robinrunUiError.js";
+  ROBINDONE_AGENT_PROVIDER_NOT_READY_CODE,
+  type RobinDoneProvider,
+  type RobinDoneError,
+} from "@robindone/shared";
+import { normalizeRobinDoneUiError } from "@/lib/robindoneUiError.js";
 
 export const MODEL_CONFIG_MISSING_UI_ERROR_CODE = "model_config_missing";
 
-export type ModelConfigMissingUiError = RobinRunError & {
+export type ModelConfigMissingUiError = RobinDoneError & {
   code: typeof MODEL_CONFIG_MISSING_UI_ERROR_CODE;
 };
 
@@ -22,12 +22,12 @@ export function buildModelConfigMissingUiError(): ModelConfigMissingUiError {
 }
 
 export function isProviderNotReadyError(error: unknown): boolean {
-  return normalizeUnknownError(error).code === ROBINRUN_AGENT_PROVIDER_NOT_READY_CODE;
+  return normalizeUnknownError(error).code === ROBINDONE_AGENT_PROVIDER_NOT_READY_CODE;
 }
 
 interface WorkspacePrepareErrorContext {
   workspacePath: string;
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
   reason:
     | "mount"
     | "retry"
@@ -128,8 +128,8 @@ function buildDisplayErrorInput(err: unknown, displayMessage: string | undefined
 export function buildWorkspacePrepareUiError(
   err: unknown,
   context: WorkspacePrepareErrorContext,
-): RobinRunError & { detail?: string } {
-  const normalizedError = normalizeRobinRunUiError(
+): RobinDoneError & { detail?: string } {
+  const normalizedError = normalizeRobinDoneUiError(
     buildDisplayErrorInput(err, context.displayMessage),
     {
       fallbackCode: "WORKSPACE_PREPARE_FAILED",
@@ -148,9 +148,9 @@ export function buildWorkspacePrepareUiError(
 
 export function buildCachedWorkspacePrepareUiError(
   message: string,
-  cachedError: (RobinRunError & { detail?: string }) | null | undefined,
+  cachedError: (RobinDoneError & { detail?: string }) | null | undefined,
   context: WorkspacePrepareErrorContext,
-): RobinRunError & { detail?: string } {
+): RobinDoneError & { detail?: string } {
   if (cachedError?.message === message) {
     // Bugfix: workspaceInit 目前只缓存纯 message；页面返回命中 failed 短路时，
     // 必须复用上一轮 prepare 的结构化 code，否则模型配置缺失会重新显示 CLI 原文。

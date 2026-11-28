@@ -11,8 +11,8 @@ import {
   Pin,
   Smartphone,
 } from "lucide-react";
-import { isCronTask, isOffPeakTask, type RobinRunTaskMeta } from "@robinrun/shared";
-import { TID_TASK_ARCHIVE, TID_TASK_ITEM, testId } from "@robinrun/shared/test-ids";
+import { isCronTask, isOffPeakTask, type RobinDoneTaskMeta } from "@robindone/shared";
+import { TID_TASK_ARCHIVE, TID_TASK_ITEM, testId } from "@robindone/shared/test-ids";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
@@ -58,7 +58,7 @@ type TaskListItemIntl = {
 interface TaskListItemProps {
   workspacePath: string;
   remoteSessionId?: string;
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   isPinned: boolean;
   isArchived?: boolean;
   isActive: boolean;
@@ -94,13 +94,13 @@ function areJsonFieldsEqual(left: unknown, right: unknown) {
   return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
 }
 
-function getTaskAutomationIdentity(task: RobinRunTaskMeta): string | undefined {
+function getTaskAutomationIdentity(task: RobinDoneTaskMeta): string | undefined {
   return (
-    task.cronAutomationId ?? (task as RobinRunTaskMeta & { automationId?: string }).automationId
+    task.cronAutomationId ?? (task as RobinDoneTaskMeta & { automationId?: string }).automationId
   );
 }
 
-function areTaskListItemTaskFieldsEqual(left: RobinRunTaskMeta, right: RobinRunTaskMeta) {
+function areTaskListItemTaskFieldsEqual(left: RobinDoneTaskMeta, right: RobinDoneTaskMeta) {
   if (left === right) {
     return true;
   }
@@ -288,7 +288,7 @@ export const MemoTaskItem = memo(function TaskListItem({
       // 原因：此行同时可复制到分屏、移动到项目；只允许 copy 会让浏览器拒绝项目的 move/drop。
       event.dataTransfer.effectAllowed = "copyMove";
       const payload = {
-        kind: "robinrun/session" as const,
+        kind: "robindone/session" as const,
         workspacePath,
         ...(task.workspaceIdentity?.trim() ? { workspaceIdentity: task.workspaceIdentity } : {}),
         ...(remoteSessionId ? { remoteSessionId } : {}),
@@ -843,7 +843,7 @@ export function TaskListItemContextMenuContent({
   organizationActions?: React.ReactNode;
   workspacePath: string;
   remoteSessionId?: string;
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   isPinned: boolean;
   isArchived?: boolean;
   intl: TaskListItemIntl;

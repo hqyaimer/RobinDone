@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { resolveTheme } from "@/useTheme.js";
 import type { Theme } from "@/useTheme.js";
 
@@ -66,7 +66,7 @@ function getThemeHeroPalette(theme: Theme): ThemeHeroPalette {
 }
 
 export function useResolvedThemeHeroPalette(): ThemeHeroPalette {
-  const theme = useRobinRunStore((state) => state.theme);
+  const theme = useRobinDoneStore((state) => state.theme);
   const resolvedTheme =
     theme === "system" ? (resolveTheme(theme) === "dark" ? "dark" : "light") : theme;
 

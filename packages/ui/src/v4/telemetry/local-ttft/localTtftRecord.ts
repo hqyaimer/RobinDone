@@ -6,8 +6,8 @@ import {
   type LocalTtftFacts,
   type LocalTtftRecord,
   type LocalTtftOutputKind,
-} from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
 export interface LocalTtftPending {
   context: LocalTtftContext;
   workspace: string;

@@ -1,16 +1,16 @@
 /* oxlint-disable eslint(max-lines) -- telemetry state lock、deviceMid 编排和上报路径共享同一状态文件，拆分会增加锁语义漂移风险。 */
 import {
   createUuid,
-  ROBINRUN_VERSION,
-  ROBINRUN_ENV,
-  ROBINRUN_TELEMETRY_REPORT_ENDPOINT,
-  buildRobinRunSourceHeadersFromContext,
-  rewriteRobinRunEndpointUrl,
+  ROBINDONE_VERSION,
+  ROBINDONE_ENV,
+  ROBINDONE_TELEMETRY_REPORT_ENDPOINT,
+  buildRobinDoneSourceHeadersFromContext,
+  rewriteRobinDoneEndpointUrl,
   sanitizeTelemetryEventDetail,
   type TelemetryEventPayload,
   type TelemetryRendererContext,
   type OAuthLoginAttribution,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { mkdir, open, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { version } from "node:os";
@@ -18,11 +18,11 @@ import { dirname, join } from "node:path";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { getAppConfigDir } from "../paths.js";
 
-const REPORT_ENDPOINT = ROBINRUN_TELEMETRY_REPORT_ENDPOINT;
+const REPORT_ENDPOINT = ROBINDONE_TELEMETRY_REPORT_ENDPOINT;
 
 function sessionCreateEventId(userId: string, sessionId: string): string {
   const bytes = createHash("sha256")
-    .update(JSON.stringify(["robinrun:session_create:v1", userId, sessionId]))
+    .update(JSON.stringify(["robindone:session_create:v1", userId, sessionId]))
     .digest()
     .subarray(0, 16);
   bytes[6] = (bytes[6]! & 0x0f) | 0x80;
@@ -53,7 +53,7 @@ interface TelemetryCoreDependencies {
   releaseChannel?: string;
   osVersion?: string;
   homeDir?: string;
-  resolveRobinRunEndpointOrigin?: () => Promise<string> | string;
+  resolveRobinDoneEndpointOrigin?: () => Promise<string> | string;
   requestTimeoutMs?: number;
   sleep?: (ms: number) => Promise<void>;
   warn?: (message: string) => void;
@@ -125,14 +125,14 @@ function toLocalDateKey(timestamp: number, timeZone: string): string {
 
 function resolveTelemetryStateFile(homeDir?: string): string {
   if (homeDir) {
-    return join(homeDir, ".robinrun", "v2", "telemetry-state.json");
+    return join(homeDir, ".robindone", "v2", "telemetry-state.json");
   }
   return join(getAppConfigDir(), "telemetry-state.json");
 }
 
 function resolveTelemetryLockFile(homeDir?: string): string {
   if (homeDir) {
-    return join(homeDir, ".robinrun", "v2", "telemetry-state.lock");
+    return join(homeDir, ".robindone", "v2", "telemetry-state.lock");
   }
   return join(getAppConfigDir(), "telemetry-state.lock");
 }
@@ -303,8 +303,8 @@ async function ensureDeviceMidInLockedState(
 /**
  * 确保 telemetry-state.json 里存在 deviceMid 并返回它。
  *
- * Bug 根因：远端 robinrun-server 所在主机没有 Desktop main 进程，过去没有任何进程会在那里写
- * telemetry-state.json；buildRobinRunSourceHeaders() 又只读不生成，于是远端发往 RobinRun endpoint 的
+ * Bug 根因：远端 robindone-server 所在主机没有 Desktop main 进程，过去没有任何进程会在那里写
+ * telemetry-state.json；buildRobinDoneSourceHeaders() 又只读不生成，于是远端发往 RobinDone endpoint 的
  * 请求永远缺 X-Device-Mid，billing/balance 被服务端拒绝为 parameter error，Start Plan 在远程
  * 工作区被判成未开通。这里把 telemetry 上报内部的 ensure 逻辑抽成独立入口，供远端 server 启动时
  * 调用：同一个文件、同一个字段、同一把 telemetry-state.lock，与同机 CLI 得到同一个设备身份。
@@ -342,7 +342,7 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
   let didWarnMarketingParamsLoadFailure = false;
   const randomUUID = dependencies.randomUUID ?? (() => createUuid());
   const now = dependencies.now ?? Date.now;
-  const appVersion = dependencies.appVersion ?? ROBINRUN_VERSION;
+  const appVersion = dependencies.appVersion ?? ROBINDONE_VERSION;
   const platform = dependencies.platform ?? process.platform;
   const osVersion = dependencies.osVersion ?? version();
   const requestTimeoutMs = dependencies.requestTimeoutMs ?? REPORT_REQUEST_TIMEOUT_MS;
@@ -455,18 +455,18 @@ export function createTelemetryCore(dependencies: TelemetryCoreDependencies = {}
     });
 
     const endpoint = String(
-      rewriteRobinRunEndpointUrl(
+      rewriteRobinDoneEndpointUrl(
         REPORT_ENDPOINT,
-        (await dependencies.resolveRobinRunEndpointOrigin?.()) ?? REPORT_ENDPOINT,
+        (await dependencies.resolveRobinDoneEndpointOrigin?.()) ?? REPORT_ENDPOINT,
       ),
     );
 
-    const headers = buildRobinRunSourceHeadersFromContext({
+    const headers = buildRobinDoneSourceHeadersFromContext({
       appVersion,
       platform,
       arch: dependencies.arch ?? process.arch,
       osVersion,
-      releaseChannel: dependencies.releaseChannel ?? ROBINRUN_ENV,
+      releaseChannel: dependencies.releaseChannel ?? ROBINDONE_ENV,
       clientLanguage: context.clientLanguage,
       clientTimezone: context.clientTimezone,
       deviceMid,

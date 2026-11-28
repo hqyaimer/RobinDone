@@ -24,29 +24,29 @@ import {
   getExportLogDir as getDefaultExportLogDir,
   getExportLogStageDir as getDefaultExportLogStageDir,
   getFeedbackLogArchiveDir as getDefaultFeedbackLogArchiveDir,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import { createAboutSnapshot, formatAboutDetail, readBuildMetadata } from "./about.js";
 import { logger } from "./logger.js";
 
-function getRobinRunDataDir() {
+function getRobinDoneDataDir() {
   return getAppConfigDir();
 }
 
-function getRobinRunCliDir() {
-  return join(homedir(), ".robinrun", "cli");
+function getRobinDoneCliDir() {
+  return join(homedir(), ".robindone", "cli");
 }
 
-function getRobinRunCliLogDir() {
-  return join(getRobinRunCliDir(), "log");
+function getRobinDoneCliLogDir() {
+  return join(getRobinDoneCliDir(), "log");
 }
 
 /**
  * Computer Use Helper 的运行目录。macOS 上 Helper 由 LaunchServices 启动，stderr 被系统丢弃，
- * 所以它把生命周期与后台输入诊断 tee 到 `<socket>.exit.log`（见 robinrun-cua
+ * 所以它把生命周期与后台输入诊断 tee 到 `<socket>.exit.log`（见 robindone-cua
  * helperExitLogPathFor）。同目录下还有 `.tokens` broker 凭据，收集时必须按文件名白名单。
  */
 function getCuaHelperRunDir() {
-  return join(homedir(), ".robinrun", "computer-use", "run");
+  return join(homedir(), ".robindone", "computer-use", "run");
 }
 
 function isCuaHelperDiagnosticFileName(fileName: string): boolean {
@@ -76,7 +76,7 @@ interface LogArchiveSkippedFileEntry {
 
 interface ExportLogsDependencies {
   now?: () => Date;
-  getRobinRunDataDir?: () => string;
+  getRobinDoneDataDir?: () => string;
   getExportLogStageDir?: () => string;
   getExportLogDir?: () => string;
   createLogArchiveArtifacts?: (
@@ -730,14 +730,14 @@ function isExcludedRelativePath(relativePath: string): boolean {
     return true;
   }
   // debug 目录通常是模型/运行时高频轨迹，不是用户要交付的日志包材料。
-  // 过去显式收集 ~/.robinrun/cli/debug 会把这类上下文带进手动导出和反馈完整日志，这里按目录段统一跳过。
+  // 过去显式收集 ~/.robindone/cli/debug 会把这类上下文带进手动导出和反馈完整日志，这里按目录段统一跳过。
   if (isExcludedDirectoryArchivePath(normalizedRelativePath)) {
     return true;
   }
   if (isNonLogStateArchivePath(normalizedRelativePath)) {
     return true;
   }
-  // ~/.robinrun/v2/dev 保存 stdio-traffic 等高频协议流，真实机器上会累计到 GB 级。
+  // ~/.robindone/v2/dev 保存 stdio-traffic 等高频协议流，真实机器上会累计到 GB 级。
   // 远超反馈附件的大小上限，不应随诊断包带出。
   if (isHighVolumeRuntimeArchivePath(normalizedRelativePath)) {
     return true;
@@ -764,7 +764,7 @@ function shouldApplyLogExportRetention(archivePath: string): boolean {
   const normalizedArchivePath = normalizeArchivePath(archivePath);
   if (
     normalizedArchivePath.startsWith("logs/") ||
-    normalizedArchivePath.startsWith(".robinrun/cli/log/")
+    normalizedArchivePath.startsWith(".robindone/cli/log/")
   ) {
     return true;
   }
@@ -960,28 +960,28 @@ export async function createLogArchiveArtifacts(
 
   await collectLogArchiveFilesFromDirectory(sourceDir, "", visitedDirs, files);
 
-  const robinrunCliLogDir = getRobinRunCliLogDir();
-  // GLM / robinrun-cli 的运行日志写在 ~/.robinrun/cli/log，不在应用主数据目录 ~/.robinrun/v2 下。
+  const robindoneCliLogDir = getRobinDoneCliLogDir();
+  // GLM / robindone-cli 的运行日志写在 ~/.robindone/cli/log，不在应用主数据目录 ~/.robindone/v2 下。
   // 如果导出日志只扫描 v2，定位 agent CLI 启动、协议或崩溃问题时会缺少最关键的原生侧日志。
   await collectLogArchiveFilesFromDirectory(
-    robinrunCliLogDir,
-    posix.join(".robinrun", "cli", "log"),
+    robindoneCliLogDir,
+    posix.join(".robindone", "cli", "log"),
     visitedDirs,
     files,
   );
 
-  const robinrunCliDir = getRobinRunCliDir();
+  const robindoneCliDir = getRobinDoneCliDir();
   // 排查 agent CLI 问题还需要它的运行配置与模型 IO 轨迹。
   // config.json 是当前生效配置；rollout 是 model-io 调用轨迹，
-  // 二者都不在 ~/.robinrun/cli/log 下，需要额外收集才能完整还原现场。
+  // 二者都不在 ~/.robindone/cli/log 下，需要额外收集才能完整还原现场。
   await collectLogArchiveFile(
-    join(robinrunCliDir, "config.json"),
-    posix.join(".robinrun", "cli", "config.json"),
+    join(robindoneCliDir, "config.json"),
+    posix.join(".robindone", "cli", "config.json"),
     files,
   );
   await collectLogArchiveFilesFromDirectory(
-    join(robinrunCliDir, "rollout"),
-    posix.join(".robinrun", "cli", "rollout"),
+    join(robindoneCliDir, "rollout"),
+    posix.join(".robindone", "cli", "rollout"),
     visitedDirs,
     files,
   );
@@ -989,11 +989,11 @@ export async function createLogArchiveArtifacts(
   // Computer Use Helper 的结构化诊断必须进日志包：否则反馈包里
   // grep "background keyboard begin rejected" 命中 0，
   // 因为 Helper 由 LaunchServices 启动、stderr 被系统丢弃，它把诊断 tee 到
-  // ~/.robinrun/computer-use/run/<socket>.exit.log，既不在 app data 也不在 ~/.robinrun/cli 下。
+  // ~/.robindone/computer-use/run/<socket>.exit.log，既不在 app data 也不在 ~/.robindone/cli 下。
   // 同目录下有 .tokens broker 凭据，因此按文件名白名单只收 *.exit.log，不递归该目录。
   await collectLogArchiveFilesByName(
     getCuaHelperRunDir(),
-    posix.join(".robinrun", "computer-use", "run"),
+    posix.join(".robindone", "computer-use", "run"),
     isCuaHelperDiagnosticFileName,
     files,
   );
@@ -1144,21 +1144,21 @@ export async function createFeedbackLogArchiveFromExportLogs(
   return createFeedbackDiagnosticArchive({
     sources: [
       { directory: join(sourceDir, "logs"), archivePrefix: "logs" },
-      { directory: getRobinRunCliLogDir(), archivePrefix: ".robinrun/cli/log" },
+      { directory: getRobinDoneCliLogDir(), archivePrefix: ".robindone/cli/log" },
       {
-        directory: getRobinRunCliDir(),
-        archivePrefix: ".robinrun/cli",
+        directory: getRobinDoneCliDir(),
+        archivePrefix: ".robindone/cli",
         includeFileNames: ["config.json"],
         onlyCurrentDay: false,
         contentPolicy: "cli-config",
       },
       {
-        directory: join(getRobinRunCliDir(), "rollout"),
-        archivePrefix: ".robinrun/cli/rollout",
+        directory: join(getRobinDoneCliDir(), "rollout"),
+        archivePrefix: ".robindone/cli/rollout",
       },
       {
         directory: getCuaHelperRunDir(),
-        archivePrefix: ".robinrun/computer-use/run",
+        archivePrefix: ".robindone/computer-use/run",
         exitLogsOnly: true,
       },
     ],
@@ -1173,7 +1173,7 @@ export async function exportLogs(
 ): Promise<{ success: boolean; path?: string; error?: string }> {
   try {
     const now = dependencies.now ?? (() => new Date());
-    const getSourceDir = dependencies.getRobinRunDataDir ?? getRobinRunDataDir;
+    const getSourceDir = dependencies.getRobinDoneDataDir ?? getRobinDoneDataDir;
     const buildArtifacts = dependencies.createLogArchiveArtifacts ?? createLogArchiveArtifacts;
     const writeZip = dependencies.writeLogArchiveZip ?? writeLogArchiveZip;
     const writeDirectory = dependencies.writeLogArchiveDirectory ?? writeLogArchiveDirectory;
@@ -1188,7 +1188,7 @@ export async function exportLogs(
 
     const sourceDir = getSourceDir();
     const timestamp = formatTimestamp(now());
-    const exportBaseName = `robinrun-logs-${timestamp}`;
+    const exportBaseName = `robindone-logs-${timestamp}`;
     const outputRootDir = getOutputRootDir();
     await mkdir(outputRootDir, { recursive: true });
     const outputDir = await mkdtemp(join(outputRootDir, `${exportBaseName}-`));

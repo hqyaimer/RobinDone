@@ -3,7 +3,7 @@ import {
   CRON_DEFAULT_GROUP_ID,
   OFF_PEAK_DEFAULT_GROUP_ID,
   MAIN_AGENT_GROUP_PREFIX,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 // 冻结 0007 的只增 SQL；后续结构调整必须追加迁移，不能跟随运行仓库修改 checksum。
 // project_id 可空、无默认值：降级兼容（旧代码不认识该列，SELECT * 不受影响）。

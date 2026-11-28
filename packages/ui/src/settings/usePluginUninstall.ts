@@ -1,20 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
-import type { RobinRunInstalledPluginSummary, RobinRunPluginInfo } from "@robinrun/shared";
-import type { IPluginManagementService } from "@robinrun/services";
+import type { RobinDoneInstalledPluginSummary, RobinDonePluginInfo } from "@robindone/shared";
+import type { IPluginManagementService } from "@robindone/services";
 import { usePluginManagementStore } from "@/store/pluginManagementStore.js";
 
 interface UsePluginUninstallInput {
   store?: typeof usePluginManagementStore;
   pluginService: IPluginManagementService;
-  installedPlugins: RobinRunInstalledPluginSummary[];
-  plugins: RobinRunPluginInfo[];
+  installedPlugins: RobinDoneInstalledPluginSummary[];
+  plugins: RobinDonePluginInfo[];
   activeOperations: ReadonlyArray<{ id: string }>;
   // 卸载会让插件提供的技能/命令失效，调用方传入统一的「能力变更后刷新」收尾逻辑。
   onAfterUninstall: () => Promise<void>;
 }
 
 export interface PluginUninstallController {
-  pendingPlugin: RobinRunPluginInfo | RobinRunInstalledPluginSummary | null;
+  pendingPlugin: RobinDonePluginInfo | RobinDoneInstalledPluginSummary | null;
   uninstalling: boolean;
   requestUninstall: (pluginId: string) => void;
   cancelUninstall: () => void;

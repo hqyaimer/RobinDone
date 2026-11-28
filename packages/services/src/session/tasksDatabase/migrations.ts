@@ -3,11 +3,15 @@ import { TASK_GROUP_PROJECT_BINDING_SQL } from "#src/task-groups/migration-v7.js
 import { OPS_PANEL_SCHEMA_SQL } from "#src/ops-panel/migration-v8.js";
 import { OPS_PANEL_RECORDED_BY_SQL } from "#src/ops-panel/migration-v9.js";
 import { PROGRESS_SCHEMA_SQL } from "#src/ops-panel/migration-v10.js";
+import {
+  BRAND_GROUP_PREFIX_RENAME_CHECKSUM_INPUT,
+  renameBrandGroupPrefixes,
+} from "#src/task-groups/migration-v11.js";
 import { basename, dirname, join } from "node:path";
 import { createHash } from "node:crypto";
-import { databaseMigrationIdSchema, type DatabaseMigrationFacts } from "@robinrun/shared";
+import { databaseMigrationIdSchema, type DatabaseMigrationFacts } from "@robindone/shared";
 import type { DatabaseSync } from "node:sqlite";
-import { sqliteMigrations, type SqliteMigration } from "@robinrun/shared/sqlite-migrations";
+import { sqliteMigrations, type SqliteMigration } from "@robindone/shared/sqlite-migrations";
 import {
   AUTOMATION_SCHEMA,
   OFF_PEAK_SCHEMA,
@@ -123,7 +127,7 @@ const definitions = [
     apply: (db: DatabaseSync) => db.exec(TASK_GROUP_ADMISSIONS_SQL),
   },
   {
-    // 智能体绑定项目（RobinRun 产品模型：项目 → 智能体 → 会话 三级组织）。
+    // 智能体绑定项目（RobinDone 产品模型：项目 → 智能体 → 会话 三级组织）。
     // 列只增可空；数据回填走 TaskIndexRepo.initialize 的启动对账（项目表此时已就绪）。
     id: "0007_task_group_project_binding",
     touchedTables: ["task_groups"],
@@ -152,6 +156,15 @@ const definitions = [
     touchedTables: ["progress_entries"],
     checksumInput: [PROGRESS_SCHEMA_SQL],
     apply: (db: DatabaseSync) => db.exec(PROGRESS_SCHEMA_SQL),
+  },
+  {
+    // RobinRun→RobinDone 改名（2026-11-27，specs/rename-robindone-migration.md）：确定性分组 id
+    // 前缀与系统组常量 id 改写。启动加载屏按本迁移 id 展示迁移进度；主智能体/worker 组自举
+    // （INSERT OR IGNORE）在其后的启动对账里命中已改写行，不会重复建组。
+    id: "0011_brand_group_prefix_rename",
+    touchedTables: ["task_groups", "task_group_members", "task_group_view_node_orders"],
+    checksumInput: [BRAND_GROUP_PREFIX_RENAME_CHECKSUM_INPUT],
+    apply: renameBrandGroupPrefixes,
   },
 ] as const;
 

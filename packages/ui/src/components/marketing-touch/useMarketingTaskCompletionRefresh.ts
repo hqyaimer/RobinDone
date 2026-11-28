@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect } from "react";
-import type { SessionSummary } from "@robinrun/shared/robinrun-protocol-v4";
+import type { SessionSummary } from "@robindone/shared/robindone-protocol-v4";
 import { useServices } from "@/hooks/useServices.js";
 import {
   acquireSessionsIndex,
@@ -22,7 +22,7 @@ export function useMarketingTaskCompletionRefresh({
   rpcReady: boolean;
 }): void {
   const refresh = useContext(MarketingRefreshContext);
-  const { robinrunAgentService } = useServices();
+  const { robindoneAgentService } = useServices();
   useEffect(() => {
     if (!refresh || !rpcReady) return;
     const identity = workspaceIdentity?.trim();
@@ -32,7 +32,7 @@ export function useMarketingTaskCompletionRefresh({
       ...(identity ? { workspaceIdentity: identity } : {}),
       ...(endpointKey ? { endpointKey } : {}),
     };
-    const store = acquireSessionsIndex(scope, robinrunAgentService);
+    const store = acquireSessionsIndex(scope, robindoneAgentService);
     let previous: Map<string, SessionSummary["phase"]> | null = null;
     const observe = () => {
       // 初次历史与断连恢复只建立基线，避免把旧完成状态当成新完成事件。
@@ -58,5 +58,5 @@ export function useMarketingTaskCompletionRefresh({
       unsubscribe();
       releaseSessionsIndex(scope, store);
     };
-  }, [endpointKey, refresh, rpcReady, workspaceIdentity, workspacePath, robinrunAgentService]);
+  }, [endpointKey, refresh, rpcReady, workspaceIdentity, workspacePath, robindoneAgentService]);
 }

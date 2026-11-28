@@ -1,4 +1,4 @@
-import type { ModelSwitchStage } from "@/store/robinrunSessionStoreTypes.js";
+import type { ModelSwitchStage } from "@/store/robindoneSessionStoreTypes.js";
 
 export function shouldBlockTaskSelectionDuringModelRestart(
   modelSwitchPending: boolean,

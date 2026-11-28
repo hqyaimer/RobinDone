@@ -1,6 +1,6 @@
 import { projectSectionSelector } from "#e2e/helpers/project-sidebar";
 import { randomUUID } from "node:crypto";
-import type { CommandEnvelope } from "@robinrun/shared/robinrun-protocol-v4";
+import type { CommandEnvelope } from "@robindone/shared/robindone-protocol-v4";
 import { admitCreateBeforeExit } from "#e2e/helpers/session-creation-resend";
 import { startE2ENetworkCaptureProxy } from "#e2e/helpers/network-capture-proxy";
 import { verifySessionCreationRetries } from "#e2e/helpers/session-creation-retries";
@@ -13,7 +13,7 @@ import {
   TID_V4_COMPOSER_INPUT,
   TID_V4_COMPOSER_SEND,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { chromium } from "playwright-core";
 import { openMobilePairingPage, seedMobileFixtureLogin } from "#e2e/helpers/mobile-pairing";
 import { obtainUnreadPairingUrl, showMobileTaskHome } from "#e2e/helpers/web-remote-unread";
@@ -52,7 +52,9 @@ const LEGACY_IDS = [
   "session_12345678-1234-4234-8234-123456789abc",
 ];
 const paths = getE2EAppDataPaths();
-const artifactDir = resolve(process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? `.e2e-artifacts/${CASE_NAME}`);
+const artifactDir = resolve(
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? `.e2e-artifacts/${CASE_NAME}`,
+);
 let replay: Awaited<ReturnType<typeof startConversationModelProviderReplayServer>>;
 const facts: Record<string, unknown> = {};
 
@@ -140,7 +142,7 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
         {
           includes: [
             `E2E_SID_REFERENCE_${index}`,
-            "The user referenced prior RobinRun session(s)",
+            "The user referenced prior RobinDone session(s)",
             id,
           ],
           excludes: ["Generate a concise title"],
@@ -175,10 +177,10 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
 
   it("手机 shared-host 恢复两种旧 ID，引用发送后刷新仍保留原身份", async function () {
     this.timeout(180000);
-    const endpoint = process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL;
+    const endpoint = process.env.ROBINDONE_WEB_REMOTE_CONTROL_URL;
     if (!endpoint) throw new Error("SID 手机验收需要隔离 Web/relay fixture");
     const pairingUrl = await obtainUnreadPairingUrl(new URL(endpoint).origin);
-    const executablePath = process.env.ROBINRUN_E2E_MOBILE_BROWSER_EXECUTABLE;
+    const executablePath = process.env.ROBINDONE_E2E_MOBILE_BROWSER_EXECUTABLE;
     const chrome = await chromium.launch({
       ...(executablePath ? { executablePath } : { channel: "chrome" }),
       headless: true,
@@ -222,7 +224,7 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
           {
             includes: [
               `E2E_SID_MOBILE_${index}`,
-              "The user referenced prior RobinRun session(s)",
+              "The user referenced prior RobinDone session(s)",
               id,
             ],
             excludes: ["Generate a concise title"],
@@ -291,7 +293,7 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
       // 模拟 ACK 丢失窗口已有的 renderer ledger；首发 admission 由真实 Host/CLI 完成。
       if (surface === "desktop")
         await browser.execute((entry) => {
-          localStorage.setItem("robinrun-v4-pending-commands:v1", JSON.stringify([entry]));
+          localStorage.setItem("robindone-v4-pending-commands:v1", JSON.stringify([entry]));
         }, pendingCreateEntry(command));
       await withRetryProxy(async () => {
         await restartIntoWorkspacePreservingProfile(DEFAULT_WORKSPACE, {
@@ -312,7 +314,7 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
           async () =>
             browser.execute(() => {
               const entries = JSON.parse(
-                localStorage.getItem("robinrun-v4-pending-commands:v1") ?? "[]",
+                localStorage.getItem("robindone-v4-pending-commands:v1") ?? "[]",
               );
               return entries.some((entry: { recovery?: string }) => entry.recovery === "discarded");
             }),
@@ -329,8 +331,8 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
             browser.execute(() =>
               Boolean(
                 (
-                  window as unknown as { __robinrunV4CommandAcksE2E?: Array<{ type: string }> }
-                ).__robinrunV4CommandAcksE2E?.some((ack) => ack.type === "createSession"),
+                  window as unknown as { __robindoneV4CommandAcksE2E?: Array<{ type: string }> }
+                ).__robindoneV4CommandAcksE2E?.some((ack) => ack.type === "createSession"),
               ),
             ),
           { timeout: 30000, timeoutMsg: "重发没有收到 createSession ACK" },
@@ -339,13 +341,13 @@ describe("SID01–SID05: 会话 ID 创建、历史引用和完整重启恢复", 
           () =>
             (
               window as unknown as {
-                __robinrunV4CommandAcksE2E: Array<{
+                __robindoneV4CommandAcksE2E: Array<{
                   type: string;
                   status: string;
                   reasonCode?: string;
                 }>;
               }
-            ).__robinrunV4CommandAcksE2E,
+            ).__robindoneV4CommandAcksE2E,
         );
         facts[`resendAcks-${surface}`] = acks;
         expect(acks.filter((ack) => ack.type === "createSession").at(-1)?.status).toBe("accepted");
@@ -481,7 +483,7 @@ function seedLegacySessions(sourceId: string) {
       const user = {
         role: "user",
         time: { created: now },
-        agent: "robinrun-agent",
+        agent: "robindone-agent",
         model: { providerID: UPSTREAM_PROVIDER_ID, modelID: UPSTREAM_MODEL },
       };
       const assistant = {
@@ -491,7 +493,7 @@ function seedLegacySessions(sourceId: string) {
         modelID: UPSTREAM_MODEL,
         providerID: UPSTREAM_PROVIDER_ID,
         mode: "build",
-        agent: "robinrun-agent",
+        agent: "robindone-agent",
         path: { cwd: DEFAULT_WORKSPACE, root: DEFAULT_WORKSPACE },
         cost: 0,
         tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
@@ -575,10 +577,10 @@ function pendingCreateEntry(command: CommandEnvelope) {
 }
 
 async function resendOnMobile(command: CommandEnvelope): Promise<string> {
-  const endpoint = process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL;
+  const endpoint = process.env.ROBINDONE_WEB_REMOTE_CONTROL_URL;
   if (!endpoint) throw new Error("SID 手机重发需要隔离 Web/relay fixture");
   const pairingUrl = await obtainUnreadPairingUrl(new URL(endpoint).origin);
-  const executablePath = process.env.ROBINRUN_E2E_MOBILE_BROWSER_EXECUTABLE;
+  const executablePath = process.env.ROBINDONE_E2E_MOBILE_BROWSER_EXECUTABLE;
   const chrome = await chromium.launch({
     ...(executablePath ? { executablePath } : { channel: "chrome" }),
     headless: true,
@@ -599,7 +601,7 @@ async function resendOnMobile(command: CommandEnvelope): Promise<string> {
       readySelector: '[data-testid="sidebar"], [data-mobile-page="chat"]',
     });
     await page.evaluate(
-      (entry) => localStorage.setItem("robinrun-v4-pending-commands:v1", JSON.stringify([entry])),
+      (entry) => localStorage.setItem("robindone-v4-pending-commands:v1", JSON.stringify([entry])),
       pendingCreateEntry(command),
     );
     await page.reload();
@@ -619,20 +621,20 @@ async function resendOnMobile(command: CommandEnvelope): Promise<string> {
     await resend.tap();
     await page.waitForFunction(() =>
       (
-        window as unknown as { __robinrunV4CommandAcksE2E?: Array<{ type: string }> }
-      ).__robinrunV4CommandAcksE2E?.some((ack) => ack.type === "createSession"),
+        window as unknown as { __robindoneV4CommandAcksE2E?: Array<{ type: string }> }
+      ).__robindoneV4CommandAcksE2E?.some((ack) => ack.type === "createSession"),
     );
     const acks = await page.evaluate(
       () =>
         (
           window as unknown as {
-            __robinrunV4CommandAcksE2E: Array<{
+            __robindoneV4CommandAcksE2E: Array<{
               type: string;
               status: string;
               reasonCode?: string;
             }>;
           }
-        ).__robinrunV4CommandAcksE2E,
+        ).__robindoneV4CommandAcksE2E,
     );
     facts["resendAcks-mobile"] = acks;
     expect(acks.filter((ack) => ack.type === "createSession").at(-1)?.status).toBe("accepted");

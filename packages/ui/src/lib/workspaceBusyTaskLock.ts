@@ -1,14 +1,14 @@
-import type { RobinRunProvider, RobinRunTaskRuntimeStatus } from "@robinrun/shared";
+import type { RobinDoneProvider, RobinDoneTaskRuntimeStatus } from "@robindone/shared";
 
-function isBusyTaskRuntimeStatus(status: RobinRunTaskRuntimeStatus): boolean {
+function isBusyTaskRuntimeStatus(status: RobinDoneTaskRuntimeStatus): boolean {
   return status === "creating" || status === "restoring" || status === "streaming";
 }
 
 function buildTaskProviderByTaskId(
-  optimisticTaskMetaByTaskId: Record<string, { provider?: RobinRunProvider }>,
-  taskListCache?: Array<{ taskId: string; provider?: RobinRunProvider }> | null,
-): Record<string, RobinRunProvider | undefined> {
-  const providerByTaskId: Record<string, RobinRunProvider | undefined> = {};
+  optimisticTaskMetaByTaskId: Record<string, { provider?: RobinDoneProvider }>,
+  taskListCache?: Array<{ taskId: string; provider?: RobinDoneProvider }> | null,
+): Record<string, RobinDoneProvider | undefined> {
+  const providerByTaskId: Record<string, RobinDoneProvider | undefined> = {};
 
   for (const task of taskListCache ?? []) {
     if (!task.provider) {
@@ -28,13 +28,13 @@ function buildTaskProviderByTaskId(
 }
 
 export function hasBusyTaskInWorkspaceProvider(
-  selectedProvider: RobinRunProvider,
+  selectedProvider: RobinDoneProvider,
   taskRuntimeByTaskId: Record<
     string,
-    { status: RobinRunTaskRuntimeStatus; provider?: RobinRunProvider }
+    { status: RobinDoneTaskRuntimeStatus; provider?: RobinDoneProvider }
   >,
-  optimisticTaskMetaByTaskId: Record<string, { provider?: RobinRunProvider }>,
-  taskListCache?: Array<{ taskId: string; provider?: RobinRunProvider }> | null,
+  optimisticTaskMetaByTaskId: Record<string, { provider?: RobinDoneProvider }>,
+  taskListCache?: Array<{ taskId: string; provider?: RobinDoneProvider }> | null,
   activeTaskId?: string | null,
 ): boolean {
   const providerByTaskId = buildTaskProviderByTaskId(optimisticTaskMetaByTaskId, taskListCache);

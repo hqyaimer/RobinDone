@@ -12,7 +12,7 @@ import {
 describe("手机置顶/归档/新建项目 payload", () => {
   it.each([
     {
-      robinrun_type: "task-pin-request",
+      robindone_type: "task-pin-request",
       requestId: "r1",
       taskId: "t1",
       workspacePath: "/w",
@@ -20,67 +20,67 @@ describe("手机置顶/归档/新建项目 payload", () => {
       pinned: true,
     },
     {
-      robinrun_type: "task-pin-response",
+      robindone_type: "task-pin-response",
       requestId: "r1",
       taskId: "t1",
       success: true,
       pinned: false,
     },
     {
-      robinrun_type: "task-pin-response",
+      robindone_type: "task-pin-response",
       requestId: "r1",
       taskId: "t1",
       success: false,
       error: "x",
     },
-    { robinrun_type: "task-archive-request", requestId: "r2", taskId: "t1", workspacePath: "/w" },
+    { robindone_type: "task-archive-request", requestId: "r2", taskId: "t1", workspacePath: "/w" },
     {
-      robinrun_type: "task-archive-request",
+      robindone_type: "task-archive-request",
       requestId: "r2",
       taskId: "t1",
       workspacePath: "/w",
       archived: false,
     },
     {
-      robinrun_type: "task-archive-response",
+      robindone_type: "task-archive-response",
       requestId: "r2",
       taskId: "t1",
       success: true,
       archived: false,
     },
     {
-      robinrun_type: "task-archive-response",
+      robindone_type: "task-archive-response",
       requestId: "r2",
       taskId: "t1",
       success: true,
       archived: true,
     },
-    { robinrun_type: "workspace-create-request", requestId: "r3", name: "demo" },
+    { robindone_type: "workspace-create-request", requestId: "r3", name: "demo" },
     {
-      robinrun_type: "workspace-create-response",
+      robindone_type: "workspace-create-response",
       requestId: "r3",
       success: true,
-      workspacePath: "/Users/u/RobinRunProject/demo",
-      workspaceKey: "/Users/u/RobinRunProject/demo",
+      workspacePath: "/Users/u/RobinDoneProject/demo",
+      workspaceKey: "/Users/u/RobinDoneProject/demo",
       projectId: "p1",
       hostId: "local",
     },
-    { robinrun_type: "workspace-create-response", requestId: "r3", success: false, error: "bad" },
-  ])("解析 $robinrun_type", (payload) => {
+    { robindone_type: "workspace-create-response", requestId: "r3", success: false, error: "bad" },
+  ])("解析 $robindone_type", (payload) => {
     expect(parseWebRemoteControlAppPayload(payload)).toEqual(payload);
   });
 
   it("拒绝缺字段或成功应答带错的 payload", () => {
     expect(
       parseWebRemoteControlAppPayload({
-        robinrun_type: "task-pin-request",
+        robindone_type: "task-pin-request",
         requestId: "r",
         taskId: "t",
       }),
     ).toBeNull();
     expect(
       parseWebRemoteControlAppPayload({
-        robinrun_type: "task-archive-response",
+        robindone_type: "task-archive-response",
         requestId: "r",
         taskId: "t",
         success: true,
@@ -121,19 +121,19 @@ describe("resolveUnrecognizedWebRemoteControlRequest", () => {
   it("只对带 requestId 的 -request 类型回错", () => {
     expect(
       resolveUnrecognizedWebRemoteControlRequest({
-        robinrun_type: "future-request",
+        robindone_type: "future-request",
         requestId: "r",
       }),
-    ).toEqual({ requestId: "r", robinrunType: "future-request" });
+    ).toEqual({ requestId: "r", robindoneType: "future-request" });
   });
 
   it.each([
     null,
     "text",
-    { robinrun_type: "future-response", requestId: "r" },
-    { robinrun_type: "future-request" },
-    { robinrun_type: "future-request", requestId: "  " },
-    { robinrun_type: 1, requestId: "r" },
+    { robindone_type: "future-response", requestId: "r" },
+    { robindone_type: "future-request" },
+    { robindone_type: "future-request", requestId: "  " },
+    { robindone_type: 1, requestId: "r" },
   ])("忽略 %j", (value) => {
     expect(resolveUnrecognizedWebRemoteControlRequest(value)).toBeNull();
   });

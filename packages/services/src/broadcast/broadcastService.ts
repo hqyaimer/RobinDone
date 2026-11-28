@@ -1,11 +1,11 @@
-import { Emitter } from "@robinrun/rpc";
+import { Emitter } from "@robindone/rpc";
 import {
   HostResponseTypes,
   HostMessageTypes,
   broadcastMessageSchema,
   hostBroadcastClaimResultMessageSchema,
   hostBroadcastEnvelopeSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   BroadcastClaimAcquireResult,
   BroadcastClaimLease,

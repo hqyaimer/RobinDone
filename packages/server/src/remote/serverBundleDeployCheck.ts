@@ -1,12 +1,12 @@
-import type { IRemoteBackend, StdioStream } from "@robinrun/server/remote/backend.js";
-import { quotePosixPathArg, quotePosixShellArg } from "@robinrun/server/remote/posixShell.js";
+import type { IRemoteBackend, StdioStream } from "@robindone/server/remote/backend.js";
+import { quotePosixPathArg, quotePosixShellArg } from "@robindone/server/remote/posixShell.js";
 
 const REQUIRED_SERVER_BUNDLE_MARKERS = [
   "skill-sync",
   "mcp-sync",
   "plugin-sync",
   "user-config-sync",
-  "__robinrun_rpc_nested_uint8array_v1",
+  "__robindone_rpc_nested_uint8array_v1",
   "exportMarketplaceSourceArchive",
   "importMarketplaceSourceArchive",
 ];

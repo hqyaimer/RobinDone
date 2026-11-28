@@ -1,12 +1,12 @@
 import {
-  ROBINRUN_PRODUCT_FLAVOR,
-  type RobinRunProductFlavor,
+  ROBINDONE_PRODUCT_FLAVOR,
+  type RobinDoneProductFlavor,
   type UpdateStatePayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 // 更新入口跟随产品身份而不是后端环境：Preview 身份（含生产后端的 Preview）禁用更新器。
 export function shouldShowDesktopUpdateEntry(
-  flavor: RobinRunProductFlavor = ROBINRUN_PRODUCT_FLAVOR,
+  flavor: RobinDoneProductFlavor = ROBINDONE_PRODUCT_FLAVOR,
 ): boolean {
   return flavor === "production";
 }

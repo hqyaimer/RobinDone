@@ -6,8 +6,8 @@ import {
   generateTraceId,
   isRemoteWorkspaceIdentity,
   resolveWorkspaceKey,
-  ROBINRUN_AGENT_PROVIDER,
-} from "@robinrun/shared";
+  ROBINDONE_AGENT_PROVIDER,
+} from "@robindone/shared";
 import type {
   AutoArchiveInput,
   ProjectDirectories,
@@ -124,7 +124,7 @@ function readTasks(db: DatabaseSync): ProjectTask[] {
     .prepare(
       "SELECT * FROM tasks WHERE provider=? AND deleted=0 AND coalesce(cli_deleted,0)=0 AND cli_created_at IS NOT NULL ORDER BY cli_updated_at DESC,task_id",
     )
-    .all(ROBINRUN_AGENT_PROVIDER)
+    .all(ROBINDONE_AGENT_PROVIDER)
     .map((row) => {
       const meta = typeof row.meta_json === "string" ? JSON.parse(row.meta_json) : {};
       return {

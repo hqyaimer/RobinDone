@@ -1,5 +1,5 @@
 import { SidebarNativeTooltip } from "@/ControlHintTooltip.js";
-import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
+import type { ProjectTask as RobinDoneTaskMeta } from "@/project-sidebar/contract.js";
 
 import {
   ContextMenuContent,
@@ -32,7 +32,7 @@ export function GroupedTaskContextMenuContent({
   onOpenTaskFeedback,
   disabledReason,
 }: {
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   currentGroupId?: string;
   groups: TaskGroupMenuItem[];
   intl: {
@@ -42,11 +42,11 @@ export function GroupedTaskContextMenuContent({
   taskSessionFile: { loading: boolean; path: string | null };
   taskNativeSessionLogFile: { loading: boolean; path: string | null };
   providerConfigFile: { loading: boolean; path: string | null };
-  onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
-  onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
-  onStartRenameTask: (task: RobinRunTaskMeta) => void;
-  onArchiveTask: (task: RobinRunTaskMeta) => void;
-  onMarkTaskAsUnread: (task: RobinRunTaskMeta) => void;
+  onMoveTaskToGroup: (task: RobinDoneTaskMeta, groupId: string | null) => void;
+  onMoveTaskToTop: (task: RobinDoneTaskMeta) => void;
+  onStartRenameTask: (task: RobinDoneTaskMeta) => void;
+  onArchiveTask: (task: RobinDoneTaskMeta) => void;
+  onMarkTaskAsUnread: (task: RobinDoneTaskMeta) => void;
   onOpenTaskPathInFileManager: () => void;
   onCopyText: (label: string, text: string | null) => void;
   onOpenProviderConfig: () => void;

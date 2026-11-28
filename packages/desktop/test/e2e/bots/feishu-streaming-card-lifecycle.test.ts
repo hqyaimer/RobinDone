@@ -1,8 +1,8 @@
 import { createBotProjectFixture } from "./helpers/bots-service-harness.js";
 import { readFile } from "node:fs/promises";
 
-import type { BotsConfigFile, BotsStateFile, RobinRunStreamEvent } from "@robinrun/shared";
-import { createBotsService } from "@robinrun/services/node";
+import type { BotsConfigFile, BotsStateFile, RobinDoneStreamEvent } from "@robindone/shared";
+import { createBotsService } from "@robindone/services/node";
 import { createBotModelSelectionView } from "./helpers/bots-service-harness.js";
 import { resolveE2ERuntimePath } from "../helpers/e2e-runtime-paths.js";
 
@@ -13,7 +13,7 @@ type LifecycleFixture = {
   classification: "synthetic";
   syntheticReason: string;
   prompt: string;
-  events: Array<Record<string, unknown> & { type: RobinRunStreamEvent["type"] }>;
+  events: Array<Record<string, unknown> & { type: RobinDoneStreamEvent["type"] }>;
   expectedTimeline: string[];
   forbiddenCardMarkers: string[];
 };
@@ -53,10 +53,10 @@ describe("BOT-E2E-SC-01 Feishu streaming card lifecycle", () => {
     const sendPromptCalls: unknown[] = [];
     const subscriptions: Array<{
       params: Record<string, unknown>;
-      listener: (event: RobinRunStreamEvent) => Promise<void> | void;
+      listener: (event: RobinDoneStreamEvent) => Promise<void> | void;
     }> = [];
 
-    const robinrunTaskService = {
+    const robindoneTaskService = {
       listTasks: async () => [],
       createTask: async (params: unknown) => {
         createTaskCalls.push(params);
@@ -99,7 +99,7 @@ describe("BOT-E2E-SC-01 Feishu streaming card lifecycle", () => {
       stopGeneration: async () => undefined,
       onDynamicTaskEvent:
         (params: Record<string, unknown>) =>
-        (listener: (event: RobinRunStreamEvent) => Promise<void> | void) => {
+        (listener: (event: RobinDoneStreamEvent) => Promise<void> | void) => {
           subscriptions.push({ params, listener });
           return { dispose() {} };
         },
@@ -113,7 +113,7 @@ describe("BOT-E2E-SC-01 Feishu streaming card lifecycle", () => {
         save: async () => undefined,
         delete: async () => undefined,
       },
-      robinrunTaskService,
+      robindoneTaskService,
       settingService: {
         get: async () => ({
           locale: "zh-CN",
@@ -186,7 +186,7 @@ describe("BOT-E2E-SC-01 Feishu streaming card lifecycle", () => {
         ...fixture.events[index],
         taskId: "task-e2e-bot-streaming-card",
         traceId: `trace-e2e-bot-${index}`,
-      } as RobinRunStreamEvent;
+      } as RobinDoneStreamEvent;
       await listener?.(event);
     }
 

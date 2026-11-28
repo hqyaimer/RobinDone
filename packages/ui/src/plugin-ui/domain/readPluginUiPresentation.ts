@@ -1,4 +1,4 @@
-import { mcpToolDisplayUiSchema } from "@robinrun/shared/mcp-apps";
+import { mcpToolDisplayUiSchema } from "@robindone/shared/mcp-apps";
 import type { PluginUiPresentation } from "../contract.js";
 
 /**

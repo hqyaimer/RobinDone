@@ -1,6 +1,6 @@
 export const DEVELOPER_TOOLS_STORAGE_KEYS = [
-  "robinrun:developer-tools:enabled",
-  "robinrun:token-debug:enabled",
+  "robindone:developer-tools:enabled",
+  "robindone:token-debug:enabled",
 ] as const;
 
 const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);

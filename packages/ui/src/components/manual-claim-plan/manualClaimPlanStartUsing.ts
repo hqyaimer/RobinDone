@@ -1,4 +1,4 @@
-import type { ProviderSettingsView } from "@robinrun/services";
+import type { ProviderSettingsView } from "@robindone/services";
 
 export interface ManualClaimPlanStartUsingTarget {
   readonly providerExecutable?: boolean;

@@ -1,8 +1,8 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
 import {
   ISourceServerManagementService,
   type UpdateConnectionProfileInput,
-} from "@robinrun/services";
+} from "@robindone/services";
 
 const DISCONNECT_REQUEST = -8301;
 const UPDATE_REQUEST = -8302;

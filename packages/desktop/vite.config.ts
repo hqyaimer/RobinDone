@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { resolveRobinRunEndpointOrigin } from "@robinrun/shared/robinrunEndpoint";
+import { resolveRobinDoneEndpointOrigin } from "@robindone/shared/robindoneEndpoint";
 import { pdfJsCMapsPlugin } from "../ui/vite/pdfJsCMapsPlugin.js";
 import { getBuildMetadata } from "./scripts/build-metadata.mjs";
 import { resolveDesktopProductFlavor } from "./scripts/desktop-product-identity.mjs";
@@ -56,7 +56,7 @@ export const desktopRendererDependencyAliases = {
   "lucide-react": resolveInstalledPackageRoot("lucide-react"),
 } as const;
 
-function resolveRobinRunEnv(value: string | undefined): "test" | "production" {
+function resolveRobinDoneEnv(value: string | undefined): "test" | "production" {
   return value?.trim().toLowerCase() === "production" ? "production" : "test";
 }
 
@@ -82,7 +82,7 @@ function createE2EUIRendererCoveragePlugin(repoRoot: string): Plugin {
   );
 
   return {
-    name: "robinrun:e2e-ui-source-coverage",
+    name: "robindone:e2e-ui-source-coverage",
     enforce: "pre",
     transform(sourceCode, id, options) {
       if (options?.ssr || id.startsWith("\0")) {
@@ -153,7 +153,7 @@ function stripViteRequestQuery(id: string) {
 function createReactScanDevPlugin(): Plugin {
   const scriptPath = normalizePathForVite(desktopRequire.resolve("react-scan/dist/auto.global.js"));
   return {
-    name: "robinrun:react-scan",
+    name: "robindone:react-scan",
     apply: "serve",
     transformIndexHtml: {
       order: "post",
@@ -167,35 +167,35 @@ function createReactScanDevPlugin(): Plugin {
 }
 
 export default defineConfig(({ command, mode }) => {
-  // `.env*` 只提供链接常量；当前产品环境由启动脚本或 CI 注入 ROBINRUN_ENV。
+  // `.env*` 只提供链接常量；当前产品环境由启动脚本或 CI 注入 ROBINDONE_ENV。
   const env = loadEnv(mode, "../..", "");
   const repoRoot = resolve(__dirname, "../..");
-  const robinrunEnv = resolveRobinRunEnv(env.ROBINRUN_ENV);
+  const robindoneEnv = resolveRobinDoneEnv(env.ROBINDONE_ENV);
   // 安装包身份与后端环境分轴；renderer 用它决定是否展示更新入口。
-  const robinrunProductFlavor = resolveDesktopProductFlavor({
+  const robindoneProductFlavor = resolveDesktopProductFlavor({
     ...process.env,
     ...env,
-    ROBINRUN_ENV: robinrunEnv,
+    ROBINDONE_ENV: robindoneEnv,
   });
   const e2eCoverageEnabled =
-    env.ROBINRUN_E2E_COVERAGE === "1" || process.env.ROBINRUN_E2E_COVERAGE === "1";
+    env.ROBINDONE_E2E_COVERAGE === "1" || process.env.ROBINDONE_E2E_COVERAGE === "1";
   const e2eStoreBridgeEnabled =
-    env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1" ||
-    process.env.VITE_ROBINRUN_E2E_STORE_BRIDGE === "1";
-  const robinrunEndpointOrigin = resolveRobinRunEndpointOrigin({
-    env: robinrunEnv,
+    env.VITE_ROBINDONE_E2E_STORE_BRIDGE === "1" ||
+    process.env.VITE_ROBINDONE_E2E_STORE_BRIDGE === "1";
+  const robindoneEndpointOrigin = resolveRobinDoneEndpointOrigin({
+    env: robindoneEnv,
     envBaseOrigin:
-      env.ROBINRUN_BASE_URL ??
-      env.ROBINRUN_ENDPOINT_ORIGIN ??
-      (robinrunEnv === "production"
-        ? env.ROBINRUN_PRODUCTION_BASE_URL
-        : env.ROBINRUN_TEST_BASE_URL),
+      env.ROBINDONE_BASE_URL ??
+      env.ROBINDONE_ENDPOINT_ORIGIN ??
+      (robindoneEnv === "production"
+        ? env.ROBINDONE_PRODUCTION_BASE_URL
+        : env.ROBINDONE_TEST_BASE_URL),
   });
   const codingPlanWebviewOrigin =
     env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? process.env.VITE_CODING_PLAN_WEBVIEW_ORIGIN ?? "";
   const plugins = [
-    // 仅开发服务器装配，所有 build 都不注入；后端 ROBINRUN_ENV 不决定是否开启开发工具。
-    ...(command === "serve" && mode !== "production" && env.ROBINRUN_REACT_SCAN !== "0"
+    // 仅开发服务器装配，所有 build 都不注入；后端 ROBINDONE_ENV 不决定是否开启开发工具。
+    ...(command === "serve" && mode !== "production" && env.ROBINDONE_REACT_SCAN !== "0"
       ? [createReactScanDevPlugin()]
       : []),
     ...(e2eCoverageEnabled ? [createE2EUIRendererCoveragePlugin(repoRoot)] : []),
@@ -224,23 +224,23 @@ export default defineConfig(({ command, mode }) => {
     },
     server: { port: 5174, strictPort: true },
     define: {
-      __ROBINRUN_VERSION__: JSON.stringify(buildMetadata.appVersion),
-      __ROBINRUN_MIN_COMPATIBLE_VERSION__: JSON.stringify(buildMetadata.minCompatibleVersion),
-      __ROBINRUN_COMMIT__: JSON.stringify(buildMetadata.buildCommitId),
-      __ROBINRUN_BUILD_TIME__: JSON.stringify(buildMetadata.buildTime),
-      __ROBINRUN_ENV__: JSON.stringify(robinrunEnv),
-      __ROBINRUN_PRODUCT_FLAVOR__: JSON.stringify(robinrunProductFlavor),
+      __ROBINDONE_VERSION__: JSON.stringify(buildMetadata.appVersion),
+      __ROBINDONE_MIN_COMPATIBLE_VERSION__: JSON.stringify(buildMetadata.minCompatibleVersion),
+      __ROBINDONE_COMMIT__: JSON.stringify(buildMetadata.buildCommitId),
+      __ROBINDONE_BUILD_TIME__: JSON.stringify(buildMetadata.buildTime),
+      __ROBINDONE_ENV__: JSON.stringify(robindoneEnv),
+      __ROBINDONE_PRODUCT_FLAVOR__: JSON.stringify(robindoneProductFlavor),
       ...buildTimeConfigDefines,
-      __ROBINRUN_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(mode !== "production"),
-      "import.meta.env.VITE_ROBINRUN_BASE_URL": JSON.stringify(robinrunEndpointOrigin),
-      // 兼容旧 renderer 读取名；新代码统一读 VITE_ROBINRUN_BASE_URL。
-      "import.meta.env.VITE_ROBINRUN_ENDPOINT_ORIGIN": JSON.stringify(robinrunEndpointOrigin),
+      __ROBINDONE_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(mode !== "production"),
+      "import.meta.env.VITE_ROBINDONE_BASE_URL": JSON.stringify(robindoneEndpointOrigin),
+      // 兼容旧 renderer 读取名；新代码统一读 VITE_ROBINDONE_BASE_URL。
+      "import.meta.env.VITE_ROBINDONE_ENDPOINT_ORIGIN": JSON.stringify(robindoneEndpointOrigin),
       "import.meta.env.VITE_CODING_PLAN_WEBVIEW_ORIGIN": JSON.stringify(codingPlanWebviewOrigin),
       "import.meta.env.VITE_REWARDS_WEBVIEW_ORIGIN": JSON.stringify(
         env.VITE_REWARDS_WEBVIEW_ORIGIN ?? process.env.VITE_REWARDS_WEBVIEW_ORIGIN ?? "",
       ),
-      // Bugfix: E2E store bridge 只能由 WDIO 专用变量打开，避免把 ROBINRUN_ENV=test 产品环境误当成测试运行态。
-      "import.meta.env.VITE_ROBINRUN_E2E_STORE_BRIDGE": JSON.stringify(
+      // Bugfix: E2E store bridge 只能由 WDIO 专用变量打开，避免把 ROBINDONE_ENV=test 产品环境误当成测试运行态。
+      "import.meta.env.VITE_ROBINDONE_E2E_STORE_BRIDGE": JSON.stringify(
         e2eStoreBridgeEnabled ? "1" : "",
       ),
     },
@@ -266,7 +266,7 @@ export default defineConfig(({ command, mode }) => {
           index: resolve(__dirname, "src/renderer/index.html"),
           "resource-manager": resolve(__dirname, "src/renderer/resource-manager.html"),
           "cua-permission-panel": resolve(__dirname, "src/renderer/cua-permission-panel.html"),
-          // 插件 UI 沙箱的受信 shell，经 robinrun-sandbox:// 提供
+          // 插件 UI 沙箱的受信 shell，经 robindone-sandbox:// 提供
           "plugin-sandbox": resolve(__dirname, "src/renderer/plugin-sandbox.html"),
         },
       },

@@ -26,7 +26,7 @@ if (process.platform !== "win32") {
     getBinFromUrl("nsis-3.0.4.1", "nsis-3.0.4.1.7z", NSIS_CHECKSUM),
     getBinFromUrl("nsis-resources-3.4.1", "nsis-resources-3.4.1.7z", NSIS_RESOURCES_CHECKSUM),
   ]);
-  const tempRoot = mkdtempSync(join(tmpdir(), "robinrun-preserve-files-"));
+  const tempRoot = mkdtempSync(join(tmpdir(), "robindone-preserve-files-"));
   try {
     const makensisPath = resolve(nsisDir, "makensis.exe");
     const uninstallerOutput = join(tempRoot, "uninstaller.exe");
@@ -39,7 +39,7 @@ if (process.platform !== "win32") {
         `/DNSIS_INCLUDE_DIR=${resolve(nsisDir, "Include")}`,
         `/DELECTRON_BUILDER_NSIS_INCLUDE_DIR=${resolve(appBuilderLibDir, "templates/nsis/include")}`,
         `/DNSIS_PLUGIN_DIR=${resolve(nsisResourcesDir, "plugins/x86-unicode")}`,
-        `/DROBINRUN_INSTALLER_NSH=${installerNshPath}`,
+        `/DROBINDONE_INSTALLER_NSH=${installerNshPath}`,
         `/DFIXTURE_EXE=${process.env.ComSpec ?? "C:\\Windows\\System32\\cmd.exe"}`,
         `/DOUTPUT_FILE=${uninstallerOutput}`,
         fixturePath,
@@ -57,7 +57,7 @@ if (process.platform !== "win32") {
         `/DNSIS_INCLUDE_DIR=${resolve(nsisDir, "Include")}`,
         `/DELECTRON_BUILDER_NSIS_INCLUDE_DIR=${resolve(appBuilderLibDir, "templates/nsis/include")}`,
         `/DNSIS_PLUGIN_DIR=${resolve(nsisResourcesDir, "plugins/x86-unicode")}`,
-        `/DROBINRUN_INSTALLER_NSH=${installerNshPath}`,
+        `/DROBINDONE_INSTALLER_NSH=${installerNshPath}`,
         `/DFIXTURE_EXE=${process.env.ComSpec ?? "C:\\Windows\\System32\\cmd.exe"}`,
         `/DOUTPUT_FILE=${outputPath}`,
         fixturePath,
@@ -69,14 +69,14 @@ if (process.platform !== "win32") {
         stdio: ["ignore", "pipe", "pipe"],
       });
       execFileSync(outputPath, ["/S", `/D=${installDir}`], { encoding: "utf-8" });
-      const ownedFileExists = existsSync(join(installDir, "owned-by-robinrun.txt"));
+      const ownedFileExists = existsSync(join(installDir, "owned-by-robindone.txt"));
       if (omitManifest !== ownedFileExists) {
         throw new Error(`${scenario}: ownership fallback mismatch`);
       }
       if (!existsSync(join(installDir, "user-data.txt"))) {
         throw new Error(`${scenario}: unrelated file was removed`);
       }
-      if (readFileSync(join(installDir, "RobinRun.exe")).length === 0) {
+      if (readFileSync(join(installDir, "RobinDone.exe")).length === 0) {
         throw new Error(`${scenario}: application payload was not installed`);
       }
     }
@@ -90,10 +90,10 @@ if (process.platform !== "win32") {
       `/DNSIS_INCLUDE_DIR=${resolve(nsisDir, "Include")}`,
       `/DELECTRON_BUILDER_NSIS_INCLUDE_DIR=${resolve(appBuilderLibDir, "templates/nsis/include")}`,
       `/DNSIS_PLUGIN_DIR=${resolve(nsisResourcesDir, "plugins/x86-unicode")}`,
-      `/DROBINRUN_INSTALLER_NSH=${installerNshPath}`,
+      `/DROBINDONE_INSTALLER_NSH=${installerNshPath}`,
       `/DFIXTURE_EXE=${process.env.ComSpec ?? "C:\\Windows\\System32\\cmd.exe"}`,
       `/DOUTPUT_FILE=${failureOutputPath}`,
-      `/DROBINRUN_UNINSTALLER_LOG_PATH=${failureLogPath}`,
+      `/DROBINDONE_UNINSTALLER_LOG_PATH=${failureLogPath}`,
       "/DFAIL_DELETE",
       fixturePath,
     ];

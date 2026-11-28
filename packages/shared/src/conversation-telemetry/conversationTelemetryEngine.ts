@@ -1,4 +1,4 @@
-import { normalizeTelemetryUiMode } from "@robinrun/shared";
+import { normalizeTelemetryUiMode } from "@robindone/shared";
 /* oxlint-disable eslint(max-lines) -- 旧 message/ARMS builders 共用同一 prompt 生命周期与时钟；拆散 fact 状态机会增加跨模块同步漂移。 */
 import {
   legacyTelemetryModelValue,
@@ -8,11 +8,11 @@ import type {
   IPlatformService,
   TelemetryEventPayload,
   RemoteWorkspaceIdentityKind,
-  RobinRunContextCompactionTimelineMeta,
-  RobinRunStreamEvent,
-  RobinRunUsage,
-} from "@robinrun/shared";
-import type { ConversationTelemetryFact } from "@robinrun/shared/robinrun-protocol-v4";
+  RobinDoneContextCompactionTimelineMeta,
+  RobinDoneStreamEvent,
+  RobinDoneUsage,
+} from "@robindone/shared";
+import type { ConversationTelemetryFact } from "@robindone/shared/robindone-protocol-v4";
 import {
   activatePromptTelemetry,
   activateDetachedAgentStepTelemetry,
@@ -75,7 +75,7 @@ export type TelemetryPlatform = Pick<
 >;
 
 export interface ConversationPromptTelemetrySeed {
-  localTtft?: import("@robinrun/shared").LocalTtftContext;
+  localTtft?: import("@robindone/shared").LocalTtftContext;
   /** 用户触发原始发送动作的 renderer 时钟。 */
   sendTime: number;
   /** 发送瞬间冻结的旧版模型/模式/套餐字段。 */
@@ -259,7 +259,7 @@ interface ForegroundSubagentUsage {
   modelName: string;
   modelProvider: string;
   providerName: string;
-  usage: RobinRunUsage | null;
+  usage: RobinDoneUsage | null;
   stopped: boolean;
   pendingFinalizedSteps: PendingFinalizedStep[];
 }
@@ -288,7 +288,7 @@ interface BackgroundSubagentTelemetry {
   startedAt: number;
   requestIds: string[];
   requestCount: number;
-  usage: RobinRunUsage | null;
+  usage: RobinDoneUsage | null;
   modelName: string;
   modelProvider: string;
   providerName: string;
@@ -337,7 +337,7 @@ class BoundedKeySet {
 
 function toLegacyNetworkEvent(
   fact: Extract<ConversationTelemetryFact, { kind: "model.request.status" }>,
-): Extract<RobinRunStreamEvent, { type: "task_network_debug_status" }> {
+): Extract<RobinDoneStreamEvent, { type: "task_network_debug_status" }> {
   return {
     type: "task_network_debug_status",
     taskId: fact.sessionId,
@@ -369,7 +369,7 @@ function toLegacyNetworkEvent(
     responseHeaders: {},
     requestHeaderCount: 0,
     responseHeaderCount: 0,
-  } as Extract<RobinRunStreamEvent, { type: "task_network_debug_status" }>;
+  } as Extract<RobinDoneStreamEvent, { type: "task_network_debug_status" }>;
 }
 
 function scopedSubagentToolCallId(agentId: string, childToolCallId: string): string {
@@ -436,7 +436,7 @@ function toToolLifecycleEvent(input: {
   toolId: string;
   inputId?: string;
   hasStarted: boolean;
-}): RobinRunStreamEvent {
+}): RobinDoneStreamEvent {
   const { fact } = input;
   const skillMetadata =
     fact.skillName || fact.skillQualifiedName || fact.skillPluginId || fact.skillSource
@@ -466,7 +466,7 @@ function toToolLifecycleEvent(input: {
       title: "",
       raw: {},
       ...(skillMetadata ? { skillMetadata } : {}),
-    } as Extract<RobinRunStreamEvent, { type: "tool_call" }>;
+    } as Extract<RobinDoneStreamEvent, { type: "tool_call" }>;
   }
   return {
     type: "tool_call_update",
@@ -485,10 +485,12 @@ function toToolLifecycleEvent(input: {
     ...(fact.pluginId
       ? { pluginMetadata: { pluginId: fact.pluginId, component: "mcp" as const } }
       : {}),
-  } as Extract<RobinRunStreamEvent, { type: "tool_call_update" }>;
+  } as Extract<RobinDoneStreamEvent, { type: "tool_call_update" }>;
 }
 
-function toUsage(fact: Extract<ConversationTelemetryFact, { kind: "usage.delta" }>): RobinRunUsage {
+function toUsage(
+  fact: Extract<ConversationTelemetryFact, { kind: "usage.delta" }>,
+): RobinDoneUsage {
   return {
     inputTokens: fact.inputTokens,
     outputTokens: fact.outputTokens,
@@ -507,7 +509,7 @@ function runtimeTelemetryModelName(providerId: string | undefined, modelId: stri
   return model.includes("/") ? model : `${provider}/${model}`;
 }
 
-function mergeUsage(left: RobinRunUsage | null, right: RobinRunUsage): RobinRunUsage {
+function mergeUsage(left: RobinDoneUsage | null, right: RobinDoneUsage): RobinDoneUsage {
   if (!left) return { ...right };
   return {
     inputTokens: left.inputTokens + right.inputTokens,
@@ -1590,7 +1592,7 @@ export class ConversationTelemetryEngine {
             ? { messageId: fact.assistantMessageId }
             : {}),
           ...(fact.parentToolCallId ? { parentToolUseId: fact.parentToolCallId } : {}),
-        } as Extract<RobinRunStreamEvent, { type: "agent_thought_chunk" | "agent_message_chunk" }>;
+        } as Extract<RobinDoneStreamEvent, { type: "agent_thought_chunk" | "agent_message_chunk" }>;
         this.reportFinalizedSteps(
           lifecycle,
           recordAgentStepTelemetryEvent({
@@ -1832,7 +1834,7 @@ export class ConversationTelemetryEngine {
               error: fact.errorMessage ?? lifecycle.lastErrorMessage ?? fact.errorCode ?? "",
               code: fact.errorCode,
             }
-      ) as Extract<RobinRunStreamEvent, { type: "task_complete" | "task_error" }>;
+      ) as Extract<RobinDoneStreamEvent, { type: "task_complete" | "task_error" }>;
     this.reportFinalizedSteps(
       lifecycle,
       recordAgentStepTelemetryEvent({
@@ -1969,7 +1971,7 @@ export class ConversationTelemetryEngine {
     if (!this.compactionKeys.remember(dedupeKey)) return;
     // compaction 只按 terminal 到达瞬间是否前台决定；后台到达后切回不能补报。
     if (!foregroundAtReceipt) return;
-    const timeline: RobinRunContextCompactionTimelineMeta = {
+    const timeline: RobinDoneContextCompactionTimelineMeta = {
       version: 1,
       kind: "synthetic",
       type: "context_compaction",

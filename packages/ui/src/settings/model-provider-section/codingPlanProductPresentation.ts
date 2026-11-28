@@ -1,4 +1,4 @@
-import type { CodingPlanCardCopyItem, CodingPlanProductPreviewPayment } from "@robinrun/shared";
+import type { CodingPlanCardCopyItem, CodingPlanProductPreviewPayment } from "@robindone/shared";
 
 export function normalizeCodingPlanCardCopyItems(items: unknown): CodingPlanCardCopyItem[] {
   if (!Array.isArray(items)) {

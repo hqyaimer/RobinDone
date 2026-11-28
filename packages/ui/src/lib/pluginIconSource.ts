@@ -7,12 +7,12 @@ import spreadsheetsIconUrl from "@/assets/plugin-icons/spreadsheets.png";
 import { isTrustedImageUrl } from "@/lib/trustedImageUrl.js";
 
 const OFFICIAL_PLUGIN_ICON_BY_ID: Readonly<Record<string, string>> = {
-  "documents@robinrun-plugins-official": documentsIconUrl,
-  "image-search@robinrun-plugins-official": imageSearchIconUrl,
-  "pdf@robinrun-plugins-official": pdfIconUrl,
-  "plugin-creator@robinrun-plugins-official": pluginCreatorIconUrl,
-  "presentations@robinrun-plugins-official": presentationsIconUrl,
-  "spreadsheets@robinrun-plugins-official": spreadsheetsIconUrl,
+  "documents@robindone-plugins-official": documentsIconUrl,
+  "image-search@robindone-plugins-official": imageSearchIconUrl,
+  "pdf@robindone-plugins-official": pdfIconUrl,
+  "plugin-creator@robindone-plugins-official": pluginCreatorIconUrl,
+  "presentations@robindone-plugins-official": presentationsIconUrl,
+  "spreadsheets@robindone-plugins-official": spreadsheetsIconUrl,
 };
 
 const TRUSTED_BUNDLED_PLUGIN_ICONS = new Set(Object.values(OFFICIAL_PLUGIN_ICON_BY_ID));

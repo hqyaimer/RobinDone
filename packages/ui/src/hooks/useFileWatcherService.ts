@@ -5,8 +5,8 @@
  * 目录内容变更时自动 refresh，无需手动刷新。
  */
 import { useState, useEffect, useCallback } from "react";
-import type { FileEntry } from "@robinrun/shared";
-import type { IDisposable } from "@robinrun/rpc";
+import type { FileEntry } from "@robindone/shared";
+import type { IDisposable } from "@robindone/rpc";
 import { useServices } from "./useServices.js";
 import { logger } from "@/logger.js";
 

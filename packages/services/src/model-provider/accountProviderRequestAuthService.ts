@@ -1,14 +1,14 @@
-import type { RequestVerificationReason } from "@robinrun/shared";
+import type { RequestVerificationReason } from "@robindone/shared";
 import { createHash } from "node:crypto";
 import {
   BIGMODEL_PROVIDER_ID,
   type OAuthProviderId,
   type ProviderFamilyDomain,
   type ProjectAccessTokenMaterial,
-  type RobinRunAccountAccess,
-  type RobinRunProviderAccountAccess,
+  type RobinDoneAccountAccess,
+  type RobinDoneProviderAccountAccess,
   ZAI_PROVIDER_ID,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface AccountRequestAuthMaterial {
   /** 私有传输字段兼容旧命名；套餐 OAuth 实际传入短期 Project Token。 */
@@ -21,7 +21,7 @@ export interface AccountRequestAuthMaterial {
 export interface AccountRequestAuthInput {
   providerId: string;
   modelId?: string;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   expectedAccountScope?: string;
   rejectedProjectTokenFingerprint?: string;
   reason: RequestVerificationReason | "off-peak" | "usage";
@@ -29,7 +29,7 @@ export interface AccountRequestAuthInput {
 
 export interface AccountAccessIdentityInput {
   providerId: string;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
 }
 
 export class AccountRequestCredentialUnavailableError extends Error {
@@ -41,19 +41,19 @@ export class AccountRequestCredentialUnavailableError extends Error {
 
 export interface AccountRequestAuthResolver {
   resolveAccessCurrent(
-    access: RobinRunProviderAccountAccess,
-  ): Promise<RobinRunAccountAccess | null>;
+    access: RobinDoneProviderAccountAccess,
+  ): Promise<RobinDoneAccountAccess | null>;
   resolveCurrent(input: AccountRequestAuthInput): Promise<AccountRequestAuthMaterial>;
   assertCurrent(input: AccountAccessIdentityInput): Promise<void>;
 }
 
 interface AccountProviderRequestAuthServiceOptions {
   resolveCurrentAccountAccess(
-    access: RobinRunProviderAccountAccess,
-  ): Promise<RobinRunAccountAccess | null>;
+    access: RobinDoneProviderAccountAccess,
+  ): Promise<RobinDoneAccountAccess | null>;
   loadOAuthTokenSet(providerId: OAuthProviderId): Promise<{
     accessToken?: string | null;
-    robinrunJwtToken?: string | null;
+    robindoneJwtToken?: string | null;
   } | null>;
   loadIndividualPlanMaterial(
     providerId: string,
@@ -61,7 +61,7 @@ interface AccountProviderRequestAuthServiceOptions {
     rejectedProjectTokenFingerprint?: string,
   ): Promise<ProjectAccessTokenMaterial | null>;
   resolveTeamPlanMaterial(
-    access: Extract<RobinRunAccountAccess, { planKind: "team-coding-plan" }>,
+    access: Extract<RobinDoneAccountAccess, { planKind: "team-coding-plan" }>,
     rejectedProjectTokenFingerprint?: string,
   ): Promise<ProjectAccessTokenMaterial | null>;
 }
@@ -74,8 +74,8 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
   }
 
   resolveAccessCurrent(
-    access: RobinRunProviderAccountAccess,
-  ): Promise<RobinRunAccountAccess | null> {
+    access: RobinDoneProviderAccountAccess,
+  ): Promise<RobinDoneAccountAccess | null> {
     return this.#options.resolveCurrentAccountAccess(access);
   }
 
@@ -86,7 +86,7 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
 
     if (access.planKind === "start-plan") {
       const tokenSet = await this.#options.loadOAuthTokenSet(resolveOAuthProviderId(access.family));
-      return { apiKey: requireApiKey(tokenSet?.robinrunJwtToken, providerId) };
+      return { apiKey: requireApiKey(tokenSet?.robindoneJwtToken, providerId) };
     }
 
     const scoped = input.reason !== "usage" || input.expectedAccountScope !== undefined;
@@ -119,7 +119,7 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
     };
   }
 
-  async #scope(access: RobinRunAccountAccess): Promise<string> {
+  async #scope(access: RobinDoneAccountAccess): Promise<string> {
     const login = await this.#options.loadOAuthTokenSet(resolveOAuthProviderId(access.family));
     if (!login?.accessToken?.trim())
       throw new AccountRequestCredentialUnavailableError(access.family);
@@ -132,7 +132,7 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
             ? [access.organizationId, access.projectId, access.productId]
             : null,
           login.accessToken.trim(),
-          login.robinrunJwtToken?.trim() ?? null,
+          login.robindoneJwtToken?.trim() ?? null,
         ]),
       )
       .digest("hex");
@@ -145,8 +145,8 @@ class AccountProviderRequestAuthService implements AccountRequestAuthResolver {
   }
 
   #resolveAccess(
-    access: RobinRunProviderAccountAccess | RobinRunAccountAccess,
-  ): Promise<RobinRunAccountAccess | null> {
+    access: RobinDoneProviderAccountAccess | RobinDoneAccountAccess,
+  ): Promise<RobinDoneAccountAccess | null> {
     return "mode" in access
       ? this.#options.resolveCurrentAccountAccess(access)
       : Promise.resolve(access);

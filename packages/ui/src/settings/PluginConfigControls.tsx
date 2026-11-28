@@ -1,29 +1,29 @@
 import { Eye, EyeOff, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type {
-  RobinRunPluginInfo,
-  RobinRunPluginScope,
-  RobinRunPluginUserConfigOption,
-} from "@robinrun/shared";
+  RobinDonePluginInfo,
+  RobinDonePluginScope,
+  RobinDonePluginUserConfigOption,
+} from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
 import { Switch } from "@/components/ui/switch.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { SettingsScopeBadge } from "@/settings/SettingsScopeBadge.js";
 
 interface PluginConfigControlsProps {
   getValue: (
-    plugin: RobinRunPluginInfo,
+    plugin: RobinDonePluginInfo,
     key: string,
-    option: RobinRunPluginUserConfigOption,
+    option: RobinDonePluginUserConfigOption,
   ) => string | number | boolean;
   isOptionClearPending?: (pluginId: string, key: string) => boolean;
   onClearOption?: (pluginId: string, key: string, clear: boolean) => void;
-  onSave: (plugin: RobinRunPluginInfo) => void;
+  onSave: (plugin: RobinDonePluginInfo) => void;
   onSetDraft: (pluginId: string, key: string, value: string | number | boolean) => void;
   activeOperations: ReadonlyArray<{ id: string }>;
-  plugin: RobinRunPluginInfo;
-  scope: RobinRunPluginScope;
+  plugin: RobinDonePluginInfo;
+  scope: RobinDonePluginScope;
 }
 
 export function PluginConfigControls({
@@ -36,7 +36,7 @@ export function PluginConfigControls({
   plugin,
   scope,
 }: PluginConfigControlsProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [revealedSecrets, setRevealedSecrets] = useState<Record<string, boolean>>({});
   const entries = Object.entries(plugin.userConfig ?? {});
   if (entries.length === 0) return null;

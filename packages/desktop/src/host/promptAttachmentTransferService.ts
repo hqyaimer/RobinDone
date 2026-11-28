@@ -1,12 +1,12 @@
-import { Emitter } from "@robinrun/rpc";
-import type { IRemoteBackend } from "@robinrun/server/remote";
+import { Emitter } from "@robindone/rpc";
+import type { IRemoteBackend } from "@robindone/server/remote";
 import type {
   IPromptAttachmentTransferService,
   PromptAttachmentStageParams,
   PromptAttachmentStageResult,
   PromptAttachmentTransferProgress,
-} from "@robinrun/services";
-import type { RobinRunPromptAttachment } from "@robinrun/shared";
+} from "@robindone/services";
+import type { RobinDonePromptAttachment } from "@robindone/shared";
 import {
   cleanupRemotePromptAttachment,
   cleanupStaleRemotePromptAttachments,
@@ -103,13 +103,13 @@ export function createRemotePromptAttachmentTransferService(
       try {
         if (previous) await cleanupRecord(params.operationId, previous);
         if (!isCurrent()) throw canceled();
-        const attachment: RobinRunPromptAttachment = {
+        const attachment: RobinDonePromptAttachment = {
           kind: params.mime.startsWith("image/") ? "image" : "file",
           filename: params.fileName,
           localPath: params.localPath,
           mimeType: params.mime,
           sizeBytes: params.sizeBytes ?? 0,
-        } as RobinRunPromptAttachment;
+        } as RobinDonePromptAttachment;
         const workspaceKey = params.workspaceIdentity?.trim() || params.workspacePath;
         const materialized = await materializeRemotePromptAttachments(
           {

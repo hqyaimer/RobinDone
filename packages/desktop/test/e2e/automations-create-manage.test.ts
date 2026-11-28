@@ -18,7 +18,7 @@ import {
   TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER,
   TID_CHAT_THOUGHT_LEVEL_SELECT_ITEM,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -68,8 +68,8 @@ describe("定时任务表单创建与管理 E2E", () => {
       timeoutMsg: "定时任务创建页没有项目选择器",
     });
     const workspaceMenuItems = await readWorkspaceMenuItems();
-    expect(workspaceMenuItems).toEqual(["RobinRunProject"]);
-    await selectWorkspaceMenuItem("RobinRunProject");
+    expect(workspaceMenuItems).toEqual(["RobinDoneProject"]);
+    await selectWorkspaceMenuItem("RobinDoneProject");
     await clickTestIdByWebDriver(TID_CHAT_MODEL_SELECT_TRIGGER);
     await clickTestIdByWebDriver(
       testId(TID_CHAT_MODEL_SELECT_GROUP, `registry-provider:${UPSTREAM_PROVIDER_ID}`),

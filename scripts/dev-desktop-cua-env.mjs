@@ -1,26 +1,26 @@
 import { join } from "node:path";
 
-export const WINDOWS_CUA_DEV_ROOT_ENV = "ROBINRUN_CUA_DEV_ROOT";
+export const WINDOWS_CUA_DEV_ROOT_ENV = "ROBINDONE_CUA_DEV_ROOT";
 
 /**
  * workspace 内 producer 相对仓库根的位置。Windows runtime 解析要求 DEV_ROOT 是物理目录
- * （root 不能是 symlink/junction），packages/robinrun-cua 是 checkout 内的真实目录，满足该约束。
+ * （root 不能是 symlink/junction），packages/robindone-cua 是 checkout 内的真实目录，满足该约束。
  */
-export const WINDOWS_CUA_PRODUCER_SEGMENTS = ["packages", "robinrun-cua"];
+export const WINDOWS_CUA_PRODUCER_SEGMENTS = ["packages", "robindone-cua"];
 
 /**
  * 标准 dev 启动在 Windows 上要绑定的 CUA runtime 根。
  *
- * 2026-08-18 修复原因：macOS 的 `pnpm dev:desktop` 会把 ROBINRUN_CUA_BUNDLED_HELPER_APP_PATH
+ * 2026-08-18 修复原因：macOS 的 `pnpm dev:desktop` 会把 ROBINDONE_CUA_BUNDLED_HELPER_APP_PATH
  * 绑到本 checkout 构建出的 Helper.app，开箱即用；Windows 之前什么都不注入，于是 host 落到
  * 产品分支去读 process.resourcesPath——dev 下那是 node_modules/electron/dist/resources，
  * 里面只有 default_app.asar，没有 tools/cua-helper，解析必然以 invalid-runtime-manifest
  * 失败。结果标准 dev 启动的 Windows computer use 恒不可用，且要靠开发者自己记得设
- * ROBINRUN_CUA_DEV_ROOT。这里补齐 macOS 已有的同一条原则：缺省绑定到本 checkout 的 workspace
- * producer（packages/robinrun-cua，与产品构建同源）。
+ * ROBINDONE_CUA_DEV_ROOT。这里补齐 macOS 已有的同一条原则：缺省绑定到本 checkout 的 workspace
+ * producer（packages/robindone-cua，与产品构建同源）。
  *
- * 开发者显式设置 ROBINRUN_CUA_DEV_ROOT（例如指向自己的 robinrun-cua source checkout）时永远尊重
- * 其取值，不覆盖；这里只补缺省，不改变 runtime 侧「只认 ROBINRUN_CUA_DEV_ROOT」的既有边界。
+ * 开发者显式设置 ROBINDONE_CUA_DEV_ROOT（例如指向自己的 robindone-cua source checkout）时永远尊重
+ * 其取值，不覆盖；这里只补缺省，不改变 runtime 侧「只认 ROBINDONE_CUA_DEV_ROOT」的既有边界。
  */
 export function resolveDevDesktopWindowsCuaEnv({ platform, repoRoot, env }) {
   if (platform !== "win32") return {};

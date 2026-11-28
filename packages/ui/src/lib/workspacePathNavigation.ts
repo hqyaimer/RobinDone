@@ -1,6 +1,6 @@
 import type { MessageFileLinkTarget } from "@/components/ai-elements/message.js";
 
-const WORKSPACE_PATH_OPEN_REQUEST_EVENT = "robinrun:workspace-path-open-request";
+const WORKSPACE_PATH_OPEN_REQUEST_EVENT = "robindone:workspace-path-open-request";
 
 export interface WorkspacePathOpenRequest extends MessageFileLinkTarget {
   serviceScope?: "workspace" | "base-local";

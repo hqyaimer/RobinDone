@@ -1,9 +1,9 @@
 import { cn } from "../lib/utils.js";
 import { LoaderIcon } from "lucide-react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <LoaderIcon
       role="status"

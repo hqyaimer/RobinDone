@@ -1,5 +1,5 @@
-import type { BroadcastClaimLease, BroadcastMessage, IBroadcastService } from "@robinrun/services";
-import type { CodingPlanResetType } from "@robinrun/shared";
+import type { BroadcastClaimLease, BroadcastMessage, IBroadcastService } from "@robindone/services";
+import type { CodingPlanResetType } from "@robindone/shared";
 import type {
   CodingPlanQuotaResetUiEntries,
   CodingPlanQuotaResetUiEntry,

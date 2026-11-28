@@ -3,7 +3,7 @@ import type {
   SettingsSyncCategory,
   SettingsSyncDiscoveryResult,
   SettingsSyncImportResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export type SettingsSyncUiStep = "selection" | "importing" | "complete";
 

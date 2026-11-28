@@ -1,12 +1,12 @@
-import type { RobinRunConfigOption } from "@robinrun/shared";
+import type { RobinDoneConfigOption } from "@robindone/shared";
 
 function areJsonEquivalent(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
 export function areConfigOptionsEquivalent(
-  left: readonly RobinRunConfigOption[] | null | undefined,
-  right: readonly RobinRunConfigOption[] | null | undefined,
+  left: readonly RobinDoneConfigOption[] | null | undefined,
+  right: readonly RobinDoneConfigOption[] | null | undefined,
 ): boolean {
   if (left === right) {
     return true;

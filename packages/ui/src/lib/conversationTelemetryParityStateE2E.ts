@@ -1,4 +1,4 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
 import {
   buildSessionQuotaBannerDismissKey,
   buildSessionQuotaBannerState,

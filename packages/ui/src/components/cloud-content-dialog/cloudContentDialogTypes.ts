@@ -1,4 +1,4 @@
-import type { CloudContentPayload } from "@robinrun/shared";
+import type { CloudContentPayload } from "@robindone/shared";
 
 type WireHero = CloudContentPayload["dialog"]["hero"];
 export type CloudImageHero = Extract<WireHero, { type: "image" }>;
@@ -32,7 +32,7 @@ export type CloudContentDialogPayload = Omit<CloudContentPayload, "dialog"> & {
 };
 
 export interface CloudHeroHostInitMessage {
-  channel: "robinrun-cloud-hero-v1";
+  channel: "robindone-cloud-hero-v1";
   type: "init";
   instanceId: string;
   theme: "light" | "dark";
@@ -44,49 +44,49 @@ export interface CloudHeroHostInitMessage {
 export type CloudHeroHostMessage =
   | CloudHeroHostInitMessage
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "hover";
       instanceId: string;
       hovered: boolean;
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "theme";
       instanceId: string;
       theme: "light" | "dark";
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "visibility";
       instanceId: string;
       visible: boolean;
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "destroy";
       instanceId: string;
     };
 
 export type CloudHeroResourceMessage =
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "ready";
       instanceId: string;
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "action";
       instanceId: string;
       id: string;
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "resize";
       instanceId: string;
       height: number;
     }
   | {
-      channel: "robinrun-cloud-hero-v1";
+      channel: "robindone-cloud-hero-v1";
       type: "error";
       instanceId: string;
       code: string;

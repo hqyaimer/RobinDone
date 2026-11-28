@@ -6,7 +6,7 @@ import type {
   TurnHeaderRow,
   V4ConversationFileChangesResult,
   V4ConversationFileRewindPreviewResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import {
@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { FileDisplayInline } from "@/lib/fileDisplay.js";
 import { toWorkspaceRelativePath } from "@/lib/taskChangeSummary.js";
 import { buildChangeSummaryFilePreviewSource } from "@/messageChangeSummaryPreview.js";
@@ -74,7 +74,7 @@ export function ConversationFileSummaryPanel({
   context,
   assistantText = "",
 }: ConversationFileSummaryPanelProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const genUiSources = useMemo(() => collectGenUiSourcePaths(assistantText), [assistantText]);
   const filtersSources = genUiSources.length > 0;
   const [open, setOpen] = useState(false);

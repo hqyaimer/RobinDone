@@ -1,5 +1,5 @@
 export type SettingsSyncAgent =
-  | "robinrun"
+  | "robindone"
   | "claudeCode"
   | "codexCli"
   | "openCode"

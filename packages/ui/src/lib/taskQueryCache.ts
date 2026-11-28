@@ -1,18 +1,18 @@
 import type {
-  RobinRunTaskListKind,
-  RobinRunTaskListSortBy,
-  RobinRunTaskListWorkspaceScope,
-} from "@robinrun/services";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
-import { resolveWorkspaceStateKey } from "@/store/robinrunSessionStoreSelectors.js";
+  RobinDoneTaskListKind,
+  RobinDoneTaskListSortBy,
+  RobinDoneTaskListWorkspaceScope,
+} from "@robindone/services";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
+import { resolveWorkspaceStateKey } from "@/store/robindoneSessionStoreSelectors.js";
 
 export type TaskEntityKey = string;
 export type TaskListCacheKey = string;
-export type TaskListQueryKind = RobinRunTaskListKind | "workspace";
+export type TaskListQueryKind = RobinDoneTaskListKind | "workspace";
 
 export interface TaskListCacheDescriptor {
   kind: TaskListQueryKind;
-  sortBy: RobinRunTaskListSortBy;
+  sortBy: RobinDoneTaskListSortBy;
   search: string;
   expanded: boolean;
   visibleLimit: number | null;
@@ -42,15 +42,15 @@ export function buildTaskWorkspaceKey(workspacePath: string, workspaceIdentity?:
 }
 
 export function buildTaskEntityKey(
-  task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+  task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
 ): TaskEntityKey {
   return `${buildTaskWorkspaceKey(task.workspacePath, task.workspaceIdentity)}::${task.taskId}`;
 }
 
 export function normalizeTaskListWorkspaceScopes(
-  scopes: RobinRunTaskListWorkspaceScope[],
-): RobinRunTaskListWorkspaceScope[] {
-  const uniqueScopes = new Map<string, RobinRunTaskListWorkspaceScope>();
+  scopes: RobinDoneTaskListWorkspaceScope[],
+): RobinDoneTaskListWorkspaceScope[] {
+  const uniqueScopes = new Map<string, RobinDoneTaskListWorkspaceScope>();
 
   for (const scope of scopes) {
     const workspaceKey = buildTaskWorkspaceKey(scope.workspacePath, scope.workspaceIdentity);
@@ -71,8 +71,8 @@ function normalizeTaskListSearch(search?: string): string {
 
 export function buildTaskListCacheDescriptor(params: {
   kind: TaskListQueryKind;
-  workspaceScopes: RobinRunTaskListWorkspaceScope[];
-  sortBy: RobinRunTaskListSortBy;
+  workspaceScopes: RobinDoneTaskListWorkspaceScope[];
+  sortBy: RobinDoneTaskListSortBy;
   search?: string;
   expanded: boolean;
   visibleLimit?: number | null;

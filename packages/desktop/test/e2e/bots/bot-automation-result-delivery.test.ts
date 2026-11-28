@@ -2,8 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { RobinRunAutomationBotDeliveryTarget, RobinRunStreamEvent } from "@robinrun/shared";
-import { AutomationRepo, setDataBaseDir } from "@robinrun/services/node";
+import type { RobinDoneAutomationBotDeliveryTarget, RobinDoneStreamEvent } from "@robindone/shared";
+import { AutomationRepo, setDataBaseDir } from "@robindone/services/node";
 
 import {
   createBotsServiceHarness,
@@ -54,7 +54,7 @@ describe("Bot automation terminal result delivery E2E", () => {
     expect(callback.ok).toBe(true);
     await waitFor(() => harness?.sendPromptCalls.length === 1, "Bot prompt dispatch");
     const creationPrompt = harness.sendPromptCalls[0] as {
-      botDeliveryTarget?: RobinRunAutomationBotDeliveryTarget;
+      botDeliveryTarget?: RobinDoneAutomationBotDeliveryTarget;
     };
     expect(creationPrompt.botDeliveryTarget).toEqual({
       provider: "feishu",
@@ -63,7 +63,7 @@ describe("Bot automation terminal result delivery E2E", () => {
       chatType: "private",
     });
 
-    dataDir = await mkdtemp(join(tmpdir(), "robinrun-bot-automation-e2e-"));
+    dataDir = await mkdtemp(join(tmpdir(), "robindone-bot-automation-e2e-"));
     setDataBaseDir(dataDir);
     repo = new AutomationRepo();
     const automation = await repo.create(
@@ -151,7 +151,7 @@ describe("Bot automation terminal result delivery E2E", () => {
   });
 });
 
-function streamEvent(event: RobinRunStreamEvent): RobinRunStreamEvent {
+function streamEvent(event: RobinDoneStreamEvent): RobinDoneStreamEvent {
   return event;
 }
 

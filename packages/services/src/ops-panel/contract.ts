@@ -7,11 +7,11 @@ import {
   type OpsPanelWakeupRequest,
   type ProgressEntry,
   type ProgressView,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 
 /**
- * 需求/审批/反馈面板服务（2026-11-24 MVP，RobinRunOps dev/specs 对应需求说明）。
+ * 需求/审批/反馈面板服务（2026-11-24 MVP，RobinDoneOps dev/specs 对应需求说明）。
  *
  * 三类管理原语的状态机 + 串行唤醒队列的 host 常驻服务：条目与队列状态落
  * tasks-index.sqlite（重启不丢）；唤醒经 OpsPanelDispatchPort 投到 master 主会话
@@ -27,7 +27,7 @@ export type OpsApprovalDecision = "approved" | "rejected";
 export type OpsRequirementOutcome = "accepted" | "rejected" | "suspended" | "converted_to_approval";
 
 /** 一次串行唤醒投递的载荷（协议类型在 shared ops-panel 定义；此处 re-export 供装配面使用）。 */
-export type { OpsPanelWakeupRequest } from "@robinrun/shared";
+export type { OpsPanelWakeupRequest } from "@robindone/shared";
 
 /** 服务 → host 的唤醒投递端口（host 装配注入：解析 master 主会话 + sendPrompt）。 */
 export interface OpsPanelDispatchPort {

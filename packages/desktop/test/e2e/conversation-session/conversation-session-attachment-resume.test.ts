@@ -3,7 +3,7 @@ import { join } from "node:path";
 import {
   TID_CHAT_ATTACHMENT_BUTTON,
   TID_CHAT_ATTACHMENT_MENU_ITEM,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   DEFAULT_WORKSPACE,
@@ -36,7 +36,7 @@ import {
   waitForV4TimelineContaining,
 } from "../helpers/v4-conversation.js";
 
-const ROOT = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "conversation-session-attachment-resume");
+const ROOT = join(DEFAULT_WORKSPACE, ".robindone-e2e", "conversation-session-attachment-resume");
 const FIRST = "E2E_ATTACHMENT_RESUME_FIRST";
 const HOT = "E2E_ATTACHMENT_RESUME_HOT";
 const COLD = "E2E_ATTACHMENT_RESUME_COLD";
@@ -45,7 +45,7 @@ describe("AR01 attachment cold resume", () => {
   afterEach(async function () {
     if (this.currentTest?.state !== "failed") return;
     const artifacts =
-      process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? join(process.cwd(), ".e2e-artifacts");
+      process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? join(process.cwd(), ".e2e-artifacts");
     await browser.saveScreenshot(join(artifacts, "attachment-resume-failure.png"));
     console.info(
       "AR01 failure UI",

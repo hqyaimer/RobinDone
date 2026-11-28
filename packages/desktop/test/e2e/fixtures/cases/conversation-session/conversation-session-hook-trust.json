@@ -8,12 +8,12 @@
   ],
   "fileFixtures": [
     {
-      "path": ".robinrun/config.json",
+      "path": ".robindone/config.json",
       "source": "created-by-spec",
       "description": "Workspace Hook declarations installed by wdio.conf.ts resetE2EHome before the first agent cold start."
     },
     {
-      "path": ".robinrun/hook-trust-e2e-recorder.mjs",
+      "path": ".robindone/hook-trust-e2e-recorder.mjs",
       "source": "created-by-spec",
       "description": "Harmless recorder appending executions.jsonl evidence lines."
     }

@@ -1,4 +1,4 @@
-export type RobinRunBackgroundTaskControlStatus =
+export type RobinDoneBackgroundTaskControlStatus =
   | "pending"
   | "running"
   | "completed"
@@ -6,14 +6,14 @@ export type RobinRunBackgroundTaskControlStatus =
   | "killed"
   | "lost";
 
-export interface RobinRunBackgroundTaskControlItem {
+export interface RobinDoneBackgroundTaskControlItem {
   jobId: string;
   toolCallId?: string;
   command: string;
   taskKind: "agent" | "bash";
   cancellable?: boolean;
   title?: string;
-  status: RobinRunBackgroundTaskControlStatus;
+  status: RobinDoneBackgroundTaskControlStatus;
   startedAt?: number;
   elapsedMs?: number;
   pid?: number;
@@ -23,7 +23,7 @@ export interface RobinRunBackgroundTaskControlItem {
   raw?: unknown;
 }
 
-const ACTIVE_BACKGROUND_TASK_CONTROL_STATUSES = new Set<RobinRunBackgroundTaskControlStatus>([
+const ACTIVE_BACKGROUND_TASK_CONTROL_STATUSES = new Set<RobinDoneBackgroundTaskControlStatus>([
   "running",
 ]);
 
@@ -148,7 +148,7 @@ function normalizeToken(value: string | undefined): string {
   );
 }
 
-type BackgroundTaskControlKind = RobinRunBackgroundTaskControlItem["taskKind"];
+type BackgroundTaskControlKind = RobinDoneBackgroundTaskControlItem["taskKind"];
 
 function taskKindFromToken(token: string): BackgroundTaskControlKind | undefined {
   if (
@@ -223,7 +223,7 @@ function resolveTaskKind(record: Record<string, unknown>): BackgroundTaskControl
  * 旧 background task 事件的唯一 kind 兼容入口。
  * 新协议应直接携带 taskKind；只有历史记录缺字段时才从工具名/类型别名恢复。
  */
-export function resolveRobinRunBackgroundTaskControlKind(
+export function resolveRobinDoneBackgroundTaskControlKind(
   value: unknown,
 ): BackgroundTaskControlKind | undefined {
   return isPlainRecord(value) ? resolveTaskKind(value) : undefined;
@@ -243,7 +243,7 @@ function readDisplayCommand(
   );
 }
 
-function normalizeStatus(value: string | undefined): RobinRunBackgroundTaskControlStatus {
+function normalizeStatus(value: string | undefined): RobinDoneBackgroundTaskControlStatus {
   const normalized = normalizeToken(value);
   if (
     normalized === "queued" ||
@@ -297,7 +297,7 @@ function normalizeStatus(value: string | undefined): RobinRunBackgroundTaskContr
 
 function readJobId(record: Record<string, unknown>, command: string): string {
   const explicitId = readStringField(record, [
-    // RobinRun Protocol 后台任务取消入口按 taskId 查找 runtime task 记录；
+    // RobinDone Protocol 后台任务取消入口按 taskId 查找 runtime task 记录；
     // 若这里落到 toolCallId，UI 会发送 call_*，后端只能返回 background_task_not_found。
     "taskId",
     "task_id",
@@ -317,18 +317,18 @@ function readJobId(record: Record<string, unknown>, command: string): string {
   return `background-task:${pid ?? "no-pid"}:${startedAt ?? "no-start"}:${command}`;
 }
 
-export function parseRobinRunBackgroundTaskControlItems(
+export function parseRobinDoneBackgroundTaskControlItems(
   value: unknown,
-): RobinRunBackgroundTaskControlItem[] {
+): RobinDoneBackgroundTaskControlItem[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  const jobsById = new Map<string, RobinRunBackgroundTaskControlItem>();
+  const jobsById = new Map<string, RobinDoneBackgroundTaskControlItem>();
   for (const item of value) {
     if (!isPlainRecord(item)) {
       continue;
     }
-    const taskKind = resolveRobinRunBackgroundTaskControlKind(item);
+    const taskKind = resolveRobinDoneBackgroundTaskControlKind(item);
     if (!taskKind) {
       continue;
     }
@@ -352,7 +352,7 @@ export function parseRobinRunBackgroundTaskControlItems(
     const stdoutTail = readStringField(item, ["stdoutTail", "stdout_tail"]);
     const stderrTail = readStringField(item, ["stderrTail", "stderr_tail"]);
     const outputTail = readStringField(item, ["outputTail", "output_tail"]);
-    const job: RobinRunBackgroundTaskControlItem = {
+    const job: RobinDoneBackgroundTaskControlItem = {
       jobId,
       ...(toolCallId ? { toolCallId } : {}),
       command,
@@ -373,14 +373,14 @@ export function parseRobinRunBackgroundTaskControlItems(
   return Array.from(jobsById.values());
 }
 
-export function isActiveRobinRunBackgroundTaskControlItem(
-  job: RobinRunBackgroundTaskControlItem,
+export function isActiveRobinDoneBackgroundTaskControlItem(
+  job: RobinDoneBackgroundTaskControlItem,
 ): boolean {
   return ACTIVE_BACKGROUND_TASK_CONTROL_STATUSES.has(job.status);
 }
 
-export function getRobinRunBackgroundTaskControlItemElapsedMs(
-  job: RobinRunBackgroundTaskControlItem,
+export function getRobinDoneBackgroundTaskControlItemElapsedMs(
+  job: RobinDoneBackgroundTaskControlItem,
   now = Date.now(),
 ): number {
   const elapsedFromStart =
@@ -388,16 +388,16 @@ export function getRobinRunBackgroundTaskControlItemElapsedMs(
   return Math.max(elapsedFromStart ?? 0, job.elapsedMs ?? 0);
 }
 
-export function collectVisibleRobinRunBackgroundTaskControlItems(
-  jobs: readonly RobinRunBackgroundTaskControlItem[],
+export function collectVisibleRobinDoneBackgroundTaskControlItems(
+  jobs: readonly RobinDoneBackgroundTaskControlItem[],
   now = Date.now(),
   thresholdMs = 30_000,
-): Array<RobinRunBackgroundTaskControlItem & { elapsedMs: number }> {
+): Array<RobinDoneBackgroundTaskControlItem & { elapsedMs: number }> {
   return jobs
-    .filter(isActiveRobinRunBackgroundTaskControlItem)
+    .filter(isActiveRobinDoneBackgroundTaskControlItem)
     .map((job) => ({
       ...job,
-      elapsedMs: getRobinRunBackgroundTaskControlItemElapsedMs(job, now),
+      elapsedMs: getRobinDoneBackgroundTaskControlItemElapsedMs(job, now),
     }))
     .filter((job) => job.elapsedMs >= thresholdMs)
     .sort((left, right) => right.elapsedMs - left.elapsedMs);

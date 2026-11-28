@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { atomicWritePrivateTextFile, withFileLock } from "@robinrun/shared/node";
-import { triggerProfilesDirectoryName } from "@robinrun/shared";
+import { atomicWritePrivateTextFile, withFileLock } from "@robindone/shared/node";
+import { triggerProfilesDirectoryName } from "@robindone/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 import type { TriggerBrowserRuntimePort } from "./browser-runtime.js";
 import {
@@ -16,7 +16,7 @@ import {
 /**
  * 引擎托管浏览器实例层（2026-11-25，specs/trigger-browser-hosting.md §3.2）：
  * 引擎创建并持有 chromium 实例（每脚本实例 + 档案级串行队列），脚本经
- * `ROBINRUN_CDP_ENDPOINT` 接入（playwright connect_over_cdp），不自带启动逻辑。
+ * `ROBINDONE_CDP_ENDPOINT` 接入（playwright connect_over_cdp），不自带启动逻辑。
  *
  * 生命周期：
  * - acquire(profile, headed)：档案级 FIFO 取号（同 profile 同时至多一个实例——防同账号
@@ -130,7 +130,7 @@ export class TriggerBrowserHost {
   profileFile(workspacePath: string, profile: string): string {
     return join(
       workspacePath,
-      ".robinrun",
+      ".robindone",
       "triggers",
       triggerProfilesDirectoryName,
       `${profile}.json`,
@@ -202,7 +202,7 @@ export class TriggerBrowserHost {
       const runtime = await this.options.browserRuntime.ensureBrowser(workspacePath);
       if (!runtime.ok) return { ok: false, error: runtime.error };
 
-      const userDataDir = join(tmpdir(), `robinrun-trigger-browser-${randomUUID()}`);
+      const userDataDir = join(tmpdir(), `robindone-trigger-browser-${randomUUID()}`);
       const storageState = await this.readProfile(workspacePath, profile);
       const launched = await this.launch(runtime.executablePath, {
         headed,
@@ -273,7 +273,7 @@ export class TriggerBrowserHost {
     try {
       const runtime = await this.options.browserRuntime.ensureBrowser(workspacePath);
       if (!runtime.ok) return { ok: false, profile, error: runtime.error };
-      const userDataDir = join(tmpdir(), `robinrun-trigger-login-${randomUUID()}`);
+      const userDataDir = join(tmpdir(), `robindone-trigger-login-${randomUUID()}`);
       const storageState = await this.readProfile(workspacePath, profile);
       const launched = await this.launch(runtime.executablePath, {
         headed: true, // 登录会话永远有头（用户要在窗口里操作）
@@ -500,7 +500,7 @@ export class TriggerBrowserHost {
           clearTimeout(timer);
           child.stderr?.off("data", onLine);
           // endpoint 落盘（user-data-dir 内；仅供调试与测试观察，不含凭据）。
-          void writeFile(join(userDataDir, "robinrun-cdp-endpoint.txt"), match[1], "utf8").catch(
+          void writeFile(join(userDataDir, "robindone-cdp-endpoint.txt"), match[1], "utf8").catch(
             () => undefined,
           );
           resolve(match[1]);

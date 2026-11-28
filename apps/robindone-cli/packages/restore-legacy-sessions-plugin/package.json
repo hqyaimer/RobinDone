@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@robindone/restore-legacy-sessions-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Legacy RobinDone session restoration skills published as an official RobinDone plugin."
+}

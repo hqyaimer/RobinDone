@@ -6,19 +6,19 @@ import { archiveTaskKey } from "@/project-sidebar/archive-view.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { resolveRemoteWorkspaceSessionIdForTarget } from "@/hooks/useResolvedRemoteWorkspaceSessionId.js";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 
 export type ArchiveOperation = "unarchive" | "delete";
 export function useArchiveManagement() {
   const directory = useProjectDirectory();
-  const { robinrunTaskService: service, windowControllerService: controller } =
+  const { robindoneTaskService: service, windowControllerService: controller } =
     useBaseWorkspaceServices();
-  const removeTaskState = useRobinRunSessionStore((s) => s.removeTaskState);
+  const removeTaskState = useRobinDoneSessionStore((s) => s.removeTaskState);
   const confirm = useConfirmDialog();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{
     succeeded: number;

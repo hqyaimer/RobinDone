@@ -7,37 +7,37 @@ export interface DefaultPluginMarketplace {
   lastUpdated?: string;
 }
 
-export const ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID = "robinrun-plugins-official";
+export const ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID = "robindone-plugins-official";
 
 /**
- * Claude Code 官方市场（GitHub git 源）。它不是 RobinRun 的强依赖：GitHub 不可达时刷新必然失败，
+ * Claude Code 官方市场（GitHub git 源）。它不是 RobinDone 的强依赖：GitHub 不可达时刷新必然失败，
  * 该失败不应作为错误提示打扰用户，UI 侧按此 id 静默处理其刷新失败（任何原因）。
  */
 export const CLAUDE_OFFICIAL_PLUGIN_MARKETPLACE_ID = "claude-plugins-official";
 
 /** Settings 三类资源发现共用；Bootstrap 单测与官方 definition 的 defaultEnabled 机械对照。 */
 export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set([
-  "browser-use@robinrun-plugins-official",
-  // RobinRun(2026-11-22): [hide-upstream-account] image-search 依赖上游官方 MCP 身份头，已随
+  "browser-use@robindone-plugins-official",
+  // RobinDone(2026-11-22): [hide-upstream-account] image-search 依赖上游官方 MCP 身份头，已随
   // official-plugin-definitions.ts 一并注释——两处名单必须同步（bootstrap 机械对照单测）
-  // "image-search@robinrun-plugins-official",
-  "documents@robinrun-plugins-official",
-  "pdf@robinrun-plugins-official",
-  "presentations@robinrun-plugins-official",
-  "spreadsheets@robinrun-plugins-official",
+  // "image-search@robindone-plugins-official",
+  "documents@robindone-plugins-official",
+  "pdf@robindone-plugins-official",
+  "presentations@robindone-plugins-official",
+  "spreadsheets@robindone-plugins-official",
   // node_repl 宿主：不进市场、不对用户露出，也不贡献任何 skill/command/subagent，但必须
   // 始终可用 —— node_repl 的注册门禁是「Browser Use 或 Computer Use 任一启用」，宿主自己
   // 不参与那个判断。Browser Use 默认开着，宿主若默认关就等于它上来就没有宿主。
-  "node-repl-host@robinrun-plugins-official",
-  "skill-creator@robinrun-plugins-official",
-  "plugin-creator@robinrun-plugins-official",
-  "robinrun-guide@robinrun-plugins-official",
+  "node-repl-host@robindone-plugins-official",
+  "skill-creator@robindone-plugins-official",
+  "plugin-creator@robindone-plugins-official",
+  "robindone-guide@robindone-plugins-official",
   // visualize（交互视图）随 UI 插件合入时 CLI 定义已标 defaultEnabled，但这里漏加，
   // Settings 会把它当成默认关闭，与 CLI 实际启用状态不一致。
-  "visualize@robinrun-plugins-official",
-  // RobinRun(2026-11-22): [hide-upstream-account] robinrun-site（Sites 部署）依赖上游 /api/v1/sites + 登录
+  "visualize@robindone-plugins-official",
+  // RobinDone(2026-11-22): [hide-upstream-account] robindone-site（Sites 部署）依赖上游 /api/v1/sites + 登录
   // JWT，已随 official-plugin-definitions.ts 一并注释——两处名单必须同步（bootstrap 机械对照单测）
-  // "robinrun-site@robinrun-plugins-official",
+  // "robindone-site@robindone-plugins-official",
   // 电脑控制回退为默认关闭，故 computer-use 不在此名单内。
   // 该集合必须与 official-plugin-definitions.ts 里标了 defaultEnabled 的插件逐一对应，
   // bootstrap 的「Settings 默认启用集合与 CLI 的官方插件声明一致」单测机械对照两者。
@@ -45,14 +45,14 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
 
 export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   {
-    // RobinRun 官方唯一市场：本地 seed 分片与 CDN 分片在 Agent storage 内合并。
+    // RobinDone 官方唯一市场：本地 seed 分片与 CDN 分片在 Agent storage 内合并。
     // 上游 CDN manifest 的顶层 name 仍是旧名 zcode-plugins-official，由受信任刷新
     // 在 adapters addMarketplace 归一化为该 canonical id（2026-11-23 别名修复）。
-    id: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+    id: ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
     source: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",
-    name: ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+    name: ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
     description:
-      "Official RobinRun plugins marketplace: built-in and community plugins for RobinRun.",
+      "Official RobinDone plugins marketplace: built-in and community plugins for RobinDone.",
     pluginCount: 0,
   },
   {
@@ -66,8 +66,8 @@ export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   },
 ];
 
-// 商店「公开」分段只有一个 RobinRun 官方市场 id，内置与 CDN 不再拆分身份。
-export const PUBLIC_STORE_MARKETPLACE_IDS = [ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID] as const;
+// 商店「公开」分段只有一个 RobinDone 官方市场 id，内置与 CDN 不再拆分身份。
+export const PUBLIC_STORE_MARKETPLACE_IDS = [ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID] as const;
 
 export function isPublicStoreMarketplaceId(id: string): boolean {
   return (PUBLIC_STORE_MARKETPLACE_IDS as readonly string[]).includes(id);

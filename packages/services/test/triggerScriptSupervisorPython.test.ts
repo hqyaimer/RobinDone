@@ -1,21 +1,21 @@
 // 常驻脚本触发器 python 主运行时回归（2026-11-22 python 主 + node 备选改造 + HTTP emit
 // 协议修订，docs/trigger-python-runtime.md §3.4）：
 //  - python 触发器经 resolvePythonRuntime 走供给链（venv 解释器 spawn + env 注入）；
-//  - 事件协议 = HTTP emit 端点（`__robinrun/emit/<trg-id>`）：真 LocalWebhookServer +
+//  - 事件协议 = HTTP emit 端点（`__robindone/emit/<trg-id>`）：真 LocalWebhookServer +
 //    脚本内 fetch POST → 同步 ack → 事件投递；契约违例 ack.ok=false 且 script-error 进会话；
 //  - stdout 退役为纯日志（子进程/三方库输出不再影响事件通道）；
-//  - robinrun.py 桥接模块随 spawn 预写进 state/（PYTHONPATH 注入）；
+//  - robindone.py 桥接模块随 spawn 预写进 state/（PYTHONPATH 注入）；
 //  - 供给解析失败按崩溃收口（信息进审计，走既有熔断计数）；
 //  - LineBuffer：多字节跨 chunk 不乱码、>64KB 单行不丢不裂、残余行收口（stdout 日志面）；
 //  - POSIX 停止分层：忽略 SIGTERM 的脚本在宽限后被 SIGKILL 升级终止（win 跳过）。
 // 真实子进程：以 process.execPath 冒充 venv 解释器执行 JS 脚本（协议层与解释器无关——
-// node 的 fetch 直发 emit 端点，覆盖与 robinrun.py 相同的 HTTP 面）。
+// node 的 fetch 直发 emit 端点，覆盖与 robindone.py 相同的 HTTP 面）。
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry } from "@robindone/shared";
 import {
   LineBuffer,
   TriggerScriptSupervisor,
@@ -32,7 +32,7 @@ let workspace = "";
 let fakeVenvDir = "";
 
 async function writeScriptEntry(source: string): Promise<void> {
-  const scriptDir = join(workspace, ".robinrun", "triggers", TRIGGER_ID, "script");
+  const scriptDir = join(workspace, ".robindone", "triggers", TRIGGER_ID, "script");
   await mkdir(scriptDir, { recursive: true });
   await writeFile(join(scriptDir, "index.mjs"), source, "utf8");
 }
@@ -141,8 +141,8 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
   let fixture: PythonFixture | undefined;
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-py-"));
-    fakeVenvDir = join(workspace, ".robinrun", "triggers", "state", "python-env");
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-py-"));
+    fakeVenvDir = join(workspace, ".robindone", "triggers", "state", "python-env");
   });
 
   afterEach(async () => {
@@ -152,14 +152,14 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
     await rm(workspace, { recursive: true, force: true });
   });
 
-  it("venv spawn + env 注入：脚本 fetch emit 端点 → 同步 ack → 事件投递；robinrun.py 预写进 state/", async () => {
+  it("venv spawn + env 注入：脚本 fetch emit 端点 → 同步 ack → 事件投递；robindone.py 预写进 state/", async () => {
     fixture = await makePythonFixture({
       ok: true,
       interpreterPath: process.execPath,
       venvDir: fakeVenvDir,
     });
     await writeScriptEntry(
-      `const response = await fetch(process.env.ROBINRUN_EMIT_URL, {
+      `const response = await fetch(process.env.ROBINDONE_EMIT_URL, {
          method: "POST",
          headers: { "content-type": "application/json" },
          body: JSON.stringify({
@@ -168,9 +168,9 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
              unbuffered: process.env.PYTHONUNBUFFERED ?? null,
              utf8: process.env.PYTHONUTF8 ?? null,
              venv: process.env.VIRTUAL_ENV ?? null,
-             py: process.env.ROBINRUN_PYTHON ?? null,
+             py: process.env.ROBINDONE_PYTHON ?? null,
              pythonPath: (process.env.PYTHONPATH ?? "").split(";")[0] ?? null,
-             emitUrl: process.env.ROBINRUN_EMIT_URL ?? null,
+             emitUrl: process.env.ROBINDONE_EMIT_URL ?? null,
            },
          }),
        });
@@ -186,17 +186,17 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
     );
     const event = fixture.events.find((candidate) => candidate.kind === "script-result");
     expect(event?.summary).toContain("py-event");
-    const stateDir = join(workspace, ".robinrun", "triggers", "state");
+    const stateDir = join(workspace, ".robindone", "triggers", "state");
     expect(event?.data).toEqual({
       unbuffered: "1",
       utf8: "1",
       venv: fakeVenvDir,
       py: process.execPath,
       pythonPath: stateDir,
-      emitUrl: `${fixture.webhookServer.baseUrl}/__robinrun/emit/${TRIGGER_ID}`,
+      emitUrl: `${fixture.webhookServer.baseUrl}/__robindone/emit/${TRIGGER_ID}`,
     });
-    // robinrun.py 桥接随 spawn 预写；start 审计带 venv 目录；干净退出 → completed。
-    const bridge = await readFile(join(stateDir, "robinrun.py"), "utf8");
+    // robindone.py 桥接随 spawn 预写；start 审计带 venv 目录；干净退出 → completed。
+    const bridge = await readFile(join(stateDir, "robindone.py"), "utf8");
     expect(bridge).toContain("def emit(summary, data=None):");
     expect(fixture.resolveCalls).toEqual([workspace]);
     expect(
@@ -215,13 +215,13 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
       { contract: { requiredFields: ["mustExist"] } },
     );
     await writeScriptEntry(
-      `const response = await fetch(process.env.ROBINRUN_EMIT_URL, {
+      `const response = await fetch(process.env.ROBINDONE_EMIT_URL, {
          method: "POST",
          headers: { "content-type": "application/json" },
          body: JSON.stringify({ summary: "bad payload", data: { other: 1 } }),
        });
        const ack = await response.json();
-       // 引擎契约校验同步响应：ack.ok=false 且带原因（脚本侧 robinrun.emit 会 raise）。
+       // 引擎契约校验同步响应：ack.ok=false 且带原因（脚本侧 robindone.emit 会 raise）。
        process.exit(ack.ok === false && typeof ack.error === "string" && ack.error.length > 0 ? 0 : 3);`,
     );
     await fixture.reconcile();
@@ -245,7 +245,7 @@ describe("TriggerScriptSupervisor python 主运行时（HTTP emit 协议）", ()
       venvDir: fakeVenvDir,
     });
     await writeScriptEntry(
-      `const url = process.env.ROBINRUN_EMIT_URL.replace(/trg-[0-9a-f]+$/, "trg-00000000");
+      `const url = process.env.ROBINDONE_EMIT_URL.replace(/trg-[0-9a-f]+$/, "trg-00000000");
        const response = await fetch(url, {
          method: "POST",
          headers: { "content-type": "application/json" },
@@ -346,15 +346,15 @@ describe("停止分层：POSIX SIGKILL 升级（win 跳过）", () => {
       // Windows 路径 = taskkill /T /F（本就无条件硬杀），升级语义只在 POSIX 有意义。
       return;
     }
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-py-sigkill-"));
-    fakeVenvDir = join(workspace, ".robinrun", "triggers", "state", "python-env");
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-py-sigkill-"));
+    fakeVenvDir = join(workspace, ".robindone", "triggers", "state", "python-env");
     const fixtureKill = await makePythonFixture({
       ok: true,
       interpreterPath: process.execPath,
       venvDir: fakeVenvDir,
     });
     // 注册 SIGTERM 忽略并驻留：旧行为（无 SIGKILL 升级）会永久悬挂。
-    const scriptDir = join(workspace, ".robinrun", "triggers", TRIGGER_ID, "script");
+    const scriptDir = join(workspace, ".robindone", "triggers", TRIGGER_ID, "script");
     await mkdir(scriptDir, { recursive: true });
     await writeFile(
       join(scriptDir, "index.mjs"),

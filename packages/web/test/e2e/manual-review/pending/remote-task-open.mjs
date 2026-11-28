@@ -1,12 +1,12 @@
 // MRO01：真实 Web 入口与 RPC 帧；受控桌面 bridge 成功/失败，不发送模型请求。
-// 启动：pnpm --filter @robinrun/web exec vite --host 127.0.0.1 --port 5178 --strictPort
+// 启动：pnpm --filter @robindone/web exec vite --host 127.0.0.1 --port 5178 --strictPort
 // 运行：pnpm exec tsx packages/web/test/e2e/manual-review/pending/remote-task-open.mjs
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright-core";
-import { ServiceChannels } from "@robinrun/shared";
-import { V4_WIRE_PROTOCOL_VERSION } from "@robinrun/shared/robinrun-protocol-v4";
+import { ServiceChannels } from "@robindone/shared";
+import { V4_WIRE_PROTOCOL_VERSION } from "@robindone/shared/robindone-protocol-v4";
 import { Emitter } from "../../../../../rpc/src/index.ts";
 import { taskSnapshotFrame } from "./remote-task-open.fixture.mjs";
 import { createDeviceSwitchDesktopBridge } from "./remote-device-switch.helpers.mjs";
@@ -119,7 +119,7 @@ try {
           };
           const frames = new Emitter();
           send(socket, {
-            robinrun_type: "workspace-bridge-ready",
+            robindone_type: "workspace-bridge-ready",
             requestId: request.requestId,
             bridgeSessionId: request.bridgeSessionId,
             bridgeGeneration: request.bridgeGeneration,
@@ -131,11 +131,11 @@ try {
               locale,
               theme,
               events: {
-                [`${ServiceChannels.RobinRunAgent}:onDynamicConversationFrame`]: frames.event,
+                [`${ServiceChannels.RobinDoneAgent}:onDynamicConversationFrame`]: frames.event,
               },
               responses: {
                 [`${ServiceChannels.SettingsSync}:getFirstRunPromptState`]: { handled: true },
-                [`${ServiceChannels.RobinRunAgent}:helloConversationV4`]: {
+                [`${ServiceChannels.RobinDoneAgent}:helloConversationV4`]: {
                   kind: "hello",
                   protocolVersion: V4_WIRE_PROTOCOL_VERSION,
                   connectionId: bridge.bridgeSessionId,
@@ -150,16 +150,16 @@ try {
                     compression: "none",
                   },
                 },
-                [`${ServiceChannels.RobinRunAgent}:initializeConversationV4`]: null,
+                [`${ServiceChannels.RobinDoneAgent}:initializeConversationV4`]: null,
                 [`${ServiceChannels.Project}:readTree`]: (params) => ({
                   projects: projects.filter((p) => p.hostId === (params?.hostId || "local")),
                   tasks: tasks.filter((t) => t.hostId === (params?.hostId || "local")),
                 }),
                 [`${ServiceChannels.RemoteProjects}:readDirectory`]: directory,
                 [`${ServiceChannels.RemoteProjects}:refreshEntry`]: null,
-                [`${ServiceChannels.RobinRunTask}:getTaskMeta`]: (input) =>
+                [`${ServiceChannels.RobinDoneTask}:getTaskMeta`]: (input) =>
                   tasks.find((t) => t.taskId === input.taskId) ?? null,
-                [`${ServiceChannels.RobinRunAgent}:subscribeConversationV4`]: (input) => {
+                [`${ServiceChannels.RobinDoneAgent}:subscribeConversationV4`]: (input) => {
                   traffic.subscriptions.push({
                     workspacePath: input.workspacePath,
                     workspaceIdentity: input.workspaceIdentity,
@@ -177,9 +177,9 @@ try {
                     },
                   };
                 },
-                [`${ServiceChannels.RobinRunAgent}:unsubscribeConversationV4`]: null,
-                [`${ServiceChannels.RobinRunAgent}:conversationWorkflowRunsV4`]: { runs: [] },
-                [`${ServiceChannels.RobinRunAgent}:conversationPlansV4`]: { plans: [] },
+                [`${ServiceChannels.RobinDoneAgent}:unsubscribeConversationV4`]: null,
+                [`${ServiceChannels.RobinDoneAgent}:conversationWorkflowRunsV4`]: { runs: [] },
+                [`${ServiceChannels.RobinDoneAgent}:conversationPlansV4`]: { plans: [] },
               },
             }),
           );
@@ -198,7 +198,10 @@ try {
             socket.send(JSON.stringify({ type: "pair_status_ack", pair_status: "matched" }));
           const payload = message.payload;
           if (!payload) return;
-          if (payload.robinrun_type === "rpc-frame" || payload.robinrun_type === "rpc-frame-ack") {
+          if (
+            payload.robindone_type === "rpc-frame" ||
+            payload.robindone_type === "rpc-frame-ack"
+          ) {
             bridges.get(payload.bridgeSessionId)?.acceptPayload(payload);
             return;
           }
@@ -212,28 +215,28 @@ try {
               updatedAt: 1,
             },
           };
-          if (payload.robinrun_type === "bootstrap-request")
+          if (payload.robindone_type === "bootstrap-request")
             send(socket, {
-              robinrun_type: "bootstrap-response",
+              robindone_type: "bootstrap-response",
               requestId: payload.requestId,
               success: true,
               result,
             });
-          if (payload.robinrun_type === "workspace-list-request")
+          if (payload.robindone_type === "workspace-list-request")
             send(socket, {
-              robinrun_type: "workspace-list-response",
+              robindone_type: "workspace-list-response",
               requestId: payload.requestId,
               success: true,
               result,
             });
-          if (payload.robinrun_type === "mobile-view-state-update") {
+          if (payload.robindone_type === "mobile-view-state-update") {
             traffic.views.push(payload);
             send(socket, {
-              robinrun_type: "mobile-view-state-updated",
+              robindone_type: "mobile-view-state-updated",
               requestId: payload.requestId,
             });
           }
-          if (payload.robinrun_type === "workspace-bridge-open") {
+          if (payload.robindone_type === "workspace-bridge-open") {
             traffic.opens.push(payload);
             if (payload.workspaceKey === identity) {
               // 测试主动释放响应，断言等待阶段；不用定时器制造时序。
@@ -241,7 +244,7 @@ try {
                 if (failNext) {
                   failNext = false;
                   send(socket, {
-                    robinrun_type: "workspace-bridge-error",
+                    robindone_type: "workspace-bridge-error",
                     requestId: payload.requestId,
                     bridgeSessionId: payload.bridgeSessionId,
                     bridgeGeneration: payload.bridgeGeneration,
@@ -261,7 +264,9 @@ try {
         const local = page.locator('[data-project-name="E2E_MRO01_LOCAL"]');
         const remote = page.locator('[data-project-name="E2E_MRO01_REMOTE"]');
         const onboarding = page.getByTestId("onboarding-page");
-        const welcome = page.getByRole("dialog", { name: /欢迎使用 RobinRun|Welcome to RobinRun/ });
+        const welcome = page.getByRole("dialog", {
+          name: /欢迎使用 RobinDone|Welcome to RobinDone/,
+        });
         await local.or(onboarding).or(welcome).first().waitFor();
         if (await onboarding.isVisible())
           await onboarding.getByRole("button", { name: /退出引导|Exit onboarding/ }).click();

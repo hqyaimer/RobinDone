@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import {
   APP_RUNTIME_PREFERENCES_CHANGED_BROADCAST_CHANNEL,
   type AppSettings,
-} from "@robinrun/shared";
-import type { IServiceAccessor, ISettingService } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IServiceAccessor, ISettingService } from "@robindone/services";
 import { useServices } from "./useServices.js";
 import { usePlatform } from "./usePlatform.js";
 
@@ -111,7 +111,7 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
   // Bug 原因：SettingsPage 可在远端 workspace 的 ServiceProvider 下渲染；若继续隐式取当前
   // context，“记住 Source 选择”会写入远端 setting，Controller 本地快照随后把选择重置为本机。
   const settingsServices = options.services ?? contextualServices;
-  const { botsService, broadcastService, settingService, robinrunAgentService } = settingsServices;
+  const { botsService, broadcastService, settingService, robindoneAgentService } = settingsServices;
   const platform = usePlatform();
   const cacheKey = resolveSettingsCacheKey(options.cacheKey, settingService);
   const [snapshot, setSnapshot] = useState<SettingsSnapshot>(() => getSettingsSnapshot(cacheKey));
@@ -174,7 +174,7 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
             currentSettings?.modelIoFullRetentionEnabled === true,
         };
         const syncResults = await Promise.allSettled([
-          robinrunAgentService.syncAppRuntimePreferences(preferences),
+          robindoneAgentService.syncAppRuntimePreferences(preferences),
           botsService.syncAppRuntimePreferences(preferences),
         ]);
         const syncError = syncResults.find(
@@ -194,7 +194,7 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
       broadcastService,
       cacheKey,
       settingService,
-      robinrunAgentService,
+      robindoneAgentService,
       platform,
       refresh,
     ],

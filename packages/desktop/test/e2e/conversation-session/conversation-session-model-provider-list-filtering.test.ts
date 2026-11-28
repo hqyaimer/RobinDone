@@ -1,10 +1,10 @@
-import { encodeCustomModelValue } from "@robinrun/shared";
+import { encodeCustomModelValue } from "@robindone/shared";
 import {
   TID_CHAT_MODEL_SELECT_GROUP,
   TID_CHAT_MODEL_SELECT_ITEM,
   TID_CHAT_MODEL_SELECT_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { DEFAULT_WORKSPACE, clearAppData, waitForWorkspaceApp } from "../helpers/desktop-app.js";
 import {
   assertUpstreamRequestCapture,

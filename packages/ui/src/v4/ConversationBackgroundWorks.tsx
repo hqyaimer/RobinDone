@@ -4,8 +4,8 @@ import {
   TID_V4_BACKGROUND_WORK_CANCEL,
   TID_V4_BACKGROUND_WORK_ITEM,
   testId,
-} from "@robinrun/shared/test-ids";
-import type { BackgroundWorkSummary } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/test-ids";
+import type { BackgroundWorkSummary } from "@robindone/shared/robindone-protocol-v4";
 import { runUserAction } from "@/lib/userActionTelemetry.js";
 
 export interface ConversationBackgroundWorksProps {

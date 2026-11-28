@@ -10,10 +10,10 @@
 export const WEB_REMOTE_CONTROL_RENDERER_ACTION_TIMEOUT_MS = 30_000;
 
 /** 手机新建本地项目的固定根目录（相对用户主目录），与桌面 scratch workspace 一致。 */
-export const WEB_REMOTE_CONTROL_LOCAL_PROJECT_ROOT_DIR = "RobinRunProject";
+export const WEB_REMOTE_CONTROL_LOCAL_PROJECT_ROOT_DIR = "RobinDoneProject";
 
 export interface WebRemoteControlWorkspaceCreateRequestPayload {
-  robinrun_type: "workspace-create-request";
+  robindone_type: "workspace-create-request";
   requestId: string;
   /** 项目目录名：去首尾空白后非空，且不含 `/` 或 `\`。同名目录直接复用。 */
   name: string;
@@ -21,7 +21,7 @@ export interface WebRemoteControlWorkspaceCreateRequestPayload {
 
 export type WebRemoteControlWorkspaceCreateResponsePayload =
   | {
-      robinrun_type: "workspace-create-response";
+      robindone_type: "workspace-create-response";
       requestId: string;
       success: true;
       workspacePath: string;
@@ -31,14 +31,14 @@ export type WebRemoteControlWorkspaceCreateResponsePayload =
       hostId?: string;
     }
   | {
-      robinrun_type: "workspace-create-response";
+      robindone_type: "workspace-create-response";
       requestId: string;
       success: false;
       error: string;
     };
 
 export interface WebRemoteControlTaskPinRequestPayload {
-  robinrun_type: "task-pin-request";
+  robindone_type: "task-pin-request";
   requestId: string;
   taskId: string;
   workspacePath: string;
@@ -48,14 +48,14 @@ export interface WebRemoteControlTaskPinRequestPayload {
 
 export type WebRemoteControlTaskPinResponsePayload =
   | {
-      robinrun_type: "task-pin-response";
+      robindone_type: "task-pin-response";
       requestId: string;
       taskId: string;
       success: true;
       pinned: boolean;
     }
   | {
-      robinrun_type: "task-pin-response";
+      robindone_type: "task-pin-response";
       requestId: string;
       taskId: string;
       success: false;
@@ -63,7 +63,7 @@ export type WebRemoteControlTaskPinResponsePayload =
     };
 
 export interface WebRemoteControlTaskArchiveRequestPayload {
-  robinrun_type: "task-archive-request";
+  robindone_type: "task-archive-request";
   requestId: string;
   taskId: string;
   workspacePath: string;
@@ -74,7 +74,7 @@ export interface WebRemoteControlTaskArchiveRequestPayload {
 
 export type WebRemoteControlTaskArchiveResponsePayload =
   | {
-      robinrun_type: "task-archive-response";
+      robindone_type: "task-archive-response";
       requestId: string;
       taskId: string;
       success: true;
@@ -82,7 +82,7 @@ export type WebRemoteControlTaskArchiveResponsePayload =
       archived: boolean;
     }
   | {
-      robinrun_type: "task-archive-response";
+      robindone_type: "task-archive-response";
       requestId: string;
       taskId: string;
       success: false;
@@ -147,17 +147,17 @@ export function normalizeWebRemoteControlWorkspaceName(name: string): string {
 
 /**
  * 不认识的请求型 payload 需要回 app-error，旧/新版本才能互相降级。
- * 只认「字符串 robinrun_type + 非空 requestId + 以 -request 结尾」，response/推送/垃圾数据仍静默丢弃，
+ * 只认「字符串 robindone_type + 非空 requestId + 以 -request 结尾」，response/推送/垃圾数据仍静默丢弃，
  * 避免两端对未知应答互相回错形成循环。
  */
 export function resolveUnrecognizedWebRemoteControlRequest(
   value: unknown,
-): { requestId: string; robinrunType: string } | null {
+): { requestId: string; robindoneType: string } | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
-  const robinrunType = record.robinrun_type;
+  const robindoneType = record.robindone_type;
   const requestId = record.requestId;
-  if (typeof robinrunType !== "string" || !robinrunType.endsWith("-request")) return null;
+  if (typeof robindoneType !== "string" || !robindoneType.endsWith("-request")) return null;
   if (typeof requestId !== "string" || !requestId.trim()) return null;
-  return { requestId, robinrunType };
+  return { requestId, robindoneType };
 }

@@ -1,4 +1,4 @@
-import type { WebRemoteControlFailure, WebRemoteControlFailureReason } from "@robinrun/shared";
+import type { WebRemoteControlFailure, WebRemoteControlFailureReason } from "@robindone/shared";
 
 export type WebRemoteControlScreenLocale = "zh-CN" | "en-US";
 
@@ -73,7 +73,7 @@ const WEB_REMOTE_CONTROL_SCREEN_COPY = {
       detailLabel: "Relay 返回",
       nextStepsTitle: "下一步",
       nextSteps: [
-        "确认电脑端 RobinRun 仍在运行并联网。",
+        "确认电脑端 RobinDone 仍在运行并联网。",
         "在电脑端重新开启 Web 远程控制后再连接。",
       ],
       action: "重新连接",
@@ -214,7 +214,7 @@ const WEB_REMOTE_CONTROL_SCREEN_COPY = {
       detailLabel: "Relay detail",
       nextStepsTitle: "What happened",
       nextSteps: [
-        "Make sure RobinRun is still running and online on desktop.",
+        "Make sure RobinDone is still running and online on desktop.",
         "Start Web remote control again from desktop.",
       ],
       action: "Try Again",

@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { CheckIcon, MinusIcon } from "lucide-react";
-import type { SettingsSyncCategory, SettingsSyncDiscoveryResult } from "@robinrun/shared";
+import type { SettingsSyncCategory, SettingsSyncDiscoveryResult } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { renderProviderCliIcon } from "@/lib/providerCliIcon.js";
 
 function getSelectionKey(agent: string, category: string): string {
@@ -28,10 +28,10 @@ function agentsWithCategory(
   return agents.filter((a) => a.categories.some((c) => c.category === category));
 }
 
-function formatAgentName(agent: string, intl: ReturnType<typeof useRobinRunIntl>["intl"]): string {
+function formatAgentName(agent: string, intl: ReturnType<typeof useRobinDoneIntl>["intl"]): string {
   switch (agent) {
-    case "robinrun":
-      return intl.formatMessage({ id: "settingsSync.agent.robinrun" });
+    case "robindone":
+      return intl.formatMessage({ id: "settingsSync.agent.robindone" });
     case "claudeCode":
       return intl.formatMessage({ id: "settingsSync.agent.claudeCode" });
     case "codexCli":
@@ -47,7 +47,7 @@ function formatAgentName(agent: string, intl: ReturnType<typeof useRobinRunIntl>
 
 function formatCategoryName(
   category: string,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
 ): string {
   switch (category) {
     case "providers":
@@ -61,7 +61,7 @@ function formatCategoryName(
 
 function formatCategoryDescription(
   category: string,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
 ): string {
   switch (category) {
     case "providers":
@@ -88,7 +88,7 @@ export function SettingsSyncSelectionStep(props: {
   onToggleSelection: (key: string) => void;
   onSetCategorySelectionAllAgents: (category: SettingsSyncCategory, checked: boolean) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const selected = useMemo(() => new Set(props.selectedKeys), [props.selectedKeys]);
 
   const agents = props.discovery.agents;

@@ -16,7 +16,7 @@ import {
   MessageCirclePlus,
 } from "lucide-react";
 import { ProjectFolderIcon } from "@/project-sidebar/ProjectFolderIcon.js";
-import { sourceServerConnectionStateSchema } from "@robinrun/shared";
+import { sourceServerConnectionStateSchema } from "@robindone/shared";
 import type {
   ProjectTask,
   VirtualProject,
@@ -44,7 +44,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu.js";
 import { ProjectTaskRows } from "@/project-sidebar/ProjectTaskRows.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { resolveRemoteConnectionPresentation } from "@/lib/remoteConnectionPresentation.js";
 import { RemoteConnectionStateIcon } from "@/remote-connection/RemoteConnectionStateIcon.js";
 
@@ -73,7 +73,7 @@ export interface ProjectRowActionInput {
 }
 
 export function useProjectRowActionLists(input: ProjectRowActionInput) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
   const { project, availability, editable, additionalActions } = input;
   const primaryRootDisabledReason =
@@ -180,7 +180,7 @@ export function ProjectRowActionButtons({
   online: boolean;
   onCreate(): void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
   return (
     <>
@@ -273,7 +273,7 @@ export type ProjectNodeProps = {
    */
   children?: ReactNode;
   /**
-   * RobinRun 项目列表导航模式（2026-11-15 裁决）：项目行是“进入项目”入口而非展开
+   * RobinDone 项目列表导航模式（2026-11-15 裁决）：项目行是“进入项目”入口而非展开
    * 容器——标题点击改为打开项目，不渲染子内容，也不接收会话拖放。
    */
   navigation?: { onOpen(): void; openLabel: string };
@@ -332,7 +332,7 @@ export const ProjectNodeContent = memo(function ProjectNodeContent({
     canOpen: boolean;
     isOpen: boolean;
   }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
   // 修复原因：新项目行曾无条件显示本地文件夹；远程图标只读 Host 现有投影，复用统一五态。
   const remotePresentation = remoteHost

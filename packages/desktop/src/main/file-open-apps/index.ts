@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { stat } from "node:fs/promises";
 import { isAbsolute, normalize, win32 } from "node:path";
-import type { FileApplicationInfo, FileApplicationTarget } from "@robinrun/shared";
+import type { FileApplicationInfo, FileApplicationTarget } from "@robindone/shared";
 import type {
   FileApplicationNativeAdapter,
   FileOpenAppsContract,

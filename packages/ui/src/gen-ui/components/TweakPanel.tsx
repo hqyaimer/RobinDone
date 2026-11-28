@@ -1,11 +1,11 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { GenUiPage, GenUiPageSnapshot } from "../contract.js";
 export function TweakPanel({ snapshot, page }: { snapshot: GenUiPageSnapshot; page: GenUiPage }) {
   const { groups, tweakValues: values, previewOriginal: preview } = snapshot;
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const original = Object.fromEntries(
     groups.flatMap((group) => group.controls).map((control) => [control.id, control.value]),
   );

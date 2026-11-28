@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { parseTriggerSessionKey } from "@robinrun/shared";
-import type { TriggerEntry, TriggerRouting } from "@robinrun/shared";
+import { parseTriggerSessionKey } from "@robindone/shared";
+import type { TriggerEntry, TriggerRouting } from "@robindone/shared";
 import type { TriggerEvent, TriggerEventBatch } from "./contract.js";
 
 /**

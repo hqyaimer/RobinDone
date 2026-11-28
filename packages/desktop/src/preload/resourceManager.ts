@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { PlatformChannels, formatRobinRunRendererProcessName } from "@robinrun/shared";
+import { PlatformChannels, formatRobinDoneRendererProcessName } from "@robindone/shared";
 import type {
   ResourceUsageSnapshot,
   NetworkCaptureBridge,
@@ -7,9 +7,9 @@ import type {
   StorageCleanResult,
   StorageManagementBridge,
   StorageUsageSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
-process.title = formatRobinRunRendererProcessName("Resource Manager");
+process.title = formatRobinDoneRendererProcessName("Resource Manager");
 
 const storage: StorageManagementBridge = {
   startScan: (): Promise<{ jobId: string }> =>

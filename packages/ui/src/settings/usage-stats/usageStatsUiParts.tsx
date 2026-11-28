@@ -1,7 +1,7 @@
-import type { AppUsageRange } from "@robinrun/shared";
+import type { AppUsageRange } from "@robindone/shared";
 import { Flame } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatCompactTokenNumber } from "@/lib/tokenNumberFormat.js";
 
 export const RANGE_OPTIONS: AppUsageRange[] = ["7d", "30d"];
@@ -83,7 +83,7 @@ export function formatMonth(locale: string, dateKey: string): string {
 }
 
 export function resolveModelLabel(
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
   modelId: string | null,
 ): string {
   return modelId?.trim() || intl.formatMessage({ id: "settings.usage.unknownModel" });

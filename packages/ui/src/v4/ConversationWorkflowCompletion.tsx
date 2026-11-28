@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { WorkflowRunArtifactSummary } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunArtifactSummary } from "@robindone/shared/robindone-protocol-v4";
 import {
   WorkflowCompletionCard,
   type WorkflowCompletionFigures,

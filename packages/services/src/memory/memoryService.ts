@@ -1,4 +1,4 @@
-import type { Memory, MemoryConfig } from "@robinrun/shared";
+import type { Memory, MemoryConfig } from "@robindone/shared";
 import {
   type IMemoryService,
   type ProjectMemoryFileSummary,
@@ -8,7 +8,7 @@ import { lstat, mkdir, readFile, readdir, realpath, writeFile } from "node:fs/pr
 import { homedir } from "node:os";
 import { basename, isAbsolute, join, relative, sep } from "node:path";
 import { readProjectMemoryFileFromStableHandle } from "#src/memory/projectMemoryStableRead.js";
-import { getRobinRunDataRootDir } from "#src/paths.js";
+import { getRobinDoneDataRootDir } from "#src/paths.js";
 
 const PROJECT_MEMORY_INDEX_FILE_NAME = "MEMORY.md";
 const PROJECT_MEMORY_DIRECTORY_NAME = "memory";
@@ -19,7 +19,7 @@ function isNotFoundError(error: unknown): boolean {
 }
 
 function getProjectMemoriesRoot(): string {
-  return join(getRobinRunDataRootDir(), "cli", "memories", "projects");
+  return join(getRobinDoneDataRootDir(), "cli", "memories", "projects");
 }
 
 function isValidPathSegment(value: string): boolean {

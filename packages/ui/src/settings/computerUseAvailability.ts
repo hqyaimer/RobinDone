@@ -1,5 +1,5 @@
-import type { RemoteTarget } from "@robinrun/shared";
-import { isRemoteWorkspaceIdentity } from "@robinrun/shared";
+import type { RemoteTarget } from "@robindone/shared";
+import { isRemoteWorkspaceIdentity } from "@robindone/shared";
 
 export type ComputerUseAvailabilityKind =
   | "local-macos"
@@ -58,7 +58,7 @@ export function resolveComputerUseAvailability({
   return { kind: "local-linux", supported: false };
 }
 
-const COMPUTER_USE_SEARCH_TERMS = ["电脑控制", "computer use", "robinrun-cua", "cua"];
+const COMPUTER_USE_SEARCH_TERMS = ["电脑控制", "computer use", "robindone-cua", "cua"];
 
 export function matchesComputerUseSearch(query: string): boolean {
   const normalized = query.trim().toLocaleLowerCase();

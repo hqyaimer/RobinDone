@@ -19,7 +19,7 @@ import {
   TID_AUTOMATIONS_OPEN,
   TID_CRON_CREATE_CARD,
   TID_CRON_CREATE_OPEN,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   DEFAULT_WORKSPACE,
@@ -181,7 +181,7 @@ interface AutomationRecord {
 }
 
 function automationDatabasePath(): string {
-  return join(homedir(), ".robinrun", "v2", "tasks-index.sqlite");
+  return join(homedir(), ".robindone", "v2", "tasks-index.sqlite");
 }
 
 function readAutomationRecordById(automationId: string): AutomationRecord | null {

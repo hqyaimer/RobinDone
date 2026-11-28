@@ -16,15 +16,15 @@ import {
   genUiTweakMessageSchema,
   genUiTweakResultSchema,
   genUiTweakAnnotationSchema,
-} from "@robinrun/shared/gen-ui";
+} from "@robindone/shared/gen-ui";
 import { installGenUiTweakRuntime } from "./genUiTweakRuntime.js";
 
 const initial = JSON.parse(
-  document.getElementById("robinrun-gen-ui-initial-state")?.textContent ?? "null",
+  document.getElementById("robindone-gen-ui-initial-state")?.textContent ?? "null",
 ) as unknown;
 let state: GenUiWidgetState | null =
   initial === null ? null : genUiWidgetStateSchema.parse(initial);
-const app = new App({ name: "robinrun-gen-ui", version: "1" }, {}, { autoResize: false });
+const app = new App({ name: "robindone-gen-ui", version: "1" }, {}, { autoResize: false });
 
 function observeContentSize() {
   const body = document.body;
@@ -65,7 +65,7 @@ function observeContentSize() {
     void app
       .sendSizeChanged({ width: next.width, height: Math.ceil(next.height) })
       .catch((error) =>
-        window.dispatchEvent(new CustomEvent("robinrun:error", { detail: String(error) })),
+        window.dispatchEvent(new CustomEvent("robindone:error", { detail: String(error) })),
       );
   };
   const schedule = () => {
@@ -146,7 +146,7 @@ const ready = app.connect(new PostMessageTransport(window.parent, window.parent)
   else observeContentSize();
 });
 void ready.catch((error) =>
-  window.dispatchEvent(new CustomEvent("robinrun:error", { detail: String(error) })),
+  window.dispatchEvent(new CustomEvent("robindone:error", { detail: String(error) })),
 );
 let saves = Promise.resolve();
 const api = Object.freeze({
@@ -178,7 +178,7 @@ const api = Object.freeze({
     if (result.isError) throw new Error("External link was denied");
   },
 });
-Object.defineProperty(window, "robinrun", { value: api, writable: false, configurable: false });
+Object.defineProperty(window, "robindone", { value: api, writable: false, configurable: false });
 const openAnchor = (event: MouseEvent) => {
   if (event.defaultPrevented || (event.button !== 0 && event.button !== 1)) return;
   const anchor = event.composedPath().find((node) => node instanceof HTMLAnchorElement);
@@ -191,7 +191,7 @@ const openAnchor = (event: MouseEvent) => {
   void api
     .openExternal({ href })
     .catch((error) =>
-      window.dispatchEvent(new CustomEvent("robinrun:error", { detail: String(error) })),
+      window.dispatchEvent(new CustomEvent("robindone:error", { detail: String(error) })),
     );
 };
 window.addEventListener("click", openAnchor);

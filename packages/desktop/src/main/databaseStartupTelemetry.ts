@@ -1,9 +1,9 @@
 import armsRum from "@arms/rum-electron";
 import {
-  ROBINRUN_VERSION,
+  ROBINDONE_VERSION,
   type DatabaseStartupState,
   type ArmsCustomEventPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { ensureDesktopDeviceMidSync } from "./desktopDeviceMid.js";
 import { buildFinalArmsCustomEventPayload } from "./desktopArmsCustomEvent.js";
 import { logger } from "./logger.js";
@@ -38,7 +38,7 @@ function send(
       context: {
         deviceMid,
         platform: process.platform,
-        appVersion: ROBINRUN_VERSION,
+        appVersion: ROBINDONE_VERSION,
         armsEnv: armsRum.getConfig().env === "prod" ? "prod" : "local",
         rendererId: 0,
       },

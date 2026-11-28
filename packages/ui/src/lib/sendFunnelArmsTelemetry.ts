@@ -1,4 +1,4 @@
-import type { ArmsCustomEventPayload, IPlatformService } from "@robinrun/shared";
+import type { ArmsCustomEventPayload, IPlatformService } from "@robindone/shared";
 import { logger } from "@/logger.js";
 
 // Composer 发送漏斗埋点的 ARMS 出口。

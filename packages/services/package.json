@@ -1,5 +1,5 @@
 {
-  "name": "@robinrun/services",
+  "name": "@robindone/services",
   "private": true,
   "type": "module",
   "imports": {
@@ -19,11 +19,11 @@
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.21.1",
     "@larksuiteoapi/node-sdk": "1.64.0",
-    "@robinrun/provider": "workspace:*",
-    "@robinrun/provider-node": "workspace:*",
-    "@robinrun/robinrun-cua": "workspace:*",
-    "@robinrun/rpc": "workspace:*",
-    "@robinrun/shared": "workspace:*",
+    "@robindone/provider": "workspace:*",
+    "@robindone/provider-node": "workspace:*",
+    "@robindone/robindone-cua": "workspace:*",
+    "@robindone/rpc": "workspace:*",
+    "@robindone/shared": "workspace:*",
     "chokidar": "4.0.3",
     "croner": "^10.0.1",
     "ignore": "^5.3.2",

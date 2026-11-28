@@ -6,8 +6,8 @@ import type {
   SettingsSyncImportResult,
   SettingsSyncProgressEvent,
   SettingsSyncSelection,
-} from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+} from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface ISettingsSyncService {
@@ -15,7 +15,7 @@ export interface ISettingsSyncService {
     workspacePath?: string;
     workspaceIdentity?: string;
   }): Promise<SettingsSyncClaudeAgentsFileMigrationStatus>;
-  copyClaudeAgentsFileToRobinrunAgentsFile(request?: {
+  copyClaudeAgentsFileToRobindoneAgentsFile(request?: {
     workspacePath?: string;
     workspaceIdentity?: string;
     overwrite?: boolean;

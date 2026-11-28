@@ -13,11 +13,11 @@ export function getE2EProviderEndpointEnv(
   // 公共 helper 不再复制 preset 判断，避免两处规则漂移。
   if (!isProductionAccountRun(specs)) return requestSecurityEndpointEnv(providerPreset, httpMode);
   return {
-    ROBINRUN_BASE_URL: PRODUCTION_E2E_PROVIDER_CONFIG_ORIGIN,
-    ROBINRUN_ENDPOINT_ORIGIN: PRODUCTION_E2E_PROVIDER_CONFIG_ORIGIN,
-    // 账号校验独立于 RobinRun 控制面。SSH 透传 ROBINRUN_ENV，但不透传 BigModel 地址覆盖；
+    ROBINDONE_BASE_URL: PRODUCTION_E2E_PROVIDER_CONFIG_ORIGIN,
+    ROBINDONE_ENDPOINT_ORIGIN: PRODUCTION_E2E_PROVIDER_CONFIG_ORIGIN,
+    // 账号校验独立于 RobinDone 控制面。SSH 透传 ROBINDONE_ENV，但不透传 BigModel 地址覆盖；
     // 仅覆盖本机地址会造成模型已可选、远端却向 bigmodel.cn 重试的半通状态。
-    ROBINRUN_ENV: "production",
+    ROBINDONE_ENV: "production",
     BIGMODEL_API_BASE_URL: "https://bigmodel.cn",
   };
 }

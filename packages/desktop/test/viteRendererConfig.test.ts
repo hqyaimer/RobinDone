@@ -33,10 +33,10 @@ describe("desktop renderer Vite dependency aliases", () => {
   const isWindows = process.platform === "win32";
 
   (isWindows ? it.skip : it)(
-    "injects the selected RobinRun endpoint origin into renderer env",
+    "injects the selected RobinDone endpoint origin into renderer env",
     async () => {
-      vi.stubEnv("ROBINRUN_ENV", "test");
-      vi.stubEnv("ROBINRUN_BASE_URL", "");
+      vi.stubEnv("ROBINDONE_ENV", "test");
+      vi.stubEnv("ROBINDONE_BASE_URL", "");
       const desktopRoot = resolve(import.meta.dirname, "..");
       const configFile = resolve(desktopRoot, "vite.config.ts");
       const result = await loadConfigFromFile(
@@ -52,15 +52,15 @@ describe("desktop renderer Vite dependency aliases", () => {
       );
 
       expect(result?.config.define).toMatchObject({
-        "import.meta.env.VITE_ROBINRUN_BASE_URL": JSON.stringify("https://zcode.z.ai"),
-        "import.meta.env.VITE_ROBINRUN_ENDPOINT_ORIGIN": JSON.stringify("https://zcode.z.ai"),
-        __ROBINRUN_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(false),
+        "import.meta.env.VITE_ROBINDONE_BASE_URL": JSON.stringify("https://zcode.z.ai"),
+        "import.meta.env.VITE_ROBINDONE_ENDPOINT_ORIGIN": JSON.stringify("https://zcode.z.ai"),
+        __ROBINDONE_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(false),
       });
     },
   );
 
   it("marks non-production renderer builds as local development runtime", async () => {
-    vi.stubEnv("ROBINRUN_ENV", "production");
+    vi.stubEnv("ROBINDONE_ENV", "production");
     const desktopRoot = resolve(import.meta.dirname, "..");
     const configFile = resolve(desktopRoot, "vite.config.ts");
     const result = await loadConfigFromFile(
@@ -76,10 +76,10 @@ describe("desktop renderer Vite dependency aliases", () => {
     );
 
     expect(result?.config.define).toMatchObject({
-      __ROBINRUN_ENV__: JSON.stringify("production"),
-      __ROBINRUN_PRODUCT_FLAVOR__: JSON.stringify("production"),
-      __ROBINRUN_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(true),
-      "import.meta.env.VITE_ROBINRUN_E2E_STORE_BRIDGE": JSON.stringify(""),
+      __ROBINDONE_ENV__: JSON.stringify("production"),
+      __ROBINDONE_PRODUCT_FLAVOR__: JSON.stringify("production"),
+      __ROBINDONE_LOCAL_DEVELOPMENT_RUNTIME__: JSON.stringify(true),
+      "import.meta.env.VITE_ROBINDONE_E2E_STORE_BRIDGE": JSON.stringify(""),
     });
   });
 
@@ -98,14 +98,14 @@ describe("desktop renderer Vite dependency aliases", () => {
       "silent",
     );
 
-    expect(result?.config.plugins?.some((plugin) => plugin.name === "robinrun:pdfjs-cmaps")).toBe(
+    expect(result?.config.plugins?.some((plugin) => plugin.name === "robindone:pdfjs-cmaps")).toBe(
       true,
     );
   });
 
   it("injects the E2E store bridge only from the runner flag", async () => {
-    vi.stubEnv("ROBINRUN_ENV", "test");
-    vi.stubEnv("VITE_ROBINRUN_E2E_STORE_BRIDGE", "1");
+    vi.stubEnv("ROBINDONE_ENV", "test");
+    vi.stubEnv("VITE_ROBINDONE_E2E_STORE_BRIDGE", "1");
     const desktopRoot = resolve(import.meta.dirname, "..");
     const configFile = resolve(desktopRoot, "vite.config.ts");
     const result = await loadConfigFromFile(
@@ -121,15 +121,15 @@ describe("desktop renderer Vite dependency aliases", () => {
     );
 
     expect(result?.config.define).toMatchObject({
-      __ROBINRUN_ENV__: JSON.stringify("test"),
-      __ROBINRUN_PRODUCT_FLAVOR__: JSON.stringify("preview"),
-      "import.meta.env.VITE_ROBINRUN_E2E_STORE_BRIDGE": JSON.stringify("1"),
+      __ROBINDONE_ENV__: JSON.stringify("test"),
+      __ROBINDONE_PRODUCT_FLAVOR__: JSON.stringify("preview"),
+      "import.meta.env.VITE_ROBINDONE_E2E_STORE_BRIDGE": JSON.stringify("1"),
     });
   });
 
-  it("ROBINRUN_PREVIEW_IDENTITY=1 让生产后端的 renderer 编译成 Preview 身份", async () => {
-    vi.stubEnv("ROBINRUN_ENV", "production");
-    vi.stubEnv("ROBINRUN_PREVIEW_IDENTITY", "1");
+  it("ROBINDONE_PREVIEW_IDENTITY=1 让生产后端的 renderer 编译成 Preview 身份", async () => {
+    vi.stubEnv("ROBINDONE_ENV", "production");
+    vi.stubEnv("ROBINDONE_PREVIEW_IDENTITY", "1");
     const desktopRoot = resolve(import.meta.dirname, "..");
     const configFile = resolve(desktopRoot, "vite.config.ts");
     const result = await loadConfigFromFile(
@@ -145,8 +145,8 @@ describe("desktop renderer Vite dependency aliases", () => {
     );
 
     expect(result?.config.define).toMatchObject({
-      __ROBINRUN_ENV__: JSON.stringify("production"),
-      __ROBINRUN_PRODUCT_FLAVOR__: JSON.stringify("preview"),
+      __ROBINDONE_ENV__: JSON.stringify("production"),
+      __ROBINDONE_PRODUCT_FLAVOR__: JSON.stringify("preview"),
     });
   });
 });
@@ -162,12 +162,12 @@ describe("desktop React Scan development tools", () => {
       desktopRoot,
       "silent",
     );
-    return result?.config.plugins?.flat().find((plugin) => plugin?.name === "robinrun:react-scan");
+    return result?.config.plugins?.flat().find((plugin) => plugin?.name === "robindone:react-scan");
   }
 
   it("serves Scan before React only in the main development entry", async () => {
-    vi.stubEnv("ROBINRUN_ENV", "production");
-    vi.stubEnv("ROBINRUN_REACT_SCAN", undefined);
+    vi.stubEnv("ROBINDONE_ENV", "production");
+    vi.stubEnv("ROBINDONE_REACT_SCAN", undefined);
     const plugin = await loadReactScanPlugin("serve", "development");
     expect(plugin).toBeDefined();
     const server = await createServer({
@@ -195,7 +195,7 @@ describe("desktop React Scan development tools", () => {
   });
 
   it("allows opting out of development instrumentation", async () => {
-    vi.stubEnv("ROBINRUN_REACT_SCAN", "0");
+    vi.stubEnv("ROBINDONE_REACT_SCAN", "0");
     expect(await loadReactScanPlugin("serve", "development")).toBeUndefined();
   });
 
@@ -206,9 +206,9 @@ describe("desktop React Scan development tools", () => {
     ["build", "development", "0"],
     ["build", "development", "1"],
   ] as const)(
-    "excludes Scan from %s in %s mode with ROBINRUN_REACT_SCAN=%s",
+    "excludes Scan from %s in %s mode with ROBINDONE_REACT_SCAN=%s",
     async (command, mode, scan) => {
-      vi.stubEnv("ROBINRUN_REACT_SCAN", scan);
+      vi.stubEnv("ROBINDONE_REACT_SCAN", scan);
       expect(await loadReactScanPlugin(command, mode)).toBeUndefined();
     },
   );

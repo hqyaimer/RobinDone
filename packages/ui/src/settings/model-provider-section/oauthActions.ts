@@ -1,5 +1,5 @@
-import type { BuiltinModelProviderId, IPlatformService } from "@robinrun/shared";
-import type { IOAuthService } from "@robinrun/services";
+import type { BuiltinModelProviderId, IPlatformService } from "@robindone/shared";
+import type { IOAuthService } from "@robindone/services";
 import { resolveOAuthProviderIdByPreset } from "./utils.js";
 import {
   reportAppTelemetryEvent,

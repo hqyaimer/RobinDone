@@ -12,16 +12,16 @@ import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { TID_PLUGIN_STORE_BROWSE } from "@robinrun/shared/test-ids";
+import { TID_PLUGIN_STORE_BROWSE } from "@robindone/shared/test-ids";
 import type {
-  RobinRunPluginInfo,
-  RobinRunPluginScope,
-  RobinRunPluginUserConfigOption,
-} from "@robinrun/shared";
+  RobinDonePluginInfo,
+  RobinDonePluginScope,
+  RobinDonePluginUserConfigOption,
+} from "@robindone/shared";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { useConfigWorkspaceServicesResolution as useWorkspaceServicesResolution } from "@/workspace-config-catalog/index.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { McpSettingsSection } from "@/settings/McpSettingsSection.js";
 import { SkillsSection } from "@/settings/SkillsSection.js";
 import { CommandsSection } from "@/settings/CommandsSection.js";
@@ -148,7 +148,7 @@ function PluginList({
   inMarketplace?: boolean;
   onOpenUi?: PluginsSectionProps["onOpenUi"];
   target: ConfigWorkspaceTarget | null;
-  configScope: RobinRunPluginScope;
+  configScope: RobinDonePluginScope;
   searchQuery: string;
   isDesktop: boolean;
   isMacDesktop: boolean;
@@ -165,7 +165,7 @@ function PluginList({
   unscopedServices?: IServiceAccessor;
   cacheAuthorityKey?: string;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   // 「用户」由 Scope 显式给出服务（本机 base / 远端 source-settings），不按路径推断 Host：
   // 本机项目路径可能与远程 tab 路径相同，推断会把本机「用户」路由到远端。
   const targetServiceResolution = useWorkspaceServicesResolution(
@@ -511,9 +511,9 @@ function PluginList({
     }));
   };
   const getPluginOptionValue = (
-    plugin: RobinRunPluginInfo,
+    plugin: RobinDonePluginInfo,
     key: string,
-    option: RobinRunPluginUserConfigOption,
+    option: RobinDonePluginUserConfigOption,
   ): string | number | boolean => {
     const draft = pluginOptionsDrafts[plugin.id]?.[key];
     if (draft === null) return "";
@@ -524,7 +524,7 @@ function PluginList({
       (option.type === "boolean" ? false : "")
     );
   };
-  const savePluginOptions = async (plugin: RobinRunPluginInfo) => {
+  const savePluginOptions = async (plugin: RobinDonePluginInfo) => {
     const { options, clearOptionKeys } = buildPluginConfigPatch(
       plugin,
       pluginOptionsDrafts[plugin.id] ?? {},
@@ -607,7 +607,7 @@ function PluginList({
     targetServiceResolution.rpcReady,
   ]);
 
-  const renderPluginRows = (items: RobinRunPluginInfo[]) => (
+  const renderPluginRows = (items: RobinDonePluginInfo[]) => (
     <div className="grid grid-cols-1 gap-y-1">
       {items.map((plugin) => (
         <div key={plugin.id} data-testid="plugin-settings-plugin-row" data-plugin-id={plugin.id}>
@@ -948,7 +948,7 @@ export function PluginsSection({
   onOpenPluginStore,
   showMarketplaceBreadcrumb = false,
 }: PluginsSectionProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const storeActiveWorkspacePath = useTabStore((state) => state.activeWorkspacePath);
   const storeActiveWorkspaceIdentity = useTabStore((state) => state.activeWorkspaceIdentity);
   const activeWorkspacePath = workspacePath ?? storeActiveWorkspacePath;

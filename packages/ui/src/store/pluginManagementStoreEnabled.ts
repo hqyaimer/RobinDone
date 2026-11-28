@@ -1,5 +1,5 @@
-import type { IPluginManagementService } from "@robinrun/services";
-import type { RobinRunPluginScope } from "@robinrun/shared";
+import type { IPluginManagementService } from "@robindone/services";
+import type { RobinDonePluginScope } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import {
   buildWorkspaceKey,
@@ -19,7 +19,7 @@ function buildToggleRequestKey(input: {
   workspacePath: string;
   workspaceIdentity: string | null;
   authorityKey: string | null;
-  configScope: RobinRunPluginScope | null;
+  configScope: RobinDonePluginScope | null;
   pluginId: string;
 }): string {
   const workspaceKey = buildWorkspaceKey(
@@ -36,7 +36,7 @@ export async function setPluginEnabledOptimistically(
   pluginId: string,
   enabled: boolean,
   pluginService: IPluginManagementService,
-  scope: RobinRunPluginScope = "user",
+  scope: RobinDonePluginScope = "user",
 ): Promise<boolean> {
   const { workspacePath, workspaceIdentity, authorityKey, configScope } = get();
   if (!workspacePath) return false;

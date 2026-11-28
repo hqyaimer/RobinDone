@@ -4,7 +4,7 @@ import {
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,
@@ -169,7 +169,7 @@ async function waitForToolBlock() {
 }
 
 async function ensureQueueInteractionBehavior() {
-  if ((await readSettings()).robinrunInteractionBehavior === "queue") {
+  if ((await readSettings()).robindoneInteractionBehavior === "queue") {
     return;
   }
 
@@ -190,7 +190,7 @@ async function ensureQueueInteractionBehavior() {
   await clickInteractionBehaviorQueueOption();
 
   await browser.waitUntil(
-    async () => (await readSettings()).robinrunInteractionBehavior === "queue",
+    async () => (await readSettings()).robindoneInteractionBehavior === "queue",
     {
       timeout: 15000,
       timeoutMsg: "turn steer: 交互行为没有保存为 queue",

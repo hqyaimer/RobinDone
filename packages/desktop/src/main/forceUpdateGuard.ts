@@ -1,9 +1,9 @@
 import {
-  ROBINRUN_VERSION,
+  ROBINDONE_VERSION,
   resolveForceUpdateRequirement,
   type ForceUpdateRequirement,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { requestForceAutoUpdate, type ForceAutoUpdateState } from "./autoUpdater.js";
 import { resolveStaticManifestBase } from "./manifestUpdateProvider.js";
 import { showForceUpdatePrompt } from "./forceUpdatePrompt.js";
@@ -36,8 +36,8 @@ export interface ForceUpdateGuardOptions {
   /**
    * 静态更新源 base（构建期钉死，与更新 feed 同源）。强制升级检查改走自有静态配置
    * `"{base}/min-version.json"`（2026-11-24 裁决：上游 SaaS 的 client-configs API 会把
-   * ZCode 的最低可用版本（v3.5.3）套到 RobinRun 头上，0.0.1 启动即被强更拦截——
-   * RobinRun 不再请求上游 API；未配置静态源时整体跳过远端强更检查）。
+   * ZCode 的最低可用版本（v3.5.3）套到 RobinDone 头上，0.0.1 启动即被强更拦截——
+   * RobinDone 不再请求上游 API；未配置静态源时整体跳过远端强更检查）。
    */
   staticFeedBase?: string;
   fetchRemoteConfig?: () => Promise<unknown>;
@@ -164,10 +164,10 @@ export async function resolveDesktopForceUpdateRequirement(options: {
 }): Promise<ForceUpdateRequirement | null> {
   const staticFeedBase = options.staticFeedBase?.trim();
   if (!staticFeedBase) {
-    // 未配置静态更新源 = RobinRun 没有可用的强更决策来源（上游 SaaS 的 client-configs
+    // 未配置静态更新源 = RobinDone 没有可用的强更决策来源（上游 SaaS 的 client-configs
     // 已退役，见 ForceUpdateGuardOptions 注释），整体跳过，绝不退回上游 API。
     options.logger.warn(
-      "[force-update] 未配置静态更新源（ROBINRUN_UPDATE_FEED_BASE），跳过远端强制升级检查",
+      "[force-update] 未配置静态更新源（ROBINDONE_UPDATE_FEED_BASE），跳过远端强制升级检查",
     );
     return null;
   }
@@ -192,7 +192,7 @@ export async function resolveDesktopForceUpdateRequirement(options: {
   }
 
   const requirement = resolveForceUpdateRequirement({
-    currentVersion: ROBINRUN_VERSION,
+    currentVersion: ROBINDONE_VERSION,
     forceUpdate: { minimalVersion: config.minimalVersion ?? "" },
   });
   if (!requirement) {
@@ -207,7 +207,7 @@ export function formatForceUpdateDialogText(
 ): ForceUpdateDialogText {
   if (locale === "zh-CN") {
     return {
-      title: "需要升级 RobinRun",
+      title: "需要升级 RobinDone",
       message: "当前版本无法继续使用",
       detail: `当前版本：v${requirement.currentVersion}\n最低可用版本：v${requirement.minimalVersion}`,
       autoUpdateButton: "自动升级",
@@ -217,7 +217,7 @@ export function formatForceUpdateDialogText(
   }
 
   return {
-    title: "Update RobinRun",
+    title: "Update RobinDone",
     message: "The current version can no longer be used",
     detail: `Current version: v${requirement.currentVersion}\nMinimum supported version: v${requirement.minimalVersion}`,
     autoUpdateButton: "Auto update",

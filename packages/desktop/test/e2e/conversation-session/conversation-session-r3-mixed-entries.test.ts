@@ -1,7 +1,7 @@
 import { reloadElectronSessionPreservingBrowserProfile } from "#e2e/helpers/e2e-electron-reload";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { clearAppData, DEFAULT_WORKSPACE, readSettings } from "../helpers/desktop-app.js";
 import {
   connectSSHWorkspaceAndSendFirstTurn,
@@ -26,7 +26,7 @@ import {
 
 const CASE_MARKER = "E2E_R3_MIXED_ENTRIES";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-mixed-entries",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-mixed-entries",
 );
 
 interface TabRow {
@@ -40,7 +40,7 @@ function readTabs(): Promise<{ active: string | null; tabs: TabRow[] }> {
   return browser.execute(() => {
     const store = (
       window as Window & {
-        __robinrunTabStoreE2E?: {
+        __robindoneTabStoreE2E?: {
           getState?: () => {
             activeWorkspaceIdentity?: string | null;
             activeWorkspacePath?: string | null;
@@ -53,7 +53,7 @@ function readTabs(): Promise<{ active: string | null; tabs: TabRow[] }> {
           };
         };
       }
-    ).__robinrunTabStoreE2E;
+    ).__robindoneTabStoreE2E;
     const state = store?.getState?.();
     return {
       active: state?.activeWorkspaceIdentity ?? state?.activeWorkspacePath ?? null,

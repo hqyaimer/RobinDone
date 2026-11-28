@@ -1,7 +1,7 @@
-import type { RobinRunTaskChangeSummary } from "@robinrun/shared";
+import type { RobinDoneTaskChangeSummary } from "@robindone/shared";
 
 export function formatGroupedTaskHoverChangeParts(
-  summary: RobinRunTaskChangeSummary | null,
+  summary: RobinDoneTaskChangeSummary | null,
 ): string[] {
   if (!summary) {
     return [];

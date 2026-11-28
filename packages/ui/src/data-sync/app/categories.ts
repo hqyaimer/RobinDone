@@ -8,13 +8,13 @@ import {
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
-import type { IDataSyncCategoryService, IServiceAccessor } from "@robinrun/services";
+import type { IDataSyncCategoryService, IServiceAccessor } from "@robindone/services";
 import {
   PLUGIN_DATA_SYNC_MAX_ITEM_BYTES,
   SKILL_DATA_SYNC_MAX_ITEM_BYTES,
   type SourceServerWorkspaceHistoryEntry,
   type UserConfigSyncCategory,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { getWorkspaceSourceServerId } from "@/conversation-workspace-target/sourceIdentity.js";
 import {
   refreshSlashCommandsAfterRemoteSync,
@@ -25,7 +25,7 @@ import { refreshSharedSkillStoreForWorkspace } from "@/lib/skillStoreRefresh.js"
 import {
   invalidateDeferredDraftSessionForRuntimeChange,
   invalidateDeferredDraftSessionForSkillChange,
-} from "@/lib/robinrunDraftSkillInvalidation.js";
+} from "@/lib/robindoneDraftSkillInvalidation.js";
 import { refreshSubagentsStoreForRemoteWorkspaces } from "@/store/subagentsStore.js";
 import type { WorkspaceTabState } from "@/store/tabStore.js";
 import type { DataSyncCategoryId } from "@/data-sync/contract.js";
@@ -101,7 +101,7 @@ async function refreshPluginsAfterPush(context: DataSyncAfterPushContext): Promi
       skillsService: targetServices.skillsService,
       workspaceIdentity: tab.workspaceIdentity,
       workspacePath: tab.workspacePath,
-      robinrunAgentService: targetServices.robinrunAgentService,
+      robindoneAgentService: targetServices.robindoneAgentService,
     });
   }
 }

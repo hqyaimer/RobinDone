@@ -1,6 +1,6 @@
-import type { BotConfig } from "@robinrun/shared";
+import type { BotConfig } from "@robindone/shared";
 import { useBotBoundGroups, type BoundGroupRow } from "@/hooks/useBotBoundGroups.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { Switch } from "@/components/ui/switch.js";
 import { Button } from "@/components/ui/button.js";
 import { SettingsGroupCard } from "@/settings/SettingsPageParts.js";
@@ -16,7 +16,7 @@ export function BoundGroupsList({
   saving: string | null;
   onToggle: (chatId: string, enabled: boolean) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div className="divide-y divide-border" data-testid="bot-bound-groups">
       {rows.map((row) => (
@@ -52,7 +52,7 @@ export function BoundGroupsList({
 }
 
 export function BoundGroupsCard({ bot }: { bot: BotConfig }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { rows, loading, error, saving, reload, toggle, supported } = useBotBoundGroups(bot);
   return (
     <SettingsGroupCard>

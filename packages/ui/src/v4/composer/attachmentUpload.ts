@@ -1,4 +1,4 @@
-// 附件命令面（UI 侧）：RobinRunPromptAttachment（composer 序列化产物）→ AttachmentRef
+// 附件命令面（UI 侧）：RobinDonePromptAttachment（composer 序列化产物）→ AttachmentRef
 // （v4 sendText/createSession attachments 引用模型）。
 //
 // 分派规则（与 CLI attachment-refs.ts 的映射对偶）：
@@ -7,12 +7,12 @@
 // - dataBase64（粘贴截图等内联图）→ 高层 put（内部 begin/chunk/commit）→ artifact ref；
 // - textContent（无路径文本，web 回退面）→ 编码后同走 put；
 // - 三者皆无（元信息-only）→ 丢弃并告警（无内容可发，不伪造引用）。
-import type { RobinRunPromptAttachment } from "@robinrun/shared";
+import type { RobinDonePromptAttachment } from "@robindone/shared";
 import type {
   AttachmentRef,
   V4AttachmentPutParams,
   V4AttachmentPutResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 import type { AttachmentUploadOptions } from "@/v4/attachmentUploadTransaction.js";
 
@@ -40,7 +40,7 @@ function base64ByteLength(dataBase64: string): number {
 export async function uploadComposerAttachment(
   put: AttachmentPutFn,
   sessionId: string,
-  attachment: RobinRunPromptAttachment,
+  attachment: RobinDonePromptAttachment,
   options?: AttachmentUploadOptions,
 ): Promise<AttachmentRef | null> {
   const fileName = attachment.filename;
@@ -91,7 +91,7 @@ export async function uploadComposerAttachment(
 export async function uploadComposerAttachments(
   put: AttachmentPutFn,
   sessionId: string,
-  attachments: readonly RobinRunPromptAttachment[],
+  attachments: readonly RobinDonePromptAttachment[],
 ): Promise<AttachmentRef[]> {
   const refs: AttachmentRef[] = [];
   for (const attachment of attachments) {

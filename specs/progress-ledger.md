@@ -15,11 +15,11 @@
 
 三条定位边界（2026-11-25 设计讨论裁决，防走形）：
 
-| 区分 | 进度账本 | 对照物 |
-| ---- | -------- | ------ |
-| vs 任务清单 | **面向过去的不可变事实**（发生了什么） | 清单是面向未来的可变状态（要做什么）；写入者、可变性、粒度三维全不同，不合并 |
-| vs 知识库 | **时间线事实**：条目短（一行标题 + 展开详情） | 知识文件承载深度（怎么做/为什么）；`links` 字段是桥——深度一律进被链接文件，账本不得退化为堆料场 |
-| vs 面板事件面 | **master 的叙事**：静态、无事件 | REQ/APP/FBK 是工作项状态机 + 唤醒事件面；worker 反馈是 worker 的发声通道，进度**有意不给** worker——它是 master 对项目的叙事 |
+| 区分          | 进度账本                                      | 对照物                                                                                                                      |
+| ------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| vs 任务清单   | **面向过去的不可变事实**（发生了什么）        | 清单是面向未来的可变状态（要做什么）；写入者、可变性、粒度三维全不同，不合并                                                |
+| vs 知识库     | **时间线事实**：条目短（一行标题 + 展开详情） | 知识文件承载深度（怎么做/为什么）；`links` 字段是桥——深度一律进被链接文件，账本不得退化为堆料场                             |
+| vs 面板事件面 | **master 的叙事**：静态、无事件               | REQ/APP/FBK 是工作项状态机 + 唤醒事件面；worker 反馈是 worker 的发声通道，进度**有意不给** worker——它是 master 对项目的叙事 |
 
 另一个有意取舍（2026-11-25 用户裁决）：进度账本**不是审计账本**——允许原位修改与删除，账本只呈现**有效记录（最终态）**，服务"直观摸清项目脉络"；审计与过程追溯由会话历史、REQ/APP/FBK 工作项、触发器审计日志、状态文件承担，不在这里重复建设。
 
@@ -50,10 +50,10 @@
 
 ## 5. 权限矩阵
 
-| 动作 | 用户（UI） | master（工具） | worker（工具） |
-| ---- | ---------- | -------------- | -------------- |
-| 读进度 | ✅（进度 tab） | ✅ `list_progress` | ❌（MVP 不开放） |
-| 追加/修改/删除进度 | ❌ | ✅ `append_progress` / `update_progress` / `delete_progress` | ❌ |
+| 动作               | 用户（UI）     | master（工具）                                               | worker（工具）   |
+| ------------------ | -------------- | ------------------------------------------------------------ | ---------------- |
+| 读进度             | ✅（进度 tab） | ✅ `list_progress`                                           | ❌（MVP 不开放） |
+| 追加/修改/删除进度 | ❌             | ✅ `append_progress` / `update_progress` / `delete_progress` | ❌               |
 
 worker 不读不写：worker 的完成汇报走 ContactAgent → master 落账；worker 直写会把粒度打碎成噪声，"不分太细"就守不住了。
 
@@ -98,10 +98,10 @@ worker 不读不写：worker 的完成汇报走 ContactAgent → master 落账�
 ## 10. 实现落点（供开发；实现面已探明）
 
 - **shared 词汇表**：`packages/shared/src/ops-panel/progress.ts`（新文件：PRG 编号规则、progressEntrySchema / progressViewSchema、links 词表），经 `ops-panel/index.ts` 导出——不进 entries.ts 的 kind 判别体系
-- **协议**：`packages/shared/src/robinrun-protocol/index.ts` 新增 `opsPanel/appendProgress`、`opsPanel/getProgressView` 方法名与 params/result schema
+- **协议**：`packages/shared/src/robindone-protocol/index.ts` 新增 `opsPanel/appendProgress`、`opsPanel/getProgressView` 方法名与 params/result schema
 - **迁移**：`packages/services/src/ops-panel/migration-v10.ts`（冻结 SQL，`progress_entries` 表，含幂等播种所需的索引）+ `session/tasksDatabase/migrations.ts` definitions 追加 `0010_progress_entries`
 - **服务**：`IOpsPanelService`（contract.ts）+ `OpsPanelService` 新增 `appendProgress` / `getProgressView`（不触碰 REQ/APP/FBK 状态机与唤醒队列）；锚条目播种在 ensure 链路内幂等完成，项目真实 createdAt 经窄端口解析（node.ts 已有 readTree 匹配 rootPath 先例）
-- **工具链**：contracts `manage-ops-panel.ts`（master 动作集/输入 schema 扩展）→ core handler → `ops-panel.port.ts` 两方法 → bootstrap 协议端口 → `robinrunAgentService.ts` 分派 → `node.ts` opsPanelExecutor 两分支
+- **工具链**：contracts `manage-ops-panel.ts`（master 动作集/输入 schema 扩展）→ core handler → `ops-panel.port.ts` 两方法 → bootstrap 协议端口 → `robindoneAgentService.ts` 分派 → `node.ts` opsPanelExecutor 两分支
 - **UI**：`OpsPanelPage.tsx`（页签置首 + 进度列表分支 + 滚动定位/回到最新）、`useOpsPanelView.ts`（进度数据 + 三路刷新复用）、i18n 两语言、test-ids 沿用/按需新增；文件打开走既有 openCodeViewer 链路；既有 e2e 若断言面板页签结构需同步修订
 
 ## 11. 留给开发与用户直接沟通的事项

@@ -1,10 +1,10 @@
 import type {
-  RobinRunPersistedFileChange,
-  RobinRunTaskChangeSummary,
-  RobinRunTaskChangedFileSummary,
-  RobinRunTaskMeta,
-} from "@robinrun/shared";
-import { computeLineChangeStat } from "@robinrun/shared";
+  RobinDonePersistedFileChange,
+  RobinDoneTaskChangeSummary,
+  RobinDoneTaskChangedFileSummary,
+  RobinDoneTaskMeta,
+} from "@robindone/shared";
+import { computeLineChangeStat } from "@robindone/shared";
 import { getPathLeaf } from "@/lib/path.js";
 import type { TaskChatMessage } from "@/lib/taskChatMessageTypes.js";
 import { readRawToolCallFileSummaries } from "@/ToolCallBlocks/fileSummaries.js";
@@ -26,8 +26,8 @@ function trimTrailingSeparators(path: string): string {
 }
 
 export function getTaskChangeSummary(
-  task: Pick<RobinRunTaskMeta, "changeSummary"> | null | undefined,
-): RobinRunTaskChangeSummary | null {
+  task: Pick<RobinDoneTaskMeta, "changeSummary"> | null | undefined,
+): RobinDoneTaskChangeSummary | null {
   if (!task?.changeSummary || task.changeSummary.files.length === 0) {
     return null;
   }
@@ -36,7 +36,7 @@ export function getTaskChangeSummary(
 }
 
 function formatTaskChangeStats(
-  summary: RobinRunTaskChangeSummary,
+  summary: RobinDoneTaskChangeSummary,
   intl: TaskChangeSummaryIntl,
 ): string {
   return intl.formatMessage(
@@ -50,7 +50,7 @@ function formatTaskChangeStats(
 
 export function formatTaskTitleWithChanges(
   title: string,
-  summary: RobinRunTaskChangeSummary | null,
+  summary: RobinDoneTaskChangeSummary | null,
   intl: TaskChangeSummaryIntl,
 ): string {
   if (!summary) {
@@ -84,7 +84,7 @@ export function toWorkspaceRelativePath(workspacePath: string, filePath: string)
 
 export function formatTaskChangedFileLabel(
   workspacePath: string,
-  file: RobinRunTaskChangedFileSummary,
+  file: RobinDoneTaskChangedFileSummary,
 ): string {
   const relativePath = toWorkspaceRelativePath(workspacePath, file.path);
   const statParts: string[] = [];
@@ -99,9 +99,9 @@ export function formatTaskChangedFileLabel(
 }
 
 export function buildPerTurnFileChangeMap(
-  fileChanges: readonly RobinRunPersistedFileChange[] | undefined,
-): Map<number, RobinRunPersistedFileChange> {
-  const result = new Map<number, RobinRunPersistedFileChange>();
+  fileChanges: readonly RobinDonePersistedFileChange[] | undefined,
+): Map<number, RobinDonePersistedFileChange> {
+  const result = new Map<number, RobinDonePersistedFileChange>();
   if (!fileChanges || fileChanges.length === 0) {
     return result;
   }
@@ -118,8 +118,8 @@ export function buildPerTurnFileChangeMap(
 }
 
 export function buildTaskChangeSummary(
-  fileChanges: readonly RobinRunPersistedFileChange[] | undefined,
-): RobinRunTaskChangeSummary | null {
+  fileChanges: readonly RobinDonePersistedFileChange[] | undefined,
+): RobinDoneTaskChangeSummary | null {
   if (!fileChanges || fileChanges.length === 0) {
     return null;
   }
@@ -152,7 +152,7 @@ export function buildTaskChangeSummary(
 
   let added = 0;
   let removed = 0;
-  const files: RobinRunTaskChangedFileSummary[] = Array.from(changedFileMap.values())
+  const files: RobinDoneTaskChangedFileSummary[] = Array.from(changedFileMap.values())
     .map((file) => {
       const fileStat = computeLineChangeStat(file.originalContent, file.finalContent);
       added += fileStat.added;
@@ -215,13 +215,13 @@ export function buildToolCallChangeSummary(
   turnIndex: number,
 ): {
   patchesByPath?: ReadonlyMap<string, string>;
-  summary: RobinRunTaskChangeSummary | null;
+  summary: RobinDoneTaskChangeSummary | null;
 } {
   if (message.role !== "assistant" || !message.toolCalls?.length) {
     return { summary: null };
   }
 
-  const filesByPath = new Map<string, RobinRunTaskChangedFileSummary>();
+  const filesByPath = new Map<string, RobinDoneTaskChangedFileSummary>();
   const patchesByPath = new Map<string, string>();
   for (const toolCall of message.toolCalls) {
     if (hasUnsuccessfulToolStatus(toolCall)) {
@@ -278,12 +278,12 @@ export function buildToolCallChangeSummary(
 
 export function buildTaskChangeSummaryFromToolCalls(
   messages: readonly TaskChatMessage[] | undefined,
-): RobinRunTaskChangeSummary | null {
+): RobinDoneTaskChangeSummary | null {
   if (!messages || messages.length === 0) {
     return null;
   }
 
-  const filesByPath = new Map<string, RobinRunTaskChangedFileSummary>();
+  const filesByPath = new Map<string, RobinDoneTaskChangedFileSummary>();
   for (let messageIndex = 0; messageIndex < messages.length; messageIndex++) {
     const message = messages[messageIndex]!;
     const turnIndex =
@@ -333,8 +333,8 @@ export function buildTaskChangeSummaryFromToolCalls(
 }
 
 export function buildTurnChangeSummary(
-  turn: RobinRunPersistedFileChange | null | undefined,
-): RobinRunTaskChangeSummary | null {
+  turn: RobinDonePersistedFileChange | null | undefined,
+): RobinDoneTaskChangeSummary | null {
   if (!turn || turn.snapshots.length === 0) {
     return null;
   }
@@ -368,7 +368,7 @@ export function buildTurnChangeSummary(
 
   let added = 0;
   let removed = 0;
-  const files: RobinRunTaskChangedFileSummary[] = Array.from(filesByPath.entries())
+  const files: RobinDoneTaskChangedFileSummary[] = Array.from(filesByPath.entries())
     .map(([path, snapshot]) => {
       const fileStat = computeLineChangeStat(snapshot.beforeContent, snapshot.afterContent);
       added += fileStat.added;
@@ -396,9 +396,9 @@ export function buildTurnChangeSummary(
  * 用于在每条 assistant 消息下方显示该轮的文件改动。
  */
 export function buildPerTurnChangeSummaries(
-  fileChanges: readonly RobinRunPersistedFileChange[] | undefined,
-): Map<number, RobinRunTaskChangeSummary> {
-  const result = new Map<number, RobinRunTaskChangeSummary>();
+  fileChanges: readonly RobinDonePersistedFileChange[] | undefined,
+): Map<number, RobinDoneTaskChangeSummary> {
+  const result = new Map<number, RobinDoneTaskChangeSummary>();
   if (!fileChanges || fileChanges.length === 0) {
     return result;
   }

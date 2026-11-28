@@ -1,4 +1,4 @@
-import { modelSelectionSchema, type ModelSelection } from "@robinrun/shared";
+import { modelSelectionSchema, type ModelSelection } from "@robindone/shared";
 
 export function normalizeSubagentModelSelection(
   selection: ModelSelection | undefined,

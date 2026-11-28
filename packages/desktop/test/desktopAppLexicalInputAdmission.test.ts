@@ -19,7 +19,7 @@ function mountInput(unlockAfterProbe: boolean) {
   const writes: Array<{ editable: boolean; text: string }> = [];
   const focus = vi.fn();
   Object.assign(input, {
-    __robinrunLexicalInputE2E: {
+    __robindoneLexicalInputE2E: {
       focus,
       getText: () => input.textContent ?? "",
       setText: (text: string) => {

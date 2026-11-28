@@ -26,28 +26,28 @@ export function readV4ChatRootSnapshotInBrowser(
   const paneSessionId = pane?.getAttribute("data-session-id") ?? null;
   const taskId = paneSessionId && paneSessionId !== "draft" ? paneSessionId : null;
   const e2eWindow = window as Window & {
-    __robinrunSessionStoreE2E?: {
+    __robindoneSessionStoreE2E?: {
       getState?: () => { workspaces?: Record<string, BrowserWorkspaceState> };
     };
-    __robinrunTabStoreE2E?: {
+    __robindoneTabStoreE2E?: {
       getState?: () => {
         activeWorkspaceIdentity?: string | null;
         activeWorkspacePath?: string | null;
       };
     };
   };
-  const tabState = e2eWindow.__robinrunTabStoreE2E?.getState?.();
+  const tabState = e2eWindow.__robindoneTabStoreE2E?.getState?.();
   const workspaceKey =
     tabState?.activeWorkspaceIdentity?.trim() || tabState?.activeWorkspacePath || null;
-  const sessionState = e2eWindow.__robinrunSessionStoreE2E?.getState?.();
+  const sessionState = e2eWindow.__robindoneSessionStoreE2E?.getState?.();
   const workspace = workspaceKey ? sessionState?.workspaces?.[workspaceKey] : undefined;
   const taskRuntime = taskId ? workspace?.taskRuntimeByTaskId?.[taskId] : undefined;
   const runtimeStatus = taskId ? taskRuntime?.status : workspace?.draftRuntime?.status;
   const bridgeError = !pane
     ? "v4-pane-missing"
-    : !e2eWindow.__robinrunTabStoreE2E?.getState
+    : !e2eWindow.__robindoneTabStoreE2E?.getState
       ? "tab-store-bridge-missing"
-      : !e2eWindow.__robinrunSessionStoreE2E?.getState
+      : !e2eWindow.__robindoneSessionStoreE2E?.getState
         ? "session-store-bridge-missing"
         : !workspaceKey
           ? "active-workspace-key-missing"

@@ -259,8 +259,8 @@ function createTarHeader(options: {
   writeTarString(header, options.typeFlag, 156, 1);
   writeTarString(header, "ustar", 257, 6);
   writeTarString(header, "00", 263, 2);
-  writeTarString(header, "robinrun", 265, 32);
-  writeTarString(header, "robinrun", 297, 32);
+  writeTarString(header, "robindone", 265, 32);
+  writeTarString(header, "robindone", 297, 32);
   writeTarString(header, prefix, 345, 155);
   writeTarChecksum(
     header,

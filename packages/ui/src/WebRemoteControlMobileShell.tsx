@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, LoaderIcon } from "lucide-react";
-import { type WebRemoteControlMobileNavigationIntent } from "@robinrun/shared";
+import { type WebRemoteControlMobileNavigationIntent } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { WebRemoteControlThemeMenu } from "@/WebRemoteControlThemeMenu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { WebRemoteControlTaskViewReporter } from "@/web-remote-control/index.js";
 import type { WebRemoteControlTerminalTransportState } from "@/root/types.js";
 import type { WebRemoteControlWorkspaceSwitcherApi } from "@/root/types.js";
@@ -12,7 +12,7 @@ import { useWebRemoteControlTerminalTransportState } from "@/webRemoteControlTer
 type WebRemoteControlMobilePage = "home" | "chat";
 
 interface WebRemoteControlMobileHistoryState {
-  robinrunMobilePage?: WebRemoteControlMobilePage;
+  robindoneMobilePage?: WebRemoteControlMobilePage;
 }
 
 export function isWebRemoteControlMobileChatHistoryState(
@@ -21,7 +21,7 @@ export function isWebRemoteControlMobileChatHistoryState(
   return (
     typeof state === "object" &&
     state !== null &&
-    (state as WebRemoteControlMobileHistoryState).robinrunMobilePage === "chat"
+    (state as WebRemoteControlMobileHistoryState).robindoneMobilePage === "chat"
   );
 }
 
@@ -34,7 +34,7 @@ function pushWebRemoteControlMobileChatHistory() {
     return;
   }
 
-  window.history.pushState({ robinrunMobilePage: "chat" }, "");
+  window.history.pushState({ robindoneMobilePage: "chat" }, "");
 }
 
 function resolveInitialWebRemoteControlMobilePage(
@@ -94,7 +94,7 @@ export function WebRemoteControlMobileShell({
   sidePaneContent?: ReactNode;
   webRemoteControlTerminalTransportState?: WebRemoteControlTerminalTransportState;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [currentPage, setCurrentPage] = useState<WebRemoteControlMobilePage>(() =>
     resolveInitialWebRemoteControlMobilePage(initialNavigationIntent),
   );

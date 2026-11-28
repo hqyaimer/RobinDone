@@ -1,4 +1,4 @@
-export type SettingsDirectorySource = "robinrun" | "agents" | "claude";
+export type SettingsDirectorySource = "robindone" | "agents" | "claude";
 
 export type SettingsDirectoryScope = "user" | "project";
 

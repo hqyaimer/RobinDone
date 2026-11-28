@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { getAppConfigDir } from "@robinrun/services/node";
+import { getAppConfigDir } from "@robindone/services/node";
 
 export type ElectronAppPathName = "appData" | "userData";
 

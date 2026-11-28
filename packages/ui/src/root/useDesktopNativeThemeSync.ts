@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { IPlatformService } from "@robinrun/shared";
+import type { IPlatformService } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import { resolveTheme, type Theme } from "@/useTheme.js";
 

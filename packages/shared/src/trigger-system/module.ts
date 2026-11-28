@@ -5,7 +5,7 @@
  */
 export const triggerSystemModule = {
   id: "trigger-system",
-  requires: ["shared", "services", "session", "robinrun-cli"],
+  requires: ["shared", "services", "session", "robindone-cli"],
   provides: ["trigger-system"],
   publicEntrypoints: ["index.ts", "contract.ts"],
 } as const;

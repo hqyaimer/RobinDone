@@ -4,7 +4,7 @@ import {
   buildRemoteEnvironmentKey,
   parseRemoteWorkspaceIdentity,
   providerProvisioningResultSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { clearAppData, DEFAULT_WORKSPACE } from "../../../helpers/desktop-app.js";
 import { disconnectRemoteSource } from "#e2e/helpers/remote-project-actions";
 import { openWorkspaceDraftFromSidebar } from "#e2e/helpers/workspace-agent-warmup";
@@ -27,14 +27,14 @@ import {
 
 const CASE_MARKER = "E2E_R3_SOURCE_LINES";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-source-lines",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-source-lines",
 );
 const SYMLINK_PATH = "/home/dev/r3-workspace-link";
 
 async function readProvisioningCompletions(): Promise<
   Array<{ environmentKey: string; trigger: string; status: string }>
 > {
-  const directory = await browser.electron.execute(() => process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR);
+  const directory = await browser.electron.execute(() => process.env.ROBINDONE_E2E_RUNTIME_LOG_DIR);
   if (!directory) throw new Error(`${CASE_MARKER}: 缺少本次 Main 日志目录`);
   const marker = "[provider-provisioning] Environment sync completed ";
   const contents = await Promise.all(
@@ -177,7 +177,7 @@ describe(`${CASE_MARKER}: 同一 Source 经两条线路/alias 与 symlink 打开
     facts.environmentSyncs = { expectedKeys: keys, completions, aliasProject };
     const journal = await runSSHCommand(
       config,
-      'cat "$HOME/.robinrun/v2/runtime/provider/provisioning.json"',
+      'cat "$HOME/.robindone/v2/runtime/provider/provisioning.json"',
     );
     expect(journal.code).toBe(0);
     const results = (JSON.parse(journal.stdout).records as Array<{ result: unknown }>).map(
@@ -189,7 +189,7 @@ describe(`${CASE_MARKER}: 同一 Source 经两条线路/alias 与 symlink 打开
     );
     const remoteConfig = await runSSHCommand(
       config,
-      'cat "$HOME/.robinrun/v2/provider_config.json"',
+      'cat "$HOME/.robindone/v2/provider_config.json"',
     );
     expect(remoteConfig.stdout).toContain(UPSTREAM_PROVIDER_NAME);
     const sidebar = await browser.execute(() => document.body?.innerText ?? "");

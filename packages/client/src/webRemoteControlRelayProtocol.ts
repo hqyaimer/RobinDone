@@ -1,5 +1,8 @@
-import { Emitter, VSBuffer, type IMessagePassingProtocol } from "@robinrun/rpc";
-import type { WebRemoteControlAppPayload, WebRemoteControlRpcFramePayload } from "@robinrun/shared";
+import { Emitter, VSBuffer, type IMessagePassingProtocol } from "@robindone/rpc";
+import type {
+  WebRemoteControlAppPayload,
+  WebRemoteControlRpcFramePayload,
+} from "@robindone/shared";
 
 export {
   ACKNOWLEDGED_WEB_REMOTE_CONTROL_RELAY_LIMITS,
@@ -157,7 +160,7 @@ export function createWebRemoteControlRelayProtocol({
       }
       seq += 1;
       const frame = {
-        robinrun_type: "rpc-frame",
+        robindone_type: "rpc-frame",
         bridgeSessionId,
         ...(bridgeGeneration !== undefined ? { bridgeGeneration } : {}),
         ...(recoveryId ? { recoveryId } : {}),
@@ -189,7 +192,7 @@ export function createWebRemoteControlRelayProtocol({
       if (
         disposed ||
         degraded ||
-        payload.robinrun_type !== "rpc-frame" ||
+        payload.robindone_type !== "rpc-frame" ||
         payload.bridgeSessionId !== bridgeSessionId
       ) {
         return;

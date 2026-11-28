@@ -6,7 +6,7 @@ import type {
   GitChangeKind,
   GitDiffResult,
   GitHeadRefType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   GIT_UNTRACKED_STAT_CHUNK_BYTES,
   GIT_UNTRACKED_STAT_CONCURRENCY,

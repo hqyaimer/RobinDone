@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import type {
-  RobinRunModelTrajectoryContentPart,
-  RobinRunModelTrajectoryRecord,
-  RobinRunModelTrajectoryUsage,
-} from "@robinrun/services";
+  RobinDoneModelTrajectoryContentPart,
+  RobinDoneModelTrajectoryRecord,
+  RobinDoneModelTrajectoryUsage,
+} from "@robindone/services";
 import { Badge } from "@/components/ui/badge.js";
 import { cn } from "@/components/lib/utils.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
-type IntlShape = ReturnType<typeof useRobinRunIntl>["intl"];
+type IntlShape = ReturnType<typeof useRobinDoneIntl>["intl"];
 
 export function ContentPartView({
   part,
@@ -16,7 +16,7 @@ export function ContentPartView({
   sectionLabel,
   showToolHeader = true,
 }: {
-  part: RobinRunModelTrajectoryContentPart;
+  part: RobinDoneModelTrajectoryContentPart;
   intl: IntlShape;
   sectionLabel?: string;
   showToolHeader?: boolean;
@@ -164,7 +164,7 @@ export function UsageBadges({
   usage,
   intl,
 }: {
-  usage?: RobinRunModelTrajectoryUsage;
+  usage?: RobinDoneModelTrajectoryUsage;
   intl: IntlShape;
 }) {
   if (!usage) {
@@ -225,7 +225,7 @@ export function EmptyState({
   );
 }
 
-export function summarizeRecords(records: RobinRunModelTrajectoryRecord[]): {
+export function summarizeRecords(records: RobinDoneModelTrajectoryRecord[]): {
   totalTokens: number;
   models: string[];
 } {

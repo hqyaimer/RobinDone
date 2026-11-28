@@ -1,11 +1,11 @@
-import { createServiceLogger } from "@robinrun/services/node";
+import { createServiceLogger } from "@robindone/services/node";
 import { createHash } from "node:crypto";
-import { collectMobilePushEvents, type MobilePushEvent } from "@robinrun/shared/web-remote-relay";
-import type { IDisposable } from "@robinrun/rpc";
+import { collectMobilePushEvents, type MobilePushEvent } from "@robindone/shared/web-remote-relay";
+import type { IDisposable } from "@robindone/rpc";
 import {
-  ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE,
-  type IRobinRunAgentService,
-} from "@robinrun/services";
+  ROBINDONE_AGENT_RUNTIME_UNAVAILABLE_CODE,
+  type IRobinDoneAgentService,
+} from "@robindone/services";
 import {
   PROTOCOL_V4_LIMITS,
   sessionsIndexTopic,
@@ -14,7 +14,7 @@ import {
   type SessionsIndexTopicFrame,
   type SessionsIndexTopicWireCandidate,
   type SessionSummary,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 const notificationLogger = createServiceLogger("mobile-push");
 
@@ -23,14 +23,14 @@ const MAX_STAGED_WIRES = 1_024;
 const MAX_STAGED_BYTES = 32 * 1024 * 1024;
 
 type SessionsIndexAgentService = Pick<
-  IRobinRunAgentService,
+  IRobinDoneAgentService,
   | "subscribeSessionsIndexV4"
   | "resyncSessionsIndexV4"
   | "unsubscribeSessionsIndexV4"
   | "onDynamicSessionsIndexFrame"
   | "onAgentRuntimeRestarted"
 > &
-  Partial<Pick<IRobinRunAgentService, "onAgentRuntimeLifecycle">>;
+  Partial<Pick<IRobinDoneAgentService, "onAgentRuntimeLifecycle">>;
 
 export interface WindowHostSessionsIndexObserver {
   start(): Promise<void>;
@@ -41,7 +41,7 @@ function isRuntimeUnavailableError(error: unknown): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
-    (error as { code?: unknown }).code === ROBINRUN_AGENT_RUNTIME_UNAVAILABLE_CODE
+    (error as { code?: unknown }).code === ROBINDONE_AGENT_RUNTIME_UNAVAILABLE_CODE
   );
 }
 
@@ -57,7 +57,7 @@ export function createWindowHostSessionsIndexObserver(options: {
   agentService: SessionsIndexAgentService;
   target: { workspacePath: string; workspaceIdentity?: string };
   onSessionsChange: (sessions: SessionSummary[]) => void;
-  onRunStarted?: (run: import("@robinrun/shared/web-remote-relay").MobilePushRun) => void;
+  onRunStarted?: (run: import("@robindone/shared/web-remote-relay").MobilePushRun) => void;
   onNotification?: (event: MobilePushEvent) => void;
   onError?: (error: unknown) => void;
 }): WindowHostSessionsIndexObserver {

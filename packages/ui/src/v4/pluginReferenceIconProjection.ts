@@ -1,6 +1,6 @@
 import { resolvePluginIconSource } from "@/lib/pluginIconSource.js";
-import type { RobinRunPluginReferenceCatalogEntry } from "@robinrun/shared";
-import type { ConversationRowsPartition } from "@robinrun/shared/robinrun-protocol-v4";
+import type { RobinDonePluginReferenceCatalogEntry } from "@robindone/shared";
+import type { ConversationRowsPartition } from "@robindone/shared/robindone-protocol-v4";
 import { memoizeByRows, type ConversationStoreStatus } from "@/v4/conversationProjectionStore.js";
 
 export function isSessionPluginCatalogReady(
@@ -44,7 +44,7 @@ export function hasPluginReferenceRowsInPartition(partition: ConversationRowsPar
  */
 export function buildSessionPluginIconMap(
   authority: "session" | "workspace" | null,
-  entries: readonly RobinRunPluginReferenceCatalogEntry[],
+  entries: readonly RobinDonePluginReferenceCatalogEntry[],
 ): ReadonlyMap<string, string> {
   if (authority !== "session") {
     return new Map();

@@ -20,7 +20,7 @@ import type {
   SettingsSyncSourceScope,
   SettingsSyncSourceRootSummary,
   SettingsSyncTaskImportResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { copyFile, cp, link, lstat, mkdir, readFile, readdir, rm, symlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
@@ -402,7 +402,7 @@ const SUPPORTED_MCP_AGENT_SOURCES: ExternalAgentMcpPathSource[] = [
   },
 ];
 
-const ROBINRUN_PLUGIN_MANIFEST_PATH = [".robinrun-plugin", "plugin.json"] as const;
+const ROBINDONE_PLUGIN_MANIFEST_PATH = [".robindone-plugin", "plugin.json"] as const;
 const CLAUDE_PLUGIN_MANIFEST_PATH = [".claude-plugin", "plugin.json"] as const;
 const CODEX_PLUGIN_MANIFEST_PATH = [".codex-plugin", "plugin.json"] as const;
 const INLINE_PLUGIN_MARKETPLACE = "inline";
@@ -412,44 +412,44 @@ function resolveUserHomeDir(): string {
   return envHome && envHome.length > 0 ? envHome : homedir();
 }
 
-function getWorkspaceRobinrunSkillRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "skills");
+function getWorkspaceRobindoneSkillRoot(workspacePath: string): string {
+  return join(workspacePath, ".robindone", "skills");
 }
 
-function getUserRobinrunSkillRoot(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "skills");
+function getUserRobindoneSkillRoot(): string {
+  return join(resolveUserHomeDir(), ".robindone", "skills");
 }
 
-function getWorkspaceRobinrunCommandRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "commands");
+function getWorkspaceRobindoneCommandRoot(workspacePath: string): string {
+  return join(workspacePath, ".robindone", "commands");
 }
 
-function getUserRobinrunCommandRoot(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "commands");
+function getUserRobindoneCommandRoot(): string {
+  return join(resolveUserHomeDir(), ".robindone", "commands");
 }
 
-function getWorkspaceRobinrunPluginRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "plugins");
+function getWorkspaceRobindonePluginRoot(workspacePath: string): string {
+  return join(workspacePath, ".robindone", "plugins");
 }
 
-function getUserRobinrunPluginRoot(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "plugins");
+function getUserRobindonePluginRoot(): string {
+  return join(resolveUserHomeDir(), ".robindone", "plugins");
 }
 
-function getUserRobinrunCliConfigPath(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "cli", "config.json");
+function getUserRobindoneCliConfigPath(): string {
+  return join(resolveUserHomeDir(), ".robindone", "cli", "config.json");
 }
 
-function getWorkspaceRobinrunConfigPath(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "config.json");
+function getWorkspaceRobindoneConfigPath(workspacePath: string): string {
+  return join(workspacePath, ".robindone", "config.json");
 }
 
 function getClaudeUserAgentsFileSourcePath(): string {
   return join(resolveUserHomeDir(), ".claude", "CLAUDE.md");
 }
 
-function getUserRobinrunAgentsFilePath(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "AGENTS.md");
+function getUserRobindoneAgentsFilePath(): string {
+  return join(resolveUserHomeDir(), ".robindone", "AGENTS.md");
 }
 
 function resolveTargetRootForScope(
@@ -457,9 +457,9 @@ function resolveTargetRootForScope(
   workspacePath: string | undefined,
 ): string | null {
   if (targetScope === "global") {
-    return getUserRobinrunSkillRoot();
+    return getUserRobindoneSkillRoot();
   }
-  return workspacePath ? getWorkspaceRobinrunSkillRoot(workspacePath) : null;
+  return workspacePath ? getWorkspaceRobindoneSkillRoot(workspacePath) : null;
 }
 
 function resolveCandidateTargetRoot(
@@ -468,9 +468,9 @@ function resolveCandidateTargetRoot(
 ): string | null {
   return sourceScope === "workspace"
     ? workspacePath
-      ? getWorkspaceRobinrunSkillRoot(workspacePath)
+      ? getWorkspaceRobindoneSkillRoot(workspacePath)
       : null
-    : getUserRobinrunSkillRoot();
+    : getUserRobindoneSkillRoot();
 }
 
 function resolveCommandTargetRootForScope(
@@ -478,9 +478,9 @@ function resolveCommandTargetRootForScope(
   workspacePath: string | undefined,
 ): string | null {
   if (targetScope === "global") {
-    return getUserRobinrunCommandRoot();
+    return getUserRobindoneCommandRoot();
   }
-  return workspacePath ? getWorkspaceRobinrunCommandRoot(workspacePath) : null;
+  return workspacePath ? getWorkspaceRobindoneCommandRoot(workspacePath) : null;
 }
 
 function resolveCommandCandidateTargetRoot(
@@ -489,9 +489,9 @@ function resolveCommandCandidateTargetRoot(
 ): string | null {
   return sourceScope === "workspace"
     ? workspacePath
-      ? getWorkspaceRobinrunCommandRoot(workspacePath)
+      ? getWorkspaceRobindoneCommandRoot(workspacePath)
       : null
-    : getUserRobinrunCommandRoot();
+    : getUserRobindoneCommandRoot();
 }
 
 function resolvePluginTargetRootForScope(
@@ -499,9 +499,9 @@ function resolvePluginTargetRootForScope(
   workspacePath: string | undefined,
 ): string | null {
   if (targetScope === "global") {
-    return getUserRobinrunPluginRoot();
+    return getUserRobindonePluginRoot();
   }
-  return workspacePath ? getWorkspaceRobinrunPluginRoot(workspacePath) : null;
+  return workspacePath ? getWorkspaceRobindonePluginRoot(workspacePath) : null;
 }
 
 function resolvePluginCandidateTargetRoot(
@@ -510,9 +510,9 @@ function resolvePluginCandidateTargetRoot(
 ): string | null {
   return sourceScope === "workspace"
     ? workspacePath
-      ? getWorkspaceRobinrunPluginRoot(workspacePath)
+      ? getWorkspaceRobindonePluginRoot(workspacePath)
       : null
-    : getUserRobinrunPluginRoot();
+    : getUserRobindonePluginRoot();
 }
 
 function resolvePluginConfigPathForScope(
@@ -520,9 +520,9 @@ function resolvePluginConfigPathForScope(
   workspacePath: string | undefined,
 ): string | null {
   if (targetScope === "global") {
-    return getUserRobinrunCliConfigPath();
+    return getUserRobindoneCliConfigPath();
   }
-  return workspacePath ? getWorkspaceRobinrunConfigPath(workspacePath) : null;
+  return workspacePath ? getWorkspaceRobindoneConfigPath(workspacePath) : null;
 }
 
 function resolveMcpConfigPathForScope(
@@ -530,9 +530,9 @@ function resolveMcpConfigPathForScope(
   workspacePath: string | undefined,
 ): string | null {
   if (targetScope === "global") {
-    return getUserRobinrunCliConfigPath();
+    return getUserRobindoneCliConfigPath();
   }
-  return workspacePath ? getWorkspaceRobinrunConfigPath(workspacePath) : null;
+  return workspacePath ? getWorkspaceRobindoneConfigPath(workspacePath) : null;
 }
 
 async function importSkillDirectory(
@@ -769,9 +769,9 @@ async function collectCommandMarkdownPaths(rootPath: string): Promise<string[]> 
 }
 
 async function findPluginManifestPath(pluginPath: string): Promise<string | null> {
-  const robinrunManifestPath = join(pluginPath, ...ROBINRUN_PLUGIN_MANIFEST_PATH);
-  if (await pathExists(robinrunManifestPath)) {
-    return robinrunManifestPath;
+  const robindoneManifestPath = join(pluginPath, ...ROBINDONE_PLUGIN_MANIFEST_PATH);
+  if (await pathExists(robindoneManifestPath)) {
+    return robindoneManifestPath;
   }
   const claudeManifestPath = join(pluginPath, ...CLAUDE_PLUGIN_MANIFEST_PATH);
   if (await pathExists(claudeManifestPath)) {
@@ -1012,7 +1012,7 @@ function stripExternalMcpTimeoutFields(config: McpServerConfig): McpServerConfig
   return rest as McpServerConfig;
 }
 
-function readRobinrunMcpServers(parsed: Record<string, unknown>): Record<string, McpServerConfig> {
+function readRobindoneMcpServers(parsed: Record<string, unknown>): Record<string, McpServerConfig> {
   if (!isRecord(parsed.mcp)) {
     return {};
   }
@@ -1087,7 +1087,7 @@ async function collectExistingMcpServerNameKeys(
   const targetConfigPath = resolveMcpConfigPathForScope(targetScope, workspacePath);
   if (targetConfigPath) {
     for (const name of Object.keys(
-      readRobinrunMcpServers(await readJsonFileOrEmpty(targetConfigPath)),
+      readRobindoneMcpServers(await readJsonFileOrEmpty(targetConfigPath)),
     )) {
       nameKeys.add(normalizeMcpServerNameKey(name));
     }
@@ -1102,7 +1102,7 @@ async function collectExistingMcpServerNameKeys(
  * 修法：改用 updateJsonObjectFile——文件损坏时报错不写，写前重读，只改自己的字段，原子替换。
  * 错误交给 importXxxForAgent 的 catch，按现有方式把该项标为 failed 显示在迁移结果里。
  */
-async function addMcpServerToRobinrunConfig(
+async function addMcpServerToRobindoneConfig(
   filePath: string,
   name: string,
   config: McpServerConfig,
@@ -1112,7 +1112,7 @@ async function addMcpServerToRobinrunConfig(
     mcp: {
       ...(isRecord(current.mcp) ? current.mcp : {}),
       servers: {
-        ...readRobinrunMcpServers(current),
+        ...readRobindoneMcpServers(current),
         [name]: config,
       },
     },
@@ -2143,7 +2143,7 @@ async function importMcpServersForAgent(
       continue;
     }
     try {
-      await addMcpServerToRobinrunConfig(selectedConfigPath, candidate.name, candidate.config);
+      await addMcpServerToRobindoneConfig(selectedConfigPath, candidate.name, candidate.config);
       importedCount += 1;
       const existingNameKeys = existingNameKeysByTargetScope.get(selectedTargetScope);
       if (existingNameKeys) {
@@ -2213,7 +2213,7 @@ function shouldScanMcpServers(request: {
 async function getClaudeAgentsFileMigrationStatus(): Promise<SettingsSyncClaudeAgentsFileMigrationStatus> {
   const sourcePath = getClaudeUserAgentsFileSourcePath();
   const sourceExists = await pathExists(sourcePath);
-  const targetPath = getUserRobinrunAgentsFilePath();
+  const targetPath = getUserRobindoneAgentsFilePath();
   const targetExists = await pathExists(targetPath);
 
   return {
@@ -2226,11 +2226,11 @@ async function getClaudeAgentsFileMigrationStatus(): Promise<SettingsSyncClaudeA
   };
 }
 
-async function copyClaudeAgentsFileToRobinrunAgentsFile(params: {
+async function copyClaudeAgentsFileToRobindoneAgentsFile(params: {
   overwrite?: boolean;
 }): Promise<SettingsSyncClaudeAgentsFileCopyResult> {
   const sourcePath = getClaudeUserAgentsFileSourcePath();
-  const targetPath = getUserRobinrunAgentsFilePath();
+  const targetPath = getUserRobindoneAgentsFilePath();
   const sourceExists = await pathExists(sourcePath);
   const targetExists = await pathExists(targetPath);
 
@@ -2283,10 +2283,10 @@ export function createSettingsSyncService(
       return getClaudeAgentsFileMigrationStatus();
     },
 
-    async copyClaudeAgentsFileToRobinrunAgentsFile(
+    async copyClaudeAgentsFileToRobindoneAgentsFile(
       request = {},
     ): Promise<SettingsSyncClaudeAgentsFileCopyResult> {
-      const result = await copyClaudeAgentsFileToRobinrunAgentsFile({
+      const result = await copyClaudeAgentsFileToRobindoneAgentsFile({
         overwrite: request.overwrite,
       });
       log.info("[settings-sync] Claude AGENTS.md migration completed", {

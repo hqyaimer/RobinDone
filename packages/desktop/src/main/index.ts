@@ -1,12 +1,14 @@
+// 改名迁移 A1 必须保持在本文件所有 import 的最前：本模块 import 期执行数据根搬迁，
+// 晚于它被 import 的模块（crash 捕获等）才不会提前按旧路径建目录。2026-11-27 事故教训。
+import { brandDataRootMigrationResult } from "./desktopEarlyDataBaseDirBootstrap.js";
 import {
   BROWSER_LOCAL_PREVIEW_PRIVILEGES,
   installBrowserLocalPreview,
 } from "@desktop/main/browser-local-preview/index.js";
-import { createRemoteConversationTelemetryDispatcher } from "@robinrun/shared/conversation-telemetry";
+import { createRemoteConversationTelemetryDispatcher } from "@robindone/shared/conversation-telemetry";
 import { installRequestSecurityDiagnostics } from "./request-security-edition/index.js";
 import { createLocalTtftExporter } from "./localTtftExporter.js";
 /* eslint-disable max-lines */
-import "./desktopEarlyDataBaseDirBootstrap.js";
 import "./desktopEarlyChromiumHardwareAccelerationBootstrap.js";
 import { powerMonitor, powerSaveBlocker } from "electron";
 import { crashCapturePaths } from "./appCrashCaptureBootstrap.js";
@@ -69,37 +71,37 @@ import {
   getConversationWorkspaceDir,
   getDataBaseDir,
   getExportLogDir,
-  getRobinRunDataRootDir,
+  getRobinDoneDataRootDir,
   normalizeRuntimeProcessEnv,
   setDataBaseDir,
   migrateApplicationStorage,
-  resolveDefaultRobinRunAgentCommand,
+  resolveDefaultRobinDoneAgentCommand,
   startupStorage,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import {
   desktopMenuMessageIds,
   type Locale,
   type AppSettings,
   type appSettingsPatchSchema,
   PlatformChannels,
-  ROBINRUN_ENV,
-  ROBINRUN_PRODUCT_FLAVOR,
-  ROBINRUN_AUTO_UPDATE_ENABLED,
-  ROBINRUN_MAC_AUTO_UPDATE_READY,
-  ROBINRUN_UPDATE_FEED_BASE,
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+  ROBINDONE_ENV,
+  ROBINDONE_PRODUCT_FLAVOR,
+  ROBINDONE_AUTO_UPDATE_ENABLED,
+  ROBINDONE_MAC_AUTO_UPDATE_READY,
+  ROBINDONE_UPDATE_FEED_BASE,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
   DEFAULT_LOCALE,
-  TEST_ROBINRUN_ENDPOINT_ORIGIN,
-  ROBINRUN_VERSION,
-  buildRobinRunEndpointUrls,
+  TEST_ROBINDONE_ENDPOINT_ORIGIN,
+  ROBINDONE_VERSION,
+  buildRobinDoneEndpointUrls,
   resolveWebRemoteControlRelayWsUrl,
-  resolveRobinRunEndpointOrigin,
+  resolveRobinDoneEndpointOrigin,
   shouldEnableE2ETestBridge,
   type UpdateStatePayload,
   type TelemetryEventPayload,
   HostMessageTypes,
   InternalChannels,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logger, webRemoteControlRelayLogger, flushLocalTtftLogs } from "./logger.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
@@ -156,7 +158,7 @@ import {
   getDesktopMenuLabel as getDesktopMenuLabelByLocale,
   rebuildApplicationMenu,
   resolveSystemApplicationLocale,
-  updateRobinRunStdioTapDevMenuState,
+  updateRobinDoneStdioTapDevMenuState,
 } from "./desktopApplicationMenu.js";
 import { applyAppIcon } from "./desktopWindowChrome.js";
 import { resolveWindowsAppUserModelIdForFlavor } from "../../scripts/desktop-product-identity.mjs";
@@ -179,7 +181,8 @@ import {
   syncApplicationUnreadBadge,
   handleDesktopWindowCloseRequest,
 } from "./desktopWindowLifecycle.js";
-import { resolveRobinRunBuiltinProviderConfigFilePath } from "./desktopProviderConfig.js";
+import { migrateBrandElectronUserData } from "./brandDataMigration.js";
+import { resolveRobinDoneBuiltinProviderConfigFilePath } from "./desktopProviderConfig.js";
 import {
   getCredentialsDir,
   isDockerDaemonAvailable,
@@ -189,7 +192,7 @@ import {
   loadHostProcessEnvFromLocalFiles,
   resolveBundledGlmBinaryPath,
   resolveRemoteAssetDirs,
-  resolveRobinRunEndpointEnvBaseOrigin,
+  resolveRobinDoneEndpointEnvBaseOrigin,
   desktopRuntimeEnv,
   runtimeApplicationName,
   runtimeHomePath,
@@ -264,9 +267,9 @@ import {
 } from "./desktopResourceTelemetry.js";
 import { registerRendererHeapSampleIpc } from "./processResourceRendererHeapSource.js";
 import {
-  registerDesktopRobinRunDataSizeTelemetry,
-  stopDesktopRobinRunDataSizeTelemetry,
-} from "./desktopRobinRunDataSizeTelemetry.js";
+  registerDesktopRobinDoneDataSizeTelemetry,
+  stopDesktopRobinDoneDataSizeTelemetry,
+} from "./desktopRobinDoneDataSizeTelemetry.js";
 import { configureDesktopMcpTelemetry, reportMcpTelemetryToArms } from "./desktopMcpTelemetry.js";
 import {
   configureDesktopNetworkTelemetry,
@@ -280,7 +283,7 @@ import {
   createEmbeddedBrowserPermissionUiBridge,
   setActiveEmbeddedBrowserPermissionUiBridge,
 } from "./embeddedBrowserPermissionUiBridge.js";
-import { mapRobinRunEnvToArmsRumEnv } from "@robinrun/shared";
+import { mapRobinDoneEnvToArmsRumEnv } from "@robindone/shared";
 import {
   findWindowsProcessesReferencingResourceMarkers,
   probeWindowsPackagedResourceWritable,
@@ -303,9 +306,9 @@ registerLocalMediaPreviewScheme(protocol, [
 const localMediaPreviewPathRegistry = createLocalMediaPreviewPathRegistry();
 
 // e2e 由 Chromedriver 管理远程调试端口；如果这里继续固定到 9229，
-// 会和开发态已打开的 RobinRun Dev 抢端口，导致 WebDriver session 创建前白屏超时。
+// 会和开发态已打开的 RobinDone Dev 抢端口，导致 WebDriver session 创建前白屏超时。
 // 仅本地开发运行默认开启远程调试端口，并允许 e2e 通过环境变量交给 Chromedriver 接管。
-if (!app.isPackaged && process.env.ROBINRUN_DISABLE_FIXED_REMOTE_DEBUGGING_PORT !== "1") {
+if (!app.isPackaged && process.env.ROBINDONE_DISABLE_FIXED_REMOTE_DEBUGGING_PORT !== "1") {
   app.commandLine.appendSwitch("remote-debugging-port", "9229");
 }
 
@@ -322,6 +325,20 @@ if (!shouldUseElectronDefaultUserDataPath) {
   app.setPath("userData", runtimeUserDataPath);
   app.setPath("sessionData", runtimeSessionDataPath);
 }
+// RobinRun→RobinDone 改名迁移 A0（specs/rename-robindone-migration.md §3.5）：userData 跟随
+// 应用名派生（含 Dev/Preview 变体 1:1 映射），在 setName/setPath 后、任何 userData 使用前搬迁。
+// e2e 显式隔离模式（Chromedriver 临时 userData）不搬。A1 数据根迁移已由
+// desktopEarlyDataBaseDirBootstrap 在 import 期最早执行（晚于此处会导致 crash 捕获先建新目录
+// 占位，2026-11-27 事故教训），这里只补一条日志供启动排查；legacy env 采纳后的
+// setDataBaseDir 同样在早期模块完成。
+if (!shouldUseElectronDefaultUserDataPath) {
+  const brandUserData = migrateBrandElectronUserData(
+    app.getPath("appData"),
+    runtimeApplicationName,
+  );
+  logger.info("[brand-migration] userData", { status: brandUserData.status });
+}
+logger.info("[brand-migration] dataRoot", { status: brandDataRootMigrationResult.status });
 process.title = runtimeApplicationName;
 
 process.on("unhandledRejection", (reason) => {
@@ -590,7 +607,7 @@ async function runBrowserCommandOnView(params: {
 let currentDesktopZoomLevel = 0;
 let currentDesktopWindowSize: DesktopWindowSize | undefined;
 const preloadPath = join(import.meta.dirname, "../preload/index.cjs");
-const settingsFile = join(homedir(), ".robinrun", "v2", "setting.json");
+const settingsFile = join(homedir(), ".robindone", "v2", "setting.json");
 let activeAppShutdownPolicy = resolveAppShutdownPolicy("normal", process.platform);
 let activeAppShutdownKind: AppShutdownKind | null = null;
 const WINDOWS_AGENT_FORCE_KILL_TIMEOUT_MS = 2_000;
@@ -737,11 +754,11 @@ const webRemoteControlCredentialService = createCredentialService();
 const appLaunchGate = createAppLaunchGate();
 const appLaunchCoordinator = createAppLaunchCoordinator(appLaunchGate);
 const appTelemetryCredentialService = createCredentialService();
-async function resolveCurrentRobinRunEndpointOrigin() {
-  return resolveRobinRunEndpointOrigin({
-    env: ROBINRUN_ENV,
-    envBaseOrigin: resolveRobinRunEndpointEnvBaseOrigin(hostProcessLocalEnv),
-    overrideOrigin: (await mainSettingService.get()).robinrunEndpointOrigin,
+async function resolveCurrentRobinDoneEndpointOrigin() {
+  return resolveRobinDoneEndpointOrigin({
+    env: ROBINDONE_ENV,
+    envBaseOrigin: resolveRobinDoneEndpointEnvBaseOrigin(hostProcessLocalEnv),
+    overrideOrigin: (await mainSettingService.get()).robindoneEndpointOrigin,
   });
 }
 let desktopContextPromptRollout: ReturnType<typeof createDesktopContextPromptRollout> | undefined;
@@ -794,7 +811,7 @@ const appTelemetryCore = createTelemetryCore({
   loadUserId: createTelemetryUserIdLoader(appTelemetryCredentialService),
   loadAuthorization: createTelemetryAuthorizationLoader(appTelemetryCredentialService),
   loadMarketingParams: createTelemetryMarketingParamsLoader(appTelemetryCredentialService),
-  resolveRobinRunEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+  resolveRobinDoneEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
   fetchImpl: createDesktopTelemetryFetch({
     fetch: (input, init) => net.fetch(input instanceof URL ? input.toString() : input, init),
   }),
@@ -845,7 +862,7 @@ function syncAppTelemetryInteractiveState(): void {
 app.on("browser-window-focus", (_event, win) => {
   syncAppTelemetryInteractiveState();
   rebuildMenu();
-  // 设置/更新等无 Host 的 RobinRun 窗口也算前台：router 会先把旧 workspace Host 清成 null，
+  // 设置/更新等无 Host 的 RobinDone 窗口也算前台：router 会先把旧 workspace Host 清成 null，
   // 再把无 Host 的新窗口事实静默丢弃，避免旧会话 PiP 继续显示。
   cuaPipFocusRouter.focusWindow(resolveCuaPipWindowKey(win));
 });
@@ -882,18 +899,18 @@ const webRemoteControlSharedHostAttachments = createWebRemoteControlSharedHostAt
 const deviceMid = ensureDesktopDeviceMidSync();
 // 帮助配置是公开读取，不能复用下面附带账号鉴权的灰度响应缓存。
 const readHelpConfig = createDesktopHelpConfigReader({
-  appVersion: ROBINRUN_VERSION || app.getVersion(),
+  appVersion: ROBINDONE_VERSION || app.getVersion(),
   deviceMid,
   getClientLanguage: () => currentApplicationLocale,
-  resolveEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+  resolveEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
 });
 // 同一个 /api/v1/client/configs fetcher 供两个灰度 rollout 共用（请求参数与鉴权完全一致，
 // 各自独立缓存/去重，服务端按 data.configs.<key> 区分功能）。
 const electronClientConfigsFetcher = createElectronDesktopContextPromptConfigFetcher({
-  appVersion: ROBINRUN_VERSION || app.getVersion(),
+  appVersion: ROBINDONE_VERSION || app.getVersion(),
   deviceMid,
   getClientLanguage: () => currentApplicationLocale,
-  resolveEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+  resolveEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
 });
 desktopContextPromptRollout = createDesktopContextPromptRollout({
   fetchConfig: electronClientConfigsFetcher,
@@ -905,7 +922,7 @@ const rendererActionTraceRollout = createRendererActionTraceRollout({
 });
 const localTtftExporter = createLocalTtftExporter({
   env: { ...hostProcessLocalEnv, ...process.env },
-  version: ROBINRUN_VERSION || app.getVersion(),
+  version: ROBINDONE_VERSION || app.getVersion(),
   logger,
 });
 ipcMain.on(PlatformChannels.ReportLocalTtftBatch, (_event, batch: unknown) =>
@@ -923,13 +940,13 @@ const armsUserIdentitySync = createArmsUserIdentitySync({
   deviceMid,
   setUser: (user) => armsRum.setConfig("user", user),
 });
-const webRemoteControlAppVersion = ROBINRUN_VERSION || app.getVersion();
-const defaultRobinRunEndpointUrls = buildRobinRunEndpointUrls(DEFAULT_ROBINRUN_ENDPOINT_ORIGIN, {
+const webRemoteControlAppVersion = ROBINDONE_VERSION || app.getVersion();
+const defaultRobinDoneEndpointUrls = buildRobinDoneEndpointUrls(DEFAULT_ROBINDONE_ENDPOINT_ORIGIN, {
   appVersion: webRemoteControlAppVersion,
 });
 const webRemoteControlRelayWsEnvOverride =
-  process.env["ROBINRUN_WEB_REMOTE_CONTROL_RELAY_WS_URL"]?.trim();
-const webRemoteControlUrlEnvOverride = process.env["ROBINRUN_WEB_REMOTE_CONTROL_URL"]?.trim();
+  process.env["ROBINDONE_WEB_REMOTE_CONTROL_RELAY_WS_URL"]?.trim();
+const webRemoteControlUrlEnvOverride = process.env["ROBINDONE_WEB_REMOTE_CONTROL_URL"]?.trim();
 
 function extractOpenWorkspacePathFromDeepLinkUrl(url: string): string | null {
   try {
@@ -967,7 +984,7 @@ function getMobileLogSink(): MobileLogSink {
 const webRemoteControlManager = createWebRemoteControlManager({
   mobileLogSink: { append: (target, events) => getMobileLogSink().append(target, events) },
   getEndpointUrls: async () => {
-    const derived = buildRobinRunEndpointUrls(await resolveCurrentRobinRunEndpointOrigin(), {
+    const derived = buildRobinDoneEndpointUrls(await resolveCurrentRobinDoneEndpointOrigin(), {
       appVersion: webRemoteControlAppVersion,
     });
     return {
@@ -980,10 +997,10 @@ const webRemoteControlManager = createWebRemoteControlManager({
     };
   },
   relayWsUrl: resolveWebRemoteControlRelayWsUrl({
-    endpointOrigin: DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+    endpointOrigin: DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
     overrideUrl: webRemoteControlRelayWsEnvOverride,
   }),
-  mobileRemoteControlUrl: webRemoteControlUrlEnvOverride || defaultRobinRunEndpointUrls.remoteUrl,
+  mobileRemoteControlUrl: webRemoteControlUrlEnvOverride || defaultRobinDoneEndpointUrls.remoteUrl,
   deviceMid,
   deviceName: hostname(),
   appVersion: webRemoteControlAppVersion,
@@ -1257,7 +1274,7 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
   // Bug 根因：资源样本改为 5 分钟窗口后，退出仍直接 stop 会清空未满窗口的数据。
   // 退出时只排空已存在的角色 / Agent 内存窗口，不启动新采样、目录扫描或外部探针。
   stopDesktopResourceTelemetry({ flushPendingWindows: true });
-  stopDesktopRobinRunDataSizeTelemetry();
+  stopDesktopRobinDoneDataSizeTelemetry();
   stopDesktopNetworkTelemetry();
   stopRemoteUsageArmsPeriodicSampling();
   disposeRendererActionTraceIpc?.();
@@ -1322,7 +1339,7 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
     })
     .finally(() => {
       // before-quit 是同步事件。只发 Dispose 就继续退出 main 的话，
-      // host 还没等到 agent 进程树的 SIGTERM/SIGKILL 兜底完成就被带走，robinrun-cli 会被 init 接管成残留进程。
+      // host 还没等到 agent 进程树的 SIGTERM/SIGKILL 兜底完成就被带走，robindone-cli 会被 init 接管成残留进程。
       // 这里先拦截第一次退出，等待 host 清理完成后再放行第二次 app.quit。
       hasPreparedAppQuit = true;
       appQuitPreparationInFlight = null;
@@ -1333,7 +1350,7 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
 
 function exitPreparedApp(reason: string): never | void {
   logger.info(`[app-quit] exiting prepared app (${reason})`);
-  if (process.env.ROBINRUN_E2E_RUN_ID?.trim()) {
+  if (process.env.ROBINDONE_E2E_RUN_ID?.trim()) {
     flushMainE2ECoverage((error) => {
       logger.warn("[e2e-coverage] main coverage flush failed", error);
     });
@@ -1542,12 +1559,12 @@ async function prepareWindowsProcessesForUpdateInstall() {
 
 function shouldConfirmAppQuit() {
   // 开发环境里的普通会话经常需要重启 Electron，只在 production 下拦截，避免打断调试。
-  return ROBINRUN_ENV === "production" && getRunningAgentSessionCount() > 0;
+  return ROBINDONE_ENV === "production" && getRunningAgentSessionCount() > 0;
 }
 
 function confirmAppQuit(originWindow?: BrowserWindow | null) {
   if (!shouldConfirmAppQuit()) {
-    logger.info(`[app-quit] quit confirmation skipped in ${ROBINRUN_ENV}`);
+    logger.info(`[app-quit] quit confirmation skipped in ${ROBINDONE_ENV}`);
     return true;
   }
 
@@ -1572,7 +1589,7 @@ function confirmAppQuit(originWindow?: BrowserWindow | null) {
     defaultId: 1,
     cancelId: 1,
     title: isZh ? "退出确认" : "Confirm Quit",
-    message: isZh ? "确认退出 RobinRun?" : "Quit RobinRun?",
+    message: isZh ? "确认退出 RobinDone?" : "Quit RobinDone?",
     detail: detailLines.join("\n"),
     icon: nativeImage.createFromPath(iconPath),
   };
@@ -1592,14 +1609,14 @@ async function executeDesktopCommandForApp(
     command,
     senderWindow,
     logger,
-    updateRobinRunStdioTapDevMenuState,
+    updateRobinDoneStdioTapDevMenuState,
     onDesktopZoomChanged: (zoomLevel) => {
       currentDesktopZoomLevel = clampDesktopZoomLevel(zoomLevel);
       rebuildMenu();
     },
     settingService: mainSettingService,
-    onRobinRunEndpointChanged: handleRobinRunEndpointChanged,
-    robinrunEndpointEnvBaseOrigin: resolveRobinRunEndpointEnvBaseOrigin(hostProcessLocalEnv),
+    onRobinDoneEndpointChanged: handleRobinDoneEndpointChanged,
+    robindoneEndpointEnvBaseOrigin: resolveRobinDoneEndpointEnvBaseOrigin(hostProcessLocalEnv),
     onRelaunchApp: async () => {
       await prepareAppQuit("desktop-command-relaunch");
       app.relaunch();
@@ -1627,21 +1644,21 @@ async function executeDesktopCommandForApp(
   });
 }
 
-async function resolveRobinRunEndpointSelection(): Promise<"production" | "test" | "custom"> {
-  if (ROBINRUN_ENV === "production") {
+async function resolveRobinDoneEndpointSelection(): Promise<"production" | "test" | "custom"> {
+  if (ROBINDONE_ENV === "production") {
     return "production";
   }
-  const origin = await resolveCurrentRobinRunEndpointOrigin();
-  if (origin === DEFAULT_ROBINRUN_ENDPOINT_ORIGIN) {
+  const origin = await resolveCurrentRobinDoneEndpointOrigin();
+  if (origin === DEFAULT_ROBINDONE_ENDPOINT_ORIGIN) {
     return "production";
   }
-  if (origin === TEST_ROBINRUN_ENDPOINT_ORIGIN) {
+  if (origin === TEST_ROBINDONE_ENDPOINT_ORIGIN) {
     return "test";
   }
   return "custom";
 }
 
-async function handleRobinRunEndpointChanged() {
+async function handleRobinDoneEndpointChanged() {
   rebuildMenu();
   for (const win of getApplicationWindowsExcludingCuaIndicator()) {
     await webRemoteControlManagerRef.current?.suspend(win.id, "endpoint-changed");
@@ -1683,11 +1700,11 @@ function resetShortcutRecordingForWebContents(webContentsId: number) {
 }
 
 function rebuildMenu() {
-  void Promise.all([resolveRobinRunEndpointSelection(), mainSettingService.get()]).then(
-    ([robinrunEndpointSelection, settings]) => {
+  void Promise.all([resolveRobinDoneEndpointSelection(), mainSettingService.get()]).then(
+    ([robindoneEndpointSelection, settings]) => {
       rebuildApplicationMenu({
         currentApplicationLocale,
-        robinrunEndpointSelection,
+        robindoneEndpointSelection,
         executeDesktopCommand: executeDesktopCommandForApp,
         currentZoomLevel: resolveFocusedDesktopZoomLevel(),
         // 菜单 accelerator 跟随用户快捷键设置（shortcutBindings 用户覆盖）
@@ -1970,7 +1987,7 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
         {
           ...initMessage,
           browserBackendIdentity: browserGuestManager.getBackendIdentity(win.id),
-          robinrunBuiltinProviderConfigFilePath: resolveRobinRunBuiltinProviderConfigFilePath(),
+          robindoneBuiltinProviderConfigFilePath: resolveRobinDoneBuiltinProviderConfigFilePath(),
         },
         {
           hostProcessLocalEnv,
@@ -2146,7 +2163,7 @@ app.whenReady().then(async () => {
   installLocalMediaPreviewProtocol(session.defaultSession.protocol, {
     isPathAuthorized: localMediaPreviewPathRegistry.isAuthorized,
   });
-  // 插件 UI 沙箱：注册表 + renderer 可调 IPC；scheme 的 privileged 注册已随 robinrun-media 在 ready 前完成。
+  // 插件 UI 沙箱：注册表 + renderer 可调 IPC；scheme 的 privileged 注册已随 robindone-media 在 ready 前完成。
   installPluginSandboxHost({
     preloadPath: join(import.meta.dirname, "../preload/pluginSandbox.cjs"),
     rendererDir: join(import.meta.dirname, "../renderer"),
@@ -2157,10 +2174,10 @@ app.whenReady().then(async () => {
       : {}),
     logger: console,
     // e2e L05（配额）：只在 e2e run 里允许缩小注册表容量。
-    ...(process.env.ROBINRUN_E2E_RUN_ID?.trim() &&
-    Number.isInteger(Number(process.env.ROBINRUN_E2E_PLUGIN_SANDBOX_MAX_ENTRIES)) &&
-    Number(process.env.ROBINRUN_E2E_PLUGIN_SANDBOX_MAX_ENTRIES) > 0
-      ? { registryMaxEntries: Number(process.env.ROBINRUN_E2E_PLUGIN_SANDBOX_MAX_ENTRIES) }
+    ...(process.env.ROBINDONE_E2E_RUN_ID?.trim() &&
+    Number.isInteger(Number(process.env.ROBINDONE_E2E_PLUGIN_SANDBOX_MAX_ENTRIES)) &&
+    Number(process.env.ROBINDONE_E2E_PLUGIN_SANDBOX_MAX_ENTRIES) > 0
+      ? { registryMaxEntries: Number(process.env.ROBINDONE_E2E_PLUGIN_SANDBOX_MAX_ENTRIES) }
       : {}),
   });
   installBrowserLocalPreview(session.fromPartition(EMBEDDED_BROWSER_PARTITION));
@@ -2241,7 +2258,7 @@ app.whenReady().then(async () => {
     // 打包态必须与 NSIS 快捷方式使用同一 AUMID，否则 Shell 把它们当成不同应用。
     // 使用构建期产品身份，不依赖用户机器环境；开发态继续保持独立身份。
     app.setAppUserModelId(
-      resolveWindowsAppUserModelIdForFlavor(ROBINRUN_PRODUCT_FLAVOR, {
+      resolveWindowsAppUserModelIdForFlavor(ROBINDONE_PRODUCT_FLAVOR, {
         isPackaged: app.isPackaged,
       }),
     );
@@ -2298,18 +2315,18 @@ app.whenReady().then(async () => {
   logWindowsBundledRuntimeIntegrityDiagnostic();
 
   // 启动自动更新检查（后台执行，不阻塞主界面）
-  // Preview 身份无论连接哪个后端都不自动更新：stable feed 上只分发正式 RobinRun 安装包，
+  // Preview 身份无论连接哪个后端都不自动更新：stable feed 上只分发正式 RobinDone 安装包，
   // 不向 Preview 渠道提供更新。构建期未启用自动更新时同样不更新
   // （见 docs/desktop/build-time-optional-capabilities.md）。
   // macOS 更新安装（Squirrel.Mac）强制要求应用持有 Developer ID 签名：未签名 mac 打包
-  // （构建期未开 ROBINRUN_MAC_AUTO_UPDATE）必须整体禁用自动更新，否则用户在更新弹窗里
+  // （构建期未开 ROBINDONE_MAC_AUTO_UPDATE）必须整体禁用自动更新，否则用户在更新弹窗里
   // 点击安装必然失败。门控只针对打包态——开发态走 --update-feed-url 调试链路不受影响。
   const macAutoUpdateAllowed =
-    !app.isPackaged || process.platform !== "darwin" || ROBINRUN_MAC_AUTO_UPDATE_READY;
+    !app.isPackaged || process.platform !== "darwin" || ROBINDONE_MAC_AUTO_UPDATE_READY;
   void initAutoUpdater({
     enabled:
-      ROBINRUN_PRODUCT_FLAVOR === "production" &&
-      ROBINRUN_AUTO_UPDATE_ENABLED &&
+      ROBINDONE_PRODUCT_FLAVOR === "production" &&
+      ROBINDONE_AUTO_UPDATE_ENABLED &&
       macAutoUpdateAllowed,
     onBeforeQuitAndInstall: async () => {
       notifyStabilityLifecycle("update_install");
@@ -2321,7 +2338,7 @@ app.whenReady().then(async () => {
     settingService: mainSettingService,
     locale: currentApplicationLocale,
     deviceMid,
-    resolveEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+    resolveEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
     updateFeedSource: resolveUpdateFeedSourceFromStartupConfig({
       argv: process.argv,
       env: process.env,
@@ -2422,7 +2439,7 @@ app.whenReady().then(async () => {
     },
     applyApplicationLocale: async (locale) => {
       currentApplicationLocale = locale;
-      // Host 的 RobinRun endpoint 请求以此为实时语言；setting.json 写入可能滞后或失败，不能作为来源。
+      // Host 的 RobinDone endpoint 请求以此为实时语言；setting.json 写入可能滞后或失败，不能作为来源。
       for (const child of windowHostProcessMap.values()) {
         child.postMessage({ type: HostMessageTypes.ApplicationLocaleChanged, locale });
       }
@@ -2524,8 +2541,8 @@ app.whenReady().then(async () => {
     armsCustomContext: {
       deviceMid,
       platform: process.platform,
-      appVersion: ROBINRUN_VERSION,
-      armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+      appVersion: ROBINDONE_VERSION,
+      armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
     },
     finalArmsCustomEventE2EEnabled: shouldEnableE2ETestBridge(process.env),
     webRemoteControlManager,
@@ -2573,35 +2590,35 @@ app.whenReady().then(async () => {
   configureDesktopStabilityTelemetry({
     deviceMid,
     platform: process.platform,
-    appVersion: ROBINRUN_VERSION,
-    armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+    appVersion: ROBINDONE_VERSION,
+    armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
   });
   configureDesktopResourceTelemetry({
     deviceMid,
     platform: process.platform,
-    appVersion: ROBINRUN_VERSION,
-    armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+    appVersion: ROBINDONE_VERSION,
+    armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
   });
   configureDesktopMcpTelemetry({
     deviceMid,
-    appVersion: ROBINRUN_VERSION,
-    armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+    appVersion: ROBINDONE_VERSION,
+    armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
   });
   configureDesktopNetworkTelemetry({
     deviceMid,
     platform: process.platform,
-    appVersion: ROBINRUN_VERSION,
-    armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+    appVersion: ROBINDONE_VERSION,
+    armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
   });
   registerDesktopStabilityMonitors(logger, crashCapturePaths);
   registerDesktopResourceTelemetry(logger);
   // 主窗口 renderer 的 60 秒 heap 样本入口；随 App 生命周期常驻，只注册一次。
   registerRendererHeapSampleIpc();
   const defaultDataBaseDir = process.env.HOME?.trim() || homedir();
-  registerDesktopRobinRunDataSizeTelemetry({
+  registerDesktopRobinDoneDataSizeTelemetry({
     context: {
-      appVersion: ROBINRUN_VERSION,
-      armsEnv: mapRobinRunEnvToArmsRumEnv(desktopRuntimeEnv),
+      appVersion: ROBINDONE_VERSION,
+      armsEnv: mapRobinDoneEnvToArmsRumEnv(desktopRuntimeEnv),
       dataRootKind:
         resolve(getDataBaseDir()) === resolve(defaultDataBaseDir) ? "default" : "custom",
       deviceMid,
@@ -2609,35 +2626,35 @@ app.whenReady().then(async () => {
     },
     getSystemIdleTimeSeconds: () => powerMonitor.getSystemIdleTime(),
     isAppBackground: () => resolveResourceUsageScene() === "background",
-    isRobinRunBusy: () => getRunningAgentSessionCount() > 0,
+    isRobinDoneBusy: () => getRunningAgentSessionCount() > 0,
     logger,
-    rootPath: getRobinRunDataRootDir(),
-    stateFile: join(app.getPath("userData"), "robinrun-data-size-telemetry.json"),
+    rootPath: getRobinDoneDataRootDir(),
+    stateFile: join(app.getPath("userData"), "robindone-data-size-telemetry.json"),
   });
   registerDesktopNetworkTelemetry(logger);
 
   // 本地未打包 dev 构建（app.isPackaged === false）必须跳过远端强制升级 gate。
-  // 原因：force-update gate 只看 ROBINRUN_ENV === "production"，但 dev 构建（如 dev:desktop:cua
+  // 原因：force-update gate 只看 ROBINDONE_ENV === "production"，但 dev 构建（如 dev:desktop:cua
   // 连真实后端测 computer use）虽指向 production 后端，版本号却滞后于线上 release（feature
   // 分支不 bump 版本），会被 release minimalVersion 误判为"需强制升级"而启动秒退。force-update
   // 是面向打包发布客户端的安全门，对未打包 dev 运行时无意义。打包版 app.isPackaged === true，
   // gate 照常生效，对真实用户零影响。
   const skipForceUpdateForLocalDevRuntime = !app.isPackaged;
   const forceUpdateGuardResult =
-    ROBINRUN_PRODUCT_FLAVOR === "production" && !skipForceUpdateForLocalDevRuntime
+    ROBINDONE_PRODUCT_FLAVOR === "production" && !skipForceUpdateForLocalDevRuntime
       ? await maybeBlockStartupForForceUpdate({
           locale: currentApplicationLocale,
           logger,
           // 强更最低版本检查与更新 feed 同源（updates 分支 min-version.json，2026-11-24 裁决）；
-          // 上游 client-configs API 会把 ZCode 的最低版本套在 RobinRun 头上，已退役。
+          // 上游 client-configs API 会把 ZCode 的最低版本套在 RobinDone 头上，已退役。
           // 未配置静态源时守卫整体跳过，绝不退回上游 API。
-          staticFeedBase: ROBINRUN_UPDATE_FEED_BASE.trim() || undefined,
+          staticFeedBase: ROBINDONE_UPDATE_FEED_BASE.trim() || undefined,
           onBlocked: () => {
             forceUpdateMainWindowCreationBlocked = true;
           },
         })
       : { blocked: false };
-  if (ROBINRUN_PRODUCT_FLAVOR !== "production") {
+  if (ROBINDONE_PRODUCT_FLAVOR !== "production") {
     logger.info("[force-update] Preview 跳过远端强制升级检查");
   } else if (skipForceUpdateForLocalDevRuntime) {
     logger.info("[force-update] 本地 dev 构建（未打包）跳过远端强制升级检查");

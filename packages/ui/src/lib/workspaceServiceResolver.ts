@@ -1,4 +1,4 @@
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
 
 interface WorkspaceServiceTarget {

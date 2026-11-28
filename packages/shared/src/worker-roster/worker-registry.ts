@@ -3,11 +3,11 @@ import { modelSelectionSchema } from "../model-selection.js";
 import type { AgentProfile } from "../subagent-profile.js";
 
 /**
- * RobinRun worker 编制注册表（`.robinrun/agents/workers.json`）的协议层定义。
+ * RobinDone worker 编制注册表（`.robindone/agents/workers.json`）的协议层定义。
  *
  * 裁决（2026-11-15，worker 编制系统里程碑）：
  * - 常驻智能体统一叫 worker，一次性派生叫 subagent（沿用上游语义）。
- * - worker 以 id 为路径锚点（`.robinrun/agents/<id>/`），name 仅作派发显示名，改名不影响路径。
+ * - worker 以 id 为路径锚点（`.robindone/agents/<id>/`），name 仅作派发显示名，改名不影响路径。
  * - workers.json 是编制唯一事实源，由程序（ManageWorkers 工具）写入；模型不经 Write/Edit 直接改它。
  * - 规则文件双文件（裁决 10，2026-11-20）：`<id>/define.md`（职责定义，master 预创建并独占
  *   维护，worker 提示词约束不得修改）+ `<id>/agents.md`（worker 自维护，回小写）；均为纯
@@ -89,7 +89,7 @@ export interface WorkerProfileBuildInput {
   defineMd?: string;
   /** `<id>/agents.md` 的完整内容（worker 自维护）；undefined 表示文件缺失（调用方决定是否降级）。 */
   agentsMd?: string;
-  /** `<workspace>/.robinrun/agents/<id>/define.md` 绝对路径（职责定义是 worker 的锚点文件），用于 UI 定位与诊断。 */
+  /** `<workspace>/.robindone/agents/<id>/define.md` 绝对路径（职责定义是 worker 的锚点文件），用于 UI 定位与诊断。 */
   defineMdPath: string;
 }
 

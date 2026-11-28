@@ -6,9 +6,9 @@ import {
   resolveModelProviderFamilySpecByProviderId,
   type UsageEntitlementSubscriptionDetail,
   type UsageQuotaLimit,
-  type RobinRunAccountAccess,
-  type RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
+  type RobinDoneAccountAccess,
+  type RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
 import { InfoIcon, Loader2Icon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button.js";
@@ -21,7 +21,7 @@ import {
   CodingPlanBillingDiscountBadge,
   useCodingPlanBillingDiscount,
 } from "@/CodingPlanBillingDiscount.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
 import { formatQuotaResetTime, isSameLimitCategory } from "@/lib/codingPlanQuotaPresentation.js";
 import {
@@ -122,7 +122,7 @@ export function PresetProviderPlaceholderCard({
   displayName: string;
   messageId?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div className="bg-background/50 rounded-2xl p-3">
@@ -214,10 +214,10 @@ export function CodingPlanStatusPanel({
   teamPlanAvailabilityReason?: TeamPlanAvailabilityReason;
   /** Team Plan 必须传完整连接 key，避免与同 provider 的个人套餐共享重置状态。 */
   quotaResetSourceKey?: string;
-  quotaResetAccountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  quotaResetAccountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   onQuotaResetEntitlementRefresh?: () => void | Promise<void>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const billingDiscount = useCodingPlanBillingDiscount();
   const [internalUpgradePlansVisible, setInternalUpgradePlansVisible] = useState(false);
   const [startPlanEntitlementRefreshing, setStartPlanEntitlementRefreshing] = useState(false);
@@ -729,10 +729,10 @@ function CodingPlanUsageSummaryCards({
   mcpQuotaLimit: UsageQuotaLimit | null;
   sourceKey: string;
   preferredProviderId: string;
-  accountAccess?: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess?: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   onEntitlementRefresh?: () => void | Promise<void>;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [quotaResetDialogOpen, setQuotaResetDialogOpen] = useState(false);
   const resetUi = useCodingPlanQuotaResetUi({
     sourceKey,
@@ -897,7 +897,7 @@ function CodingPlanUsageSummaryCards({
             infoDescription={
               card.key === "serverMcp"
                 ? intl.formatMessage({
-                    id: "sidebar.usage.plan.robinrunMcpDescription",
+                    id: "sidebar.usage.plan.robindoneMcpDescription",
                   })
                 : undefined
             }
@@ -959,7 +959,7 @@ function isDisplayableUsageLimit(limit: UsageQuotaLimit): boolean {
 
 function resolveGenericUsageLimitLabel(
   limit: UsageQuotaLimit,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
 ): string {
   if (limit.type === "TIME_LIMIT") {
     return intl.formatMessage({
@@ -988,7 +988,7 @@ function PlanUsageMetricCard({
   progressColor: string;
   resetTimeFormat: "date" | "dateTime";
 }) {
-  const { locale } = useRobinRunIntl();
+  const { locale } = useRobinDoneIntl();
   const remainingPercentage = resolveLimitRemainingPercentage(limit);
   const progressPercentage = remainingPercentage ?? 0;
   const modelLabel = limit && limit.type !== "TIME_LIMIT" ? formatLimitModels(limit) : "";
@@ -1011,7 +1011,7 @@ function PlanUsageMetricCard({
                 type="button"
                 aria-label={infoDescription}
                 className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-foreground-subtle transition-colors hover:text-foreground"
-                data-robinrun-mcp-info="model-settings"
+                data-robindone-mcp-info="model-settings"
               >
                 <InfoIcon className="size-3.5" aria-hidden="true" />
               </button>

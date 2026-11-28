@@ -1,9 +1,9 @@
 import type {
-  RobinRunConfigOption,
-  RobinRunPlanStep,
-  RobinRunProvider,
-  RobinRunTaskModeInfo,
-} from "@robinrun/shared";
+  RobinDoneConfigOption,
+  RobinDonePlanStep,
+  RobinDoneProvider,
+  RobinDoneTaskModeInfo,
+} from "@robindone/shared";
 
 interface PlanToolLike {
   title?: string;
@@ -15,13 +15,13 @@ interface PlanToolLike {
 
 interface ParsedPlanTool {
   summary: string | null;
-  steps: RobinRunPlanStep[];
+  steps: RobinDonePlanStep[];
   toolName: string | null;
 }
 
 interface ParsedPlanPayload {
   summary: string | null;
-  steps: RobinRunPlanStep[];
+  steps: RobinDonePlanStep[];
 }
 
 const PLAN_COLLECTION_KEYS = ["plan", "steps", "entries", "todos", "items"] as const;
@@ -53,7 +53,7 @@ function firstNonEmptyString(...values: unknown[]): string | null {
   return null;
 }
 
-function normalizePlanStepStatus(value: unknown): RobinRunPlanStep["status"] {
+function normalizePlanStepStatus(value: unknown): RobinDonePlanStep["status"] {
   if (typeof value !== "string") {
     return "pending";
   }
@@ -70,7 +70,7 @@ function normalizePlanStepStatus(value: unknown): RobinRunPlanStep["status"] {
   return "pending";
 }
 
-function createPlanStep(title: string, status: unknown, index: number): RobinRunPlanStep | null {
+function createPlanStep(title: string, status: unknown, index: number): RobinDonePlanStep | null {
   const trimmedTitle = title.trim();
   if (trimmedTitle.length === 0) {
     return null;
@@ -103,7 +103,7 @@ function parsePlanMarkdown(markdown: string): ParsedPlanPayload | null {
 
   const lines = trimmed.split(/\r?\n/);
   const summaryLines: string[] = [];
-  const steps: RobinRunPlanStep[] = [];
+  const steps: RobinDonePlanStep[] = [];
   let encounteredList = false;
 
   for (const line of lines) {
@@ -166,7 +166,7 @@ function parsePlanMarkdown(markdown: string): ParsedPlanPayload | null {
   };
 }
 
-function parsePlanStepEntry(value: unknown, index: number): RobinRunPlanStep | null {
+function parsePlanStepEntry(value: unknown, index: number): RobinDonePlanStep | null {
   if (typeof value === "string") {
     return createPlanStep(value, "pending", index);
   }
@@ -217,7 +217,7 @@ function extractPlanPayload(
   if (Array.isArray(value)) {
     const directSteps = value
       .map((entry, index) => parsePlanStepEntry(entry, index))
-      .filter((step): step is RobinRunPlanStep => step !== null);
+      .filter((step): step is RobinDonePlanStep => step !== null);
     if (directSteps.length > 0) {
       return {
         summary: null,
@@ -317,8 +317,8 @@ function extractToolName(raw: unknown): string | null {
 }
 
 export function getModeOptionFromConfigOptions(
-  configOptions: RobinRunConfigOption[],
-): RobinRunConfigOption | null {
+  configOptions: RobinDoneConfigOption[],
+): RobinDoneConfigOption | null {
   const modeOption = configOptions.find(
     (option) => option.category === "mode" && option.type === "select",
   );
@@ -326,7 +326,7 @@ export function getModeOptionFromConfigOptions(
 }
 
 export function getCurrentModeIdFromConfigOptions(
-  configOptions: RobinRunConfigOption[],
+  configOptions: RobinDoneConfigOption[],
 ): string | null {
   const modeOption = getModeOptionFromConfigOptions(configOptions);
   if (typeof modeOption?.currentValue !== "string") {
@@ -345,9 +345,9 @@ export function getCurrentModeIdFromConfigOptions(
  * @returns The provider-native mode ID, or the original semanticModeId if not found
  */
 export function resolveProviderNativeModeIdFromSemantic(
-  configOptions: RobinRunConfigOption[],
+  configOptions: RobinDoneConfigOption[],
   semanticModeId: string,
-  provider?: RobinRunProvider,
+  provider?: RobinDoneProvider,
 ): string {
   const modeOption = getModeOptionFromConfigOptions(configOptions);
   if (!modeOption?.options) {
@@ -370,7 +370,7 @@ export function resolveProviderNativeModeIdFromSemantic(
   return normalizedMatch?.value ?? semanticModeId;
 }
 
-function normalizeSessionMode(mode: string, _provider?: RobinRunProvider): string {
+function normalizeSessionMode(mode: string, _provider?: RobinDoneProvider): string {
   const normalized = mode.trim().toLowerCase();
   // Map known provider-native variants to canonical forms
   switch (normalized) {
@@ -401,8 +401,8 @@ function normalizeSessionMode(mode: string, _provider?: RobinRunProvider): strin
 }
 
 export function getAvailableModesFromConfigOptions(
-  configOptions: RobinRunConfigOption[],
-): RobinRunTaskModeInfo[] {
+  configOptions: RobinDoneConfigOption[],
+): RobinDoneTaskModeInfo[] {
   const modeOption = getModeOptionFromConfigOptions(configOptions);
   if (!modeOption?.options) {
     return [];
@@ -416,7 +416,7 @@ export function getAvailableModesFromConfigOptions(
 }
 
 export function getModeLabelFromConfigOptions(
-  configOptions: RobinRunConfigOption[],
+  configOptions: RobinDoneConfigOption[],
   modeId: string | null,
 ): string | null {
   if (!modeId) {

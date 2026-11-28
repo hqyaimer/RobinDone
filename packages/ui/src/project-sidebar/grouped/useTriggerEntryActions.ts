@@ -1,5 +1,5 @@
-import { mainAgentGroupId, makeTriggerSessionKey, workerGroupId } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { mainAgentGroupId, makeTriggerSessionKey, workerGroupId } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { TRIGGER_MASTER_OWNER_ID } from "@/project-sidebar/useTriggerSnapshots.js";
 
 /**
@@ -55,7 +55,7 @@ export function useTriggerEntryActions(deps: TriggerEntryActionDeps): {
   handleTriggerSessionReset: (ownerId: string, sessionKey: string) => void;
   handleTriggerDelete: (triggerId: string) => void;
 } {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { action, confirm, triggers } = deps;
   return {
     // UI"清空会话"（2026-11-20）：会话保留、消息归零、身份按当前订阅者重置；绑定不动。

@@ -43,7 +43,7 @@ const subscribe = (name: string, handler: (value: any) => void) => {
 window.addEventListener("message", (event) => {
   if (event.data?.type === "fixture-notification")
     emit(event.data.payload.kind, event.data.payload.value);
-  if (event.data?.type === "robinrun:plugin-sandbox-ports")
+  if (event.data?.type === "robindone:plugin-sandbox-ports")
     emit("ports", { ...event.data, port: event.ports[0] });
 });
 const proxy = (send: (method: string, p: unknown) => Promise<unknown>) =>
@@ -65,8 +65,8 @@ const agent = {
   onAgentRuntimeLifecycle: (handler: any) => subscribe("lifecycle", handler),
 };
 const services = {
-  robinrunAgentService: agent,
-  robinrunTaskService: {
+  robindoneAgentService: agent,
+  robindoneTaskService: {
     onDynamicWorkspaceEvent: () => (handler: any) => subscribe("task", handler),
   },
   pluginUiBridgeService: proxy(harness.bridge),
@@ -75,7 +75,7 @@ const services = {
 };
 const platform = {
   pluginSandbox: {
-    setExecutionActive: window.robinrunPluginSandbox?.setExecutionActive,
+    setExecutionActive: window.robindonePluginSandbox?.setExecutionActive,
     getOwnerWebContentsId: () => harness.owner(),
     disposeSandbox: (id: string, init: number) => harness.dispose(id, init),
     consumeUserGesture: async () => false,

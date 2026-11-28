@@ -10,7 +10,7 @@ import {
   type BotsConfigFile,
   type BotConfig,
   type BotGroupDelivery,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface ChannelReplyDependencies {
   readState(): Promise<BotsStateFile>;

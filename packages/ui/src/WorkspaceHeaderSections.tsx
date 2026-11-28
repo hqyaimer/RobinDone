@@ -14,13 +14,13 @@ import { WorkspaceLastActivity } from "@/WorkspaceHeaderSections/WorkspaceLastAc
 import {
   parseRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
-  type RobinRunTaskMeta,
-} from "@robinrun/shared";
+  type RobinDoneTaskMeta,
+} from "@robindone/shared";
 import {
   TID_WORKSPACE_MORE_BUTTON,
   TID_WORKSPACE_PATH,
   TID_WORKSPACE_TITLE,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { useMemo, useRef, useState } from "react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { cn } from "@/components/lib/utils.js";
@@ -38,7 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   formatRemoteWorkspaceDisplayLabel,
   formatRemoteWorkspaceHeaderHostLabel,
@@ -54,7 +54,7 @@ import type {
   WorkspaceHeaderTitleSectionProps,
 } from "@/WorkspaceHeaderSections/shared.js";
 import { applyTaskQueryCacheMutation } from "@/store/taskQueryCacheStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { TaskRenameDialog } from "@/TaskRenameDialog.js";
 import {
   DataSyncEntryMenuItems,
@@ -108,7 +108,7 @@ export function WorkspaceHeaderTitleSection({
   simplifyForNarrowRemote = false,
   compact = false,
 }: WorkspaceHeaderTitleSectionProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
   const confirmDialog = useConfirmDialog();
   const services = useWorkspaceServices(workspaceAbsPath, remoteSessionId, workspaceIdentity);
@@ -118,14 +118,14 @@ export function WorkspaceHeaderTitleSection({
     remoteSessionId,
     workspaceIdentity,
   );
-  const removeTaskState = useRobinRunSessionStore((state) => state.removeTaskState);
-  const upsertOptimisticTaskListItem = useRobinRunSessionStore(
+  const removeTaskState = useRobinDoneSessionStore((state) => state.removeTaskState);
+  const upsertOptimisticTaskListItem = useRobinDoneSessionStore(
     (state) => state.upsertOptimisticTaskListItem,
   );
-  const removeOptimisticTaskListItem = useRobinRunSessionStore(
+  const removeOptimisticTaskListItem = useRobinDoneSessionStore(
     (state) => state.removeOptimisticTaskListItem,
   );
-  const setTaskUnreadIndicator = useRobinRunSessionStore((state) => state.setTaskUnreadIndicator);
+  const setTaskUnreadIndicator = useRobinDoneSessionStore((state) => state.setTaskUnreadIndicator);
   const [taskMenuOpen, setTaskMenuOpen] = useState(false);
   const [workspaceContextOpen, setWorkspaceContextOpen] = useState(false);
   const [renamingTaskId, setRenamingTaskId] = useState<string | null>(null);
@@ -303,9 +303,9 @@ export function WorkspaceHeaderTitleSection({
   };
 
   const buildHeaderTaskSnapshot = (
-    fallbackTask: RobinRunTaskMeta,
-    overrides?: Partial<RobinRunTaskMeta>,
-  ): RobinRunTaskMeta => {
+    fallbackTask: RobinDoneTaskMeta,
+    overrides?: Partial<RobinDoneTaskMeta>,
+  ): RobinDoneTaskMeta => {
     if (activeTaskMeta) {
       return {
         ...activeTaskMeta,
@@ -333,7 +333,7 @@ export function WorkspaceHeaderTitleSection({
     }
 
     try {
-      const renamedTask = await services.robinrunTaskService.renameTask({
+      const renamedTask = await services.robindoneTaskService.renameTask({
         taskId: renamingTaskId,
         workspacePath: workspaceAbsPath,
         title: normalizedTitle,
@@ -380,14 +380,14 @@ export function WorkspaceHeaderTitleSection({
     }
 
     handleCancelRenameTask();
-    void services.robinrunTaskService
+    void services.robindoneTaskService
       .archiveTask({
         taskId: resolvedTaskActionTaskId,
         workspacePath: workspaceAbsPath,
         ...(workspaceIdentity ? { workspaceIdentity } : {}),
       })
       .then((meta) => {
-        // Header 更多菜单不能只依赖 robinrunTaskMetaMerge：归档后只有旧列表状态被更新。
+        // Header 更多菜单不能只依赖 robindoneTaskMetaMerge：归档后只有旧列表状态被更新。
         // 这里改成和 Sidebar 一样同步清理运行态与 sqlite cache，避免 Header 操作后列表不刷新。
         removeTaskState(workspaceAbsPath, resolvedTaskActionTaskId, workspaceIdentity);
         applyTaskQueryCacheMutation({
@@ -625,7 +625,7 @@ export function WorkspaceHeaderTitleSection({
                       nextState: { pinned: !isPinned, archived: false },
                     });
                   }
-                  void services.robinrunTaskService
+                  void services.robindoneTaskService
                     .setTaskPinned({
                       taskId: resolvedTaskActionTaskId,
                       workspacePath: workspaceAbsPath,
@@ -665,7 +665,7 @@ export function WorkspaceHeaderTitleSection({
                   if (!resolvedTaskActionTaskId) {
                     return;
                   }
-                  void services.robinrunTaskService
+                  void services.robindoneTaskService
                     .setTaskUnread({
                       taskId: resolvedTaskActionTaskId,
                       workspacePath: workspaceAbsPath,

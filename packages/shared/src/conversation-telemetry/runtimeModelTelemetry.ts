@@ -1,4 +1,4 @@
-import { ROBINRUN_AGENT_PROVIDER } from "@robinrun/shared";
+import { ROBINDONE_AGENT_PROVIDER } from "@robindone/shared";
 import {
   legacyTelemetryModelValue,
   legacyTelemetryProviderId,
@@ -9,7 +9,7 @@ export function resolveLegacyRuntimeModelValue(params: {
 }): string | null | undefined {
   const configProvider = params.configProvider?.trim();
   const modelName = params.modelName?.trim();
-  if (!configProvider || !modelName || configProvider === ROBINRUN_AGENT_PROVIDER) {
+  if (!configProvider || !modelName || configProvider === ROBINDONE_AGENT_PROVIDER) {
     return params.modelName;
   }
   if (modelName.startsWith(`${configProvider}/`)) return legacyTelemetryModelValue(modelName);

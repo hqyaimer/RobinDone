@@ -2,7 +2,7 @@ import {
   parseTriggerSessionKey,
   resolveRoutingForSessionKey,
   type TriggerRegistry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { TriggerDispatchPort, TriggerEvent, RoutedEventBatch } from "./contract.js";
 
 /**

@@ -2,12 +2,12 @@ import { WebSocket, type RawData } from "ws";
 import {
   WebRemoteControlRelayPayloadSerializer,
   type WebRemoteControlPayloadSendResult,
-} from "@robinrun/client";
+} from "@robindone/client";
 import {
   WEB_REMOTE_CONTROL_RPC_TRANSPORT_LIMITS,
   parseWebRemoteControlAppPayload,
   type WebRemoteControlAppPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   WEB_REMOTE_CONTROL_V2_HEARTBEAT_ACK_TIMEOUT_MS,
   WebRemoteControlV2ConnectionError,
@@ -17,7 +17,7 @@ import {
   parseWebRemoteControlRelayV2IncomingMessage,
   type WebRemoteControlRelayV2IncomingMessage,
   type WebRemoteControlRelayV2OutgoingMessage,
-} from "@robinrun/shared/web-remote-relay";
+} from "@robindone/shared/web-remote-relay";
 import {
   noteWebRemoteRelayConnectAttempt,
   noteWebRemoteRelayReconnect,
@@ -219,8 +219,8 @@ export class WebRemoteControlDeviceTransport {
       if (
         value &&
         typeof value === "object" &&
-        "robinrun_type" in value &&
-        (value.robinrun_type === "rpc-frame" || value.robinrun_type === "rpc-frame-ack") &&
+        "robindone_type" in value &&
+        (value.robindone_type === "rpc-frame" || value.robindone_type === "rpc-frame-ack") &&
         this.options.onRawTransportPayload?.(value)
       )
         return;

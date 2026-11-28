@@ -1,5 +1,5 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
-import { ISourceServerManagementService } from "@robinrun/services";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
+import { ISourceServerManagementService } from "@robindone/services";
 
 interface SnapshotFault {
   requests: number[][];

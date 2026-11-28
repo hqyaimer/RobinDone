@@ -6,8 +6,8 @@ import {
   type PersonalProviderConfigRepository,
   type ProviderConfigLayerSnapshot,
   type ProviderConfigLayerUpdate,
-} from "@robinrun/provider";
-import { atomicWritePrivateTextFile, withFileLock } from "@robinrun/shared/node";
+} from "@robindone/provider";
+import { atomicWritePrivateTextFile, withFileLock } from "@robindone/shared/node";
 import {
   decodeProviderConfigFile,
   encodeProviderConfigFile,

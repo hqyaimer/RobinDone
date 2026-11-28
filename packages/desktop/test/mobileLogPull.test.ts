@@ -1,6 +1,6 @@
 import { gzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
-import type { WebRemoteControlMobileLogPullRequestPayload } from "@robinrun/shared";
+import type { WebRemoteControlMobileLogPullRequestPayload } from "@robindone/shared";
 import {
   createMobileLogPullCoordinator,
   decodeCompressedMobileLogShard,
@@ -33,7 +33,7 @@ function setup(options?: Parameters<typeof createMobileLogPullCoordinator>[0]) {
 }
 
 const meta = {
-  robinrun_type: "mobile-log-pull-response" as const,
+  robindone_type: "mobile-log-pull-response" as const,
   success: true as const,
   sources: ["log-files"],
 };
@@ -43,7 +43,7 @@ describe("mobile log pull coordinator", () => {
     const { coordinator, sent, shards, start } = setup();
     const pull = start({ keyword: "rc" });
     expect(sent[0]).toEqual({
-      robinrun_type: "mobile-log-pull-request",
+      robindone_type: "mobile-log-pull-request",
       requestId: "req-1",
       keyword: "rc",
       acceptEncodings: ["gzip"],
@@ -89,7 +89,7 @@ describe("mobile log pull coordinator", () => {
     const first = setup();
     const unsupported = first.start();
     first.coordinator.handleResponse({
-      robinrun_type: "mobile-log-pull-response",
+      robindone_type: "mobile-log-pull-response",
       requestId: "req-1",
       success: false,
       reason: "unsupported-action",
@@ -100,7 +100,7 @@ describe("mobile log pull coordinator", () => {
     const second = setup();
     const busy = second.start();
     second.coordinator.handleResponse({
-      robinrun_type: "mobile-log-pull-response",
+      robindone_type: "mobile-log-pull-response",
       requestId: "req-1",
       success: false,
       reason: "busy",
@@ -113,11 +113,11 @@ describe("mobile log pull coordinator", () => {
     const { coordinator, start } = setup();
     const pull = start();
     expect(
-      coordinator.handleAppError({ robinrun_type: "app-error", reason: "unknown", error: "x" }),
+      coordinator.handleAppError({ robindone_type: "app-error", reason: "unknown", error: "x" }),
     ).toBe(false);
     expect(
       coordinator.handleAppError({
-        robinrun_type: "app-error",
+        robindone_type: "app-error",
         requestId: "req-1",
         reason: "unsupported-action",
         error: "unknown",

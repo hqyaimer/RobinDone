@@ -1,18 +1,18 @@
-import type { RobinRunModelTrajectoryMessage } from "@robinrun/services";
+import type { RobinDoneModelTrajectoryMessage } from "@robindone/services";
 
-export function trajectoryToolOutputs(message: RobinRunModelTrajectoryMessage): string[] {
+export function trajectoryToolOutputs(message: RobinDoneModelTrajectoryMessage): string[] {
   return message.parts.flatMap((part) =>
     part.kind === "tool-result" ? [formatTrajectoryToolPayload(part.output)] : [],
   );
 }
 
-export function trajectoryToolCallInputs(message: RobinRunModelTrajectoryMessage): string[] {
+export function trajectoryToolCallInputs(message: RobinDoneModelTrajectoryMessage): string[] {
   return message.parts.flatMap((part) =>
     part.kind === "tool-call" ? [formatTrajectoryToolPayload(part.input)] : [],
   );
 }
 
-export function trajectoryToolHasError(message: RobinRunModelTrajectoryMessage): boolean {
+export function trajectoryToolHasError(message: RobinDoneModelTrajectoryMessage): boolean {
   return message.parts.some(
     (part) =>
       (part.kind === "tool-result" && isErrorTextObject(part.output)) ||
@@ -20,7 +20,7 @@ export function trajectoryToolHasError(message: RobinRunModelTrajectoryMessage):
   );
 }
 
-export function trajectoryToolMetadata(message: RobinRunModelTrajectoryMessage): {
+export function trajectoryToolMetadata(message: RobinDoneModelTrajectoryMessage): {
   names: string;
   ids: string;
 } {

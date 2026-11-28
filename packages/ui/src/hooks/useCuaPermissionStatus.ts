@@ -14,7 +14,7 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type {
   CuaPermissionStatusQueryOptions,
   CuaPermissionStatusResult,
-} from "@robinrun/services";
+} from "@robindone/services";
 import {
   cuaPermissionStatusKey,
   fetchCuaPermissionStatus,

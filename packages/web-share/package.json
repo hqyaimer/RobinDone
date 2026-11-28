@@ -1,5 +1,5 @@
 {
-  "name": "@robinrun/web-share",
+  "name": "@robindone/web-share",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,8 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@robinrun/share-ui": "workspace:*",
-    "@robinrun/shared": "workspace:*",
+    "@robindone/share-ui": "workspace:*",
+    "@robindone/shared": "workspace:*",
     "lucide-react": "^1.17.0",
     "react": "19.2.7",
     "react-dom": "19.2.7"

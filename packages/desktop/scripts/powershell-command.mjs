@@ -7,8 +7,8 @@ const WINDOWS_POWERSHELL_SECURITY_BOOTSTRAP = [
   "$ProgressPreference='SilentlyContinue';",
   "$ErrorActionPreference='Stop';",
   "try{",
-  "$robinrunSecurityModule=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Security','Microsoft.PowerShell.Security.psd1');",
-  "Import-Module -Name $robinrunSecurityModule -Force -ErrorAction Stop;",
+  "$robindoneSecurityModule=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Security','Microsoft.PowerShell.Security.psd1');",
+  "Import-Module -Name $robindoneSecurityModule -Force -ErrorAction Stop;",
   "}catch{",
   "[Console]::Error.WriteLine(('Windows PowerShell Security module load failed: {0}' -f $_.Exception.Message));",
   "exit 26;",
@@ -26,7 +26,7 @@ export function createEncodedPowerShellArgs(script, values = []) {
   const valueBindings = values
     .map(
       (value, index) =>
-        `$robinrunArg${index}=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodeUtf8Value(value)}'));`,
+        `$robindoneArg${index}=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodeUtf8Value(value)}'));`,
     )
     .join("");
   const encodedCommand = Buffer.from(`${valueBindings}${script}`, "utf16le").toString("base64");
@@ -43,7 +43,7 @@ export function createWindowsPowerShellSecurityArgs(script, values = []) {
 export async function readWindowsAuthenticodeSignature(filePath) {
   const script = [
     "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);",
-    "$signature=Get-AuthenticodeSignature -LiteralPath $robinrunArg0;",
+    "$signature=Get-AuthenticodeSignature -LiteralPath $robindoneArg0;",
     "@{status=[int]$signature.Status;subject=$signature.SignerCertificate.Subject}|ConvertTo-Json -Compress;",
   ].join("");
   const stdout = await new Promise((resolve, reject) => {

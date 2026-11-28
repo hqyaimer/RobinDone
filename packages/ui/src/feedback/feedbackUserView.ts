@@ -1,4 +1,4 @@
-import type { FeedbackComment, FeedbackTicketStatus } from "@robinrun/shared";
+import type { FeedbackComment, FeedbackTicketStatus } from "@robindone/shared";
 
 type MessageFormatter = (descriptor: { id: string }, values?: Record<string, string>) => string;
 

@@ -1,5 +1,5 @@
 // ML01–ML07、ML09、MD01–MD06、MD11–MD13：真实 Web 入口 + 浏览器 OAuth 回跳/登录门禁；外部 OAuth/relay 使用受控响应。
-// 启动：VITE_WEB_REMOTE_CONTROL_ROUTE_PATH=/remote/__test__ pnpm --filter @robinrun/web exec vite --host 127.0.0.1 --port 5178 --strictPort
+// 启动：VITE_WEB_REMOTE_CONTROL_ROUTE_PATH=/remote/__test__ pnpm --filter @robindone/web exec vite --host 127.0.0.1 --port 5178 --strictPort
 // 运行：node packages/web/test/e2e/manual-review/pending/remote-login-v2.mjs
 // 截图保留 pending，不代表真实 OAuth/手机/OSS 验收，不自动转正。
 import assert from "node:assert/strict";
@@ -149,7 +149,7 @@ try {
     });
     assert.equal(
       await selection.page.evaluate(() =>
-        localStorage.getItem("robinrun-web-remote-last-device-sid"),
+        localStorage.getItem("robindone-web-remote-last-device-sid"),
       ),
       "e2e-device",
     );
@@ -191,13 +191,13 @@ try {
       app_version: "3.13.0",
     });
     assert.equal(
-      await other.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+      await other.page.evaluate(() => localStorage.getItem("robindonejwttoken")),
       "e2e-jwt",
     );
     await other.page.getByRole("button", { name: "切换", exact: true }).click();
     await other.page.getByRole("button", { name: "退出并切换", exact: true }).click();
     await other.page.getByRole("button", { name: /连接 Z.ai 继续使用/ }).waitFor();
-    assert.equal(await other.page.evaluate(() => localStorage.getItem("robinrunjwttoken")), null);
+    assert.equal(await other.page.evaluate(() => localStorage.getItem("robindonejwttoken")), null);
     assert.deepEqual(other.errors, []);
     results.push({ case: "MD04 失败页换设备跳过最近直连；MD05 列表切换账号", result: "passed" });
   } finally {
@@ -312,7 +312,7 @@ try {
             assert.equal(await login.page.getByRole("dialog").count(), 0);
             assert.equal(login.page.url(), `${origin}${loginQrPath}`);
             assert.equal(
-              await login.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+              await login.page.evaluate(() => localStorage.getItem("robindonejwttoken")),
               null,
             );
             assert.equal(login.traffic.tokens, signedIn ? 1 : 0);
@@ -336,7 +336,7 @@ try {
                 process.env.REMOTE_LOGIN_E2E_BIGMODEL_ORIGIN || "https://bigmodel.cn",
               );
               assert.equal(login.traffic.authorize.pathname, "/login");
-              assert.equal(login.traffic.authorize.searchParams.get("appId"), "robinrun");
+              assert.equal(login.traffic.authorize.searchParams.get("appId"), "robindone");
               assert.equal(login.traffic.authorize.searchParams.has("redirect_uri"), false);
             }
             const payload = JSON.parse(Buffer.from(state, "base64url").toString());
@@ -357,7 +357,7 @@ try {
             assert.equal(login.traffic.tokens, signedIn ? 2 : 1);
             assert.equal(login.traffic.sockets, 1);
             assert.equal(
-              await login.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+              await login.page.evaluate(() => localStorage.getItem("robindonejwttoken")),
               "e2e-jwt",
             );
             assert.equal(
@@ -413,7 +413,7 @@ try {
       assert.equal(login.traffic.exchange.provider, provider);
       assert.equal(login.traffic.exchange.redirect_uri, redirectUri);
       assert.equal(
-        await callbackPage.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+        await callbackPage.evaluate(() => localStorage.getItem("robindonejwttoken")),
         "e2e-jwt",
       );
       assert.equal(
@@ -436,7 +436,10 @@ try {
         if (tokenStatus === 200) await assertEventually(() => h.traffic.bootstraps === 1);
         else {
           await h.page.getByRole("button", { name: /连接 Z.ai 继续使用/ }).waitFor();
-          assert.equal(await h.page.evaluate(() => localStorage.getItem("robinrunjwttoken")), null);
+          assert.equal(
+            await h.page.evaluate(() => localStorage.getItem("robindonejwttoken")),
+            null,
+          );
           assert.equal(h.page.url(), `${origin}${qrPath}`);
           assert.equal(h.traffic.sockets, 0);
           await h.page.getByRole("button", { name: /连接 BigModel 继续使用/ }).click();
@@ -479,12 +482,12 @@ try {
     try {
       await h.page.goto(`${origin}${qrPath}`);
       await assertEventually(() => authorizations.length === 1);
-      await h.page.evaluate(() => localStorage.setItem("robinrunjwttoken", "e2e-jwt-2"));
+      await h.page.evaluate(() => localStorage.setItem("robindonejwttoken", "e2e-jwt-2"));
       releaseStale();
       await assertEventually(() => h.traffic.bootstraps === 1);
       assert.deepEqual(authorizations, ["Bearer e2e-jwt", "Bearer e2e-jwt-2"]);
       assert.equal(
-        await h.page.evaluate(() => localStorage.getItem("robinrunjwttoken")),
+        await h.page.evaluate(() => localStorage.getItem("robindonejwttoken")),
         "e2e-jwt-2",
       );
       assert.equal(await h.page.getByRole("button", { name: /连接 Z.ai 继续使用/ }).count(), 0);
@@ -528,7 +531,7 @@ try {
         name: "Alice’s MacBook",
       });
       assert.equal(
-        await h.page.evaluate(() => localStorage.getItem("robinrun-web-remote-last-device-sid")),
+        await h.page.evaluate(() => localStorage.getItem("robindone-web-remote-last-device-sid")),
         "e2e-device-new",
       );
       // 刷新按新 SID 直连，不再查询列表。

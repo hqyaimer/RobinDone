@@ -5602,4 +5602,3 @@ VP22 重写为「单根创建、更换文件夹替换与编辑器删除」，原
 VP13 去掉 additionalRoot 第二次选择；设备选择用例本机项目改单目录；NDP
 （ui-shell/manual-review/pending）重写为单选替换流并新增 NDP03 名称自动填充/手改保护用例。
 未覆盖：真实 SSH/WSL 远端创建、实体手机路径重验。
-

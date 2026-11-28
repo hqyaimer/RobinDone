@@ -1,10 +1,10 @@
 import type { MouseEvent, UIEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { CodingPlanResetType } from "@robinrun/shared";
+import type { CodingPlanResetType } from "@robindone/shared";
 import { CheckIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getContextQuotaMeterGridClass } from "@/chat-input-toolbar/contextQuotaMeterGrid.js";
 import { burstCodingPlanQuotaResetConfetti } from "@/lib/codingPlanQuotaResetConfetti.js";
 
@@ -100,7 +100,7 @@ export function CodingPlanQuotaResetDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [now, setNow] = useState(() => Date.now());
   const [resettingType, setResettingType] = useState<CodingPlanResetType | null>(null);
   const [successfulType, setSuccessfulType] = useState<CodingPlanResetType | null>(null);

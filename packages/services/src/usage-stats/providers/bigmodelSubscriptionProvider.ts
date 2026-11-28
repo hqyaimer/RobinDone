@@ -1,4 +1,4 @@
-import type { ApiClient, ProviderFamilyDomain } from "@robinrun/shared";
+import type { ApiClient, ProviderFamilyDomain } from "@robindone/shared";
 import {
   fetchPersonalCodingPlanEntitlement,
   fetchTeamCodingPlanEntitlement,

@@ -1,17 +1,17 @@
-import type { RobinRunProvider, SkillsPromptContext, SkillsListResult } from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+import type { RobinDoneProvider, SkillsPromptContext, SkillsListResult } from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface ISkillsService {
   list(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    provider?: RobinRunProvider;
+    provider?: RobinDoneProvider;
   }): Promise<SkillsListResult>;
   setEnabled(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    provider?: RobinRunProvider;
+    provider?: RobinDoneProvider;
     scope?: "workspace" | "user" | "plugin";
     skillId: string;
     enabled: boolean;
@@ -19,16 +19,16 @@ export interface ISkillsService {
   buildPromptContext(params: {
     workspacePath: string;
     workspaceIdentity?: string;
-    provider?: RobinRunProvider;
+    provider?: RobinDoneProvider;
     prompt: string;
   }): Promise<SkillsPromptContext>;
-  /** 将指定 skill 复制到通用目录（.robinrun/skills），成功后返回新 skill 的路径。 */
+  /** 将指定 skill 复制到通用目录（.robindone/skills），成功后返回新 skill 的路径。 */
   copyToCommon(params: {
     workspacePath: string;
     workspaceIdentity?: string;
     skillId: string;
   }): Promise<{ newPath: string }>;
-  /** 从通用目录中移除指定 skill（仅当 skill 位于 .robinrun/skills 时有效）。 */
+  /** 从通用目录中移除指定 skill（仅当 skill 位于 .robindone/skills 时有效）。 */
   removeFromCommon(params: {
     workspacePath: string;
     workspaceIdentity?: string;
@@ -36,7 +36,7 @@ export interface ISkillsService {
   }): Promise<void>;
   /**
    * 删除本地技能（仅 workspace/user 作用域；plugin 作用域拒绝）。
-   * 删除技能所在目录，仅允许命中 .robinrun/skills 或 .agents/skills 根，越界则拒绝。
+   * 删除技能所在目录，仅允许命中 .robindone/skills 或 .agents/skills 根，越界则拒绝。
    */
   deleteSkill(params: {
     workspacePath: string;

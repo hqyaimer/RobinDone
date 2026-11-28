@@ -1,5 +1,5 @@
 import { createSourceServerMigrationCounts } from "./sourceServerMigrationCounts.js";
-import { Emitter, type Event } from "@robinrun/rpc";
+import { Emitter, type Event } from "@robindone/rpc";
 import {
   sourceServerManagementSnapshotSchema,
   sourceServerLifecycleSourceIdSchema,
@@ -22,7 +22,7 @@ import {
   type SourceServerManagementStateDelta,
   type SourceServerOperationLog,
   type SourceServerRunningTasksResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   SourceServerDirectorySnapshot,
   SourceServerReconnectCandidate,
@@ -35,7 +35,7 @@ import type {
 import type {
   ISourceServerManagementService,
   UpdateConnectionProfileInput,
-} from "@robinrun/services";
+} from "@robindone/services";
 
 interface SourceServerManagementDirectory {
   readonly onDidChange?: Event<void>;

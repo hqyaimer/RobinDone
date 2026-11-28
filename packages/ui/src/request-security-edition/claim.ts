@@ -1,5 +1,5 @@
-import type { ICodingPlanSubscriptionService } from "@robinrun/services";
-import type { RequestVerificationProof } from "@robinrun/shared";
+import type { ICodingPlanSubscriptionService } from "@robindone/services";
+import type { RequestVerificationProof } from "@robindone/shared";
 export function useRequestVerificationPrewarm(_visible: boolean): void {}
 export async function prepareRequestVerificationClaim(
   _service: ICodingPlanSubscriptionService,

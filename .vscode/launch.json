@@ -2,11 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "RobinRun Desktop: Main",
+      "name": "RobinDone Desktop: Main",
       "type": "pwa-node",
       "request": "attach",
       "port": 9231,
-      "preLaunchTask": "robinrun: start electron (debug)",
+      "preLaunchTask": "robindone: start electron (debug)",
       "restart": true,
       "timeout": 30000,
       "outFiles": ["${workspaceFolder}/packages/desktop/out/**/*.js"],
@@ -19,11 +19,11 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "RobinRun Desktop: Main (with host inspect)",
+      "name": "RobinDone Desktop: Main (with host inspect)",
       "type": "pwa-node",
       "request": "attach",
       "port": 9231,
-      "preLaunchTask": "robinrun: start electron (debug with host inspect)",
+      "preLaunchTask": "robindone: start electron (debug with host inspect)",
       "restart": true,
       "timeout": 30000,
       "outFiles": ["${workspaceFolder}/packages/desktop/out/**/*.js"],
@@ -34,7 +34,7 @@
       "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "RobinRun Desktop: Renderer",
+      "name": "RobinDone Desktop: Renderer",
       "type": "pwa-chrome",
       "request": "attach",
       "port": 9229,
@@ -42,7 +42,7 @@
       "timeout": 30000
     },
     {
-      "name": "RobinRun Desktop: Host",
+      "name": "RobinDone Desktop: Host",
       "type": "pwa-node",
       "request": "attach",
       "port": 9230,
@@ -58,16 +58,16 @@
   ],
   "compounds": [
     {
-      "name": "RobinRun Desktop: F5",
-      "configurations": ["RobinRun Desktop: Main", "RobinRun Desktop: Renderer"],
+      "name": "RobinDone Desktop: F5",
+      "configurations": ["RobinDone Desktop: Main", "RobinDone Desktop: Renderer"],
       "stopAll": true
     },
     {
-      "name": "RobinRun Desktop: F5 (with host inspect)",
+      "name": "RobinDone Desktop: F5 (with host inspect)",
       "configurations": [
-        "RobinRun Desktop: Main (with host inspect)",
-        "RobinRun Desktop: Renderer",
-        "RobinRun Desktop: Host"
+        "RobinDone Desktop: Main (with host inspect)",
+        "RobinDone Desktop: Renderer",
+        "RobinDone Desktop: Host"
       ],
       "stopAll": true
     }

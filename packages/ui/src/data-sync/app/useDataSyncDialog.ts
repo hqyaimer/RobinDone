@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import type {
   DataSyncImportItem,
   DataSyncImportResultItem,
@@ -7,7 +7,7 @@ import type {
   DataSyncWorkspaceMapping,
   DeviceSyncResult,
   SourceServerWorkspaceHistoryEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { logger } from "@/logger.js";
 import type {
   DataSyncAfterPushContext,

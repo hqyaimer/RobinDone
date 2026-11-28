@@ -1,4 +1,4 @@
-import type { RobinRunAutomationScheduleRule } from "@robinrun/shared";
+import type { RobinDoneAutomationScheduleRule } from "@robindone/shared";
 import {
   describeCron,
   describeCronBuilder,
@@ -6,7 +6,7 @@ import {
   type IntlLike,
 } from "@/settings/automationFormat.js";
 
-function scheduleRuleToBuilder(rule: RobinRunAutomationScheduleRule): CronBuilderState {
+function scheduleRuleToBuilder(rule: RobinDoneAutomationScheduleRule): CronBuilderState {
   return {
     frequency: "custom",
     hour: rule.hour,
@@ -27,7 +27,7 @@ function scheduleRuleToBuilder(rule: RobinRunAutomationScheduleRule): CronBuilde
 export function describeAutomationCardSchedule(
   automation: {
     cronExpr: string;
-    scheduleRule?: RobinRunAutomationScheduleRule;
+    scheduleRule?: RobinDoneAutomationScheduleRule;
     recurring?: boolean;
     maxRuns?: number;
   },

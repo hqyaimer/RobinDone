@@ -1,4 +1,4 @@
-import type { WorkflowRunState } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunState } from "@robindone/shared/robindone-protocol-v4";
 import { laneRefsById, type LaneRef } from "@/components/workflow-graph/lane-name.js";
 import {
   collapseStatuses,

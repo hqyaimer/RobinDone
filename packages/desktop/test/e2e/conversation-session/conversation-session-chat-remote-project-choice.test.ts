@@ -5,13 +5,13 @@ import {
   buildServerRemoteWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
   type SourceServerManagementSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   TID_COMPOSER_WORKSPACE_TRIGGER,
   TID_COMPOSER_REMOTE_CONNECTION,
   TID_SETTINGS_PAGE,
-} from "@robinrun/shared/test-ids";
-import type { ProjectTree, VirtualProject, RemoteProjectDirectory } from "@robinrun/services";
+} from "@robindone/shared/test-ids";
+import type { ProjectTree, VirtualProject, RemoteProjectDirectory } from "@robindone/services";
 import {
   prepareV4ConversationE2E,
   setV4ComposerText,
@@ -182,7 +182,7 @@ describe(marker, () => {
         );
         expect(layout.every((row) => !row.overflow && row.height > 0)).toBe(true);
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `choice-${locale}-${theme}.png`),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `choice-${locale}-${theme}.png`),
         );
       }
     await browser.electron.execute((electron) =>
@@ -196,7 +196,7 @@ describe(marker, () => {
       ).__testActions?.setLocale("zh-CN"),
     );
     await browser.saveScreenshot(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "choice-desktop.png"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "choice-desktop.png"),
     );
     await browser.keys("Escape");
     await picker.waitForExist({ reverse: true });
@@ -325,7 +325,7 @@ describe(marker, () => {
       ).tasks,
     ).toEqual(localBefore.tasks);
     await writeFile(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "choice-identities.json"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "choice-identities.json"),
       JSON.stringify({ projects: [first, second], tasks, directory }, null, 2),
     );
   });

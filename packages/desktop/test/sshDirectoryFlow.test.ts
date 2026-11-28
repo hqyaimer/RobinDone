@@ -1,11 +1,11 @@
 import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import {
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clickTestIdByDom, clickTestIdByWebDriver } from "#e2e/helpers/desktop-app";
 import { callHandoffHost } from "#e2e/helpers/remote-project-handoff-probe";
 import { openSSHRemoteDialog, openSSHSourceDirectory } from "#e2e/helpers/ssh-remote-p0";

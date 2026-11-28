@@ -9,7 +9,7 @@ import {
   DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
   triggerDirectoryConvention,
   type TriggerEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { TriggerEvent } from "./contract.js";
 import type { ScriptEmitResult } from "./local-webhook-server.js";
 import { TRIGGER_EMIT_ROUTE_PREFIX } from "./local-webhook-server.js";
@@ -26,9 +26,9 @@ import { BRIDGE_SOURCE, PYTHON_BRIDGE_SOURCE } from "./script-bridges.js";
  * - 触发器 active 即应运行（挂载/客户端启动/5s 轮询/注册表变化都会 reconcile）；
  * - 双运行时（2026-11-22 python 主 + node 备选）：python 走供给链（托管解释器自动下载
  *   + 按项目 venv，经 resolvePythonRuntime 回调注入 venv 解释器），事件协议 = **HTTP
- *   emit 端点**（`__robinrun/emit/<trg-id>`，注入 robinrun.py 桥接 + PYTHONPATH，同步
+ *   emit 端点**（`__robindone/emit/<trg-id>`，注入 robindone.py 桥接 + PYTHONPATH，同步
  *   ack——并发安全，stdout 退役为纯日志）；node 备选保留 IPC 桥接
- *   （`robinrun.emit`/`onShutdown`）。
+ *   （`robindone.emit`/`onShutdown`）。
  * - stdout/stderr = 日志（双运行时一致）：字节级行缓冲（修复多字节被 chunk 边界切坏），
  *   尾部环形缓冲，退出/停止时一次性进审计，不投递。
  * - 退出语义：exit 0 = `completed` 终态（一次性脚本的自然完成）；exit 非 0 / spawn 失败 =
@@ -114,7 +114,7 @@ export interface ScriptWorkspaceSnapshot {
   workspacePath: string;
   /** 该工作区注册表的全部触发器条目（supervisor 自行过滤 script 型）。 */
   triggers: TriggerEntry[];
-  /** 本地 webhook 服务基址（脚本 env 透传 ROBINRUN_WEBHOOK_BASE_URL）。 */
+  /** 本地 webhook 服务基址（脚本 env 透传 ROBINDONE_WEBHOOK_BASE_URL）。 */
   webhookBaseUrl?: string;
 }
 
@@ -169,7 +169,7 @@ interface RunningScript {
   /**
    * 退出收口已执行标志（2026-11-25 幽灵计数防御）：handleExit 开头置位。exit 事件在真实
    * 环境下存在丢失/未达的可能（Windows 进程收割/杀软竞态），丢失时条目以"child 已死仍在
-   * map"的僵尸态占住常驻配额（2026-11-25 RobinRunOps 真机缺陷：配额 1/1 下 scheduled 趟
+   * map"的僵尸态占住常驻配额（2026-11-25 RobinDoneOps 真机缺陷：配额 1/1 下 scheduled 趟
    * 后 A+B 永久 deferred）——reconcile 的 sweepZombieEntries 按本标志幂等补收口。
    */
   exitedHandled?: boolean;
@@ -183,7 +183,7 @@ async function contentStampOf(
   if (entry.config.kind !== "script") return "";
   const scriptPath = join(
     snapshot.workspacePath,
-    ".robinrun",
+    ".robindone",
     "triggers",
     entry.id,
     triggerDirectoryConvention.script,
@@ -239,7 +239,7 @@ const signatureOf = (entry: TriggerEntry): string =>
   entry.config.kind === "script"
     ? // 修复（2026-11-23）：groupId/contract 入签名——此前 update_group 移组（或直连↔组互转）
       // 与 contract 变更都不改变签名，常驻脚本不重启，running.entry 冻结旧值：sessionKeyOf
-      // 与 ROBINRUN_TRIGGER_SESSION_KEY 继续指向旧组会话（新组永远收不到事件）、契约校验
+      // 与 ROBINDONE_TRIGGER_SESSION_KEY 继续指向旧组会话（新组永远收不到事件）、契约校验
       // 沿用旧 contract。name 只影响事件摘要文案，不必重启，不入签名。
       `${entry.config.runtime}|${entry.config.entry}|${entry.config.profile ?? ""}|${
         entry.config.headed === true ? "headed" : "headless"
@@ -317,7 +317,7 @@ export class TriggerScriptSupervisor {
   }
 
   /**
-   * 僵尸条目清扫（2026-11-25 幽灵计数防御，RobinRunOps 真机缺陷回归）：不变量 =
+   * 僵尸条目清扫（2026-11-25 幽灵计数防御，RobinDoneOps 真机缺陷回归）：不变量 =
    * processes map 里的条目必须是活进程（child.exitCode/signalCode === null）。真实环境
    * （杀软/Windows 进程收割/python）下 exit 事件存在丢失/未达的可能，丢失时条目以
    * "child 已死仍在 map"的僵尸态**占住常驻配额**——真机形态即配额 1/1 下 scheduled 趟后
@@ -522,7 +522,7 @@ export class TriggerScriptSupervisor {
   ): Promise<void> {
     if (entry.config.kind !== "script") return;
     const key = keyOf(snapshot.workspacePath, entry.id);
-    const triggerDir = join(snapshot.workspacePath, ".robinrun", "triggers", entry.id);
+    const triggerDir = join(snapshot.workspacePath, ".robindone", "triggers", entry.id);
     const scriptDir = join(triggerDir, triggerDirectoryConvention.script);
     // 运行时解析（2026-11-22 python 主 + node 备选）：python 优先走供给链（托管解释器
     // + 项目 venv，经 resolvePythonRuntime 回调）；回调缺席（测试/未接线宿主）退回系统
@@ -608,8 +608,8 @@ export class TriggerScriptSupervisor {
         return;
       }
       browserProfile = entry.config.profile;
-      plan.env.ROBINRUN_CDP_ENDPOINT = acquisition.cdpEndpoint;
-      plan.env.ROBINRUN_TRIGGER_PROFILE = entry.config.profile;
+      plan.env.ROBINDONE_CDP_ENDPOINT = acquisition.cdpEndpoint;
+      plan.env.ROBINDONE_TRIGGER_PROFILE = entry.config.profile;
     }
     // 内容戳在 spawn 前取（2026-11-25 修复）：spawn 与 error/exit 处理器挂载之间不允许有
     // await——spawn 失败（如 cwd 已被外部删除 → ENOENT）的 'error' 事件在下一 tick 即到，
@@ -679,8 +679,8 @@ export class TriggerScriptSupervisor {
         ),
       );
 
-    // 事件通道（Node 桥接 IPC）：{type:"robinrun-event", id, event} → 校验/投递/ack。
-    // python 走 HTTP emit 端点（LocalWebhookServer __robinrun/emit → handleEmitRequest），
+    // 事件通道（Node 桥接 IPC）：{type:"robindone-event", id, event} → 校验/投递/ack。
+    // python 走 HTTP emit 端点（LocalWebhookServer __robindone/emit → handleEmitRequest），
     // stdout/stderr 双运行时统一专职日志（字节级行缓冲）。
     if (plan.ipc) {
       child.on("message", (raw: unknown) => {
@@ -733,19 +733,19 @@ export class TriggerScriptSupervisor {
     if (entry.config.kind !== "script") throw new Error("non-script config");
     const env: NodeJS.ProcessEnv = { ...process.env };
     if (electronAsNode) env.ELECTRON_RUN_AS_NODE = "1";
-    env.ROBINRUN_TRIGGER_ID = entry.id;
-    env.ROBINRUN_TRIGGER_DIR = join(snapshot.workspacePath, ".robinrun", "triggers", entry.id);
-    env.ROBINRUN_TRIGGER_SESSION_KEY =
+    env.ROBINDONE_TRIGGER_ID = entry.id;
+    env.ROBINDONE_TRIGGER_DIR = join(snapshot.workspacePath, ".robindone", "triggers", entry.id);
+    env.ROBINDONE_TRIGGER_SESSION_KEY =
       entry.groupId === null ? `trigger:${entry.id}` : `trigger-group:${entry.groupId}`;
     if (snapshot.webhookBaseUrl !== undefined) {
-      env.ROBINRUN_WEBHOOK_BASE_URL = snapshot.webhookBaseUrl;
+      env.ROBINDONE_WEBHOOK_BASE_URL = snapshot.webhookBaseUrl;
     }
     if (entry.config.runtime === "node") {
       // 桥接模块每次拉起都重写（内容常量，幂等且保证最新契约）。
       const bridgePath = await this.ensureBridgeFile(snapshot.workspacePath);
       if (snapshot.webhookBaseUrl !== undefined) {
         // 登录闭环暂停端点（2026-11-25）：node 桥接的 loginFailed 同走 HTTP。
-        env.ROBINRUN_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
+        env.ROBINDONE_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
       }
       return {
         command: runtimeCommand,
@@ -755,22 +755,22 @@ export class TriggerScriptSupervisor {
         ipc: true,
       };
     }
-    // python 主运行时（2026-11-22 HTTP emit 协议）：注入 robinrun.py 桥接（PYTHONPATH）+
+    // python 主运行时（2026-11-22 HTTP emit 协议）：注入 robindone.py 桥接（PYTHONPATH）+
     // emit 端点 URL；PYTHONUNBUFFERED/PYTHONUTF8 保留（stdout 专职日志的时效与编码）；
-    // venv 在场时追加 VIRTUAL_ENV（子进程工具链约定）与 ROBINRUN_PYTHON（脚本/调试）。
+    // venv 在场时追加 VIRTUAL_ENV（子进程工具链约定）与 ROBINDONE_PYTHON（脚本/调试）。
     env.PYTHONUNBUFFERED = "1";
     env.PYTHONUTF8 = "1";
     if (params.pythonRuntime !== undefined) {
       env.VIRTUAL_ENV = params.pythonRuntime.venvDir;
-      env.ROBINRUN_PYTHON = params.pythonRuntime.interpreterPath;
+      env.ROBINDONE_PYTHON = params.pythonRuntime.interpreterPath;
     }
-    const stateDir = join(snapshot.workspacePath, ".robinrun", "triggers", "state");
+    const stateDir = join(snapshot.workspacePath, ".robindone", "triggers", "state");
     await this.ensurePythonBridgeFile(stateDir);
     env.PYTHONPATH = env.PYTHONPATH ? `${stateDir}${delimiter}${env.PYTHONPATH}` : stateDir;
     if (snapshot.webhookBaseUrl !== undefined) {
-      env.ROBINRUN_EMIT_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_EMIT_ROUTE_PREFIX}${entry.id}`;
+      env.ROBINDONE_EMIT_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_EMIT_ROUTE_PREFIX}${entry.id}`;
       // 登录闭环暂停端点（2026-11-25）：与 emit 同基址同信任面。
-      env.ROBINRUN_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
+      env.ROBINDONE_PAUSE_URL = `${snapshot.webhookBaseUrl}/${TRIGGER_PAUSE_ROUTE_PREFIX}${entry.id}`;
     }
     return {
       command: runtimeCommand,
@@ -782,17 +782,17 @@ export class TriggerScriptSupervisor {
   }
 
   private async ensureBridgeFile(workspacePath: string): Promise<string> {
-    const dir = join(workspacePath, ".robinrun", "triggers", "state", "bridge");
-    const file = join(dir, "robinrun-bridge.cjs");
+    const dir = join(workspacePath, ".robindone", "triggers", "state", "bridge");
+    const file = join(dir, "robindone-bridge.cjs");
     await mkdir(dir, { recursive: true });
     await writeFile(file, BRIDGE_SOURCE, "utf8");
     return file;
   }
 
-  /** python 桥接模块（state/robinrun.py）：每次拉起重写（内容常量，幂等且保证最新契约）。 */
+  /** python 桥接模块（state/robindone.py）：每次拉起重写（内容常量，幂等且保证最新契约）。 */
   private async ensurePythonBridgeFile(stateDir: string): Promise<void> {
     await mkdir(stateDir, { recursive: true });
-    await writeFile(join(stateDir, "robinrun.py"), PYTHON_BRIDGE_SOURCE, "utf8");
+    await writeFile(join(stateDir, "robindone.py"), PYTHON_BRIDGE_SOURCE, "utf8");
   }
 
   // ---------------------------------------------------------------------------
@@ -807,12 +807,12 @@ export class TriggerScriptSupervisor {
   ): Promise<void> {
     if (raw === null || typeof raw !== "object") return;
     const message = raw as { type?: unknown; id?: unknown; event?: unknown };
-    if (message.type !== "robinrun-event") return; // 脚本自用 process.send 一律忽略
+    if (message.type !== "robindone-event") return; // 脚本自用 process.send 一律忽略
     const id = typeof message.id === "number" ? message.id : -1;
     const result = await this.validateAndDeliver(snapshot, entry, message.event);
     try {
       running.child.send?.({
-        type: "robinrun-ack",
+        type: "robindone-ack",
         id,
         ok: result.ok,
         ...(result.error ? { error: result.error } : {}),
@@ -824,7 +824,7 @@ export class TriggerScriptSupervisor {
 
   /**
    * python 脚本 emit 端点处理（2026-11-22 HTTP emit 协议；LocalWebhookServer 的
-   * `__robinrun/emit/<trg-id>` 注入此处）：按触发器 id 找**正在运行**的脚本（跨工作区扫
+   * `__robindone/emit/<trg-id>` 注入此处）：按触发器 id 找**正在运行**的脚本（跨工作区扫
    * 运行注册表——id 为随机 8hex，同刻双活碰撞概率可忽略，取先见者），走与 node IPC 相同
    * 的校验/投递路径并同步返回 ack（契约违例脚本侧 raise）。未运行/不存在 = undefined
    * （服务层 404）——这也是无 token 信任面的关键一半：只有引擎拉起的活脚本可达。
@@ -846,7 +846,7 @@ export class TriggerScriptSupervisor {
 
   /**
    * 脚本暂停上报处理（2026-11-25 登录闭环，specs/trigger-browser-hosting.md §3.4；
-   * LocalWebhookServer `__robinrun/pause/<trg-id>` 注入此处）：脚本自含的登录检测失败时
+   * LocalWebhookServer `__robindone/pause/<trg-id>` 注入此处）：脚本自含的登录检测失败时
    * 调用。语义：这不是崩溃（consecutiveFailures 不动），是登录态过期——audit 记
    * login-failed → 投 script-error 事件（带诊断，唤醒订阅者修复）→ 触发器置 error-paused
    * （异常且停用，用户裁决）→ 复用熔断通知通道（reason=login-failed）→ 停脚本。
@@ -1173,7 +1173,7 @@ export class TriggerScriptSupervisor {
     // killProcessTree 硬终止兜底。
     if (running.runtime === "node") {
       try {
-        running.child.send?.({ type: "robinrun-shutdown" });
+        running.child.send?.({ type: "robindone-shutdown" });
       } catch {
         // 通道已断：直接强杀路径。
       }

@@ -3,7 +3,7 @@ import {
   DISABLED_RENDERER_ACTION_TRACE_CONFIG,
   PlatformChannels,
   type RendererActionTraceConfigV1,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { RendererActionTraceBroker } from "./rendererActionTraceBroker.js";
 import type { RendererActionTraceRollout } from "./rendererActionTraceRollout.js";
 
@@ -120,8 +120,8 @@ export function resolveRuntimeConfig(
   config: RendererActionTraceConfigV1,
   env: Record<string, string | undefined>,
 ): RendererActionTraceConfigV1 {
-  if (isTruthy(env.ROBINRUN_LOCAL_TTFT_ENABLED)) config = { ...config, localTtftEnabled: true };
-  if (!isTruthy(env.ROBINRUN_RENDERER_ACTION_TRACE_ENABLED)) return config;
+  if (isTruthy(env.ROBINDONE_LOCAL_TTFT_ENABLED)) config = { ...config, localTtftEnabled: true };
+  if (!isTruthy(env.ROBINDONE_RENDERER_ACTION_TRACE_ENABLED)) return config;
   return {
     ...config,
     enabled: true,

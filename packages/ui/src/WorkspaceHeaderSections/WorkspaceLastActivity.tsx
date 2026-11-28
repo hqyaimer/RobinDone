@@ -1,11 +1,11 @@
 import { Clock } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 
-export function WorkspaceLastActivity({ task }: { task: RobinRunTaskMeta | null }) {
-  const { intl } = useRobinRunIntl();
+export function WorkspaceLastActivity({ task }: { task: RobinDoneTaskMeta | null }) {
+  const { intl } = useRobinDoneIntl();
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);

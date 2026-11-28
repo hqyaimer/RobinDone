@@ -1,10 +1,10 @@
-import type { RobinRunModelTrajectoryMessage } from "@robinrun/services";
+import type { RobinDoneModelTrajectoryMessage } from "@robindone/services";
 import { Maximize2Icon, Minimize2Icon } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ContentPartView } from "@/ModelTrajectoryPaneDetails.js";
 import {
   trajectoryToolCallInputs,
@@ -13,7 +13,7 @@ import {
   trajectoryToolOutputs,
 } from "@/ModelTrajectoryToolPayload.js";
 
-type IntlShape = ReturnType<typeof useRobinRunIntl>["intl"];
+type IntlShape = ReturnType<typeof useRobinDoneIntl>["intl"];
 
 export function TrajectoryExpandedContent({
   message,
@@ -22,7 +22,7 @@ export function TrajectoryExpandedContent({
   searchRevealed,
   intl,
 }: {
-  message: RobinRunModelTrajectoryMessage;
+  message: RobinDoneModelTrajectoryMessage;
   role: "system" | "user" | "assistant" | "tool";
   open: boolean;
   searchRevealed: boolean;

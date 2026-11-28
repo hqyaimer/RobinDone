@@ -1,6 +1,6 @@
 import type { IProjectService, ProjectDirectories } from "#src/project/contract.js";
 import type { IRemoteProjectService, RemoteProjectHost } from "#src/remote-projects/contract.js";
-import type { WindowHostRemoteWorkspaceDescriptor } from "@robinrun/shared";
+import type { WindowHostRemoteWorkspaceDescriptor } from "@robindone/shared";
 export type { ProjectDirectories, WindowHostRemoteWorkspaceDescriptor };
 export interface ProjectNavigationRequest {
   projectId?: string | null;

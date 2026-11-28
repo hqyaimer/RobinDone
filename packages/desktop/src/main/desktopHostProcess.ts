@@ -1,7 +1,7 @@
-import type { HostRemoteConversationTelemetryResponse } from "@robinrun/shared";
+import type { HostRemoteConversationTelemetryResponse } from "@robindone/shared";
 import { ingestToolExecResource } from "./desktopResourceTelemetry.js";
 import { ingestMcpResourceSamples } from "./processResourceMcpTelemetrySource.js";
-/* eslint-disable max-lines -- host process 统一处理 main↔host 生命周期、日志、RobinRun Agent，拆分前先保持跨进程消息收口。 */
+/* eslint-disable max-lines -- host process 统一处理 main↔host 生命周期、日志、RobinDone Agent，拆分前先保持跨进程消息收口。 */
 import {
   type HostAgentProcessErrorResponse,
   type HostAgentProcessExceptionResponse,
@@ -16,21 +16,21 @@ import {
   type RemoteTarget,
   type TaskRealtimeHostDeliveryKind,
   type WorkspacePurpose,
-  formatRobinRunHostProcessName,
+  formatRobinDoneHostProcessName,
   HostMessageTypes,
   hostResponseMessageSchema,
   HostResponseTypes,
   InternalChannels,
   LAUNCH_MARKS_QUERY_KEY,
-  RUNTIME_ROBINRUN_DEBUG,
+  RUNTIME_ROBINDONE_DEBUG,
   serializeLaunchMarks,
-  ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
-} from "@robinrun/shared";
+  ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+} from "@robindone/shared";
 import type {
   PluginSandboxHandle,
   PluginSandboxRegisterRequestPayload,
   PluginSandboxRegisterResultPayload,
-} from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/mcp-apps";
 import type { UtilityProcess as ElectronUtilityProcess, MessagePortMain } from "electron";
 import {
   app,
@@ -91,8 +91,8 @@ export interface HostInitMessage {
   }>;
   agentSpawnFallbackCwd?: string;
   remoteAssets?: RemoteAssetDirs;
-  /** Main 解析后的 RobinRun Built-in Provider Config 路径；Host/Services 不感知 Electron 安装布局。 */
-  robinrunBuiltinProviderConfigFilePath: string;
+  /** Main 解析后的 RobinDone Built-in Provider Config 路径；Host/Services 不感知 Electron 安装布局。 */
+  robindoneBuiltinProviderConfigFilePath: string;
   /** Main 提前异步采集并过滤的本机 runtime 环境；只允许传给 InitLocal。 */
   runtimeProcessEnvPatch?: Record<string, string>;
 }
@@ -258,26 +258,26 @@ export function spawnHostProcess(
   const hostId = randomUUID();
   const glmBinaryPath = resolveBundledGlmBinaryPath();
   const execArgv = [
-    ...(RUNTIME_ROBINRUN_DEBUG ? [`--inspect-brk=${RUNTIME_ROBINRUN_DEBUG}`] : []),
+    ...(RUNTIME_ROBINDONE_DEBUG ? [`--inspect-brk=${RUNTIME_ROBINDONE_DEBUG}`] : []),
     "--no-warnings",
   ];
   const child = electronUtilityProcess.fork(hostModulePath, [], {
-    serviceName: formatRobinRunHostProcessName(label),
+    serviceName: formatRobinDoneHostProcessName(label),
     execArgv,
     env: {
       ...buildHostProcessEnv(dependencies.hostProcessLocalEnv),
       ...buildHostE2ECoverageEnv(),
-      ROBINRUN_PROCESS_LABEL: label,
+      ROBINDONE_PROCESS_LABEL: label,
       // macOS-only: the Computer Use Helper launcher runs inside this forked host utilityProcess, whose
-      // code-signing identity is a nested Electron helper (NOT dev.robinrun.app). Publish THIS (main
-      // Electron) process's pid — which IS dev.robinrun.app — so helperLauncher passes it as
+      // code-signing identity is a nested Electron helper (NOT dev.robindone.app). Publish THIS (main
+      // Electron) process's pid — which IS dev.robindone.app — so helperLauncher passes it as
       // `--launcher-pid` and the Helper's signature/peer verification succeeds instead of
       // health-timing out. Env-name mirror of services' LAUNCHER_PID_ENV. Not set on
       // Windows/Linux (CUA is macOS-only; nothing reads it there) to keep the host env pristine.
-      ...(process.platform === "darwin" ? { ROBINRUN_CUA_LAUNCHER_PID: String(process.pid) } : {}),
+      ...(process.platform === "darwin" ? { ROBINDONE_CUA_LAUNCHER_PID: String(process.pid) } : {}),
       ...(dependencies.desktopContextPromptEnabled
         ? {
-            [ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]:
+            [ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]:
               dependencies.desktopContextPromptEnabled() ? "1" : "0",
           }
         : {}),
@@ -738,7 +738,7 @@ export function disposeHostProcess(
   }
 
   // host 收到 Dispose 后需要等待 agent 进程树的 SIGTERM/SIGKILL 兜底完成。
-  // 如果 main 仍按 150/300ms 强杀 host，host 会先退出，robinrun-cli/app-server 子进程就可能被 init 接管成孤儿。
+  // 如果 main 仍按 150/300ms 强杀 host，host 会先退出，robindone-cli/app-server 子进程就可能被 init 接管成孤儿。
   const effectiveForceKillDelayMs = Math.max(forceKillDelayMs, 3_500);
   const killTimer = setTimeout(() => {
     disposingHostProcessTimers.delete(child);

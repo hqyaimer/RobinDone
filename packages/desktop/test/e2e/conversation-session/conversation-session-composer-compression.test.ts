@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { NodePersonalProviderConfigRepository } from "@robinrun/provider-node";
-import { ROBINRUN_CUA_OFFICIAL_PLUGIN_ID } from "@robinrun/shared";
+import { NodePersonalProviderConfigRepository } from "@robindone/provider-node";
+import { ROBINDONE_CUA_OFFICIAL_PLUGIN_ID } from "@robindone/shared";
 import {
   TID_LOGIN_USE_API_KEY_BUTTON,
   TID_TASK_SETTINGS_BUTTON,
   TID_CHAT_MODEL_SELECT_TRIGGER,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   DEFAULT_WORKSPACE,
@@ -28,7 +28,7 @@ import { skipOccupationOnboardingIfPresent } from "../helpers/occupation-onboard
 
 const CASE_NAME = "conversation-session-composer-compression";
 const evidence = join(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? join(process.cwd(), ".e2e-artifacts"),
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? join(process.cwd(), ".e2e-artifacts"),
   CASE_NAME,
 );
 
@@ -192,7 +192,7 @@ describe("Composer 五档压缩", () => {
             localePreference: "zh-CN",
           }),
         );
-        const configFile = join(paths.homeDir, ".robinrun", "cli", "config.json");
+        const configFile = join(paths.homeDir, ".robindone", "cli", "config.json");
         const config = JSON.parse(
           await readFile(configFile, "utf8").catch((error: NodeJS.ErrnoException) => {
             if (error.code === "ENOENT") return "{}";
@@ -209,7 +209,7 @@ describe("Composer 五档压缩", () => {
               enabled: true,
               enabledPlugins: {
                 ...config.plugins?.enabledPlugins,
-                [ROBINRUN_CUA_OFFICIAL_PLUGIN_ID]: true,
+                [ROBINDONE_CUA_OFFICIAL_PLUGIN_ID]: true,
               },
             },
           }),

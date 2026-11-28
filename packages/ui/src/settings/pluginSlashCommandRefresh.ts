@@ -1,4 +1,4 @@
-import type { RobinRunCommand, RobinRunSlashCommand } from "@robinrun/shared";
+import type { RobinDoneCommand, RobinDoneSlashCommand } from "@robindone/shared";
 
 function normalizeSlashCommandName(name: string): string {
   return name.trim().replace(/^\/+/, "");
@@ -8,7 +8,7 @@ function slashCommandKey(name: string): string {
   return normalizeSlashCommandName(name).toLowerCase();
 }
 
-function commandToSlashCommand(command: RobinRunCommand): RobinRunSlashCommand | null {
+function commandToSlashCommand(command: RobinDoneCommand): RobinDoneSlashCommand | null {
   if (!command.enabled) {
     return null;
   }
@@ -27,14 +27,14 @@ function commandToSlashCommand(command: RobinRunCommand): RobinRunSlashCommand |
 }
 
 export function mergeSlashCommandsAfterCommandRefresh(
-  currentSlashCommands: readonly RobinRunSlashCommand[],
-  refreshedCommands: readonly RobinRunCommand[],
-): RobinRunSlashCommand[] {
+  currentSlashCommands: readonly RobinDoneSlashCommand[],
+  refreshedCommands: readonly RobinDoneCommand[],
+): RobinDoneSlashCommand[] {
   const preservedCommands = currentSlashCommands.filter((command) => command.source !== "custom");
   const preservedNames = new Set(
     preservedCommands.map((command) => slashCommandKey(command.name)).filter(Boolean),
   );
-  const customCommands: RobinRunSlashCommand[] = [];
+  const customCommands: RobinDoneSlashCommand[] = [];
   const seenCustomNames = new Set<string>();
 
   for (const command of refreshedCommands) {

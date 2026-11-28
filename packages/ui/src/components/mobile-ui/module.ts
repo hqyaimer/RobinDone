@@ -7,7 +7,7 @@ export const mobileUiModule = {
     "index.ts",
     "contract.ts",
     "DevicePlatformIcon.tsx",
-    "RobinRunAppLogo.tsx",
+    "RobinDoneAppLogo.tsx",
     "bottom-sheet.tsx",
   ],
 } as const;

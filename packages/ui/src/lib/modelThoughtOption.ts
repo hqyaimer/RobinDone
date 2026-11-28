@@ -1,5 +1,5 @@
-import type { RobinRunConfigOption } from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/services";
+import type { RobinDoneConfigOption } from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/services";
 
 /** 从 Registry 的 ModelConfig Option Specs 读取思考档位。 */
 export function resolveModelThoughtOption(params: {
@@ -8,7 +8,7 @@ export function resolveModelThoughtOption(params: {
   modelId: string;
   currentValue?: string;
   formatLevelName?: (level: string) => string;
-}): RobinRunConfigOption | null {
+}): RobinDoneConfigOption | null {
   const provider = params.modelSelectionView.providers.find(
     (candidate) => candidate.providerId === params.providerId,
   );

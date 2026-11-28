@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- Upstream E2E 初始化包含设置页、provider store、模型选择三段探针，集中维护方便失败诊断 */
 import { selectCombinedComposerThoughtLevel } from "./composer-model-picker.js";
-import { ROBINRUN_AGENT_PROVIDER, encodeCustomModelValue } from "@robinrun/shared";
+import { ROBINDONE_AGENT_PROVIDER, encodeCustomModelValue } from "@robindone/shared";
 import {
   TID_CHAT_MODEL_SELECT_GROUP,
   TID_CHAT_MODEL_SELECT_ITEM,
@@ -18,7 +18,7 @@ import {
   TID_TASK_SETTINGS_BUTTON,
   TID_V4_MODEL_CONFIG,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clickTestIdByDom,
@@ -52,7 +52,7 @@ export const UPSTREAM_THOUGHT_LEVEL = readUpstreamThoughtLevel();
 export const UPSTREAM_SECONDARY_THOUGHT_LEVEL =
   process.env.E2E_PROVIDER_SECONDARY_THOUGHT_LEVEL?.trim() || "max";
 const E2E_PROVIDER_REPLAY_API_KEY = "e2e-fixture-key";
-const MODEL_SELECTION_RECENT_KEY_PREFIX = "robinrun-model-selection-recent-v1";
+const MODEL_SELECTION_RECENT_KEY_PREFIX = "robindone-model-selection-recent-v1";
 const UPSTREAM_THOUGHT_LEVEL_MAX_ATTEMPTS = 8;
 const UPSTREAM_THOUGHT_LEVEL_LABELS_BY_VALUE: Record<string, string[]> = {
   high: ["High", "高"],
@@ -243,14 +243,14 @@ async function seedUpstreamToolbarPreferences() {
           ...(thoughtLevel.trim() ? { options: { reasoningLevel: thoughtLevel.trim() } } : {}),
         }),
       );
-      window.localStorage.setItem("robinrun-last-agent-provider", appProvider);
+      window.localStorage.setItem("robindone-last-agent-provider", appProvider);
     },
     DEFAULT_WORKSPACE,
     MODEL_SELECTION_RECENT_KEY_PREFIX,
     UPSTREAM_PROVIDER_ID,
     UPSTREAM_MODEL,
     UPSTREAM_THOUGHT_LEVEL,
-    ROBINRUN_AGENT_PROVIDER,
+    ROBINDONE_AGENT_PROVIDER,
   );
 }
 
@@ -886,7 +886,7 @@ async function isUpstreamThoughtLevelSelected(thoughtLevel: string) {
       const normalize = (value: string) => value.replace(/\s+/g, " ").trim().toLowerCase();
       const readCurrentThoughtLevel = () => {
         const e2eWindow = window as Window & {
-          __robinrunSessionStoreE2E?: {
+          __robindoneSessionStoreE2E?: {
             getState: () => {
               getWorkspaceState?: (
                 workspacePath: string,
@@ -912,7 +912,7 @@ async function isUpstreamThoughtLevelSelected(thoughtLevel: string) {
             };
           };
         };
-        const workspaceState = e2eWindow.__robinrunSessionStoreE2E
+        const workspaceState = e2eWindow.__robindoneSessionStoreE2E
           ?.getState()
           .getWorkspaceState?.(defaultWorkspace);
         const readFromOptions = (
@@ -976,7 +976,7 @@ export function getSelectedUpstreamThoughtLevelLabel() {
     (triggerTestId, modelConfigTestId, defaultWorkspace) => {
       const readCurrentValue = () => {
         const e2eWindow = window as Window & {
-          __robinrunSessionStoreE2E?: {
+          __robindoneSessionStoreE2E?: {
             getState: () => {
               getWorkspaceState?: (
                 workspacePath: string,
@@ -1002,7 +1002,7 @@ export function getSelectedUpstreamThoughtLevelLabel() {
             };
           };
         };
-        const workspaceState = e2eWindow.__robinrunSessionStoreE2E
+        const workspaceState = e2eWindow.__robindoneSessionStoreE2E
           ?.getState()
           .getWorkspaceState?.(defaultWorkspace);
         const readFromOptions = (
@@ -1214,7 +1214,7 @@ async function collectModelDropdownDiagnostics(
         locked: element.getAttribute("data-model-option-locked"),
       }));
       const e2eWindow = window as Window & {
-        __robinrunSessionStoreE2E?: {
+        __robindoneSessionStoreE2E?: {
           getState: () => {
             getWorkspaceState?: (
               workspacePath: string,
@@ -1252,7 +1252,7 @@ async function collectModelDropdownDiagnostics(
           };
         };
       };
-      const storeState = e2eWindow.__robinrunSessionStoreE2E?.getState();
+      const storeState = e2eWindow.__robindoneSessionStoreE2E?.getState();
       const workspaceState = storeState?.getWorkspaceState?.(defaultWorkspace);
       const selectSummary = (
         options:

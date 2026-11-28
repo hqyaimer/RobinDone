@@ -3,7 +3,7 @@ import {
   overlapsAssistantTextRanges,
   type AssistantTextRange,
 } from "@/lib/assistantDirectiveParser.js";
-import { extractRobinRunFileCitationDirectives } from "@/lib/robinrunFileCitation.js";
+import { extractRobinDoneFileCitationDirectives } from "@/lib/robindoneFileCitation.js";
 
 function resolveCitationFileName(path: string): string {
   const normalizedPath = path.trim().replaceAll("\\", "/");
@@ -72,7 +72,7 @@ export function normalizeConversationShareMarkdown(
   artifactNames: ReadonlyMap<string, string> = new Map(),
 ): string {
   const protectedRanges = findMarkdownCodeRanges(markdown);
-  const directives = extractRobinRunFileCitationDirectives(markdown).filter(
+  const directives = extractRobinDoneFileCitationDirectives(markdown).filter(
     (directive) => !overlapsAssistantTextRanges(directive.start, directive.end, protectedRanges),
   );
 

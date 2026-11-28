@@ -1,8 +1,8 @@
 import { Plus, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
-import { TID_TERMINAL, TID_TERMINAL_CLOSE_BUTTON } from "@robinrun/shared/test-ids";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { IServiceAccessor } from "@robindone/services";
+import { TID_TERMINAL, TID_TERMINAL_CLOSE_BUTTON } from "@robindone/shared/test-ids";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { logger } from "@/logger.js";
 import { Button } from "@/components/ui/button.js";
@@ -44,7 +44,7 @@ export function Terminal({
   onClose: () => void;
   onOpenBrowserUrl: (url: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const workspaceKey = workspaceIdentity?.trim() || cwd || "__default__";
   const [panelState, setPanelState] = useState<TerminalPanelState>(() => {

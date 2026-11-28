@@ -1,9 +1,9 @@
 import {
   workflowRunStepCounts,
   type WorkflowRunState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 /**
  * 「仅展示 {shown}/{total} 步的详情」（docs/dynamic-workflow/presentation.md「The run card」
@@ -26,7 +26,7 @@ export function WorkflowTruncatedNotice({
   run: WorkflowRunState | undefined;
   testId: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (run?.truncated !== true) return null;
   const shown = run.nodes.length;
   const { total } = workflowRunStepCounts(run);

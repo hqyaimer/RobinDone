@@ -5,7 +5,7 @@ import {
   TID_TASK_SETTINGS_BUTTON,
   TID_SETTINGS_SECTION_NAV,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,
@@ -25,7 +25,9 @@ import {
 
 const MARKER = "E2E_SSH_THREE_SCREEN";
 const alias = "rdux10-first-connect";
-const artifactDir = resolve(process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/three-screen");
+const artifactDir = resolve(
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/three-screen",
+);
 
 async function clickButton(text: string) {
   await browser.waitUntil(
@@ -143,7 +145,7 @@ describe(`${MARKER}: 设置分类添加与连接反馈`, () => {
       ).version;
       expect(await $('[data-testid="remote-install-version"]').getText()).toBe(releaseVersion);
       expect(await $('[data-testid="remote-install-path"]').getText()).toBe(
-        `/home/${config.username}/.robinrun/server`,
+        `/home/${config.username}/.robindone/server`,
       );
       expect(
         await browser.execute(() =>

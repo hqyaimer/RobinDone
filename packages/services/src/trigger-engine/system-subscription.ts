@@ -5,12 +5,12 @@
    直接驱动投递（面板唤醒链见 system-wakeup.ts）。 */
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { isSystemTriggerEntry, triggerReadmeFileName, type TriggerEntry } from "@robinrun/shared";
+import { isSystemTriggerEntry, triggerReadmeFileName, type TriggerEntry } from "@robindone/shared";
 import { appendAudit, mutateRegistry, type RegistryWritableState } from "./registry-io.js";
 
 /** 触发器根目录（engine/registry-io 各留一份私有定义的同款；本地私有避免跨文件引私有物）。 */
 function triggersRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "triggers");
+  return join(workspacePath, ".robindone", "triggers");
 }
 
 export interface SystemSubscriptionDeps {

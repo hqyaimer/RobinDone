@@ -1,4 +1,4 @@
-import { resolveWebRemoteControlRoutePathFromBaseUrl } from "@robinrun/shared";
+import { resolveWebRemoteControlRoutePathFromBaseUrl } from "@robindone/shared";
 
 interface WebRemoteControlRouteEnv {
   readonly VITE_WEB_REMOTE_CONTROL_ROUTE_PATH?: string;

@@ -15,7 +15,7 @@ using Microsoft.Win32.SafeHandles;
 
 internal static class Program
 {
-    private const string Protocol = "ROBINRUN_BROWSER_IMPORT_V1";
+    private const string Protocol = "ROBINDONE_BROWSER_IMPORT_V1";
     private const string HelperVersion = "2";
     private const int PipeTimeoutMs = 60000;
     private const int BrokerLifetimeMs = 90000;
@@ -46,7 +46,7 @@ internal static class Program
             {
                 string[] buildIdentity = GetBuildIdentity();
                 Console.Out.WriteLine(
-                    "ROBINRUN_BROWSER_IMPORT_HELPER\t" + HelperVersion + "\t" + GetProcessArchitecture() +
+                    "ROBINDONE_BROWSER_IMPORT_HELPER\t" + HelperVersion + "\t" + GetProcessArchitecture() +
                     "\t" + buildIdentity[0] + "\t" + buildIdentity[1]);
                 return 0;
             }
@@ -110,7 +110,7 @@ internal static class Program
         {
             request = ReadBoundedLine(Console.In);
             ValidateImportRequest(request);
-            pipeName = "robinrun-browser-import-broker-" + Guid.NewGuid().ToString("N");
+            pipeName = "robindone-browser-import-broker-" + Guid.NewGuid().ToString("N");
             token = CreateToken();
             pipe = CreatePipeServer(pipeName, true);
         }
@@ -346,8 +346,8 @@ internal static class Program
         StreamWriter brokerWriter,
         int brokerPid)
     {
-        string serviceName = "RobinRunBrowserImport_" + Guid.NewGuid().ToString("N");
-        string pipeName = "robinrun-browser-import-system-" + Guid.NewGuid().ToString("N");
+        string serviceName = "RobinDoneBrowserImport_" + Guid.NewGuid().ToString("N");
+        string pipeName = "robindone-browser-import-system-" + Guid.NewGuid().ToString("N");
         string token = CreateToken();
         IntPtr scm = IntPtr.Zero;
         IntPtr service = IntPtr.Zero;

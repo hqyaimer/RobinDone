@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { extname } from "node:path";
 import { rm } from "node:fs/promises";
-import { contentBundleSchema } from "@robinrun/shared";
+import { contentBundleSchema } from "@robindone/shared";
 import type { ICloudContentService } from "#src/cloud-content/cloudContent.js";
 import { createContentBundleCache } from "#src/cloud-content/contentBundleCache.js";
 import type { createMarketingAssetRegistry } from "#src/marketing-touch/marketingAssetRegistry.js";

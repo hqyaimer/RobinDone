@@ -10,7 +10,7 @@ import { chromium } from "playwright-core";
 import {
   observeSessionDebug,
   readSessionDebug,
-} from "../../../../../../apps/robinrun-cli/packages/bootstrap/src/robinrun-protocol/session-debug.ts";
+} from "../../../../../../apps/robindone-cli/packages/bootstrap/src/robindone-protocol/session-debug.ts";
 const root = fileURLToPath(new URL("../../../../../../", import.meta.url));
 const entry = "/packages/ui/test/browser/manual-review/pending/developer-tools.fixture.tsx";
 const record = { app: { sessionId: "session-1" } };

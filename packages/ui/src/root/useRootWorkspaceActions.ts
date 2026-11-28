@@ -8,9 +8,9 @@ import {
   type AppSettings,
   type IPlatformService,
   type UserInfo,
-  type RobinRunTaskClientMode,
-} from "@robinrun/shared";
-import type { IServiceAccessor } from "@robinrun/services";
+  type RobinDoneTaskClientMode,
+} from "@robindone/shared";
+import type { IServiceAccessor } from "@robindone/services";
 import type {
   CreateTaskOptions,
   CreateTaskRequest,
@@ -21,7 +21,7 @@ import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { resolveLogoutProviderFamilyDomain } from "@/lib/providerFamilyDomainSettings.js";
 import { isRendererReloadNavigation } from "@/lib/rendererNavigation.js";
 import { parseWslUncWorkspacePath } from "@/lib/wslUncWorkspace.js";
-import { upsertRobinrunProjectEntry } from "@/robinrun/projectRegistry.js";
+import { upsertRobindoneProjectEntry } from "@/robindone/projectRegistry.js";
 import { logger } from "@/logger.js";
 import { toast } from "@/components/ui/toast.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
@@ -34,8 +34,8 @@ import {
 } from "@/v4/composer/composerDraftStore.js";
 import { openFolderFromWorkspaceEntry } from "@/root/openWorkspaceFolderEntry.js";
 import { useConversationWorkspaceActions } from "@/root/useConversationWorkspaceActions.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import { notifyTaskNavigationCommitted } from "@/store/robinrunSessionStoreNavigation.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import { notifyTaskNavigationCommitted } from "@/store/robindoneSessionStoreNavigation.js";
 import { type TabStore, type TabStoreState } from "@/store/tabStore.js";
 import type { RootProps } from "@/root/types.js";
 import { hadPersistedPaneLayoutAtModuleLoad, usePaneLayoutStore } from "@/v4/paneLayoutStore.js";
@@ -104,7 +104,7 @@ export function useRootWorkspaceActions({
   openMobileProjectDraft,
   workbenchGroupClientMode = "desktop-continuous",
 }: {
-  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinDoneIntl>["intl"];
   platform: IPlatformService;
   services: IServiceAccessor;
   tabStoreApi: TabStore;
@@ -132,7 +132,7 @@ export function useRootWorkspaceActions({
     isCurrent?: () => boolean;
   }) => Promise<void>;
   openMobileProjectDraft?: (request: CreateTaskOptions) => Promise<void>;
-  workbenchGroupClientMode?: RobinRunTaskClientMode;
+  workbenchGroupClientMode?: RobinDoneTaskClientMode;
 }) {
   const navigationSequence = useRef(0);
   const [workspaceActionError, setWorkspaceActionError] = useState<string | null>(null);
@@ -212,7 +212,7 @@ export function useRootWorkspaceActions({
         useWorkbenchGroupStore.getState().deactivateActiveGroup();
         usePaneLayoutStore.getState().resetToPrimaryPane();
       }
-      useRobinRunSessionStore
+      useRobinDoneSessionStore
         .getState()
         .startDraft(workspacePath, options?.provider, workspaceIdentity, {
           projectId,
@@ -222,7 +222,7 @@ export function useRootWorkspaceActions({
         stageV4ComposerDraftAttachments(
           workspacePath,
           workspaceIdentity,
-          useRobinRunSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
+          useRobinDoneSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
             .draftFocusVersion,
           options.initialComposerDraft,
         );
@@ -243,7 +243,7 @@ export function useRootWorkspaceActions({
           },
           scope,
         );
-        useRobinRunSessionStore
+        useRobinDoneSessionStore
           .getState()
           .requestComposerTextInsert(workspacePath, initialPrompt, workspaceIdentity, mention);
       }
@@ -257,7 +257,7 @@ export function useRootWorkspaceActions({
       const sequence = ++navigationSequence.current;
       const originTab = tabStoreApi.getState().activeTabId;
       const originWorkspace = activeWorkspacePath
-        ? useRobinRunSessionStore
+        ? useRobinDoneSessionStore
             .getState()
             .getWorkspaceState(activeWorkspacePath, activeWorkspaceIdentity ?? undefined)
         : null;
@@ -267,7 +267,7 @@ export function useRootWorkspaceActions({
         tabStoreApi.getState().activeTabId === originTab &&
         (!activeWorkspacePath ||
           (() => {
-            const state = useRobinRunSessionStore
+            const state = useRobinDoneSessionStore
               .getState()
               .getWorkspaceState(activeWorkspacePath, activeWorkspaceIdentity ?? undefined);
             return (
@@ -328,7 +328,7 @@ export function useRootWorkspaceActions({
               remoteHostIdFromWorkspaceIdentity(newTaskTarget.workspaceIdentity) ?? undefined;
             if (!hostId) throw new Error("project.host-identity-required");
           }
-          const workspace = useRobinRunSessionStore
+          const workspace = useRobinDoneSessionStore
             .getState()
             .getWorkspaceState(
               newTaskTarget.workspacePath,
@@ -545,17 +545,17 @@ export function useRootWorkspaceActions({
     userId,
   ]);
 
-  // RobinRun 项目注册表（AppSettings.robinrunProjects）只服务启动编排的“最近使用”语义：
+  // RobinDone 项目注册表（AppSettings.robindoneProjects）只服务启动编排的“最近使用”语义：
   // 2026-11-15 去启动台裁决后，冷启动按 lastOpenedAt 自动打开最近项目，因此所有桌面
   // 打开入口（侧栏项目列表/深链/Dock）都要在这里统一 bump。读取走 settingService.get()
   // 取最新事实，避免快照陈旧覆盖并发更新；失败只记日志，不阻断打开流程。
-  const syncRobinrunProjectRegistry = useCallback(
+  const syncRobindoneProjectRegistry = useCallback(
     async (path: string) => {
       if (!isDesktop || !services.settingService) return;
       try {
         const current = await services.settingService.get();
         await updateAppSettings({
-          robinrunProjects: upsertRobinrunProjectEntry(current.robinrunProjects ?? [], path),
+          robindoneProjects: upsertRobindoneProjectEntry(current.robindoneProjects ?? [], path),
         });
       } catch (error) {
         logger.warn("[Root] 维护项目注册表失败（不影响打开流程）", error);
@@ -571,7 +571,7 @@ export function useRootWorkspaceActions({
       const origin = tabStoreApi.getState();
       const readOriginDraft = () =>
         origin.activeWorkspacePath
-          ? useRobinRunSessionStore
+          ? useRobinDoneSessionStore
               .getState()
               .getWorkspaceState(
                 origin.activeWorkspacePath,
@@ -624,8 +624,8 @@ export function useRootWorkspaceActions({
           projectId = (
             await services.projectService.saveProject({ roots: [path], reuseExistingRoot: true })
           ).id;
-          // RobinRun：桌面打开入口统一 bump 最近使用（冷启动自动打开依赖，见上方注册表说明）。
-          void syncRobinrunProjectRegistry(path);
+          // RobinDone：桌面打开入口统一 bump 最近使用（冷启动自动打开依赖，见上方注册表说明）。
+          void syncRobindoneProjectRegistry(path);
         }
         if (!isCurrent()) return;
         // 桌面端：检查是否已有其他窗口打开了该目录，如果是则激活该窗口对应 tab
@@ -660,7 +660,7 @@ export function useRootWorkspaceActions({
       services.projectService,
       isDesktop,
       startDraftInWorkspace,
-      syncRobinrunProjectRegistry,
+      syncRobindoneProjectRegistry,
       tabStoreApi,
     ],
   );
@@ -777,7 +777,7 @@ export function useRootWorkspaceActions({
         activeWorkspacePath,
         activeWorkspaceIdentity ? { workspaceIdentity: activeWorkspaceIdentity } : undefined,
       );
-    const taskId = useRobinRunSessionStore
+    const taskId = useRobinDoneSessionStore
       .getState()
       .getWorkspaceState(activeWorkspacePath, activeWorkspaceIdentity ?? undefined).activeTaskId;
     if (activated && taskId) {

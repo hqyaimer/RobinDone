@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { OpsPanelEntry } from "@robinrun/shared";
+import type { OpsPanelEntry } from "@robindone/shared";
 import { OpsPanelRepo } from "../src/ops-panel/opsPanelRepo.js";
 import { OpsPanelService } from "../src/ops-panel/opsPanelService.js";
 import type {
@@ -31,7 +31,7 @@ interface Harness {
 
 async function buildHarness(dbPath?: string): Promise<Harness> {
   const resolvedDbPath =
-    dbPath ?? join(await mkdtemp(join(tmpdir(), "robinrun-ops-panel-")), "tasks-index.sqlite");
+    dbPath ?? join(await mkdtemp(join(tmpdir(), "robindone-ops-panel-")), "tasks-index.sqlite");
   const repo = new OpsPanelRepo(resolvedDbPath);
   const dispatch = vi.fn(async () => ({ taskId: "sess-master-main" }));
   const seeds = vi.fn(async () => ({}));
@@ -455,7 +455,10 @@ describe("ops panel service", () => {
   });
 
   it("重启持久化（验收 #8）：重开库后条目与队列状态不丢；挂载恢复重派发在途条目", async () => {
-    const dbPath = join(await mkdtemp(join(tmpdir(), "robinrun-ops-panel-")), "tasks-index.sqlite");
+    const dbPath = join(
+      await mkdtemp(join(tmpdir(), "robindone-ops-panel-")),
+      "tasks-index.sqlite",
+    );
     cleanup.push(rm(dbPath, { recursive: true, force: true }).catch(() => {}));
     const first = await buildHarness(dbPath);
     await first.service.createEntry({

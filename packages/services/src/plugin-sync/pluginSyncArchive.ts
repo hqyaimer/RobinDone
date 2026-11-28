@@ -9,7 +9,7 @@ const gunzipAsync = promisify(gunzip);
 const TAR_BLOCK_SIZE = 512;
 const TAR_END_BLOCK_BYTES = TAR_BLOCK_SIZE * 2;
 
-export const PLUGIN_SYNC_METADATA_ARCHIVE_PATH = ".robinrun-plugin-sync.json";
+export const PLUGIN_SYNC_METADATA_ARCHIVE_PATH = ".robindone-plugin-sync.json";
 
 export type PluginSyncArchiveEntry =
   | {
@@ -227,8 +227,8 @@ function createTarHeader(options: {
   writeTarString(header, options.typeFlag, 156, 1);
   writeTarString(header, "ustar", 257, 6);
   writeTarString(header, "00", 263, 2);
-  writeTarString(header, "robinrun", 265, 32);
-  writeTarString(header, "robinrun", 297, 32);
+  writeTarString(header, "robindone", 265, 32);
+  writeTarString(header, "robindone", 297, 32);
   writeTarString(header, prefix, 345, 155);
   writeTarChecksum(
     header,

@@ -7,7 +7,7 @@ export async function checkExternalLinks(
   guest: WebContents,
   read: (code: string) => Promise<any>,
 ) {
-  assert.deepEqual(await read("Object.keys(window.robinrun).sort()"), [
+  assert.deepEqual(await read("Object.keys(window.robindone).sort()"), [
     "openExternal",
     "sendFollowUpMessage",
     "setWidgetState",
@@ -75,7 +75,7 @@ export async function checkExternalLinks(
     window.linkErrors=[];
     window.linkEvents=[];
     for(const type of ['pointerdown','pointerup','click','auxclick'])document.addEventListener(type,event=>window.linkEvents.push({type,trusted:event.isTrusted,target:event.target.outerHTML,x:event.clientX,y:event.clientY}),true);
-    window.addEventListener('robinrun:error',event=>window.linkErrors.push(String(event.detail)));
+    window.addEventListener('robindone:error',event=>window.linkErrors.push(String(event.detail)));
   })()`);
   const originalUrl = await read("location.href");
   let expected = 0;
@@ -125,7 +125,7 @@ export async function checkExternalLinks(
 
   // 页面可取消默认行为，避免自定义点击处理与委托处理重复打开。
   await read(`document.getElementById('link-probe').onclick=event=>{
-    event.preventDefault();window.linkResult=window.robinrun.openExternal({href:'http://example.com/script'}).then(()=>'',String);
+    event.preventDefault();window.linkResult=window.robindone.openExternal({href:'http://example.com/script'}).then(()=>'',String);
   }`);
   await click();
   await wait("window.linkResult");
@@ -133,7 +133,7 @@ export async function checkExternalLinks(
   await openedOnce("http://example.com/script");
   assert.match(
     await read(
-      "window.robinrun.openExternal({href:'https://example.com/automatic'}).then(()=>'',String)",
+      "window.robindone.openExternal({href:'https://example.com/automatic'}).then(()=>'',String)",
     ),
     /gesture/i,
   );
@@ -145,7 +145,7 @@ export async function checkExternalLinks(
   ]) {
     assert.match(
       await read(
-        `window.robinrun.openExternal({href:${JSON.stringify(href)}}).then(()=>'',String)`,
+        `window.robindone.openExternal({href:${JSON.stringify(href)}}).then(()=>'',String)`,
       ),
       /URL|HTTP/i,
     );
@@ -172,7 +172,7 @@ export async function checkExternalLinks(
 
   await win.webContents.executeJavaScript("window.rejectExternalOpen(true)");
   await read(`window.linkResult=null;document.getElementById('link-probe').onclick=event=>{
-    event.preventDefault();window.linkResult=window.robinrun.openExternal({href:'https://example.com/failure'}).then(()=>'',String);
+    event.preventDefault();window.linkResult=window.robindone.openExternal({href:'https://example.com/failure'}).then(()=>'',String);
   }`);
   await click();
   await wait("window.linkResult");
@@ -187,7 +187,7 @@ export async function checkExternalLinks(
   assert.match(await read("window.linkResult"), /active|closed/i);
   assert.match(
     await read(
-      "window.robinrun.openExternal({href:'https://example.com/hidden'}).then(()=>'',String)",
+      "window.robindone.openExternal({href:'https://example.com/hidden'}).then(()=>'',String)",
     ),
     /active|closed/i,
   );

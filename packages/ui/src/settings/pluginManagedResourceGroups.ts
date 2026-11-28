@@ -3,14 +3,14 @@ import type {
   McpServerStatus,
   SkillSummary,
   UserCommand,
-  RobinRunCommand,
-  RobinRunMcpServer,
-  RobinRunMcpServerStatusSnapshot,
-  RobinRunPluginInfo,
-  RobinRunPluginComponentKind,
-  RobinRunPluginsDescribeResult,
-} from "@robinrun/shared";
-import { isPluginCommand, isUserCommand, ROBINRUN_COMMAND_AGENT_SOURCE } from "@robinrun/shared";
+  RobinDoneCommand,
+  RobinDoneMcpServer,
+  RobinDoneMcpServerStatusSnapshot,
+  RobinDonePluginInfo,
+  RobinDonePluginComponentKind,
+  RobinDonePluginsDescribeResult,
+} from "@robindone/shared";
+import { isPluginCommand, isUserCommand, ROBINDONE_COMMAND_AGENT_SOURCE } from "@robindone/shared";
 import type { PluginComponentDisplayGroup } from "@/settings/PluginComponentGroups.js";
 
 export interface ResourceGroups<TLocal, TPlugin> {
@@ -19,7 +19,7 @@ export interface ResourceGroups<TLocal, TPlugin> {
 }
 
 /** 详情分组的展示顺序，与 describeResultToDisplayGroups / buildInstalledPluginDisplayGroups 一致。 */
-const COMPONENT_KIND_ORDER: RobinRunPluginComponentKind[] = [
+const COMPONENT_KIND_ORDER: RobinDonePluginComponentKind[] = [
   "agent",
   "command",
   "skill",
@@ -32,9 +32,9 @@ const COMPONENT_KIND_ORDER: RobinRunPluginComponentKind[] = [
  * 省略空分组。数量取 items.length（describe 已是权威枚举）。
  */
 export function describeResultToDisplayGroups(
-  result: RobinRunPluginsDescribeResult,
+  result: RobinDonePluginsDescribeResult,
 ): PluginComponentDisplayGroup[] {
-  const byKind = new Map<RobinRunPluginComponentKind, PluginComponentDisplayGroup>();
+  const byKind = new Map<RobinDonePluginComponentKind, PluginComponentDisplayGroup>();
   for (const group of result.components) {
     if (group.items.length === 0) continue;
     byKind.set(group.kind, {
@@ -61,9 +61,9 @@ export function describeResultToDisplayGroups(
  * 这里直接用它，彻底去掉脆弱的 join。
  */
 export function buildInstalledPluginDisplayGroups(
-  plugin: RobinRunPluginInfo,
+  plugin: RobinDonePluginInfo,
 ): PluginComponentDisplayGroup[] {
-  const byKind = new Map<RobinRunPluginComponentKind, PluginComponentDisplayGroup>();
+  const byKind = new Map<RobinDonePluginComponentKind, PluginComponentDisplayGroup>();
   for (const group of plugin.components ?? []) {
     if (group.items.length === 0) continue;
     byKind.set(group.kind, {
@@ -82,9 +82,9 @@ export function buildInstalledPluginDisplayGroups(
 
 export interface PluginMcpServerItem {
   active: boolean;
-  authorization?: RobinRunMcpServerStatusSnapshot["authorization"];
+  authorization?: RobinDoneMcpServerStatusSnapshot["authorization"];
   error?: string;
-  failureKind?: RobinRunMcpServerStatusSnapshot["failureKind"];
+  failureKind?: RobinDoneMcpServerStatusSnapshot["failureKind"];
   id: string;
   hostProvided?: boolean;
   name: string;
@@ -174,7 +174,7 @@ export function groupSkillsByPlugin(
 }
 
 export function groupCommandsByPlugin(
-  commands: RobinRunCommand[],
+  commands: RobinDoneCommand[],
   query: string,
 ): ResourceGroups<UserCommand, PluginCommand> {
   const local: UserCommand[] = [];
@@ -182,7 +182,7 @@ export function groupCommandsByPlugin(
   for (const command of commands) {
     if (
       isUserCommand(command) &&
-      command.agentSource === ROBINRUN_COMMAND_AGENT_SOURCE &&
+      command.agentSource === ROBINDONE_COMMAND_AGENT_SOURCE &&
       normalizedQueryMatches(query, [command.name, command.description, command.prompt])
     ) {
       local.push(command);
@@ -204,11 +204,11 @@ export function groupCommandsByPlugin(
 }
 
 export function filterLocalMcpServers(
-  servers: RobinRunMcpServer[],
+  servers: RobinDoneMcpServer[],
   query: string,
-): RobinRunMcpServer[] {
+): RobinDoneMcpServer[] {
   return servers.filter((server) => {
-    if (server.source !== "robinrunagentmcp") {
+    if (server.source !== "robindoneagentmcp") {
       return false;
     }
     return normalizedQueryMatches(query, [server.name, server.config.url, server.config.command]);
@@ -216,9 +216,9 @@ export function filterLocalMcpServers(
 }
 
 export function buildPluginMcpServerItems(
-  plugins: RobinRunPluginInfo[],
+  plugins: RobinDonePluginInfo[],
   query: string,
-  statusSnapshots: Record<string, RobinRunMcpServerStatusSnapshot> = {},
+  statusSnapshots: Record<string, RobinDoneMcpServerStatusSnapshot> = {},
 ): PluginMcpServerItem[] {
   return plugins.flatMap((plugin) => {
     const hostNames = new Set(plugin.hostMcpServerNames ?? []);
@@ -271,7 +271,7 @@ export function buildPluginMcpServerItems(
   });
 }
 
-function toPluginMcpServerDisplayName(plugin: RobinRunPluginInfo, serverName: string): string {
+function toPluginMcpServerDisplayName(plugin: RobinDonePluginInfo, serverName: string): string {
   const namespacePrefix = `plugin:${plugin.name}:`;
   return serverName.startsWith(namespacePrefix)
     ? serverName.slice(namespacePrefix.length)
@@ -279,7 +279,7 @@ function toPluginMcpServerDisplayName(plugin: RobinRunPluginInfo, serverName: st
 }
 
 function resolvePluginMcpRuntimeServerName(
-  plugin: RobinRunPluginInfo,
+  plugin: RobinDonePluginInfo,
   displayName: string,
 ): string {
   const activeName = plugin.mcpServerNames.find(
@@ -291,7 +291,7 @@ function resolvePluginMcpRuntimeServerName(
 }
 
 function mapPluginRuntimeStatus(
-  snapshot: RobinRunMcpServerStatusSnapshot | undefined,
+  snapshot: RobinDoneMcpServerStatusSnapshot | undefined,
 ): Pick<
   PluginMcpServerItem,
   "authorization" | "error" | "failureKind" | "serverRequestId" | "status" | "toolCount"

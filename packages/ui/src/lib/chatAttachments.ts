@@ -3,9 +3,9 @@ import { nanoid } from "nanoid";
 import {
   VIDEO_INPUT_MAX_BYTES,
   type CreateTempTextAttachmentResult,
-  type RobinRunPromptAttachment,
-} from "@robinrun/shared";
-import { PROTOCOL_V4_LIMITS } from "@robinrun/shared/robinrun-protocol-v4";
+  type RobinDonePromptAttachment,
+} from "@robindone/shared";
+import { PROTOCOL_V4_LIMITS } from "@robindone/shared/robindone-protocol-v4";
 import {
   MissingInlineImageContentError,
   MissingInlinePdfContentError,
@@ -163,7 +163,7 @@ function estimateDecodedBase64Bytes(dataBase64: string) {
 }
 
 export function restoreChatComposerAttachment(
-  attachment: RobinRunPromptAttachment,
+  attachment: RobinDonePromptAttachment,
 ): ChatComposerAttachment {
   const mimeType = normalizeComposerMimeType(
     attachment.mimeType || inferAttachmentMimeType(attachment.filename),
@@ -309,7 +309,7 @@ export function revokeChatComposerAttachment(attachment: ChatComposerAttachment)
 
 export async function serializeChatComposerAttachment(
   attachment: ChatComposerAttachment,
-): Promise<RobinRunPromptAttachment> {
+): Promise<RobinDonePromptAttachment> {
   const mimeType = normalizeComposerMimeType(
     attachment.mimeType || inferAttachmentMimeType(attachment.filename),
   );
@@ -450,7 +450,7 @@ async function readAttachmentBase64(attachment: ChatComposerAttachment): Promise
   return dataUrl.slice(base64MarkerIndex + 1);
 }
 
-export function getChatAttachmentPreviewUrl(attachment: RobinRunPromptAttachment): string | null {
+export function getChatAttachmentPreviewUrl(attachment: RobinDonePromptAttachment): string | null {
   if (!attachment.dataBase64) {
     return null;
   }

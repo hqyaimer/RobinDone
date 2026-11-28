@@ -1,16 +1,16 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { InternalChannels, PlatformChannels } from "@robinrun/shared";
-import type { PluginSandboxCaptureRequest } from "@robinrun/shared/mcp-apps";
+import { InternalChannels, PlatformChannels } from "@robindone/shared";
+import type { PluginSandboxCaptureRequest } from "@robindone/shared/mcp-apps";
 import { enableSandboxRetainedMoves } from "./retainedMoves.js";
 
 export function installPluginSandboxHostBridge(): void {
   const supportsRetainedMove =
     contextBridge.executeInMainWorld({ func: enableSandboxRetainedMoves }) === true;
   /**
-   * 插件 UI 沙箱：独立命名空间，不进 window.robinrun。只暴露明确的沙箱操作；
+   * 插件 UI 沙箱：独立命名空间，不进 window.robindone。只暴露明确的沙箱操作；
    * 端口不能过 contextBridge，走下面的 window.postMessage transfer。
    */
-  contextBridge.exposeInMainWorld("robinrunPluginSandbox", {
+  contextBridge.exposeInMainWorld("robindonePluginSandbox", {
     supportsRetainedMove,
     setExecutionActive: (sandboxId: string, initId: number, active: boolean) =>
       ipcRenderer.invoke(

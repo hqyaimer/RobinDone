@@ -6,7 +6,7 @@ import { readWorkspaceExpansionState } from "@/lib/workspaceExpansionPreference.
 
 import { reconcileProjectOrder, moveProjectOrder } from "@/project-sidebar/projectOrder.js";
 
-const KEY = "robinrun-project-sidebar-preferences";
+const KEY = "robindone-project-sidebar-preferences";
 const EMPTY_AVAILABILITY: ReadonlyMap<string, ProjectAvailability> = new Map();
 interface Preferences {
   order: string[];

@@ -1,4 +1,4 @@
-import type { AppSettings } from "@robinrun/shared";
+import type { AppSettings } from "@robindone/shared";
 
 export function normalizeSettingsPatch(patch: Partial<AppSettings>): Partial<AppSettings> {
   const normalizedPatch = { ...patch };
@@ -69,13 +69,13 @@ export function normalizeSettingsPatch(patch: Partial<AppSettings>): Partial<App
   }
 
   if (
-    "robinrunEndpointOrigin" in normalizedPatch &&
-    typeof normalizedPatch.robinrunEndpointOrigin === "string"
+    "robindoneEndpointOrigin" in normalizedPatch &&
+    typeof normalizedPatch.robindoneEndpointOrigin === "string"
   ) {
     // 非生产 endpoint override 需要支持 Reset 清空；RPC/JSON 对 undefined 不稳定时，用空串也能回到默认生产域。
-    const trimmedRobinRunEndpointOrigin = normalizedPatch.robinrunEndpointOrigin.trim();
-    normalizedPatch.robinrunEndpointOrigin =
-      trimmedRobinRunEndpointOrigin.length > 0 ? trimmedRobinRunEndpointOrigin : undefined;
+    const trimmedRobinDoneEndpointOrigin = normalizedPatch.robindoneEndpointOrigin.trim();
+    normalizedPatch.robindoneEndpointOrigin =
+      trimmedRobinDoneEndpointOrigin.length > 0 ? trimmedRobinDoneEndpointOrigin : undefined;
   }
 
   if (

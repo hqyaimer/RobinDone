@@ -1,5 +1,5 @@
 export const USAGE_STATS_RANGE_DAYS: Record<
-  Exclude<import("@robinrun/shared").UsageStatsRange, "all">,
+  Exclude<import("@robindone/shared").UsageStatsRange, "all">,
   number
 > = {
   "7d": 7,

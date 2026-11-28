@@ -1,9 +1,9 @@
 import {
-  mapRobinRunEnvToArmsRumEnv,
-  type RobinRunRuntimeEnv,
-  ROBINRUN_ARMS_RUM_ENDPOINT,
-  ROBINRUN_VERSION,
-} from "@robinrun/shared";
+  mapRobinDoneEnvToArmsRumEnv,
+  type RobinDoneRuntimeEnv,
+  ROBINDONE_ARMS_RUM_ENDPOINT,
+  ROBINDONE_VERSION,
+} from "@robindone/shared";
 
 /** 主进程 init 的 browserCollectors，经 autoInject 注入到 renderer 的 RumSDK.init(collectors) */
 export const ARMS_BROWSER_COLLECTORS = {
@@ -34,12 +34,12 @@ export function parseArmsViewName(url: string): string {
 }
 
 /** Renderer Browser SDK init 配置（与主进程 endpoint/env/version 对齐） */
-export function buildArmsBrowserInitConfig(runtimeEnv: RobinRunRuntimeEnv) {
+export function buildArmsBrowserInitConfig(runtimeEnv: RobinDoneRuntimeEnv) {
   return {
-    enable: ROBINRUN_ARMS_RUM_ENDPOINT !== "",
-    version: ROBINRUN_VERSION,
-    endpoint: ROBINRUN_ARMS_RUM_ENDPOINT,
-    env: mapRobinRunEnvToArmsRumEnv(runtimeEnv),
+    enable: ROBINDONE_ARMS_RUM_ENDPOINT !== "",
+    version: ROBINDONE_VERSION,
+    endpoint: ROBINDONE_ARMS_RUM_ENDPOINT,
+    env: mapRobinDoneEnvToArmsRumEnv(runtimeEnv),
     sessionConfig: {
       sampleRate: 1,
     },

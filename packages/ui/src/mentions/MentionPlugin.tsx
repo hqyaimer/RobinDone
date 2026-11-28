@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { createPortal } from "react-dom";
 import { PaletteIcon, WandSparkles } from "lucide-react";
@@ -15,7 +15,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
 } from "lexical";
-import { useRobinRunIntl } from "../i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "../i18n/IntlProvider.js";
 import {
   extractActivePromptInputTrigger,
   getActivePromptInputTokenTailLength,
@@ -54,7 +54,7 @@ import {
   type ActivePromptInputTokenSnapshot,
 } from "./activePromptInputToken.js";
 import { getCurrentTextNodeSelection } from "./mentionHelpers.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 
 interface MentionPluginProps {
   container?: HTMLElement | null;
@@ -143,10 +143,10 @@ export function MentionPlugin({
   container,
   disabled = false,
   onWhiteboardMentionSelected,
-}: MentionPluginProps & { provider: RobinRunProvider }) {
+}: MentionPluginProps & { provider: RobinDoneProvider }) {
   const [editor] = useLexicalComposerContext();
-  const { intl } = useRobinRunIntl();
-  const draftProjectId = useRobinRunSessionStore(
+  const { intl } = useRobinDoneIntl();
+  const draftProjectId = useRobinDoneSessionStore(
     (state) => state.getWorkspaceState(workspacePath, workspaceIdentity).draftProjectId,
   );
   const [activeTrigger, setActiveTrigger] = useState<ActivePromptInputTrigger | null>(null);

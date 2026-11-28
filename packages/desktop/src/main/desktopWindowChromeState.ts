@@ -1,5 +1,5 @@
 import { release as readPlatformRelease } from "node:os";
-import type { DesktopWindowChromeState } from "@robinrun/shared";
+import type { DesktopWindowChromeState } from "@robindone/shared";
 
 const WINDOWS_11_FIRST_BUILD = 22000;
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { IDisposable } from "@robinrun/rpc";
-import type { GitRepositorySummary } from "@robinrun/shared";
+import type { IDisposable } from "@robindone/rpc";
+import type { GitRepositorySummary } from "@robindone/shared";
 import {
   buildGitAutoRefreshWatchPaths,
   parseGitAutoRefreshWatchPaths,

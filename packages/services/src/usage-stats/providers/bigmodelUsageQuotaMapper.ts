@@ -1,5 +1,5 @@
 import { isActivePersonalCodingPlan } from "#src/bigmodel/codingPlanEntitlement.js";
-import type { UsageQuotaLimit, UsageQuotaUsageDetail } from "@robinrun/shared";
+import type { UsageQuotaLimit, UsageQuotaUsageDetail } from "@robindone/shared";
 
 export interface BigModelSubscriptionListEnvelope {
   code?: number;

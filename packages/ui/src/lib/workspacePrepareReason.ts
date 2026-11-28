@@ -1,12 +1,12 @@
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 
 type DraftWorkspacePrepareReason = "mount" | "select-provider";
 type WorkspacePrepareReason = DraftWorkspacePrepareReason | "retry" | "first-send";
 
 interface ResolveDraftWorkspacePrepareReasonOptions {
-  previousDraftProvider: RobinRunProvider | null;
-  previousTaskProvider: RobinRunProvider | null;
-  selectedProvider: RobinRunProvider;
+  previousDraftProvider: RobinDoneProvider | null;
+  previousTaskProvider: RobinDoneProvider | null;
+  selectedProvider: RobinDoneProvider;
   returningFromTask: boolean;
 }
 

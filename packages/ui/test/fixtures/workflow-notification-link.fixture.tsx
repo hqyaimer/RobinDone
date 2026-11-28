@@ -1,11 +1,11 @@
 import "@/styles.css";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { WorkflowArtifactPill } from "@/components/workflow-timeline/WorkflowArtifactPill.js";
 import { WorkflowNotificationToolRow } from "@/v4/WorkflowNotificationToolRow.js";
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale="en-US">
+  <RobinDoneIntlProvider initialLocale="en-US">
     <TooltipProvider>
       <WorkflowArtifactPill
         artifact={{ id: "sample", kind: "markdown", title: "Sample" }}
@@ -30,5 +30,5 @@ createRoot(document.getElementById("root")!).render(
         }}
       />
     </TooltipProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

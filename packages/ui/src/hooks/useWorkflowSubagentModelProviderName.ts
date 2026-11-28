@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import type { RobinRunConfigOption } from "@robinrun/shared";
+import type { RobinDoneConfigOption } from "@robindone/shared";
 import {
-  selectWorkspaceRobinRunState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
+  selectWorkspaceRobinDoneState,
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
 
 /**
  * 子代理模型的 provider 名从哪儿来：会话的模型清单
@@ -11,11 +11,11 @@ import {
  * `modelProviderId` / `modelProviderName`，不必为一行字再开第二份 provider 目录。
  *
  * 只给**名字**，不给 id：`modelProviderName` 在没有 providerLabel 时会退回 providerId 本身
- * （见 robinrunSessionSettingsToConfigOptions），那种「名字」在这里就当作没有——屏幕上绝不出现
+ * （见 robindoneSessionSettingsToConfigOptions），那种「名字」在这里就当作没有——屏幕上绝不出现
  * providerId（团队套餐的它是一个 UUID）。
  */
 function workflowSubagentProviderNameLookup(
-  configOptions: readonly RobinRunConfigOption[] | null | undefined,
+  configOptions: readonly RobinDoneConfigOption[] | null | undefined,
 ): ((providerId: string) => string | undefined) | undefined {
   const entries = configOptions?.find((option) => option.category === "model")?.options;
   if (entries === undefined) {
@@ -43,10 +43,10 @@ export function useWorkflowSubagentModelProviderName(
   workspacePath: string | undefined,
   workspaceIdentity?: string,
 ): ((providerId: string) => string | undefined) | undefined {
-  const configOptions = useRobinRunSessionStore((state) =>
+  const configOptions = useRobinDoneSessionStore((state) =>
     workspacePath === undefined
       ? undefined
-      : selectWorkspaceRobinRunState(state, workspacePath, workspaceIdentity).configOptions,
+      : selectWorkspaceRobinDoneState(state, workspacePath, workspaceIdentity).configOptions,
   );
   return useMemo(() => workflowSubagentProviderNameLookup(configOptions), [configOptions]);
 }

@@ -1,25 +1,25 @@
 /**
  * Renderer 端日志工具
- * 通过 IPC 将日志传到 main 进程统一写入 ~/.robinrun/v2/logs/YYYY-MM-DD.log
+ * 通过 IPC 将日志传到 main 进程统一写入 ~/.robindone/v2/logs/YYYY-MM-DD.log
  * 同时保留 console 输出方便开发调试
  */
-import { formatLogPrefix } from "@robinrun/shared";
+import { formatLogPrefix } from "@robindone/shared";
 import { isRendererProductionBuild } from "./rendererLoggingEnv.js";
 
 export const logger = {
   info(...args: unknown[]) {
     if (isRendererProductionBuild()) return;
     console.log(formatLogPrefix("renderer"), ...args);
-    window.robinrun?.log("info", args);
+    window.robindone?.log("info", args);
   },
   warn(...args: unknown[]) {
     if (isRendererProductionBuild()) return;
     console.warn(formatLogPrefix("renderer"), ...args);
-    window.robinrun?.log("warn", args);
+    window.robindone?.log("warn", args);
   },
   error(...args: unknown[]) {
     if (isRendererProductionBuild()) return;
     console.error(formatLogPrefix("renderer"), ...args);
-    window.robinrun?.log("error", args);
+    window.robindone?.log("error", args);
   },
 };

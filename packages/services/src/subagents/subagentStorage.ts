@@ -17,18 +17,18 @@ export function resolveUserHomeDir(options?: SubagentStorageOptions): string {
 }
 
 export async function resolveUserSubagentRoot(options?: SubagentStorageOptions): Promise<string> {
-  return join(await resolveRobinRunStorageRoot(options), "agents");
+  return join(await resolveRobinDoneStorageRoot(options), "agents");
 }
 
 export function resolveWorkspaceSubagentRoot(workspacePath: string): string {
-  return join(workspacePath, ".robinrun", "agents");
+  return join(workspacePath, ".robindone", "agents");
 }
 
 export async function resolveSubagentStateFile(options?: SubagentStorageOptions): Promise<string> {
-  return join(await resolveRobinRunStorageRoot(options), "v2", "agents-state.json");
+  return join(await resolveRobinDoneStorageRoot(options), "v2", "agents-state.json");
 }
 
-export async function resolveRobinRunStorageRoot(
+export async function resolveRobinDoneStorageRoot(
   options?: SubagentStorageOptions,
 ): Promise<string> {
   const config = await readUserCliConfig(options);
@@ -36,7 +36,7 @@ export async function resolveRobinRunStorageRoot(
   const storageDir =
     typeof storage.dir === "string" && storage.dir.trim().length > 0
       ? storage.dir.trim()
-      : "~/.robinrun";
+      : "~/.robindone";
   return resolveConfigPath(storageDir, options);
 }
 
@@ -52,7 +52,7 @@ async function readUserCliConfig(
 ): Promise<Record<string, unknown>> {
   try {
     const raw = await readFile(
-      join(resolveUserHomeDir(options), ".robinrun", "cli", "config.json"),
+      join(resolveUserHomeDir(options), ".robindone", "cli", "config.json"),
       "utf8",
     );
     const parsed = JSON.parse(raw) as unknown;

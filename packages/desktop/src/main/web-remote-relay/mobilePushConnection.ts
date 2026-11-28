@@ -3,7 +3,7 @@ import {
   mobilePushRunSchema,
   type MobilePushStatus,
   type MobilePushEvent,
-} from "@robinrun/shared/web-remote-relay";
+} from "@robindone/shared/web-remote-relay";
 import type { WebRemoteControlDeviceTransportOptions } from "#src/main/web-remote-relay/contract.js";
 
 export interface MobilePushConnectionContext {

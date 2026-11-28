@@ -1,3 +1,3 @@
-export { RobinRunIntlProvider, useRobinRunIntl } from "./IntlProvider.js";
+export { RobinDoneIntlProvider, useRobinDoneIntl } from "./IntlProvider.js";
 export type { IntlInstance } from "./IntlProvider.js";
 export { LocaleSwitcher } from "./LocaleSwitcher.js";

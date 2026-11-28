@@ -1,5 +1,5 @@
-import type { IServiceAccessor } from "@robinrun/services";
-import { Event, ProxyChannel, type IChannel } from "@robinrun/rpc";
+import type { IServiceAccessor } from "@robindone/services";
+import { Event, ProxyChannel, type IChannel } from "@robindone/rpc";
 import { useMemo } from "react";
 import { useOptionalServices, useServices } from "@/hooks/useServices.js";
 import {

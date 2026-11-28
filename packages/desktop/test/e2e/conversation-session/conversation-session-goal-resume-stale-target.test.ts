@@ -1,8 +1,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { ServiceChannels } from "@robinrun/shared";
-import type { ProjectTree } from "@robinrun/services";
+import { ServiceChannels } from "@robindone/shared";
+import type { ProjectTree } from "@robindone/services";
 import { clearAppData } from "../helpers/desktop-app.js";
 import {
   callHandoffHost,
@@ -107,7 +107,7 @@ describe("会话区 Goal 恢复 stale target 复现", () => {
 });
 
 function writeStaleTaskTarget(taskId: string) {
-  const db = new DatabaseSync(join(homedir(), ".robinrun", "v2", "tasks-index.sqlite"));
+  const db = new DatabaseSync(join(homedir(), ".robindone", "v2", "tasks-index.sqlite"));
   try {
     const row = db.prepare("SELECT meta_json FROM tasks WHERE task_id = ?").get(taskId) as
       | { meta_json: string }

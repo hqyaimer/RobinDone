@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 interface SettingsResourceHeaderActionsProps {
   onRefresh?: () => void;
@@ -53,7 +53,7 @@ export function SettingsResourceHeaderActions({
   exportActionId,
   newActionId,
 }: SettingsResourceHeaderActionsProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const resolvedRefreshLabel = refreshLabel ?? intl.formatMessage({ id: "common.refresh" });
   const importLabel = intl.formatMessage({
     id: "settings.resourceActions.import",

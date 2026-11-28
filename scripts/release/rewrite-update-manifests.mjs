@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// RobinRun 发布工程：把 electron-builder 生成的 latest*.yml 更新清单改写为静态 feed 形态。
+// RobinDone 发布工程：把 electron-builder 生成的 latest*.yml 更新清单改写为静态 feed 形态。
 //
 // 三个职责：
 // 1. 清单里的相对文件名（url/path 字段）改写为指向 GitHub Release 附件的绝对 URL——
@@ -112,7 +112,9 @@ async function main() {
       throw new Error(`release notes file is empty: ${zhNotesPath}`);
     }
     if (raw.includes("releaseNotes:")) {
-      throw new Error(`manifest already contains releaseNotes; refusing to double-inject: ${source}`);
+      throw new Error(
+        `manifest already contains releaseNotes; refusing to double-inject: ${source}`,
+      );
     }
     outputLines.push(toYamlBlockScalar(zhMarkdown));
     if (enMarkdown !== undefined && enMarkdown.length > 0) {

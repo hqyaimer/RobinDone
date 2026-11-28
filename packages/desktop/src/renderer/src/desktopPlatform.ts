@@ -1,10 +1,10 @@
-import { recordArmsCustomEventForE2E } from "@robinrun/ui";
+import { recordArmsCustomEventForE2E } from "@robindone/ui";
 import {
   DesktopCommandIds,
   buildLocalMediaPreviewUrl,
   unwrapRemoteWorkspaceBindResult,
   type IPlatformService,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 import { desktopBrowserPlatformBridge } from "./desktopBrowserPlatformBridge.js";
 import { createDesktopPluginSandboxPlatform } from "./plugin-sandbox/desktopPluginSandboxPlatform.js";
@@ -18,208 +18,208 @@ export function createDesktopPlatform(options: {
     pluginSandbox: createDesktopPluginSandboxPlatform(),
     createLocalMediaPreviewUrl: buildLocalMediaPreviewUrl,
     isLocalDevelopmentRuntime: options.isLocalDevelopmentRuntime,
-    selectDirectory: () => window.robinrun.selectDirectory(),
-    selectDirectories: () => window.robinrun.selectDirectories(),
-    selectFile: () => window.robinrun.selectFile(),
-    selectFiles: () => window.robinrun.selectFiles?.() ?? Promise.resolve([]),
-    createTempTextAttachment: (payload) => window.robinrun.createTempTextAttachment(payload),
+    selectDirectory: () => window.robindone.selectDirectory(),
+    selectDirectories: () => window.robindone.selectDirectories(),
+    selectFile: () => window.robindone.selectFile(),
+    selectFiles: () => window.robindone.selectFiles?.() ?? Promise.resolve([]),
+    createTempTextAttachment: (payload) => window.robindone.createTempTextAttachment(payload),
     materializeWorkflowArtifactFile: (payload) =>
-      window.robinrun.materializeWorkflowArtifactFile(payload),
-    onRemoteConnectionLog: (handler) => window.robinrun.onRemoteConnectionLog(handler),
-    onRemoteSessionClosed: (handler) => window.robinrun.onRemoteSessionClosed(handler),
+      window.robindone.materializeWorkflowArtifactFile(payload),
+    onRemoteConnectionLog: (handler) => window.robindone.onRemoteConnectionLog(handler),
+    onRemoteSessionClosed: (handler) => window.robindone.onRemoteSessionClosed(handler),
     // Source 自动重连会替换 logical session；统一由 preload bridge 转发换代事件。
     onRemoteSessionReconnected: (handler) =>
-      window.robinrun.onRemoteSessionReconnected?.(handler) ?? (() => {}),
+      window.robindone.onRemoteSessionReconnected?.(handler) ?? (() => {}),
     activateOrSetWorkspace: (path) =>
-      window.robinrun.activateOrSetWorkspace?.(path) ?? Promise.resolve({ activated: false }),
+      window.robindone.activateOrSetWorkspace?.(path) ?? Promise.resolve({ activated: false }),
     connectRemote: (remoteOptions, requestId, context) =>
-      window.robinrun.connectRemote(remoteOptions, requestId, context),
+      window.robindone.connectRemote(remoteOptions, requestId, context),
     requestSourceSettingsAttachment: (sourceServerId) =>
-      window.robinrun.requestSourceSettingsAttachment?.(sourceServerId) ??
+      window.robindone.requestSourceSettingsAttachment?.(sourceServerId) ??
       Promise.reject(new Error("Source settings attachment bridge unavailable")),
     cancelPendingRemoteConnection: (requestId) =>
-      window.robinrun.cancelPendingRemoteConnection?.(requestId) ?? Promise.resolve(),
+      window.robindone.cancelPendingRemoteConnection?.(requestId) ?? Promise.resolve(),
     bindRemoteWorkspaceSessionContext: async (context) => {
-      if (!window.robinrun.bindRemoteWorkspaceSessionContext) {
+      if (!window.robindone.bindRemoteWorkspaceSessionContext) {
         throw new Error("Desktop bindRemoteWorkspaceSessionContext bridge unavailable");
       }
       // preload 返回结构化结果，在页面一侧还原错误才能保留 code/retryable。
       return unwrapRemoteWorkspaceBindResult(
-        await window.robinrun.bindRemoteWorkspaceSessionContext(context),
+        await window.robindone.bindRemoteWorkspaceSessionContext(context),
       );
     },
-    startWebRemoteControl: (context) => window.robinrun.startWebRemoteControl(context),
-    stopWebRemoteControl: () => window.robinrun.stopWebRemoteControl(),
-    getWebRemoteControlStatus: () => window.robinrun.getWebRemoteControlStatus(),
+    startWebRemoteControl: (context) => window.robindone.startWebRemoteControl(context),
+    stopWebRemoteControl: () => window.robindone.stopWebRemoteControl(),
+    getWebRemoteControlStatus: () => window.robindone.getWebRemoteControlStatus(),
     onWebRemoteControlStatusChanged: (handler) =>
-      window.robinrun.onWebRemoteControlStatusChanged?.(handler) ?? (() => {}),
-    disposeRemoteSession: (sessionId) => window.robinrun.disposeRemoteSession(sessionId),
-    isDockerAvailable: () => window.robinrun.isDockerAvailable(),
-    listWSLDistros: () => window.robinrun.listWSLDistros(),
-    listDockerContainers: () => window.robinrun.listDockerContainers(),
-    listSSHConfigAliases: () => window.robinrun.listSSHConfigAliases(),
-    loadMcpFromUserDirectory: (payload) => window.robinrun.loadMcpFromUserDirectory(payload),
-    saveMcpToUserDirectory: (payload) => window.robinrun.saveMcpToUserDirectory(payload),
-    migrateLegacyCommonMcp: (payload) => window.robinrun.migrateLegacyCommonMcp(payload),
-    openExternal: (url) => window.robinrun.openExternal(url),
-    openFeedback: () => window.robinrun.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
-    openCommunity: () => window.robinrun.executeDesktopCommand(DesktopCommandIds.OpenCommunity),
-    canOpenCommunity: (locale) => window.robinrun.canOpenCommunity(locale),
-    openInFileManager: (path) => window.robinrun.openInFileManager(path),
-    openExternalFile: (path) => window.robinrun.openExternalFile(path),
-    openCuaPermissionOnboarding: window.robinrun.openCuaPermissionOnboarding
+      window.robindone.onWebRemoteControlStatusChanged?.(handler) ?? (() => {}),
+    disposeRemoteSession: (sessionId) => window.robindone.disposeRemoteSession(sessionId),
+    isDockerAvailable: () => window.robindone.isDockerAvailable(),
+    listWSLDistros: () => window.robindone.listWSLDistros(),
+    listDockerContainers: () => window.robindone.listDockerContainers(),
+    listSSHConfigAliases: () => window.robindone.listSSHConfigAliases(),
+    loadMcpFromUserDirectory: (payload) => window.robindone.loadMcpFromUserDirectory(payload),
+    saveMcpToUserDirectory: (payload) => window.robindone.saveMcpToUserDirectory(payload),
+    migrateLegacyCommonMcp: (payload) => window.robindone.migrateLegacyCommonMcp(payload),
+    openExternal: (url) => window.robindone.openExternal(url),
+    openFeedback: () => window.robindone.executeDesktopCommand(DesktopCommandIds.OpenFeedback),
+    openCommunity: () => window.robindone.executeDesktopCommand(DesktopCommandIds.OpenCommunity),
+    canOpenCommunity: (locale) => window.robindone.canOpenCommunity(locale),
+    openInFileManager: (path) => window.robindone.openInFileManager(path),
+    openExternalFile: (path) => window.robindone.openExternalFile(path),
+    openCuaPermissionOnboarding: window.robindone.openCuaPermissionOnboarding
       ? (permissionOptions) =>
-          window.robinrun.openCuaPermissionOnboarding?.(permissionOptions) ??
+          window.robindone.openCuaPermissionOnboarding?.(permissionOptions) ??
           Promise.resolve({ success: false, error: "not_supported" })
       : undefined,
-    prepareCuaHelperPermissionDrag: window.robinrun.prepareCuaHelperPermissionDrag
+    prepareCuaHelperPermissionDrag: window.robindone.prepareCuaHelperPermissionDrag
       ? () =>
-          window.robinrun.prepareCuaHelperPermissionDrag?.() ??
+          window.robindone.prepareCuaHelperPermissionDrag?.() ??
           Promise.resolve({ success: false, error: "not_supported" })
       : undefined,
-    startCuaHelperPermissionDrag: window.robinrun.startCuaHelperPermissionDrag
-      ? () => window.robinrun.startCuaHelperPermissionDrag?.()
+    startCuaHelperPermissionDrag: window.robindone.startCuaHelperPermissionDrag
+      ? () => window.robindone.startCuaHelperPermissionDrag?.()
       : undefined,
     notifyWebRemoteControlAuthStateChanged: (change) =>
-      window.robinrun.notifyWebRemoteControlAuthStateChanged(change),
-    registerOAuthState: (payload) => window.robinrun.registerOAuthState(payload),
-    onOAuthCallback: (callback) => window.robinrun.onOAuthCallback(callback),
-    onPaymentCallback: (callback) => window.robinrun.onPaymentCallback(callback),
-    onShareImport: (callback) => window.robinrun.onShareImport?.(callback) ?? (() => {}),
-    notifyRendererReady: () => window.robinrun.notifyRendererReady(),
-    syncTelemetryContext: (context) => window.robinrun.syncTelemetryContext(context),
-    reportTelemetryEvent: (payload) => window.robinrun.reportTelemetryEvent(payload),
+      window.robindone.notifyWebRemoteControlAuthStateChanged(change),
+    registerOAuthState: (payload) => window.robindone.registerOAuthState(payload),
+    onOAuthCallback: (callback) => window.robindone.onOAuthCallback(callback),
+    onPaymentCallback: (callback) => window.robindone.onPaymentCallback(callback),
+    onShareImport: (callback) => window.robindone.onShareImport?.(callback) ?? (() => {}),
+    notifyRendererReady: () => window.robindone.notifyRendererReady(),
+    syncTelemetryContext: (context) => window.robindone.syncTelemetryContext(context),
+    reportTelemetryEvent: (payload) => window.robindone.reportTelemetryEvent(payload),
     reportArmsCustomEvent: (payload) => {
       recordArmsCustomEventForE2E(payload);
-      return window.robinrun.reportArmsCustomEvent(payload);
+      return window.robindone.reportArmsCustomEvent(payload);
     },
-    getRendererActionTraceConfig: window.robinrun.getRendererActionTraceConfig
-      ? () => window.robinrun.getRendererActionTraceConfig!()
+    getRendererActionTraceConfig: window.robindone.getRendererActionTraceConfig
+      ? () => window.robindone.getRendererActionTraceConfig!()
       : undefined,
-    onRendererActionTraceConfigChanged: window.robinrun.onRendererActionTraceConfigChanged
-      ? (callback) => window.robinrun.onRendererActionTraceConfigChanged!(callback)
+    onRendererActionTraceConfigChanged: window.robindone.onRendererActionTraceConfigChanged
+      ? (callback) => window.robindone.onRendererActionTraceConfigChanged!(callback)
       : undefined,
-    reportLocalTtftBatch: (batch) => window.robinrun.reportLocalTtftBatch(batch),
-    reportRendererActionTraceBatch: window.robinrun.reportRendererActionTraceBatch
-      ? (batch) => window.robinrun.reportRendererActionTraceBatch!(batch)
+    reportLocalTtftBatch: (batch) => window.robindone.reportLocalTtftBatch(batch),
+    reportRendererActionTraceBatch: window.robindone.reportRendererActionTraceBatch
+      ? (batch) => window.robindone.reportRendererActionTraceBatch!(batch)
       : undefined,
-    reportRendererHeapSample: window.robinrun.reportRendererHeapSample
-      ? (sample) => window.robinrun.reportRendererHeapSample!(sample)
+    reportRendererHeapSample: window.robindone.reportRendererHeapSample
+      ? (sample) => window.robindone.reportRendererHeapSample!(sample)
       : undefined,
-    showTaskNotification: (payload) => window.robinrun.showTaskNotification(payload),
-    syncWindowTabs: (paths) => window.robinrun.syncWindowTabs(paths),
+    showTaskNotification: (payload) => window.robindone.showTaskNotification(payload),
+    syncWindowTabs: (paths) => window.robindone.syncWindowTabs(paths),
     syncWebRemoteControlWorkspaces: (workspaces) =>
-      window.robinrun.syncWebRemoteControlWorkspaces?.(workspaces),
+      window.robindone.syncWebRemoteControlWorkspaces?.(workspaces),
     onWebRemoteControlReconnectWorkspace: (handler) =>
-      window.robinrun.onWebRemoteControlReconnectWorkspace?.(handler) ?? (() => {}),
+      window.robindone.onWebRemoteControlReconnectWorkspace?.(handler) ?? (() => {}),
     onWebRemoteControlRendererAction: (handler) =>
-      window.robinrun.onWebRemoteControlRendererAction?.(handler) ?? (() => {}),
-    syncWindowUnreadCount: (count) => window.robinrun.syncWindowUnreadCount(count),
-    syncActiveTaskSession: (sessionId) => window.robinrun.syncActiveTaskSession(sessionId),
-    syncAppSettings: (patch) => window.robinrun.syncAppSettings?.(patch),
+      window.robindone.onWebRemoteControlRendererAction?.(handler) ?? (() => {}),
+    syncWindowUnreadCount: (count) => window.robindone.syncWindowUnreadCount(count),
+    syncActiveTaskSession: (sessionId) => window.robindone.syncActiveTaskSession(sessionId),
+    syncAppSettings: (patch) => window.robindone.syncAppSettings?.(patch),
     // 桥缺失（旧 preload 升级窗口）时按 supported 兜底，与 Windows 现状一致，设置开关可用。
     getCloseToTrayCapability: () =>
-      window.robinrun.getCloseToTrayCapability?.() ??
+      window.robindone.getCloseToTrayCapability?.() ??
       Promise.resolve({ supported: true, gnomeLikeWithoutTray: false }),
-    setShortcutRecordingActive: (active) => window.robinrun.setShortcutRecordingActive?.(active),
-    onFocusTab: (handler) => window.robinrun.onFocusTab(handler),
-    onNewTab: (handler) => window.robinrun.onNewTab(handler),
+    setShortcutRecordingActive: (active) => window.robindone.setShortcutRecordingActive?.(active),
+    onFocusTab: (handler) => window.robindone.onFocusTab(handler),
+    onNewTab: (handler) => window.robindone.onNewTab(handler),
     onCloseActiveContextRequest: (handler) =>
-      window.robinrun.onCloseActiveContextRequest?.(handler) ?? (() => {}),
-    onOpenBrowserUrl: (handler) => window.robinrun.onOpenBrowserUrl?.(handler) ?? (() => {}),
+      window.robindone.onCloseActiveContextRequest?.(handler) ?? (() => {}),
+    onOpenBrowserUrl: (handler) => window.robindone.onOpenBrowserUrl?.(handler) ?? (() => {}),
     onEmbeddedBrowserPermissionPrompt: (handler) =>
-      window.robinrun.onEmbeddedBrowserPermissionPrompt?.(handler) ?? (() => {}),
+      window.robindone.onEmbeddedBrowserPermissionPrompt?.(handler) ?? (() => {}),
     resolveEmbeddedBrowserPermissionPrompt: (request) =>
-      window.robinrun.resolveEmbeddedBrowserPermissionPrompt?.(request),
+      window.robindone.resolveEmbeddedBrowserPermissionPrompt?.(request),
     getEmbeddedBrowserSitePermissions: () =>
-      window.robinrun.getEmbeddedBrowserSitePermissions?.() ?? Promise.resolve({}),
+      window.robindone.getEmbeddedBrowserSitePermissions?.() ?? Promise.resolve({}),
     setEmbeddedBrowserSitePermission: (request) =>
-      window.robinrun.setEmbeddedBrowserSitePermission?.(request) ?? Promise.resolve({}),
+      window.robindone.setEmbeddedBrowserSitePermission?.(request) ?? Promise.resolve({}),
     clearEmbeddedBrowserSitePermissions: () =>
-      window.robinrun.clearEmbeddedBrowserSitePermissions?.() ?? Promise.resolve({}),
+      window.robindone.clearEmbeddedBrowserSitePermissions?.() ?? Promise.resolve({}),
     resetEmbeddedBrowserSitePermission: (request) =>
-      window.robinrun.resetEmbeddedBrowserSitePermission?.(request) ?? Promise.resolve({}),
+      window.robindone.resetEmbeddedBrowserSitePermission?.(request) ?? Promise.resolve({}),
     onBrowserViewScreenshotSurfacePrepare: (handler) =>
-      window.robinrun.onBrowserViewScreenshotSurfacePrepare?.(handler) ?? (() => {}),
+      window.robindone.onBrowserViewScreenshotSurfacePrepare?.(handler) ?? (() => {}),
     onBrowserViewScreenshotSurfaceRelease: (handler) =>
-      window.robinrun.onBrowserViewScreenshotSurfaceRelease?.(handler) ?? (() => {}),
+      window.robindone.onBrowserViewScreenshotSurfaceRelease?.(handler) ?? (() => {}),
     browserViewScreenshotSurfaceReady: (payload) =>
-      window.robinrun.browserViewScreenshotSurfaceReady?.(payload),
+      window.robindone.browserViewScreenshotSurfaceReady?.(payload),
     ...desktopBrowserPlatformBridge,
-    onNewTask: (handler) => window.robinrun.onNewTask(handler),
+    onNewTask: (handler) => window.robindone.onNewTask(handler),
     onOpenWorkspace: (handler) => {
       // 开发态或升级后的旧窗口可能仍运行未暴露 onOpenWorkspace 的 preload，
       // renderer 直接调用会在启动时崩溃。这里和 activateOrSetWorkspace 一样做兼容兜底，
       // 缺少该 bridge 时只禁用原生菜单回调，不影响应用继续打开。
-      return window.robinrun.onOpenWorkspace?.(handler) ?? (() => {});
+      return window.robindone.onOpenWorkspace?.(handler) ?? (() => {});
     },
-    onOpenWorkspacePath: (handler) => window.robinrun.onOpenWorkspacePath?.(handler) ?? (() => {}),
+    onOpenWorkspacePath: (handler) => window.robindone.onOpenWorkspacePath?.(handler) ?? (() => {}),
     onOpenFeedbackDialog: (handler) =>
-      window.robinrun.onOpenFeedbackDialog?.(handler) ?? (() => {}),
-    onOpenTicketsPanel: (handler) => window.robinrun.onOpenTicketsPanel?.(handler) ?? (() => {}),
-    onWindowFullscreenChanged: (handler) => window.robinrun.onWindowFullscreenChanged(handler),
-    getDesktopWindowChromeState: window.robinrun.getDesktopWindowChromeState
-      ? () => window.robinrun.getDesktopWindowChromeState!()
+      window.robindone.onOpenFeedbackDialog?.(handler) ?? (() => {}),
+    onOpenTicketsPanel: (handler) => window.robindone.onOpenTicketsPanel?.(handler) ?? (() => {}),
+    onWindowFullscreenChanged: (handler) => window.robindone.onWindowFullscreenChanged(handler),
+    getDesktopWindowChromeState: window.robindone.getDesktopWindowChromeState
+      ? () => window.robindone.getDesktopWindowChromeState!()
       : undefined,
-    onDesktopWindowChromeStateChanged: window.robinrun.onDesktopWindowChromeStateChanged
-      ? (handler) => window.robinrun.onDesktopWindowChromeStateChanged!(handler)
+    onDesktopWindowChromeStateChanged: window.robindone.onDesktopWindowChromeStateChanged
+      ? (handler) => window.robindone.onDesktopWindowChromeStateChanged!(handler)
       : undefined,
     getWindowControlsOverlayMetrics: () =>
-      window.robinrun.getWindowControlsOverlayMetrics?.() ?? null,
+      window.robindone.getWindowControlsOverlayMetrics?.() ?? null,
     onWindowControlsOverlayChanged: (handler) =>
-      window.robinrun.onWindowControlsOverlayChanged?.(handler) ?? (() => {}),
+      window.robindone.onWindowControlsOverlayChanged?.(handler) ?? (() => {}),
     getDesktopZoomLevel: () =>
-      window.robinrun.getDesktopZoomLevel?.() ?? Promise.resolve({ zoomLevel: 0 }),
+      window.robindone.getDesktopZoomLevel?.() ?? Promise.resolve({ zoomLevel: 0 }),
     onDesktopZoomLevelChanged: (handler) =>
-      window.robinrun.onDesktopZoomLevelChanged?.(handler) ?? (() => {}),
-    onTaskNotificationClick: (handler) => window.robinrun.onTaskNotificationClick(handler),
-    exportLogs: () => window.robinrun.exportLogs(),
+      window.robindone.onDesktopZoomLevelChanged?.(handler) ?? (() => {}),
+    onTaskNotificationClick: (handler) => window.robindone.onTaskNotificationClick(handler),
+    exportLogs: () => window.robindone.exportLogs(),
     captureWindowScreenshot: () =>
-      window.robinrun.captureWindowScreenshot?.() ?? Promise.resolve(null),
-    onUpdateReady: (callback) => window.robinrun.onUpdateReady(callback),
-    onUpdateCheckResult: (callback) => window.robinrun.onUpdateCheckResult(callback),
+      window.robindone.captureWindowScreenshot?.() ?? Promise.resolve(null),
+    onUpdateReady: (callback) => window.robindone.onUpdateReady(callback),
+    onUpdateCheckResult: (callback) => window.robindone.onUpdateCheckResult(callback),
     onUpdateStateChanged: (callback) =>
-      window.robinrun.onUpdateStateChanged?.(callback) ?? (() => {}),
+      window.robindone.onUpdateStateChanged?.(callback) ?? (() => {}),
     getUpdateState: () =>
-      window.robinrun.getUpdateState?.() ?? Promise.resolve({ kind: "idle", enabled: true }),
-    downloadUpdate: () => window.robinrun.downloadUpdate?.() ?? Promise.resolve(),
-    cancelUpdateDownload: () => window.robinrun.cancelUpdateDownload?.() ?? Promise.resolve(),
-    openUpdateStatusWindow: () => window.robinrun.openUpdateStatusWindow?.() ?? Promise.resolve(),
+      window.robindone.getUpdateState?.() ?? Promise.resolve({ kind: "idle", enabled: true }),
+    downloadUpdate: () => window.robindone.downloadUpdate?.() ?? Promise.resolve(),
+    cancelUpdateDownload: () => window.robindone.cancelUpdateDownload?.() ?? Promise.resolve(),
+    openUpdateStatusWindow: () => window.robindone.openUpdateStatusWindow?.() ?? Promise.resolve(),
     getAutoUpdatePreferences: () =>
-      window.robinrun.getAutoUpdatePreferences?.() ??
+      window.robindone.getAutoUpdatePreferences?.() ??
       Promise.resolve({ autoDownloadAndInstallUpdates: false }),
     setAutoDownloadAndInstallUpdates: (enabled) =>
-      window.robinrun.setAutoDownloadAndInstallUpdates?.(enabled) ?? Promise.resolve(),
+      window.robindone.setAutoDownloadAndInstallUpdates?.(enabled) ?? Promise.resolve(),
     getDesktopSessionActivity: () =>
-      window.robinrun.getDesktopSessionActivity?.() ??
+      window.robindone.getDesktopSessionActivity?.() ??
       Promise.resolve({ runningAgentSessionCount: 0 }),
-    getRobinRunStdioTapDevState: () =>
-      window.robinrun.getRobinRunStdioTapDevState?.() ??
+    getRobinDoneStdioTapDevState: () =>
+      window.robindone.getRobinDoneStdioTapDevState?.() ??
       Promise.resolve({ enabled: false, visible: false, logDir: "", statePath: "" }),
-    onSettingsChanged: (callback) => window.robinrun.onSettingsChanged?.(callback) ?? (() => {}),
+    onSettingsChanged: (callback) => window.robindone.onSettingsChanged?.(callback) ?? (() => {}),
     onApplicationLocaleChanged: (callback) =>
-      window.robinrun.onApplicationLocaleChanged?.(callback) ?? (() => {}),
-    onPostUpdateReleaseNotes: (callback) => window.robinrun.onPostUpdateReleaseNotes(callback),
+      window.robindone.onApplicationLocaleChanged?.(callback) ?? (() => {}),
+    onPostUpdateReleaseNotes: (callback) => window.robindone.onPostUpdateReleaseNotes(callback),
     acknowledgePostUpdateReleaseNotes: (version) =>
-      window.robinrun.acknowledgePostUpdateReleaseNotes(version),
+      window.robindone.acknowledgePostUpdateReleaseNotes(version),
     skipUpdateVersion: (version) =>
-      window.robinrun.skipUpdateVersion?.(version) ?? Promise.resolve(),
-    quitAndInstallUpdate: () => window.robinrun.quitAndInstallUpdate(),
-    getInstalledEditors: (filePath) => window.robinrun.getInstalledEditors(filePath),
-    getFileApplications: (target) => window.robinrun.getFileApplications(target),
+      window.robindone.skipUpdateVersion?.(version) ?? Promise.resolve(),
+    quitAndInstallUpdate: () => window.robindone.quitAndInstallUpdate(),
+    getInstalledEditors: (filePath) => window.robindone.getInstalledEditors(filePath),
+    getFileApplications: (target) => window.robindone.getFileApplications(target),
     openFileWithApplication: (applicationId, target) =>
-      window.robinrun.openFileWithApplication(applicationId, target),
+      window.robindone.openFileWithApplication(applicationId, target),
     getApplicationIcon: (bundleId) =>
-      window.robinrun.getApplicationIcon?.(bundleId) ?? Promise.resolve(null),
+      window.robindone.getApplicationIcon?.(bundleId) ?? Promise.resolve(null),
     openInEditor: (editorId, path, editorOptions) =>
-      window.robinrun.openInEditor(editorId, path, editorOptions),
-    executeDesktopCommand: (command) => window.robinrun.executeDesktopCommand(command),
-    setApplicationLocale: (locale) => window.robinrun.setApplicationLocale(locale),
+      window.robindone.openInEditor(editorId, path, editorOptions),
+    executeDesktopCommand: (command) => window.robindone.executeDesktopCommand(command),
+    setApplicationLocale: (locale) => window.robindone.setApplicationLocale(locale),
     getSystemLocale: () =>
-      window.robinrun.getSystemLocale?.() ??
+      window.robindone.getSystemLocale?.() ??
       Promise.resolve(navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US"),
-    setTitleBarTheme: (theme) => window.robinrun.setTitleBarTheme(theme),
+    setTitleBarTheme: (theme) => window.robindone.setTitleBarTheme(theme),
     getDeviceId: () =>
-      (window as Window & { __ROBINRUN_DEVICE_ID__?: string }).__ROBINRUN_DEVICE_ID__ ?? "",
+      (window as Window & { __ROBINDONE_DEVICE_ID__?: string }).__ROBINDONE_DEVICE_ID__ ?? "",
   };
 }

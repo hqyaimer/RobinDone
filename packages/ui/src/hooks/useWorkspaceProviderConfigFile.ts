@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import { shouldEnableWorkspaceRpc } from "@/lib/workspaceRpcAvailability.js";
-import { useRobinRunTaskService } from "@/hooks/useRobinRunTaskService.js";
+import { useRobinDoneTaskService } from "@/hooks/useRobinDoneTaskService.js";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
 import { useResolvedRemoteWorkspaceSessionId } from "@/hooks/useResolvedRemoteWorkspaceSessionId.js";
-import type { IRobinRunTaskService } from "@robinrun/services";
+import type { IRobinDoneTaskService } from "@robindone/services";
 
 interface WorkspaceProviderConfigFileState {
   path: string | null;
@@ -38,38 +38,38 @@ const INITIAL_STATE: WorkspaceProviderConfigFileState = {
 
 type WorkspaceProviderConfigServiceScope = "workspace" | "base";
 
-export function resolveWorkspaceProviderConfigRobinRunService(params: {
+export function resolveWorkspaceProviderConfigRobinDoneService(params: {
   configuredServiceScope: WorkspaceProviderConfigServiceScope;
-  workspaceRobinRunService: IRobinRunTaskService;
-  baseRobinRunService: IRobinRunTaskService | null;
+  workspaceRobinDoneService: IRobinDoneTaskService;
+  baseRobinDoneService: IRobinDoneTaskService | null;
   remoteSessionId: string | null;
-}): IRobinRunTaskService | null {
+}): IRobinDoneTaskService | null {
   if (params.configuredServiceScope === "workspace") {
-    return params.workspaceRobinRunService;
+    return params.workspaceRobinDoneService;
   }
 
-  if (params.baseRobinRunService) {
-    return params.baseRobinRunService;
+  if (params.baseRobinDoneService) {
+    return params.baseRobinDoneService;
   }
 
-  // Bugfix: 远程 workspace 下如果误回退到 workspaceRobinRunService，
+  // Bugfix: 远程 workspace 下如果误回退到 workspaceRobinDoneService，
   // “前往配置”会读到远端绝对路径（如 /root/...），本机无法正确打开。
-  // 这里在远程会话里严格要求 baseRobinRunService，就绪前先等待，不再冒险走错误 fallback。
+  // 这里在远程会话里严格要求 baseRobinDoneService，就绪前先等待，不再冒险走错误 fallback。
   if (params.remoteSessionId) {
     return null;
   }
 
-  return params.workspaceRobinRunService;
+  return params.workspaceRobinDoneService;
 }
 
 /**
  * 读取当前 workspace + provider 的主配置文件路径。
  *
- * 统一通过 robinrunTaskService 获取路径规则，避免 UI 层拼接 provider 配置路径。
+ * 统一通过 robindoneTaskService 获取路径规则，避免 UI 层拼接 provider 配置路径。
  */
 export function useWorkspaceProviderConfigFile(
   workspacePath: string,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   preferredRemoteSessionId?: string | null,
   workspaceIdentity?: string,
   options?: {
@@ -77,7 +77,7 @@ export function useWorkspaceProviderConfigFile(
     enabled?: boolean;
   },
 ) {
-  const workspaceRobinRunService = useRobinRunTaskService(
+  const workspaceRobinDoneService = useRobinDoneTaskService(
     workspacePath,
     preferredRemoteSessionId,
     workspaceIdentity,
@@ -89,23 +89,23 @@ export function useWorkspaceProviderConfigFile(
     preferredRemoteSessionId,
     workspaceIdentity,
   );
-  const baseRobinRunService = useRemoteWorkspaceSessionStore(
-    (state) => state.baseServices?.robinrunTaskService ?? null,
+  const baseRobinDoneService = useRemoteWorkspaceSessionStore(
+    (state) => state.baseServices?.robindoneTaskService ?? null,
   );
   const workspaceRpcEnabled = shouldEnableWorkspaceRpc({
     workspaceIdentity,
     remoteSessionId,
   });
-  const robinrunTaskService = resolveWorkspaceProviderConfigRobinRunService({
+  const robindoneTaskService = resolveWorkspaceProviderConfigRobinDoneService({
     configuredServiceScope,
-    workspaceRobinRunService,
-    baseRobinRunService,
+    workspaceRobinDoneService,
+    baseRobinDoneService,
     remoteSessionId,
   });
-  const robinrunServiceScope =
+  const robindoneServiceScope =
     configuredServiceScope === "base"
       ? "base"
-      : remoteSessionId && workspaceRobinRunService !== baseRobinRunService
+      : remoteSessionId && workspaceRobinDoneService !== baseRobinDoneService
         ? "remote"
         : "base";
   const [state, setState] = useState<WorkspaceProviderConfigFileState>(INITIAL_STATE);
@@ -122,7 +122,7 @@ export function useWorkspaceProviderConfigFile(
     if (!workspacePath || !enabled || !workspaceRpcEnabled) {
       requestVersionRef.current += 1;
       // Bugfix: 恢复断连远端 workspace 时，provider 配置路径读取不能抢在 remote session
-      // 绑定前访问断连代理，否则会把 ROBINRUN_REMOTE_WORKSPACE_DISCONNECTED 记录成配置读取失败。
+      // 绑定前访问断连代理，否则会把 ROBINDONE_REMOTE_WORKSPACE_DISCONNECTED 记录成配置读取失败。
       setState({
         path: null,
         exists: false,
@@ -134,7 +134,7 @@ export function useWorkspaceProviderConfigFile(
       };
     }
 
-    if (!robinrunTaskService) {
+    if (!robindoneTaskService) {
       requestVersionRef.current += 1;
       setState({
         path: null,
@@ -160,10 +160,10 @@ export function useWorkspaceProviderConfigFile(
     });
 
     logger.info(
-      `[useWorkspaceProviderConfigFile] 开始读取 provider 配置路径 workspace=${workspacePath} provider=${provider} scope=${robinrunServiceScope} session=${remoteSessionId ?? "none"}`,
+      `[useWorkspaceProviderConfigFile] 开始读取 provider 配置路径 workspace=${workspacePath} provider=${provider} scope=${robindoneServiceScope} session=${remoteSessionId ?? "none"}`,
     );
 
-    void robinrunTaskService
+    void robindoneTaskService
       .getWorkspaceProviderConfigFile({
         workspacePath,
         ...(workspaceIdentity ? { workspaceIdentity } : {}),
@@ -175,7 +175,7 @@ export function useWorkspaceProviderConfigFile(
         }
 
         logger.info(
-          `[useWorkspaceProviderConfigFile] 读取 provider 配置路径成功 workspace=${workspacePath} provider=${provider} scope=${robinrunServiceScope} session=${remoteSessionId ?? "none"} exists=${result.exists} path=${result.path}`,
+          `[useWorkspaceProviderConfigFile] 读取 provider 配置路径成功 workspace=${workspacePath} provider=${provider} scope=${robindoneServiceScope} session=${remoteSessionId ?? "none"} exists=${result.exists} path=${result.path}`,
         );
 
         setState({
@@ -194,7 +194,7 @@ export function useWorkspaceProviderConfigFile(
         logger.warn("[useWorkspaceProviderConfigFile] 读取 provider 配置路径失败", {
           workspacePath,
           provider,
-          scope: robinrunServiceScope,
+          scope: robindoneServiceScope,
           remoteSessionId,
           error: message,
         });
@@ -210,8 +210,8 @@ export function useWorkspaceProviderConfigFile(
       disposed = true;
     };
   }, [
-    robinrunTaskService,
-    robinrunServiceScope,
+    robindoneTaskService,
+    robindoneServiceScope,
     enabled,
     provider,
     refreshVersion,

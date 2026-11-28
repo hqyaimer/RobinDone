@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { ISourceServerManagementService } from "@robinrun/services";
-import type { RemoteTarget, SourceServerManagementSnapshot } from "@robinrun/shared";
+import type { ISourceServerManagementService } from "@robindone/services";
+import type { RemoteTarget, SourceServerManagementSnapshot } from "@robindone/shared";
 import { dismissToast, toast, type ToastOptions } from "@/components/ui/toast.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { findSourceServerUpgradeProfileId } from "@/lib/remoteConnectionWizard.js";
 import {
   getSourceServerForceUpdateDescription,
@@ -280,7 +280,7 @@ export function useSourceServerUpdateNotifications(options: {
     connectionTargetRef.current = target;
     controllerRef.current?.refresh();
   }, []);
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
   const openSettingsTab = useTabStore((state) => state.openSettingsTab);
   useEffect(() => {

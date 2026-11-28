@@ -17,11 +17,11 @@ import type {
   AppUsageHeatmap,
   AppUsageHeatmapCell,
   AppUsageHeatmapWeek,
-} from "@robinrun/shared";
-import { ESTIMATED_TOKEN_CHAR_DIVISOR } from "@robinrun/shared";
+} from "@robindone/shared";
+import { ESTIMATED_TOKEN_CHAR_DIVISOR } from "@robindone/shared";
 
 // ============================================================================
-// 把 BigModel monitor 接口数据(model-usage / tool-usage)转成 RobinRun 内部统一
+// 把 BigModel monitor 接口数据(model-usage / tool-usage)转成 RobinDone 内部统一
 // 的 UsageStatsSnapshot 结构。
 //
 // monitor 接口直接返回估算 token 数,反推字符数以保持现有 UI 字段语义。

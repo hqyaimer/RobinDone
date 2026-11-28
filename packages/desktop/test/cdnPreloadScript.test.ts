@@ -128,7 +128,7 @@ process.stdout.write("\\n");
     const describeCalls = aliyunCalls.filter((line) => line.includes("DescribeRefreshTaskById"));
     expect(pushCalls).toHaveLength(2);
     expect(pushCalls.some((line) => line.includes("latest-mac.yml"))).toBe(true);
-    expect(pushCalls.some((line) => line.includes("RobinRun-1.3.0-mac-arm64.dmg"))).toBe(true);
+    expect(pushCalls.some((line) => line.includes("RobinDone-1.3.0-mac-arm64.dmg"))).toBe(true);
     expect(pushCalls.every((line) => !line.includes("--Area"))).toBe(true);
     expect(output).not.toContain("--Area");
     expect(describeCalls).toHaveLength(2);
@@ -168,8 +168,8 @@ done
 if [[ "$2" == "PushObjectCache" ]]; then
   if [[ "$profile" == "z-ai-account" ]]; then
     printf '%s\\n' '{"PushTaskId":"task-z-ai"}'
-  elif [[ "$profile" == "robinrun-ai-account" ]]; then
-    printf '%s\\n' '{"PushTaskId":"task-robinrun-ai"}'
+  elif [[ "$profile" == "robindone-ai-account" ]]; then
+    printf '%s\\n' '{"PushTaskId":"task-robindone-ai"}'
   else
     echo "unexpected profile: $profile" >&2
     exit 1
@@ -207,8 +207,8 @@ else process.stdout.write("\\n");
         ...process.env,
         PATH: `${binDir}:${process.env.PATH ?? ""}`,
         CDN_URLS_IN: cdnUrlsIn,
-        CDN_DOMAIN: "cdn-robinrun.z.ai,cdn.robinrun-ai.com",
-        CDN_PRELOAD_PROFILE: "z-ai-account,robinrun-ai-account",
+        CDN_DOMAIN: "cdn-robindone.z.ai,cdn.robindone-ai.com",
+        CDN_PRELOAD_PROFILE: "z-ai-account,robindone-ai-account",
         POLL_INTERVAL: "0",
       },
       timeout: 25_000,
@@ -229,13 +229,13 @@ else process.stdout.write("\\n");
     expect(describeCalls).toHaveLength(2);
     expect(
       pushCalls.some(
-        (line) => line.includes("cdn-robinrun.z.ai") && line.includes("--profile z-ai-account"),
+        (line) => line.includes("cdn-robindone.z.ai") && line.includes("--profile z-ai-account"),
       ),
     ).toBe(true);
     expect(
       pushCalls.some(
         (line) =>
-          line.includes("cdn.robinrun-ai.com") && line.includes("--profile robinrun-ai-account"),
+          line.includes("cdn.robindone-ai.com") && line.includes("--profile robindone-ai-account"),
       ),
     ).toBe(true);
     expect(pushCalls.every((line) => !line.includes("--region"))).toBe(true);
@@ -248,7 +248,7 @@ else process.stdout.write("\\n");
     expect(
       describeCalls.some(
         (line) =>
-          line.includes("task-robinrun-ai") && line.includes("--profile robinrun-ai-account"),
+          line.includes("task-robindone-ai") && line.includes("--profile robindone-ai-account"),
       ),
     ).toBe(true);
     expect(describeCalls.every((line) => !line.includes("--region"))).toBe(true);
@@ -329,7 +329,7 @@ else process.stdout.write("\\n");
 
     expect(aliyunCalls).toHaveLength(2);
     expect(aliyunCalls[0]).toContain("PushObjectCache");
-    expect(aliyunCalls[0]).toContain("RobinRun-1.3.0-mac-arm64.dmg");
+    expect(aliyunCalls[0]).toContain("RobinDone-1.3.0-mac-arm64.dmg");
     expect(aliyunCalls[1]).toContain("DescribeRefreshTaskById");
   }, 30_000);
 

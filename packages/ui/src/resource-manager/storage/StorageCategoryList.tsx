@@ -1,13 +1,13 @@
 import { ChevronRight, Loader2 } from "lucide-react";
-import { type StorageCategoryId } from "@robinrun/shared";
+import { type StorageCategoryId } from "@robindone/shared";
 import {
   TID_RESOURCE_MANAGER_STORAGE_CATEGORY_CLEAN,
   TID_RESOURCE_MANAGER_STORAGE_CATEGORY_ROW,
   TID_RESOURCE_MANAGER_STORAGE_CATEGORY_SIZE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { formatBytes } from "@/resource-manager/resourceUsageView.js";
 import {
   STORAGE_CATEGORY_ICONS,
@@ -29,7 +29,7 @@ export function StorageCategoryList({
   onOpen: (id: StorageCategoryId) => void;
   onClean: (id: StorageCategoryId) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div className="overflow-hidden rounded-xl border border-card-border bg-card">
       {categories.map((category) => {

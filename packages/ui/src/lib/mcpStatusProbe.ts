@@ -1,4 +1,4 @@
-import type { McpServerConfig, McpTestResult } from "@robinrun/shared";
+import type { McpServerConfig, McpTestResult } from "@robindone/shared";
 
 const MCP_PROBE_TIMEOUT_MS = 5000;
 

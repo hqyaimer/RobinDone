@@ -5,8 +5,8 @@ import type {
   MigrateLegacyCommonMcpResult,
   NativeMcpServerRecord,
   SaveCliMcpToUserDirectoryRequest,
-} from "@robinrun/shared";
-import type { IMcpSyncService } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IMcpSyncService } from "@robindone/services";
 import { logger } from "@/logger.js";
 
 export type McpPlatformService = Pick<

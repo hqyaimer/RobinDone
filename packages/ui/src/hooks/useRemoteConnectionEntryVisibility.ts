@@ -1,7 +1,7 @@
-import type { RobinRunEnv } from "@robinrun/shared";
+import type { RobinDoneEnv } from "@robindone/shared";
 
 export function shouldShowRemoteConnectionEntry(params: {
-  env: RobinRunEnv;
+  env: RobinDoneEnv;
   isIntranet: boolean;
 }): boolean {
   void params;

@@ -3,7 +3,7 @@ import type {
   FeedbackTicketModule,
   FeedbackTicketSeverity,
   FeedbackTicketType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type FeedbackTab = "submit" | "tickets";
 

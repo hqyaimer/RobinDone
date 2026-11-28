@@ -1,5 +1,5 @@
-import { isBuiltinModelProviderId, isStartPlanModelProviderId } from "@robinrun/shared";
-import type { ProviderSettingsView } from "@robinrun/services";
+import { isBuiltinModelProviderId, isStartPlanModelProviderId } from "@robindone/shared";
+import type { ProviderSettingsView } from "@robindone/services";
 import { logger } from "@/logger.js";
 
 export interface AccountConnectionLoss {

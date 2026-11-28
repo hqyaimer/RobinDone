@@ -2,7 +2,7 @@
 import type { SettingsDirectoryLocation } from "./settings-source.js";
 
 export type CommandSource = "user" | "plugin";
-export type CommandAgentSource = "robinrunAgent";
+export type CommandAgentSource = "robindoneAgent";
 
 export interface CommandInfo {
   name: string;
@@ -34,13 +34,13 @@ export interface PluginCommand extends Omit<CommandInfo, "filePath"> {
   filePath: string;
 }
 
-export type RobinRunCommand = UserCommand | PluginCommand;
+export type RobinDoneCommand = UserCommand | PluginCommand;
 
-export function isUserCommand(command: RobinRunCommand): command is UserCommand {
+export function isUserCommand(command: RobinDoneCommand): command is UserCommand {
   return command.source === "user";
 }
 
-export function isPluginCommand(command: RobinRunCommand): command is PluginCommand {
+export function isPluginCommand(command: RobinDoneCommand): command is PluginCommand {
   return command.source === "plugin";
 }
 
@@ -60,7 +60,7 @@ export interface CommandsCapability {
 }
 
 export interface CommandsListResult {
-  commands: RobinRunCommand[];
+  commands: RobinDoneCommand[];
   userCommands: UserCommand[];
   pluginCommands: PluginCommand[];
   capability: CommandsCapability;

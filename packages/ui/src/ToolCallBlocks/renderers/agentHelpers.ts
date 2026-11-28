@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { workerRegistryFileName, workerRegistrySchema } from "@robinrun/shared";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { workerRegistryFileName, workerRegistrySchema } from "@robindone/shared";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import type { ToolCallBlockRenderContext } from "@/ToolCallBlocks/shared.js";
 import { isSubagentColor } from "@/lib/subagentColors.js";
 
-type AgentIntl = ReturnType<typeof useRobinRunIntl>["intl"];
+type AgentIntl = ReturnType<typeof useRobinDoneIntl>["intl"];
 type AgentToolCall = ToolCallBlockRenderContext["toolCallNode"]["toolCall"];
 const DEFAULT_AGENT_TYPE_LABEL = "general-purpose";
 
@@ -96,7 +96,7 @@ function readRecordFromUnknown(value: unknown): Record<string, unknown> | null {
 
 function readCodexSubagentNickname(toolCall: AgentToolCall): string | undefined {
   const rawNickname =
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "nickname"]) ??
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "nickname"]) ??
     readStringFromNestedRecord(toolCall.raw, ["nickname"]);
   if (rawNickname) {
     return rawNickname;
@@ -158,9 +158,9 @@ export function getAgentKindLabel(
   const inputRecord = isPlainRecord(toolCall.input) ? toolCall.input : null;
   const rawRecord = isPlainRecord(toolCall.raw) ? toolCall.raw : null;
   const rawName =
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "agentType"]) ??
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "agent_type"]) ??
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "subagent_type"]);
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "agentType"]) ??
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "agent_type"]) ??
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "subagent_type"]);
 
   // 流式 input 的半截 JSON 暂时读不到 subagent_type，若一读不到就按“模型省略字段”
   // 回退 general-purpose，首帧会误报、之后再跳成真实类型。只有 inputPreviewComplete 明确为 true
@@ -182,7 +182,7 @@ export function getAgentColor(toolCall: AgentToolCall) {
   const outputRecord = readRecordFromUnknown(toolCall.output);
   const inputRecord = isPlainRecord(toolCall.input) ? toolCall.input : null;
   const rawColor =
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "color"]) ??
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "color"]) ??
     readStringFromNestedRecord(toolCall.raw, ["color"]) ??
     readAgentColorFromRecord(inputRecord) ??
     readAgentColorFromRecord(outputRecord);
@@ -224,12 +224,12 @@ export function getWorkerDisplayName(toolCall: AgentToolCall): string | undefine
 export function readBackgroundAgentInfo(toolCall: AgentToolCall) {
   const raw = isPlainRecord(toolCall.raw) ? toolCall.raw : null;
   const meta = raw && isPlainRecord(raw._meta) ? raw._meta : null;
-  const robinrun = meta && isPlainRecord(meta.robinrun) ? meta.robinrun : null;
-  const robinrunBackgroundAgent =
-    robinrun && isPlainRecord(robinrun.backgroundAgent) ? robinrun.backgroundAgent : null;
+  const robindone = meta && isPlainRecord(meta.robindone) ? meta.robindone : null;
+  const robindoneBackgroundAgent =
+    robindone && isPlainRecord(robindone.backgroundAgent) ? robindone.backgroundAgent : null;
   const taskNotification =
-    robinrun && isPlainRecord(robinrun.taskNotification) ? robinrun.taskNotification : null;
-  const backgroundAgent = robinrunBackgroundAgent;
+    robindone && isPlainRecord(robindone.taskNotification) ? robindone.taskNotification : null;
+  const backgroundAgent = robindoneBackgroundAgent;
   const input = isPlainRecord(toolCall.input) ? toolCall.input : null;
   const outputText = readTextFromUnknown(toolCall.output);
   const outputFile =
@@ -246,8 +246,13 @@ export function readBackgroundAgentInfo(toolCall: AgentToolCall) {
 
 export function getAgentActivityContent(toolCall: AgentToolCall) {
   const taskNotificationResult =
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "taskNotification", "result"]) ??
-    readStringFromNestedRecord(toolCall.raw, ["_meta", "robinrun", "taskNotification", "summary"]);
+    readStringFromNestedRecord(toolCall.raw, [
+      "_meta",
+      "robindone",
+      "taskNotification",
+      "result",
+    ]) ??
+    readStringFromNestedRecord(toolCall.raw, ["_meta", "robindone", "taskNotification", "summary"]);
   if (taskNotificationResult) {
     // background Agent 的 output_file 是完整 sidechain transcript，
     // task-notification result 才是适合用户阅读的完成摘要。优先展示摘要，避免展开后被 JSONL 淹没。
@@ -328,7 +333,7 @@ const rosterCache = new Map<string, RosterNameCache>();
 const rosterInflight = new Map<string, Promise<Map<string, string>>>();
 
 function registryPathFor(workspacePath: string): string {
-  return `${workspacePath.replace(/[\\/]+$/, "")}/.robinrun/agents/${workerRegistryFileName}`;
+  return `${workspacePath.replace(/[\\/]+$/, "")}/.robindone/agents/${workerRegistryFileName}`;
 }
 
 function parseRosterNames(content: string): Map<string, string> {
@@ -377,7 +382,7 @@ async function resolveNames(
  * worker 派发行名称芯片的 id → 显示名回退。DispatchWorker 成功时输出带 workerName，
  * 行标签/名称芯片直接用它；但失败行（如派发被拦）、流式未完成行、历史快照行的输出里
  * 没有 workerName，只有输入的 wkr-id——对用户不可读（key/name 裁决：id 是寻址句柄，
- * 显示名才是人读的）。按工作区读 `.robinrun/agents/workers.json`（编制唯一事实源）；
+ * 显示名才是人读的）。按工作区读 `.robindone/agents/workers.json`（编制唯一事实源）；
  * 渲染器逐行调用，用模块级缓存收敛文件读取：TTL 内复用，miss/过期才重读。
  */
 export function useWorkerRosterName(

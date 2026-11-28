@@ -1,4 +1,4 @@
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 /**

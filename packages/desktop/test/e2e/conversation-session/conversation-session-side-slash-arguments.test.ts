@@ -3,7 +3,7 @@ import {
   TID_V4_COMPOSER_SEND,
   TID_V4_SESSION_PANE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import {
   clickV4Stop,
@@ -116,13 +116,13 @@ async function setPaneComposerText(paneTestId: string, text: string): Promise<vo
           const bridge = (
             input as
               | (HTMLElement & {
-                  __robinrunLexicalInputE2E?: {
+                  __robindoneLexicalInputE2E?: {
                     getText: () => string;
                     setText: (value: string) => void;
                   };
                 })
               | undefined
-          )?.__robinrunLexicalInputE2E;
+          )?.__robindoneLexicalInputE2E;
           if (!bridge) return false;
           bridge.setText(nextText);
           return bridge.getText() === nextText;

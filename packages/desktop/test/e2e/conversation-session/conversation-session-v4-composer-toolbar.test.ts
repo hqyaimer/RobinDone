@@ -29,7 +29,7 @@ import {
   TID_V4_MODEL_CONFIG,
   TID_SETTINGS_PAGE,
   TID_SETTINGS_BACK_BUTTON,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clickV4SlashOption,
   getV4ComposerText,
@@ -54,7 +54,7 @@ import { waitForProviderConfigPolling } from "../helpers/provider-config-polling
 
 const CUSTOM_SLASH_COMMAND_NAME = "e2e-draft-catalog";
 const CUSTOM_SLASH_OPTION_ID = `slash:${CUSTOM_SLASH_COMMAND_NAME}`;
-const CUSTOM_SLASH_COMMAND_DIR = join(getE2EAppDataPaths().homeDir, ".robinrun", "commands");
+const CUSTOM_SLASH_COMMAND_DIR = join(getE2EAppDataPaths().homeDir, ".robindone", "commands");
 const CUSTOM_SLASH_COMMAND_PATH = join(CUSTOM_SLASH_COMMAND_DIR, `${CUSTOM_SLASH_COMMAND_NAME}.md`);
 const COMPOSER_PICKER_TRIGGER_IDS = {
   mode: TID_CHAT_MODE_SELECT_TRIGGER,
@@ -338,8 +338,8 @@ describe("v4 M5 门禁：composer 工具条与 slash 候选面板", () => {
         const acks = await browser
           .execute(() =>
             JSON.stringify(
-              (window as Window & { __robinrunV4CommandAcksE2E?: unknown[] })
-                .__robinrunV4CommandAcksE2E ?? [],
+              (window as Window & { __robindoneV4CommandAcksE2E?: unknown[] })
+                .__robindoneV4CommandAcksE2E ?? [],
             ),
           )
           .catch(() => "acks unavailable");

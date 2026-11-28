@@ -1,11 +1,11 @@
-import type { TaskNotificationPayload } from "@robinrun/shared";
+import type { TaskNotificationPayload } from "@robindone/shared";
 import type {
   ConversationSnapshot,
   PendingInteraction,
   SessionPhase,
   SessionSummary,
   UserInputRequestPayload,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { IntlInstance } from "@/i18n/index.js";
 
 type FormatMessage = IntlInstance["formatMessage"];

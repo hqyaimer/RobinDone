@@ -1,4 +1,4 @@
-import { OffPeakPermanentDispatchError } from "@robinrun/services/node";
+import { OffPeakPermanentDispatchError } from "@robindone/services/node";
 
 /**
  * 闲时派发三分支：

@@ -2,10 +2,10 @@ import { useUiPluginRecommendations } from "@/plugin-ui/index.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 /* eslint-disable max-lines -- 商店列表页把搜索/公开-社区-个人分段/Featured/分类折叠聚合成一个连贯浏览面，拆散反而难以维持 1:1 布局。 */
 import { useMemo, useState } from "react";
-import type { PluginStoreOrder, RobinRunPluginMarketplaceSummary } from "@robinrun/shared";
-import { ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@robinrun/shared";
+import type { PluginStoreOrder, RobinDonePluginMarketplaceSummary } from "@robindone/shared";
+import { ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { PluginStoreAvatar } from "@/settings/PluginStoreAvatar.js";
 import { PluginStoreCard, type PluginStoreActions } from "@/settings/PluginStoreCard.js";
 import { SettingsSearchInput } from "@/settings/SettingsSearchInput.js";
@@ -26,16 +26,16 @@ import { resolveMarketplaceDisplayName } from "@/settings/pluginSourceLabel.js";
 
 // 分类/市场分组手动收起后的展示数量；默认完整展示，避免较少的插件又被自动隐藏。
 const CATEGORY_VISIBLE_LIMIT = 6;
-const RETIRED_STORE_PLUGIN_ID = `restore-legacy-sessions@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`;
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏「Sites 部署 / 上游搜图」插件——定义已从
+const RETIRED_STORE_PLUGIN_ID = `restore-legacy-sessions@${ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID}`;
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏「Sites 部署 / 上游搜图」插件——定义已从
 // official-plugin-definitions.ts 注释移除；把 id 加进退役过滤防止 CDN manifest 残留条目重新出现在商店。
 // 恢复时从 RETIRED 列表移除并还原官方插件定义
 const RETIRED_STORE_PLUGIN_IDS = [
   RETIRED_STORE_PLUGIN_ID,
-  `robinrun-site@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
-  `image-search@${ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
+  `robindone-site@${ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
+  `image-search@${ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID}`,
 ];
-// RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+// RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
 
 export type { PluginStoreSegment } from "@/settings/pluginStoreListing.js";
 import type { PluginStoreSegment } from "@/settings/pluginStoreListing.js";
@@ -54,7 +54,7 @@ export function PluginStoreListView({
 }: {
   items: StorePluginItem[];
   order?: PluginStoreOrder | null;
-  marketplaces: RobinRunPluginMarketplaceSummary[];
+  marketplaces: RobinDonePluginMarketplaceSummary[];
   actions: PluginStoreActions;
   loading: boolean;
   query: string;
@@ -63,14 +63,14 @@ export function PluginStoreListView({
   segment: PluginStoreSegment;
   onSegmentChange: (segment: PluginStoreSegment) => void;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const modeOrder = isOfficeMode ? order?.work : order?.code;
   const keyword = query.trim().toLowerCase();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   // 旧版会话恢复入口退出市场；统一过滤所有浏览投影，旧缓存/精选也不能重新露出。
   // 完整 ID 只命中官方插件，插件管理页继续使用原始条目管理已有安装。
-  // RobinRun(2026-11-22): [hide-upstream-account] 过滤清单扩展为 RETIRED_STORE_PLUGIN_IDS
+  // RobinDone(2026-11-22): [hide-upstream-account] 过滤清单扩展为 RETIRED_STORE_PLUGIN_IDS
   const items = useMemo(
     () => allItems.filter((item) => !RETIRED_STORE_PLUGIN_IDS.includes(item.id)),
     [allItems],
@@ -356,7 +356,7 @@ function CollapsibleCardGroup({
   actions: PluginStoreActions;
   locale: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const visible = expanded ? items : items.slice(0, CATEGORY_VISIBLE_LIMIT);
   const hidden = expanded ? [] : items.slice(CATEGORY_VISIBLE_LIMIT);
   const hiddenNames = hidden.slice(0, 2).map((item) => resolveItemDisplayName(item, locale));
@@ -432,7 +432,7 @@ function PublicSegment({
   resolveCategoryLabel: (category: string) => string;
   onToggleGroup: (key: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const isEmpty = featuredItems.length === 0 && categoryGroups.length === 0;
   if (isEmpty) {
     return (
@@ -496,7 +496,7 @@ function PersonalSegment({
   locale: string;
   onToggleGroup: (key: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (groups.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border px-4 py-3 text-ui-base text-foreground-subtle">

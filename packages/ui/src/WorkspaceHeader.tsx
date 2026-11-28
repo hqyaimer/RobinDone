@@ -1,14 +1,14 @@
 import type {
-  RobinRunProvider,
-  RobinRunTaskMeta,
-  RobinRunTaskChangeSummary,
+  RobinDoneProvider,
+  RobinDoneTaskMeta,
+  RobinDoneTaskChangeSummary,
   EditorInfo,
   GitRepositorySummary,
   RemoteTarget,
   UserInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useState } from "react";
-import { TID_WORKSPACE_HEADER } from "@robinrun/shared/test-ids";
+import { TID_WORKSPACE_HEADER } from "@robindone/shared/test-ids";
 import type { ConversationDropTargetController } from "@/v4/composer/conversationDropTarget.js";
 import { cn } from "@/components/lib/utils.js";
 import {
@@ -100,16 +100,16 @@ export function WorkspaceHeader({
   localWorkspacePath?: string;
   projectName: string;
   activeTaskTitle: string;
-  activeTaskChangeSummary?: RobinRunTaskChangeSummary | null;
+  activeTaskChangeSummary?: RobinDoneTaskChangeSummary | null;
   hasUpdateReady: boolean;
   activeTaskId: string | null;
   user?: UserInfo | null;
   activeTraceId: string | null;
   activeSessionId: string | null;
-  activeTaskProvider: RobinRunProvider | null;
-  resolvedActiveTaskMeta?: RobinRunTaskMeta | null;
+  activeTaskProvider: RobinDoneProvider | null;
+  resolvedActiveTaskMeta?: RobinDoneTaskMeta | null;
   sessionLogPath: string | null;
-  nativeSessionLogProvider: RobinRunProvider | null;
+  nativeSessionLogProvider: RobinDoneProvider | null;
   nativeSessionLogPath: string | null;
   nativeSessionLogExists: boolean;
   nativeSessionLogLoading: boolean;
@@ -137,7 +137,7 @@ export function WorkspaceHeader({
   toggleSidePaneShortcutLabel?: string;
   onReloadSession: (options?: {
     resumeTaskId?: string | null;
-    provider?: RobinRunProvider | null;
+    provider?: RobinDoneProvider | null;
   }) => void | Promise<void>;
   reloadSessionDisabled?: boolean;
   reloadSessionPending?: boolean;

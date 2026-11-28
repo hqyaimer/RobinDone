@@ -1,4 +1,4 @@
-import type { IPlatformService } from "@robinrun/shared";
+import type { IPlatformService } from "@robindone/shared";
 import type { FeedbackAttachmentDraft } from "@/feedback/feedbackStore.js";
 
 export async function captureFeedbackScreenshotDraft(

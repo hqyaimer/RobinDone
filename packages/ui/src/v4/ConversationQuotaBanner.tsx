@@ -1,6 +1,6 @@
 import { CodingPlanEntryButton } from "@/settings/CodingPlanEntryButton.js";
 import { useEffect, useRef } from "react";
-import type { CodingPlanBillingDiscountConfig } from "@robinrun/shared";
+import type { CodingPlanBillingDiscountConfig } from "@robindone/shared";
 import { InfoIcon, RocketIcon, XIcon } from "lucide-react";
 import {
   CodingPlanBillingDiscountBadgePill,
@@ -8,7 +8,7 @@ import {
 } from "@/CodingPlanBillingDiscount.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type {
   SessionQuotaBannerKind,
   SessionQuotaBannerState,
@@ -67,7 +67,7 @@ export function ConversationQuotaBanner({
   onDismiss: () => void;
   onShown?: () => void;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const bannerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!onShown || !state.visible || !bannerRef.current) return;

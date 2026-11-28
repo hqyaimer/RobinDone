@@ -1,5 +1,5 @@
-export const ROBINRUN_E2E_FS_FAULTS_ENV = "ROBINRUN_E2E_FS_FAULTS";
-export const ROBINRUN_E2E_FS_FAULTS_ALLOW_ENV = "ROBINRUN_E2E_FS_FAULTS_ALLOW";
+export const ROBINDONE_E2E_FS_FAULTS_ENV = "ROBINDONE_E2E_FS_FAULTS";
+export const ROBINDONE_E2E_FS_FAULTS_ALLOW_ENV = "ROBINDONE_E2E_FS_FAULTS_ALLOW";
 
 export type FsFaultOperation =
   | "any"
@@ -42,7 +42,7 @@ export interface FsFaultHit {
 }
 
 export interface InjectedFsFaultError extends NodeJS.ErrnoException {
-  robinrunFsFaultId: string;
+  robindoneFsFaultId: string;
 }
 
 export interface FsFaultInjector {
@@ -214,7 +214,7 @@ export function createInjectedFsFaultError(input: {
   error.code = input.code;
   error.path = input.path;
   error.syscall = input.operation;
-  error.robinrunFsFaultId = input.id;
+  error.robindoneFsFaultId = input.id;
   return error;
 }
 
@@ -222,8 +222,8 @@ export function isInjectedFsFaultError(error: unknown): error is InjectedFsFault
   return (
     typeof error === "object" &&
     error !== null &&
-    "robinrunFsFaultId" in error &&
-    typeof (error as { robinrunFsFaultId?: unknown }).robinrunFsFaultId === "string"
+    "robindoneFsFaultId" in error &&
+    typeof (error as { robindoneFsFaultId?: unknown }).robindoneFsFaultId === "string"
   );
 }
 
@@ -284,14 +284,14 @@ export function parseFsFaultRulesFromEnvValue(rawValue: string): FsFaultRuleConf
     parsed = JSON.parse(rawValue);
   } catch (error) {
     throw new Error(
-      `Invalid ${ROBINRUN_E2E_FS_FAULTS_ENV}: ${
+      `Invalid ${ROBINDONE_E2E_FS_FAULTS_ENV}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
   }
 
   if (!Array.isArray(parsed)) {
-    throw new Error(`Invalid ${ROBINRUN_E2E_FS_FAULTS_ENV}: expected a JSON array`);
+    throw new Error(`Invalid ${ROBINDONE_E2E_FS_FAULTS_ENV}: expected a JSON array`);
   }
   return parsed.map((value, index) => {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -304,13 +304,13 @@ export function parseFsFaultRulesFromEnvValue(rawValue: string): FsFaultRuleConf
 export function createFsFaultInjectorFromEnv(
   env: Record<string, string | undefined> = process.env,
 ): FsFaultInjector {
-  const rawValue = env[ROBINRUN_E2E_FS_FAULTS_ENV]?.trim();
+  const rawValue = env[ROBINDONE_E2E_FS_FAULTS_ENV]?.trim();
   if (!rawValue) {
     return createFsFaultInjector();
   }
 
   // 测试故障注入必须默认被生产环境隔离，避免用户机器残留环境变量后误伤真实配置和会话落盘。
-  if (env.ROBINRUN_ENV !== "test" && env[ROBINRUN_E2E_FS_FAULTS_ALLOW_ENV] !== "1") {
+  if (env.ROBINDONE_ENV !== "test" && env[ROBINDONE_E2E_FS_FAULTS_ALLOW_ENV] !== "1") {
     return createFsFaultInjector();
   }
 

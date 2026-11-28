@@ -1,11 +1,11 @@
 import type { MenuItem } from "electron";
-import { type ResourceUsageSnapshot } from "@robinrun/shared";
+import { type ResourceUsageSnapshot } from "@robindone/shared";
 import {
   TID_RESOURCE_MANAGER_TAB,
   TID_WORKSPACE_HELP_MENU_RESOURCE_MANAGER,
   TID_WORKSPACE_HELP_MENU_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clickTestIdByWebDriver, dispatchMouseDownByExactTestId } from "./desktop-app.js";
 import { sel } from "./selectors.js";
 
@@ -121,7 +121,7 @@ export async function waitForResourceManagerReady(): Promise<void> {
   await browser.waitUntil(
     async () => {
       const snapshot = await readResourceUsageSnapshot();
-      return Boolean(snapshot?.processes.some((process) => process.name === "robinrun-main"));
+      return Boolean(snapshot?.processes.some((process) => process.name === "robindone-main"));
     },
     {
       timeout: 15_000,
@@ -162,7 +162,7 @@ export async function listAgentProcessIdentities(
   return snapshot.processes
     .filter(
       (process) =>
-        process.name.startsWith("robinrun-agent-") && (!suffix || process.name.endsWith(suffix)),
+        process.name.startsWith("robindone-agent-") && (!suffix || process.name.endsWith(suffix)),
     )
     .map((process) => ({ pid: process.pid, name: process.name }))
     .sort((left, right) =>
@@ -170,12 +170,12 @@ export async function listAgentProcessIdentities(
     );
 }
 
-/** Host 进程行（`robinrun-host-*`），按 pid 升序 */
+/** Host 进程行（`robindone-host-*`），按 pid 升序 */
 export async function listHostProcessIdentities(): Promise<AgentProcessIdentity[]> {
   const snapshot = await readResourceUsageSnapshot();
   if (!snapshot) return [];
   return snapshot.processes
-    .filter((process) => process.name.startsWith("robinrun-host-"))
+    .filter((process) => process.name.startsWith("robindone-host-"))
     .map((process) => ({ pid: process.pid, name: process.name }))
     .sort((left, right) => left.pid - right.pid);
 }

@@ -41,7 +41,7 @@ import {
 
 const CASE_MARKER = "E2E_R3_MODEL_SWITCH";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-model-switch",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-model-switch",
 );
 const PROVIDER_B_ID = "e2e-r3-model-switch-b";
 const PROVIDER_B_NAME = "R3 Model Switch B";
@@ -85,7 +85,7 @@ describe(`${CASE_MARKER}: 慢回合中切换模型、fork/edit 与远端历史`,
     });
     const remoteConfig = await runSSHCommand(
       prepared.config,
-      'cat "$HOME/.robinrun/v2/provider_config.json"',
+      'cat "$HOME/.robindone/v2/provider_config.json"',
     );
     expect(remoteConfig.stdout).toContain(PROVIDER_B_NAME);
 

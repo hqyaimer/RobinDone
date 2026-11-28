@@ -1,10 +1,10 @@
 import { join } from "node:path";
 import { access } from "node:fs/promises";
-import type { StdioStream } from "@robinrun/server/remote/backend.js";
-import { quotePosixPathArg } from "@robinrun/server/remote/posixShell.js";
-import type { RemoteAssetNetworkPort } from "@robinrun/server/remote/remoteAssetNetwork.js";
+import type { StdioStream } from "@robindone/server/remote/backend.js";
+import { quotePosixPathArg } from "@robindone/server/remote/posixShell.js";
+import type { RemoteAssetNetworkPort } from "@robindone/server/remote/remoteAssetNetwork.js";
 
-export const REMOTE_BASE = "~/.robinrun/server";
+export const REMOTE_BASE = "~/.robindone/server";
 
 export interface RemoteAssetDeployOptions {
   /** 取消当前连接初始化；共享 cache 仍可独立完成，但不得继续写入远端 staging。 */

@@ -1,4 +1,4 @@
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { useEffect, useState } from "react";
 import { useServices } from "@/hooks/useServices.js";
 import { isAbsoluteFilePath } from "@/lib/path.js";

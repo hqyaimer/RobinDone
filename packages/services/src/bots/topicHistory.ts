@@ -2,7 +2,7 @@ import type {
   BotTopicHistoryBatch,
   BotTopicHistoryRequest,
   BotTopicMessage,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /** 区分权限拒绝和临时网络错误，避免错误引导用户授权。 */
 export class TopicHistoryPermissionError extends Error {}

@@ -1,23 +1,23 @@
-// Agent bundle 的暂存动作：把 apps/robinrun-cli/packages/cli/dist/robinrun.cjs 放进
+// Agent bundle 的暂存动作：把 apps/robindone-cli/packages/cli/dist/robindone.cjs 放进
 // bundled-agents/<平台>/glm，并写 meta。
 //
 // dev 与打包**必须**用同一份暂存实现。
 // 只有打包链（prepare-agent-node-bundle.mjs）会暂存是不够的，dev 链
 // （scripts/build-desktop-agent-cli.mjs）不会；而 dev 未打包时的 agent 二进制由
-// desktopRuntimeEnv.ts 的 resolveBundledRobinRunAgentBinaryPath() 解析，候选**只有**
+// desktopRuntimeEnv.ts 的 resolveBundledRobinDoneAgentBinaryPath() 解析，候选**只有**
 // bundled-agents/，没有 cli/dist/。于是 dev 一直跑着上一次打包时留下的那份 ——
 // 实测陈旧 3 天，任何 agent CLI 侧改动在 dev 里静默不生效，排查时会把「改动没生效」
 // 误判成「代码没起作用」。两边共用这一份，dev 与打包不可能再各自漂移。
 import { copyFileSync, cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-export const AGENT_BUNDLE_SOURCE_RELATIVE = "apps/robinrun-cli/packages/cli/dist/robinrun.cjs";
+export const AGENT_BUNDLE_SOURCE_RELATIVE = "apps/robindone-cli/packages/cli/dist/robindone.cjs";
 
 /**
  * 修复原因（2026-10-24 真机）：node_repl MCP server（含内联的 CUA agent runtime）
- * 不在 robinrun.cjs 里 —— agent 从 ~/.robinrun plugin cache 启动它。dev 的 robinrun.cjs 是
+ * 不在 robindone.cjs 里 —— agent 从 ~/.robindone plugin cache 启动它。dev 的 robindone.cjs 是
  * 纯 esbuild bundle（无 SEA 资产），bootstrap 的 filesystem seed rootCandidates 又
- * 解析不到 apps/robinrun-cli/packages/node-repl-host（cwd 是工作区不是仓库布局），
+ * 解析不到 apps/robindone-cli/packages/node-repl-host（cwd 是工作区不是仓库布局），
  * 于是 dev agent 只能消费 cache 现有内容；cache 的唯一写入者是生产版 agent 的
  * SEA seed（内嵌旧副本），agent 侧改动在 dev 里永远跑不上。
  * 与生产包布局对齐：把源码包 stage 到 glm/packages/node-repl-host，dev agent 的
@@ -29,7 +29,7 @@ export const AGENT_BUNDLE_SOURCE_RELATIVE = "apps/robinrun-cli/packages/cli/dist
  */
 const STAGED_NODE_REPL_HOST_ENTRIES = [
   "dist",
-  ".robinrun-plugin",
+  ".robindone-plugin",
   "package.json",
   "README.md",
   "scripts",
@@ -40,7 +40,7 @@ export function resolveAgentBundlePaths({ repoRoot, platformKey }) {
   return {
     cliBundlePath: resolve(repoRoot, AGENT_BUNDLE_SOURCE_RELATIVE),
     glmDir,
-    stagedBundlePath: resolve(glmDir, "robinrun.cjs"),
+    stagedBundlePath: resolve(glmDir, "robindone.cjs"),
     stagedMetaPath: resolve(glmDir, ".node-bundle-meta.json"),
   };
 }
@@ -48,7 +48,7 @@ export function resolveAgentBundlePaths({ repoRoot, platformKey }) {
 /**
  * 干净重建 glm 目录再拷贝。清空是刻意的：electron-builder 整目录拷贝
  * bundled-agents/<平台>/glm → resources/glm，本地工作树里上一次构建残留的原生二进制
- * （robinrun-agent / robinrun-acp 等）和旧 meta 会被一并打进安装包（CI 干净检出不会有，本地会）。
+ * （robindone-agent / robindone-acp 等）和旧 meta 会被一并打进安装包（CI 干净检出不会有，本地会）。
  */
 export function stageAgentBundle({ repoRoot, platformKey, log = console.log }) {
   const { cliBundlePath, glmDir, stagedBundlePath, stagedMetaPath } = resolveAgentBundlePaths({
@@ -63,7 +63,7 @@ export function stageAgentBundle({ repoRoot, platformKey, log = console.log }) {
   copyFileSync(cliBundlePath, stagedBundlePath);
   const meta = {
     runtime: "electron-node",
-    entry: "robinrun.cjs",
+    entry: "robindone.cjs",
     platform: platformKey,
     source: AGENT_BUNDLE_SOURCE_RELATIVE,
   };
@@ -74,7 +74,7 @@ export function stageAgentBundle({ repoRoot, platformKey, log = console.log }) {
   const nodeReplHostSource = resolve(
     repoRoot,
     "apps",
-    "robinrun-cli",
+    "robindone-cli",
     "packages",
     "node-repl-host",
   );

@@ -4,33 +4,33 @@
  * 拆出原因：useWorkspacePrepare.ts 只保留可单测的轻量判定入口；
  * 这里只读取 workspace presentation（mode/slash commands）；模型选择事实由目标 Host View 提供。
  */
-import type { IRobinRunSessionService } from "@robinrun/services";
-import { type RobinRunProvider, type RobinRunWorkspacePrepareResult } from "@robinrun/shared";
+import type { IRobinDoneSessionService } from "@robindone/services";
+import { type RobinDoneProvider, type RobinDoneWorkspacePrepareResult } from "@robindone/shared";
 import { getChatErrorMessage } from "@/lib/chatPrepareError.js";
 import { logger } from "@/logger.js";
-import { robinrunWorkspacePresentationToConfigOptions } from "@/lib/robinrunSessionProjection.js";
+import { robindoneWorkspacePresentationToConfigOptions } from "@/lib/robindoneSessionProjection.js";
 
-export async function prepareWorkspaceWithRobinRunSessionService(params: {
+export async function prepareWorkspaceWithRobinDoneSessionService(params: {
   workspacePath: string;
   workspaceIdentity?: string;
-  provider: RobinRunProvider;
-  robinrunSessionService: Pick<IRobinRunSessionService, "readWorkspacePresentation">;
-}): Promise<RobinRunWorkspacePrepareResult> {
+  provider: RobinDoneProvider;
+  robindoneSessionService: Pick<IRobinDoneSessionService, "readWorkspacePresentation">;
+}): Promise<RobinDoneWorkspacePrepareResult> {
   const startedAt = Date.now();
-  logger.info("[robinrun-workspace-presentation] workspace prepare start", {
+  logger.info("[robindone-workspace-presentation] workspace prepare start", {
     workspacePath: params.workspacePath,
     workspaceIdentity: params.workspaceIdentity ?? null,
     provider: params.provider,
   });
 
-  let presentation: Awaited<ReturnType<IRobinRunSessionService["readWorkspacePresentation"]>>;
+  let presentation: Awaited<ReturnType<IRobinDoneSessionService["readWorkspacePresentation"]>>;
   try {
-    presentation = await params.robinrunSessionService.readWorkspacePresentation({
+    presentation = await params.robindoneSessionService.readWorkspacePresentation({
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity,
     });
   } catch (error) {
-    logger.warn("[robinrun-workspace-presentation] readWorkspacePresentation failed", {
+    logger.warn("[robindone-workspace-presentation] readWorkspacePresentation failed", {
       workspacePath: params.workspacePath,
       workspaceIdentity: params.workspaceIdentity ?? null,
       provider: params.provider,
@@ -41,9 +41,9 @@ export async function prepareWorkspaceWithRobinRunSessionService(params: {
   }
 
   const readPresentationDurationMs = Date.now() - startedAt;
-  const configOptions = robinrunWorkspacePresentationToConfigOptions(presentation.mode);
+  const configOptions = robindoneWorkspacePresentationToConfigOptions(presentation.mode);
   const totalDurationMs = Date.now() - startedAt;
-  logger.info("[robinrun-workspace-presentation] readWorkspacePresentation done", {
+  logger.info("[robindone-workspace-presentation] readWorkspacePresentation done", {
     workspacePath: params.workspacePath,
     workspaceIdentity: params.workspaceIdentity ?? null,
     provider: params.provider,
@@ -56,7 +56,7 @@ export async function prepareWorkspaceWithRobinRunSessionService(params: {
   return {
     workspacePath: params.workspacePath,
     preparedSessionId: "",
-    version: "RobinRun Protocol/1",
+    version: "RobinDone Protocol/1",
     provider: params.provider,
     configOptions,
     slashCommands: presentation.slashCommands,

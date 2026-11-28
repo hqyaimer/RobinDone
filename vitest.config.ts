@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { configDefaults, defineConfig } from "vitest/config";
 
 import engineeringTestFiles from "./scripts/engineering-test-files.json";
@@ -6,7 +7,7 @@ import engineeringTestFiles from "./scripts/engineering-test-files.json";
 export default defineConfig({
   // 测试固定注入事件上报端点，使遥测上报链路在单测中可验证；真实构建由 scripts/build-time-config.mjs 决定。
   define: {
-    __ROBINRUN_TELEMETRY_REPORT_ENDPOINT__: JSON.stringify(
+    __ROBINDONE_TELEMETRY_REPORT_ENDPOINT__: JSON.stringify(
       "https://zcode.z.ai/api/v1/event/report",
     ),
   },
@@ -65,9 +66,18 @@ export default defineConfig({
           pool: "forks",
           fileParallelism: false,
           maxWorkers: 1,
+          // 数据目录隔离（2026-11-27 事故防线）：个别测试会拉起真实 electron/CLI/host 子进程，
+          // 这些进程的品牌迁移与存储启动代码会读写真实 `~/.robindone`（当日 `.robindone` 的
+          // 首次诞生即源于此）。给整个 engineering 项目注入临时数据根/HOME，子进程经
+          // process.env 继承，从根上保证测试永不触碰真实用户数据。个别需要真实路径语义的
+          // 测试可在用例内显式覆盖回自己的临时目录。
+          env: {
+            ROBINDONE_DATA_BASE_DIR: join(tmpdir(), "robindone-vitest-isolation"),
+            ROBINDONE_DESKTOP_HOME_DIR: join(tmpdir(), "robindone-vitest-isolation"),
+          },
         },
       },
-      "packages/robinrun-cua/vitest.config.ts",
+      "packages/robindone-cua/vitest.config.ts",
     ],
   },
 });

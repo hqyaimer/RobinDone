@@ -16,7 +16,7 @@ it.each([
         "oauth:active_provider": "zai",
         "oauth:zai:access_token": "fake-access-token",
         "oauth:zai:user_info": "{}",
-        robinrunjwttoken: "fake-robinrun-jwt",
+        robindonejwttoken: "fake-robindone-jwt",
       },
     }),
   ).toEqual({});

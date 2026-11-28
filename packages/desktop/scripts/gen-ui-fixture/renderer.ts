@@ -1,14 +1,14 @@
 import { createGenUiPage } from "../../../ui/src/gen-ui/adapters/page.js";
 import { registerPluginUiSessionActions } from "../../../ui/src/plugin-ui/hostPrimitives.js";
 import type { GenUiPage } from "../../../ui/src/gen-ui/contract.js";
-import type { IGenUiService } from "@robinrun/services";
-import type { GenUiStateChange } from "@robinrun/shared/gen-ui";
-import type { PluginSandboxPortsEvent } from "@robinrun/shared/mcp-apps";
+import type { IGenUiService } from "@robindone/services";
+import type { GenUiStateChange } from "@robindone/shared/gen-ui";
+import type { PluginSandboxPortsEvent } from "@robindone/shared/mcp-apps";
 const harness = (window as any).harness;
 let portListener: ((event: PluginSandboxPortsEvent) => void) | undefined;
 let stateListener: ((event: GenUiStateChange) => void) | undefined;
 window.addEventListener("message", (event) => {
-  if (event.data?.type === "robinrun:plugin-sandbox-ports")
+  if (event.data?.type === "robindone:plugin-sandbox-ports")
     portListener?.({ ...event.data, port: event.ports[0] });
   if (event.data?.type === "fixture-notification") stateListener?.(event.data.payload);
 });
@@ -80,8 +80,8 @@ void (async () => {
         return prompt;
       },
       platform: {
-        supportsRetainedMove: window.robinrunPluginSandbox?.supportsRetainedMove,
-        copyImage: (request) => window.robinrunPluginSandbox!.copyImage!(request),
+        supportsRetainedMove: window.robindonePluginSandbox?.supportsRetainedMove,
+        copyImage: (request) => window.robindonePluginSandbox!.copyImage!(request),
         getOwnerWebContentsId: () => harness.owner(),
         disposeSandbox: (id, init) => harness.dispose(id, init),
         consumeUserGesture: () => harness.gesture(),

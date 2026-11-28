@@ -1,4 +1,4 @@
-import type { RemoteWorkspaceSessionEntry } from "@robinrun/shared";
+import type { RemoteWorkspaceSessionEntry } from "@robindone/shared";
 
 interface SshConnectionHistorySuggestions {
   hosts: string[];

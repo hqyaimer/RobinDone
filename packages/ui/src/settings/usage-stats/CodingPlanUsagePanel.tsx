@@ -10,15 +10,15 @@ import type {
   CodingPlanUsageSnapshot,
   UsageQuotaLimit,
   UsageQuotaSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { LocalizedCodingPlanQuotaResetAction } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetAction.js";
 import { CodingPlanQuotaResetOpportunity } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetOpportunity.js";
 import { buildCodingPlanQuotaResetDialogConfig } from "@/components/coding-plan-quota-reset/buildCodingPlanQuotaResetDialogConfig.js";
 import { Button } from "@/components/ui/button.js";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useUsageEntitlement } from "@/hooks/useUsageEntitlement.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
 import { useCodingPlanUsageStats } from "@/hooks/useUsageStats.js";
@@ -105,7 +105,7 @@ export function CodingPlanUsagePanel({
   workspaceIdentity?: string;
   workspacePath?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [range, setRange] = useState<CodingPlanUsageTrendRange>("7d");
   void workspaceIdentity;
   void workspacePath;
@@ -332,13 +332,13 @@ function CodingPlanQuotaCards({
   sourceKey: string | undefined;
   preferredProviderId: string | undefined;
   accountAccess:
-    | import("@robinrun/shared").RobinRunProviderAccountAccess
-    | import("@robinrun/shared").RobinRunAccountAccess
+    | import("@robindone/shared").RobinDoneProviderAccountAccess
+    | import("@robindone/shared").RobinDoneAccountAccess
     | undefined;
   onEntitlementRefresh: () => void | Promise<void>;
   onUsageStatsRefresh: () => void | Promise<void>;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [quotaResetDialogOpen, setQuotaResetDialogOpen] = useState(false);
   const resetUi = useCodingPlanQuotaResetUi({
     sourceKey,
@@ -486,17 +486,17 @@ function CodingPlanQuotaCards({
                 {card.key === "serverMcp" ? (
                   <ControlHintTooltip
                     title={intl.formatMessage({
-                      id: "sidebar.usage.plan.robinrunMcpDescription",
+                      id: "sidebar.usage.plan.robindoneMcpDescription",
                     })}
                     standalone
                   >
                     <button
                       type="button"
                       aria-label={intl.formatMessage({
-                        id: "sidebar.usage.plan.robinrunMcpDescription",
+                        id: "sidebar.usage.plan.robindoneMcpDescription",
                       })}
                       className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-foreground-subtle transition-colors hover:text-foreground"
-                      data-robinrun-mcp-info="usage-stats"
+                      data-robindone-mcp-info="usage-stats"
                     >
                       <InfoIcon className="size-3.5" aria-hidden="true" />
                     </button>
@@ -562,7 +562,7 @@ function CodingPlanUsageTrendsSection({
   snapshot: CodingPlanUsageSnapshot;
   onRangeChange: (range: CodingPlanUsageTrendRange) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <section id={CODING_PLAN_USAGE_TRENDS_SECTION_ID} className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -580,7 +580,7 @@ function CodingPlanUsageTrendsSection({
 }
 
 function CodingPlanActivitySection({ snapshot }: { snapshot: CodingPlanUsageSnapshot }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const summary = snapshot.activity.summary;
   const items = [
     {
@@ -657,7 +657,7 @@ function CodingPlanActivitySection({ snapshot }: { snapshot: CodingPlanUsageSnap
 }
 
 function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageSnapshot }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const [metric, setMetric] = useState<CodingPlanUsageDetailMetric>("credits");
   const [subject, setSubject] = useState<CodingPlanUsageDetailSubject>("model");
   const [selectedSeriesNames, setSelectedSeriesNames] = useState<string[]>([]);
@@ -931,7 +931,7 @@ function CodingPlanUsageDetailSummary({
 }: {
   summary: CodingPlanUsageSnapshot["detail"]["model"];
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const items = [
     {
       label: intl.formatMessage({ id: "settings.usage.cacheHitRate" }),
@@ -974,7 +974,7 @@ function CodingPlanUsageDetailSummary({
 }
 
 function CodingPlanHealthSection({ snapshot }: { snapshot: CodingPlanUsageSnapshot }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const healthSeries = useMemo(
     () => [
       {
@@ -1036,7 +1036,7 @@ function formatCodingPlanRate(locale: string, value: number | null): string {
 
 function formatCodingPlanRefreshTime(
   locale: string,
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
   value: number,
 ): string {
   const time = new Intl.DateTimeFormat(locale, {
@@ -1083,7 +1083,7 @@ function SegmentedTabs<T extends string>({
   labelIdPrefix: string;
   onChange: (value: T) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Tabs value={value} onValueChange={(next) => onChange(next as T)}>
       <TabsList className={USAGE_STATS_TABS_LIST_CLASS}>

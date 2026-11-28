@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { writeFile } from "node:fs/promises";
-import type { ProjectTree, RemoteProjectDirectory } from "@robinrun/services";
-import { ServiceChannels, type SourceServerManagementSnapshot } from "@robinrun/shared";
+import type { ProjectTree, RemoteProjectDirectory } from "@robindone/services";
+import { ServiceChannels, type SourceServerManagementSnapshot } from "@robindone/shared";
 import {
   TID_COMPOSER_WORKSPACE_TRIGGER,
   TID_COMPOSER_REMOTE_CONNECTION,
@@ -11,7 +11,7 @@ import {
   TID_TASK_ITEM,
   TID_VIRTUAL_PROJECT_CREATE_TASK,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "#e2e/helpers/desktop-app";
 import {
   getV4ComposerAttachments,
@@ -49,7 +49,7 @@ async function openFromChat(locale = "zh-CN", evidence?: string) {
   if (evidence) {
     await settlePresentation();
     await browser.saveScreenshot(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `menu-${evidence}.png`),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `menu-${evidence}.png`),
     );
   }
   await entry.click();
@@ -60,10 +60,10 @@ async function openFromChat(locale = "zh-CN", evidence?: string) {
 function readChatIdentity() {
   return browser.execute(() => {
     const windowState = window as Window & {
-      __robinrunTabStoreE2E?: {
+      __robindoneTabStoreE2E?: {
         getState(): { activeWorkspacePath: string | null; activeWorkspaceIdentity: string | null };
       };
-      __robinrunSessionStoreE2E?: {
+      __robindoneSessionStoreE2E?: {
         getState(): {
           workspaces: Record<
             string,
@@ -72,9 +72,9 @@ function readChatIdentity() {
         };
       };
     };
-    const tabs = windowState.__robinrunTabStoreE2E!.getState();
+    const tabs = windowState.__robindoneTabStoreE2E!.getState();
     const workspaceKey = tabs.activeWorkspaceIdentity?.trim() || tabs.activeWorkspacePath!;
-    const workspace = windowState.__robinrunSessionStoreE2E!.getState().workspaces[workspaceKey]!;
+    const workspace = windowState.__robindoneSessionStoreE2E!.getState().workspaces[workspaceKey]!;
     return {
       workspaceKey,
       workspacePath: tabs.activeWorkspacePath!,
@@ -100,7 +100,7 @@ async function readTaskIdentity(taskId: string) {
 async function createOriginalTask(target: Awaited<ReturnType<typeof readChatIdentity>>) {
   if (!target.projectId) throw new Error(`${marker}: project selection is not committed`);
   const result = await callHandoffHost<{ session: { sessionId: string } }>(
-    ServiceChannels.RobinRunAgent,
+    ServiceChannels.RobinDoneAgent,
     "createSession",
     [
       {
@@ -120,7 +120,7 @@ async function createOriginalTask(target: Awaited<ReturnType<typeof readChatIden
     ],
   );
   const taskId = result.session.sessionId;
-  await callHandoffHost(ServiceChannels.RobinRunTask, "resumeTask", [
+  await callHandoffHost(ServiceChannels.RobinDoneTask, "resumeTask", [
     { taskId, workspacePath: target.workspacePath },
   ]);
   const toggle = $(
@@ -201,11 +201,11 @@ describe(marker, () => {
         events: (window as Window & { __chatDeviceFocus?: unknown[] }).__chatDeviceFocus,
       }));
       await writeFile(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "chat-device-focus.json"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "chat-device-focus.json"),
         JSON.stringify(focus, null, 2),
       );
       await browser.saveScreenshot(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "chat-device-failure.png"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "chat-device-failure.png"),
       );
     }
   });
@@ -291,7 +291,7 @@ describe(marker, () => {
           await settlePresentation();
           await browser.saveScreenshot(
             join(
-              process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+              process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
               `cancel-return-${locale}-${theme}-${width}.png`,
             ),
           );
@@ -331,7 +331,7 @@ describe(marker, () => {
           const bounds = await folder.getLocation();
           expect(bounds.x).toBeGreaterThanOrEqual(0);
           await browser.saveScreenshot(
-            join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `folder-${locale}-${theme}-${width}.png`),
+            join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `folder-${locale}-${theme}-${width}.png`),
           );
         }
       }

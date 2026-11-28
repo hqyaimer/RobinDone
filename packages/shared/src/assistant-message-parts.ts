@@ -1,4 +1,4 @@
-export type RobinRunAssistantMessagePart =
+export type RobinDoneAssistantMessagePart =
   | {
       type: "content";
       content: string;
@@ -13,8 +13,8 @@ export type RobinRunAssistantMessagePart =
     };
 
 export function appendAssistantMessagePart(
-  parts: readonly RobinRunAssistantMessagePart[] | undefined,
-  nextPart: RobinRunAssistantMessagePart,
+  parts: readonly RobinDoneAssistantMessagePart[] | undefined,
+  nextPart: RobinDoneAssistantMessagePart,
 ) {
   const currentParts = parts ?? [];
   const lastPart = currentParts[currentParts.length - 1];
@@ -39,7 +39,7 @@ export function appendAssistantMessagePart(
   return [...currentParts, nextPart];
 }
 
-export function getLatestAssistantContentPart(parts: readonly RobinRunAssistantMessagePart[]) {
+export function getLatestAssistantContentPart(parts: readonly RobinDoneAssistantMessagePart[]) {
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     const part = parts[index];
     if (part?.type === "content") {
@@ -49,6 +49,6 @@ export function getLatestAssistantContentPart(parts: readonly RobinRunAssistantM
   return null;
 }
 
-export function getLatestAssistantContentText(parts: readonly RobinRunAssistantMessagePart[]) {
+export function getLatestAssistantContentText(parts: readonly RobinDoneAssistantMessagePart[]) {
   return getLatestAssistantContentPart(parts)?.content ?? "";
 }

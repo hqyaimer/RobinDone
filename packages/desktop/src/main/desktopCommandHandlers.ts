@@ -1,27 +1,27 @@
 import { getPluginSandboxHost } from "./pluginSandbox/index.js";
 /* eslint-disable max-lines -- 桌面命令分发需要共享窗口与平台上下文，集中维护更便于一致性 */
 import {
-  readRobinRunStdioTapDevState,
-  setRobinRunStdioTapDevEnabled,
-} from "@robinrun/services/node";
+  readRobinDoneStdioTapDevState,
+  setRobinDoneStdioTapDevEnabled,
+} from "@robindone/services/node";
 import {
-  buildRobinRunEndpointUrls,
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+  buildRobinDoneEndpointUrls,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
   DesktopCommandIds,
   REWARDS_PARTITION,
-  TEST_ROBINRUN_ENDPOINT_ORIGIN,
+  TEST_ROBINDONE_ENDPOINT_ORIGIN,
   getCommunityUrlFromConfigs,
   getFeedbackUrlFromConfig,
-  normalizeRobinRunEndpointOrigin,
+  normalizeRobinDoneEndpointOrigin,
   PlatformChannels,
   resolveHelpAppConfig,
-  resolveRobinRunEndpointOrigin,
-  ROBINRUN_ENV,
-  ROBINRUN_PRODUCT_FLAVOR,
+  resolveRobinDoneEndpointOrigin,
+  ROBINDONE_ENV,
+  ROBINDONE_PRODUCT_FLAVOR,
   type AppSettings,
   type DesktopCommandId,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { MessageBoxOptions } from "electron";
 import { app, BrowserWindow, dialog, session, shell } from "electron";
 import { readFile } from "node:fs/promises";
@@ -43,10 +43,10 @@ import { exportLogs } from "./exportLogs.js";
 import { openResourceManager } from "./resourceManagerWindow.js";
 
 export const HELP_TOGGLE_DEV_TOOLS_MENU_ID = "help.toggle-dev-tools";
-export const HELP_TOGGLE_ROBINRUN_STDIO_TAP_MENU_ID = "help.toggle-robinrun-stdio-tap";
-const ROBINRUN_ENDPOINT_PROMPT_WIDTH = 460;
-const ROBINRUN_ENDPOINT_PROMPT_HEIGHT = 210;
-const CODING_PLAN_WEBVIEW_PARTITION = "persist:robinrun-coding-plan";
+export const HELP_TOGGLE_ROBINDONE_STDIO_TAP_MENU_ID = "help.toggle-robindone-stdio-tap";
+const ROBINDONE_ENDPOINT_PROMPT_WIDTH = 460;
+const ROBINDONE_ENDPOINT_PROMPT_HEIGHT = 210;
+const CODING_PLAN_WEBVIEW_PARTITION = "persist:robindone-coding-plan";
 
 function resolveTargetWindow(senderWindow?: BrowserWindow | null) {
   if (senderWindow && !senderWindow.isDestroyed()) {
@@ -98,7 +98,7 @@ async function clearAllDataAndRelaunch(options: {
     title: "Clear All Data",
     message: "确定要清除所有数据吗？",
     detail:
-      "将删除 ~/.robinrun/v2（配置、凭据、日志）和浏览器缓存（localStorage）。操作不可恢复，清除后应用将自动重启。",
+      "将删除 ~/.robindone/v2（配置、凭据、日志）和浏览器缓存（localStorage）。操作不可恢复，清除后应用将自动重启。",
   });
   if (response !== 1) {
     return;
@@ -108,9 +108,9 @@ async function clearAllDataAndRelaunch(options: {
   const { rm } = await import("node:fs/promises");
   try {
     await rm(options.credentialsDir, { recursive: true, force: true });
-    options.logger.info("[clear-all-data] deleted ~/.robinrun/v2");
+    options.logger.info("[clear-all-data] deleted ~/.robindone/v2");
   } catch (error) {
-    options.logger.error("[clear-all-data] failed to delete ~/.robinrun/v2:", error);
+    options.logger.error("[clear-all-data] failed to delete ~/.robindone/v2:", error);
   }
 
   for (const win of BrowserWindow.getAllWindows()) {
@@ -291,11 +291,11 @@ async function openCommunity(
   await shell.openExternal(communityUrl);
 }
 
-async function promptCustomRobinRunEndpoint(
+async function promptCustomRobinDoneEndpoint(
   targetWindow: BrowserWindow | null | undefined,
   currentValue: string,
 ): Promise<string | undefined> {
-  return showRobinRunEndpointPromptWindow({
+  return showRobinDoneEndpointPromptWindow({
     currentValue,
     parentWindow: targetWindow && !targetWindow.isDestroyed() ? targetWindow : undefined,
   });
@@ -309,13 +309,13 @@ function escapeHtmlAttribute(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function buildRobinRunEndpointPromptHtml(currentValue: string): string {
+function buildRobinDoneEndpointPromptHtml(currentValue: string): string {
   const value = escapeHtmlAttribute(currentValue);
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>RobinRun Endpoint</title>
+    <title>RobinDone Endpoint</title>
     <style>
       :root { color-scheme: light dark; }
       body { margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -328,7 +328,7 @@ function buildRobinRunEndpointPromptHtml(currentValue: string): string {
   </head>
   <body>
     <form id="form">
-      <label for="endpoint">RobinRun endpoint origin</label>
+      <label for="endpoint">RobinDone endpoint origin</label>
       <input id="endpoint" value="${value}" placeholder="https://zcode.z.ai" spellcheck="false" />
       <div class="hint">Use an http or https origin, for example https://zcode.z.ai.</div>
       <div class="actions">
@@ -338,13 +338,13 @@ function buildRobinRunEndpointPromptHtml(currentValue: string): string {
     </form>
     <script>
       const input = document.getElementById("endpoint");
-      const submit = (value) => { document.title = "robinrun-endpoint-submit:" + encodeURIComponent(value); };
+      const submit = (value) => { document.title = "robindone-endpoint-submit:" + encodeURIComponent(value); };
       document.getElementById("form").addEventListener("submit", (event) => {
         event.preventDefault();
         submit(input.value);
       });
       document.getElementById("cancel").addEventListener("click", () => {
-        document.title = "robinrun-endpoint-cancel";
+        document.title = "robindone-endpoint-cancel";
       });
       input.focus();
       input.select();
@@ -353,21 +353,21 @@ function buildRobinRunEndpointPromptHtml(currentValue: string): string {
 </html>`;
 }
 
-function showRobinRunEndpointPromptWindow(options: {
+function showRobinDoneEndpointPromptWindow(options: {
   currentValue: string;
   parentWindow?: BrowserWindow;
 }): Promise<string | undefined> {
   return new Promise((resolve) => {
     let settled = false;
     const promptWindow = new BrowserWindow({
-      width: ROBINRUN_ENDPOINT_PROMPT_WIDTH,
-      height: ROBINRUN_ENDPOINT_PROMPT_HEIGHT,
+      width: ROBINDONE_ENDPOINT_PROMPT_WIDTH,
+      height: ROBINDONE_ENDPOINT_PROMPT_HEIGHT,
       parent: options.parentWindow,
       modal: Boolean(options.parentWindow),
       resizable: false,
       minimizable: false,
       maximizable: false,
-      title: "RobinRun Endpoint",
+      title: "RobinDone Endpoint",
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -388,40 +388,42 @@ function showRobinRunEndpointPromptWindow(options: {
 
     promptWindow.on("closed", () => finish(undefined));
     promptWindow.on("page-title-updated", (event, title) => {
-      if (title === "robinrun-endpoint-cancel") {
+      if (title === "robindone-endpoint-cancel") {
         event.preventDefault();
         finish(undefined);
         return;
       }
-      if (!title.startsWith("robinrun-endpoint-submit:")) {
+      if (!title.startsWith("robindone-endpoint-submit:")) {
         return;
       }
       event.preventDefault();
-      finish(decodeURIComponent(title.slice("robinrun-endpoint-submit:".length)));
+      finish(decodeURIComponent(title.slice("robindone-endpoint-submit:".length)));
     });
 
     // Electron 菜单命令在主进程触发，调用 renderer 的 window.prompt 可能被禁用或没有焦点，表现为点击无反应。
     // 这里改为主进程创建受控 modal 输入窗，确保 Custom... 始终有可见交互入口。
     void promptWindow.loadURL(
       `data:text/html;charset=utf-8,${encodeURIComponent(
-        buildRobinRunEndpointPromptHtml(options.currentValue),
+        buildRobinDoneEndpointPromptHtml(options.currentValue),
       )}`,
     );
   });
 }
 
-async function setRobinRunEndpointOverride(options: {
+async function setRobinDoneEndpointOverride(options: {
   value: string | undefined;
-  settingService: { update(patch: { robinrunEndpointOrigin?: string | undefined }): Promise<void> };
-  onRobinRunEndpointChanged: () => Promise<void> | void;
+  settingService: {
+    update(patch: { robindoneEndpointOrigin?: string | undefined }): Promise<void>;
+  };
+  onRobinDoneEndpointChanged: () => Promise<void> | void;
   logger: { warn: (...args: unknown[]) => void };
 }) {
-  if (ROBINRUN_ENV === "production") {
+  if (ROBINDONE_ENV === "production") {
     return;
   }
-  const normalized = options.value ? normalizeRobinRunEndpointOrigin(options.value) : undefined;
-  await options.settingService.update({ robinrunEndpointOrigin: normalized });
-  await options.onRobinRunEndpointChanged();
+  const normalized = options.value ? normalizeRobinDoneEndpointOrigin(options.value) : undefined;
+  await options.settingService.update({ robindoneEndpointOrigin: normalized });
+  await options.onRobinDoneEndpointChanged();
 }
 
 async function persistDesktopZoomLevel(options: {
@@ -438,13 +440,13 @@ async function persistDesktopZoomLevel(options: {
   }
 }
 
-function toggleRobinRunStdioTapDevProxy(options: {
+function toggleRobinDoneStdioTapDevProxy(options: {
   logger: { info: (...args: unknown[]) => void };
-  updateRobinRunStdioTapDevMenuState: () => void;
+  updateRobinDoneStdioTapDevMenuState: () => void;
 }) {
-  const current = readRobinRunStdioTapDevState();
-  const next = setRobinRunStdioTapDevEnabled(!current.enabled);
-  options.updateRobinRunStdioTapDevMenuState();
+  const current = readRobinDoneStdioTapDevState();
+  const next = setRobinDoneStdioTapDevEnabled(!current.enabled);
+  options.updateRobinDoneStdioTapDevMenuState();
   options.logger.info("[stdio-tap] dev proxy toggled", {
     enabled: next.enabled,
     visible: next.visible,
@@ -454,30 +456,30 @@ function toggleRobinRunStdioTapDevProxy(options: {
 
 function resolveChangelogUrl(
   locale: Locale,
-  endpointOrigin = DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+  endpointOrigin = DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
 ): string {
   // 帮助菜单里的外链以前只有固定英文地址，切到中文界面后仍会落到英文 changelog。
   // 这里统一收口到主进程按当前应用语言分流，避免菜单模板里手写分支后续再出现多处不一致。
-  const origin = buildRobinRunEndpointUrls(endpointOrigin).origin;
+  const origin = buildRobinDoneEndpointUrls(endpointOrigin).origin;
   return locale === "zh-CN" ? `${origin}/cn/changelog` : `${origin}/en/changelog`;
 }
 
 export async function openChangelog(
   locale: Locale,
-  endpointOrigin = DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+  endpointOrigin = DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
 ) {
   await shell.openExternal(resolveChangelogUrl(locale, endpointOrigin));
 }
 
-async function resolveCurrentRobinRunEndpointOrigin(settingService: {
-  get(): Promise<{ robinrunEndpointOrigin?: string }>;
+async function resolveCurrentRobinDoneEndpointOrigin(settingService: {
+  get(): Promise<{ robindoneEndpointOrigin?: string }>;
   envBaseOrigin?: string | null;
 }): Promise<string> {
   const settings = await settingService.get();
-  return resolveRobinRunEndpointOrigin({
-    env: ROBINRUN_ENV,
+  return resolveRobinDoneEndpointOrigin({
+    env: ROBINDONE_ENV,
     envBaseOrigin: settingService.envBaseOrigin,
-    overrideOrigin: settings.robinrunEndpointOrigin,
+    overrideOrigin: settings.robindoneEndpointOrigin,
   });
 }
 
@@ -490,17 +492,17 @@ export async function executeDesktopCommand(options: {
     warn: (...args: unknown[]) => void;
     error: (...args: unknown[]) => void;
   };
-  updateRobinRunStdioTapDevMenuState: () => void;
+  updateRobinDoneStdioTapDevMenuState: () => void;
   onDesktopZoomChanged?: (zoomLevel: number) => Promise<void> | void;
-  onRobinRunEndpointChanged: () => Promise<void> | void;
+  onRobinDoneEndpointChanged: () => Promise<void> | void;
   onRelaunchApp: () => Promise<void>;
   settingService: {
-    get(): Promise<Pick<AppSettings, "robinrunEndpointOrigin" | "desktopZoomLevel">>;
+    get(): Promise<Pick<AppSettings, "robindoneEndpointOrigin" | "desktopZoomLevel">>;
     update(
-      patch: Partial<Pick<AppSettings, "robinrunEndpointOrigin" | "desktopZoomLevel">>,
+      patch: Partial<Pick<AppSettings, "robindoneEndpointOrigin" | "desktopZoomLevel">>,
     ): Promise<void>;
   };
-  robinrunEndpointEnvBaseOrigin?: string | null;
+  robindoneEndpointEnvBaseOrigin?: string | null;
   credentialsDir: string;
   currentApplicationLocale: Locale;
   /** 远控诊断：向已配对手机拉取日志并导出（窗口 id 为命令来源窗口）。 */
@@ -588,21 +590,21 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.ShowAbout:
       await showAboutDialog(targetWindow ?? undefined, options.currentApplicationLocale);
       return;
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「changelog / 反馈 / 社群」命令——上游触达面，
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「changelog / 反馈 / 社群」命令——上游触达面，
     // 菜单项已注释移除；恢复时取消本段与 desktopApplicationMenu.ts 的对应注释
     // case DesktopCommandIds.OpenChangelog:
     //   await openChangelog(
     //     options.currentApplicationLocale,
-    //     await resolveCurrentRobinRunEndpointOrigin({
+    //     await resolveCurrentRobinDoneEndpointOrigin({
     //       ...options.settingService,
-    //       envBaseOrigin: options.robinrunEndpointEnvBaseOrigin,
+    //       envBaseOrigin: options.robindoneEndpointEnvBaseOrigin,
     //     }),
     //   );
     //   return;
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     case DesktopCommandIds.CheckForUpdates:
       // 按产品身份而不是后端环境放行：生产后端的 Preview 同样没有更新器。
-      if (ROBINRUN_PRODUCT_FLAVOR === "production") {
+      if (ROBINDONE_PRODUCT_FLAVOR === "production") {
         checkForUpdateMenuClick(targetWindow);
       } else {
         options.logger.info("[auto-update] Preview 已禁用手动更新检查");
@@ -611,7 +613,7 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.RelaunchApp:
       await options.onRelaunchApp();
       return;
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「反馈 / 社群」命令 case——恢复时取消本段注释
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「反馈 / 社群」命令 case——恢复时取消本段注释
     // case DesktopCommandIds.OpenFeedback:
     //   await openFeedback(options.logger, targetWindow, options.fetchHelpConfig);
     //   return;
@@ -622,7 +624,7 @@ export async function executeDesktopCommand(options: {
     //     options.fetchHelpConfig,
     //   );
     //   return;
-    // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+    // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
     case DesktopCommandIds.ExportLogs:
       await exportLogs();
       return;
@@ -635,58 +637,58 @@ export async function executeDesktopCommand(options: {
     case DesktopCommandIds.OpenResourceManager:
       openResourceManager();
       return;
-    case DesktopCommandIds.ToggleRobinRunStdioTapDevProxy:
-      toggleRobinRunStdioTapDevProxy({
+    case DesktopCommandIds.ToggleRobinDoneStdioTapDevProxy:
+      toggleRobinDoneStdioTapDevProxy({
         logger: options.logger,
-        updateRobinRunStdioTapDevMenuState: options.updateRobinRunStdioTapDevMenuState,
+        updateRobinDoneStdioTapDevMenuState: options.updateRobinDoneStdioTapDevMenuState,
       });
       return;
-    case DesktopCommandIds.SetRobinRunEndpointProduction:
-      await setRobinRunEndpointOverride({
-        value: DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
+    case DesktopCommandIds.SetRobinDoneEndpointProduction:
+      await setRobinDoneEndpointOverride({
+        value: DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
         settingService: options.settingService,
-        onRobinRunEndpointChanged: options.onRobinRunEndpointChanged,
+        onRobinDoneEndpointChanged: options.onRobinDoneEndpointChanged,
         logger: options.logger,
       });
       return;
-    case DesktopCommandIds.SetRobinRunEndpointTest:
-      await setRobinRunEndpointOverride({
-        value: TEST_ROBINRUN_ENDPOINT_ORIGIN,
+    case DesktopCommandIds.SetRobinDoneEndpointTest:
+      await setRobinDoneEndpointOverride({
+        value: TEST_ROBINDONE_ENDPOINT_ORIGIN,
         settingService: options.settingService,
-        onRobinRunEndpointChanged: options.onRobinRunEndpointChanged,
+        onRobinDoneEndpointChanged: options.onRobinDoneEndpointChanged,
         logger: options.logger,
       });
       return;
-    case DesktopCommandIds.SetRobinRunEndpointCustom: {
+    case DesktopCommandIds.SetRobinDoneEndpointCustom: {
       const current =
-        (await options.settingService.get()).robinrunEndpointOrigin ??
-        DEFAULT_ROBINRUN_ENDPOINT_ORIGIN;
-      const value = await promptCustomRobinRunEndpoint(targetWindow, current);
+        (await options.settingService.get()).robindoneEndpointOrigin ??
+        DEFAULT_ROBINDONE_ENDPOINT_ORIGIN;
+      const value = await promptCustomRobinDoneEndpoint(targetWindow, current);
       if (!value) {
         return;
       }
       try {
-        await setRobinRunEndpointOverride({
+        await setRobinDoneEndpointOverride({
           value,
           settingService: options.settingService,
-          onRobinRunEndpointChanged: options.onRobinRunEndpointChanged,
+          onRobinDoneEndpointChanged: options.onRobinDoneEndpointChanged,
           logger: options.logger,
         });
       } catch (error) {
         await showMessageBoxWithOptionalParent(targetWindow, {
           type: "error",
-          title: "RobinRun Endpoint",
+          title: "RobinDone Endpoint",
           message: "Endpoint 无效",
           detail: error instanceof Error ? error.message : String(error),
         });
       }
       return;
     }
-    case DesktopCommandIds.ResetRobinRunEndpoint:
-      await setRobinRunEndpointOverride({
+    case DesktopCommandIds.ResetRobinDoneEndpoint:
+      await setRobinDoneEndpointOverride({
         value: undefined,
         settingService: options.settingService,
-        onRobinRunEndpointChanged: options.onRobinRunEndpointChanged,
+        onRobinDoneEndpointChanged: options.onRobinDoneEndpointChanged,
         logger: options.logger,
       });
       return;

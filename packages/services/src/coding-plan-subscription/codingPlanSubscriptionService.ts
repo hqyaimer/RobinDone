@@ -1,8 +1,8 @@
-import { applyDynamicWorkflowUserMode, type ApiClient } from "@robinrun/shared";
+import { applyDynamicWorkflowUserMode, type ApiClient } from "@robindone/shared";
 import type { ICredentialService } from "../credential/credential.js";
 import type { ICodingPlanSubscriptionService } from "./codingPlanSubscription.js";
 import { BigModelCodingPlanSubscriptionProvider } from "./bigmodelCodingPlanSubscriptionProvider.js";
-import type { ModelSelectionView } from "@robinrun/provider";
+import type { ModelSelectionView } from "@robindone/provider";
 import { ZaiCodingPlanSubscriptionProvider } from "./zaiCodingPlanSubscriptionProvider.js";
 
 interface CodingPlanSubscriptionServiceDependencies {

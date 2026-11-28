@@ -1,9 +1,9 @@
-import type { IDisposable } from "@robinrun/rpc";
+import type { IDisposable } from "@robindone/rpc";
 import {
   createMemoryDiagnosticsRegistry,
   type MemoryDiagnosticsProvider,
   type MemoryDiagnosticsRegistry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /**
  * services 进程级内存诊断计数器注册表。

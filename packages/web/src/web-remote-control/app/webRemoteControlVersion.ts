@@ -1,4 +1,4 @@
-import type { WebRemoteControlWindowBootstrapResult } from "@robinrun/shared";
+import type { WebRemoteControlWindowBootstrapResult } from "@robindone/shared";
 
 interface WebRemoteControlVersionGuardOptions {
   /** 只读取响应；依赖当前连接的副作用由 onAccepted 同步提交。 */

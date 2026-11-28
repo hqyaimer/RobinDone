@@ -1,12 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { type IRobinRunTaskService, type ISettingService } from "@robinrun/services";
+import { type IRobinDoneTaskService, type ISettingService } from "@robindone/services";
 import {
   appSettingsSchema,
   buildRemoteWorkspaceIdentity,
   buildServerRemoteWorkspaceIdentity,
   type BotsConfigFile,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createBotProjectRuntime } from "../../../../services/src/bot-project-runtime/index.js";
 import { SourceServerDirectory } from "#src/host/sourceServerDirectory.js";
 import { resolveBotRemoteWorkspace } from "#src/host/botRemoteWorkspaceResolver.js";
@@ -126,7 +126,7 @@ it("BOT-E2E-RW-02 legacy 与 stable Bot 通过同一 Source 身份完成任务�
   const bound: string[] = [];
   const connection = {
     owner: {},
-    taskService: taskService as unknown as IRobinRunTaskService,
+    taskService: taskService as unknown as IRobinDoneTaskService,
     modelSelectionService: { getView: async () => ({ ...view, effectiveSelection: selected }) },
     agentService: { syncAppRuntimePreferences: async () => {} },
     bindWorkspace: async (workspace: { workspaceIdentity: string }) => {
@@ -261,7 +261,7 @@ it("BOT-E2E-RW-02 legacy 与 stable Bot 通过同一 Source 身份完成任务�
     expect(bound.every((identity) => identity === stable)).toBe(true);
     expect(connections).toBe(1);
     const artifactDir = resolve(
-      process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/bot-r3-workspace-identity",
+      process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/bot-r3-workspace-identity",
     );
     await mkdir(artifactDir, { recursive: true });
     await writeFile(

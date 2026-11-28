@@ -10,7 +10,7 @@ import {
   type FeedbackTicketModule,
   type FeedbackTicketSeverity,
   type FeedbackTicketType,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { toast } from "@/components/ui/toast.js";
 import { FeedbackErrorTip } from "@/feedback/feedbackBadges.js";
 import { readFeedbackContactPreference } from "@/feedback/feedbackContactPreference.js";
@@ -47,14 +47,14 @@ import {
   DEFAULT_FEEDBACK_TYPE,
   startSimplifiedFeedbackSubmission,
 } from "@/feedback/feedbackSubmitSubmission.js";
-import type { IFeedbackService } from "@robinrun/services";
-import type { IPlatformService } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { IFeedbackService } from "@robindone/services";
+import type { IPlatformService } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import {
-  selectWorkspaceRobinRunState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
+  selectWorkspaceRobinDoneState,
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
 
 export { SubmitProgressView } from "@/feedback/FeedbackSubmitProgressView.js";
 export { readCurrentAgentModelContext } from "@/feedback/feedbackSubmitModelContext.js";
@@ -92,7 +92,7 @@ export function FeedbackSubmitForm({
   onViewTickets: () => void;
   onCancel: () => void;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const formatMessage = useCallback(
     (id: string, values?: Record<string, string>) => intl.formatMessage({ id }, values),
     [intl],
@@ -400,13 +400,13 @@ function useActiveFeedbackModelContext(): FeedbackAgentModelContext {
   const activeWorkspaceIdentity = useTabStore(
     (state) => state.activeWorkspaceIdentity ?? undefined,
   );
-  const workspaceRobinRunState = useRobinRunSessionStore((state) =>
+  const workspaceRobinDoneState = useRobinDoneSessionStore((state) =>
     activeWorkspacePath
-      ? selectWorkspaceRobinRunState(state, activeWorkspacePath, activeWorkspaceIdentity)
+      ? selectWorkspaceRobinDoneState(state, activeWorkspacePath, activeWorkspaceIdentity)
       : null,
   );
   return useMemo(
-    () => readCurrentAgentModelContext(workspaceRobinRunState?.configOptions),
-    [workspaceRobinRunState?.configOptions],
+    () => readCurrentAgentModelContext(workspaceRobinDoneState?.configOptions),
+    [workspaceRobinDoneState?.configOptions],
   );
 }

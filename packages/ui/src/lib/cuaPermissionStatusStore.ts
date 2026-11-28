@@ -10,13 +10,13 @@
  * 由 useCuaPermissionStatus 触发。缓存跨组件卸载保留：重新进入设置页时先渲染上次的授权状态，
  * 不再从 null 闪一下「未知」再跳到已授权。
  */
-import { isCuaPermissionStatusAvailable } from "@robinrun/services";
+import { isCuaPermissionStatusAvailable } from "@robindone/services";
 import type {
   CuaPermissionStatus,
   CuaPermissionStatusQueryOptions,
   CuaPermissionStatusResult,
   ICuaPermissionService,
-} from "@robinrun/services";
+} from "@robindone/services";
 
 import {
   persistCuaPermissionStatus,

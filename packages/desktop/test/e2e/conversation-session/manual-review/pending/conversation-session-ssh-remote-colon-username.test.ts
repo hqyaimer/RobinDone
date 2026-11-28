@@ -1,6 +1,6 @@
-import { ServiceChannels } from "@robinrun/shared";
-import { TID_SSH_PASSWORD_INPUT } from "@robinrun/shared/test-ids";
-import type { RemoteProjectDirectory } from "@robinrun/services";
+import { ServiceChannels } from "@robindone/shared";
+import { TID_SSH_PASSWORD_INPUT } from "@robindone/shared/test-ids";
+import type { RemoteProjectDirectory } from "@robindone/services";
 import {
   clearAppData,
   setInputValueByTestIdDom,

@@ -2,7 +2,7 @@ import type { RemoteAssetInstallMode } from "./remoteAssetInstallMode.js";
 import type { RemoteResourcePackageSelection } from "./remoteResourcePackages.js";
 import type { ProviderFamilyDomain } from "./model-provider-family.js";
 import type { ProviderFamilyConnectionSelectionSettings } from "./provider-family-connection-selection.js";
-import type { RobinRunProvider } from "./robinrun-task-types-core.js";
+import type { RobinDoneProvider } from "./robindone-task-types-core.js";
 import type { WorkspacePurpose } from "./workspacePurpose.js";
 import type { DynamicWorkflowMode } from "./dynamic-workflow-feature.js";
 import type { EmbeddedBrowserViewportPreference } from "./browser-use/command-metadata.js";
@@ -79,8 +79,8 @@ export type Locale = "zh-CN" | "en-US";
 /** 界面语言偏好；system 表示跟随当前运行端系统语言。 */
 export type LocalePreference = "system" | Locale;
 
-/** RobinRun 运行中继续输入时的交互行为 */
-export type RobinRunInteractionBehavior = "queue" | "guide";
+/** RobinDone 运行中继续输入时的交互行为 */
+export type RobinDoneInteractionBehavior = "queue" | "guide";
 
 /** 桌面端 Electron 自动更新发布通道。 */
 export type ElectronReleaseChannel = "stable" | "preview";
@@ -224,7 +224,7 @@ export type ResourceUsageBaseGroupKey = "main" | "gpu" | "renderer" | "host" | "
 /** 资源管理器中的一个进程行（CPU 为整机归一化百分比，内存为字节） */
 export interface ResourceUsageProcess {
   pid: number;
-  /** 进程显示名，如 robinrun-main / robinrun-agent-robinrun-demo / node_repl */
+  /** 进程显示名，如 robindone-main / robindone-agent-robindone-demo / node_repl */
   name: string;
   category: ResourceUsageCategory;
   groupKey: string;
@@ -255,12 +255,12 @@ export interface ResourceUsageSnapshot {
 }
 
 /**
- * RobinRun 项目登记条目：launcher（项目启动台）的注册表单元。
+ * RobinDone 项目登记条目：launcher（项目启动台）的注册表单元。
  * path 是项目工作空间目录（也是本地 workspace identity 键）。
- * 运行时校验 schema 见 validationAppSettings.ts 的 robinrunProjectEntrySchema，
+ * 运行时校验 schema 见 validationAppSettings.ts 的 robindoneProjectEntrySchema，
  * 两处形状必须保持一致（schema 侧有编译期双向可赋值守卫）。
  */
-export interface RobinRunProjectEntry {
+export interface RobinDoneProjectEntry {
   id: string;
   name: string;
   path: string;
@@ -285,7 +285,7 @@ export interface RobinRunProjectEntry {
  * （解析逻辑见 services 侧 resolveAutoSessionDefaultMode），未经确认的新项目
  * 不得静默拿到完全访问。
  */
-export type RobinRunGlobalComposerMode = "build" | "edit" | "guarded" | "yolo";
+export type RobinDoneGlobalComposerMode = "build" | "edit" | "guarded" | "yolo";
 
 /**
  * 常驻脚本触发器并发配额缺省（2026-11-25 可配置化裁决，docs/trigger-system.md「资源与
@@ -299,7 +299,7 @@ export interface AppSettings {
   /** 当前 App/Host 不再显示提交前体验套餐推荐；不改变任何入口的模型选择。 */
   startPlanRecommendationDismissed?: boolean;
   /** 全局权限模式缺省；缺席时 UI 草稿走既有解析链、宿主自动会话落 CLI 缺省 build。 */
-  globalComposerMode?: RobinRunGlobalComposerMode;
+  globalComposerMode?: RobinDoneGlobalComposerMode;
   /**
    * 常驻脚本触发器并发配额（单项目，2026-11-25 可配置化裁决）：引擎每轮 reconcile 起点读取，
    * 改动 ≤5s 生效，无需重启。定时执行模式（runMode="scheduled"）的运行不占此配额。
@@ -332,7 +332,7 @@ export interface AppSettings {
   httpProxyCaCertPath?: string;
   /**
    * 内置浏览器忽略 HTTPS 证书校验错误（自签名、过期、域名不匹配等），用于访问内网测试站点。
-   * 只影响内置浏览器出口，不影响 RobinRun 自身对后端与模型 API 的请求。默认关闭，重启后生效。
+   * 只影响内置浏览器出口，不影响 RobinDone 自身对后端与模型 API 的请求。默认关闭，重启后生效。
    */
   embeddedBrowserAllowInsecureCertificates?: boolean;
   /** 人类用户主动打开 Browser tab 时的一次性显示偏好；Agent Browser Use 不读写。 */
@@ -384,8 +384,8 @@ export interface AppSettings {
   toolGroupingTerminalEnabled?: boolean;
   /** 是否把连续的 Write/Edit/ApplyPatch 工具调用聚合成 Changes。 */
   toolGroupingChangesEnabled?: boolean;
-  /** RobinRun 运行中继续输入时，是排队到下一轮，还是引导到下一次工具调用后运行 */
-  robinrunInteractionBehavior?: RobinRunInteractionBehavior;
+  /** RobinDone 运行中继续输入时，是排队到下一轮，还是引导到下一次工具调用后运行 */
+  robindoneInteractionBehavior?: RobinDoneInteractionBehavior;
   /** Agent 提问五分钟无人回答时是否允许自动继续；缺失按开启兼容旧配置。 */
   askUserQuestionAutoResolutionEnabled?: boolean;
   /** 是否完整保留 Model I/O；开启后不轮转、不限额重置、不压缩或裁剪，鉴权信息仍会脱敏。 */
@@ -396,7 +396,7 @@ export interface AppSettings {
    */
   dynamicWorkflowMode?: DynamicWorkflowMode;
   /** 已启用的内置 Agent CLI；UI 对外仍展示为“Install”，底层语义保持为启用内置能力。 */
-  enabledBuiltinAgentCliProviders?: RobinRunProvider[];
+  enabledBuiltinAgentCliProviders?: RobinDoneProvider[];
   /** 设置页中每个 Provider Family 当前唯一的结构化连接选择。 */
   providerFamilyConnectionSelections?: ProviderFamilyConnectionSelectionSettings;
   /** 用户通过 WelcomeScreen 成功连接后确认的 ZAI / BigModel provider family 运行域。 */
@@ -457,7 +457,7 @@ export interface AppSettings {
   lastActiveTabIndex?: number;
   /** 每个 workspace 的最后活跃 taskId，下次打开自动恢复 */
   lastActiveTaskByWorkspace?: Record<string, string>;
-  /** 数据目录的根路径（替代 homedir），默认为 os.homedir()；.robinrun/v2 后缀不变 */
+  /** 数据目录的根路径（替代 homedir），默认为 os.homedir()；.robindone/v2 后缀不变 */
   dataBaseDir?: string;
   /** 自动更新安装完成后，等待首次启动展示的版本说明 */
   pendingPostUpdateReleaseNotes?: {
@@ -491,11 +491,11 @@ export interface AppSettings {
     workspaceIdentity?: string;
     initialTaskId?: string;
   };
-  /** 设置页里的临时 endpoint override；正式/测试默认 base url 由 ROBINRUN_BASE_URL env 管理。 */
-  robinrunEndpointOrigin?: string;
+  /** 设置页里的临时 endpoint override；正式/测试默认 base url 由 ROBINDONE_BASE_URL env 管理。 */
+  robindoneEndpointOrigin?: string;
   /**
-   * RobinRun 项目注册表：launcher（项目启动台）的持久化事实来源。
+   * RobinDone 项目注册表：launcher（项目启动台）的持久化事实来源。
    * path 是项目工作空间目录（本地 workspace identity 键）；schema 见 validationAppSettings.ts。
    */
-  robinrunProjects?: RobinRunProjectEntry[];
+  robindoneProjects?: RobinDoneProjectEntry[];
 }

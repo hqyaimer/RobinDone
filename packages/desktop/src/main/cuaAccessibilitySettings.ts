@@ -9,16 +9,16 @@ import { randomUUID } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { shell } from "electron";
-import type { CuaHelperInstallerOptions } from "@robinrun/services/node";
+import type { CuaHelperInstallerOptions } from "@robindone/services/node";
 import {
   resolveHelperPermissionSubjectIdentity,
   type HelperPermissionSubjectIdentity,
-} from "@robinrun/services/cua-permission-broker";
+} from "@robindone/services/cua-permission-broker";
 import type {
   CuaAccessibilitySettingsResult,
   CuaPermissionKind,
   PrepareCuaHelperPermissionDragResult,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { createDesktopCuaHelperInstaller } from "./desktopCuaHelperInstaller.js";
 
 export const MACOS_ACCESSIBILITY_SETTINGS_URL =
@@ -189,7 +189,7 @@ async function verifyHelperPermissionIdentityUnchanged(
   await options.verifyHelperInstalled?.(identity.appPath);
   if (!cuaHelperBundleFingerprintUnchanged(identity.appPath, fingerprint)) {
     throw new Error(
-      `RobinRun Computer Use changed while its ${phase} signature was being verified`,
+      `RobinDone Computer Use changed while its ${phase} signature was being verified`,
     );
   }
   const currentIdentity = await (
@@ -197,12 +197,12 @@ async function verifyHelperPermissionIdentityUnchanged(
   )(identity.appPath);
   if (!sameHelperPermissionIdentity(identity, currentIdentity)) {
     throw new Error(
-      `RobinRun Computer Use permission identity changed during ${phase} verification`,
+      `RobinDone Computer Use permission identity changed during ${phase} verification`,
     );
   }
   if (!cuaHelperBundleFingerprintUnchanged(identity.appPath, fingerprint)) {
     throw new Error(
-      `RobinRun Computer Use changed while its ${phase} permission identity was being resolved`,
+      `RobinDone Computer Use changed while its ${phase} permission identity was being resolved`,
     );
   }
   return fingerprint;
@@ -508,7 +508,7 @@ export async function openCuaPermissionOnboarding(
   if (platform !== "darwin") {
     return {
       success: false,
-      error: "RobinRun Computer Use permissions are only available on macOS.",
+      error: "RobinDone Computer Use permissions are only available on macOS.",
     };
   }
   const env = options.env ?? process.env;
@@ -528,11 +528,11 @@ export async function openCuaPermissionOnboarding(
     // 必须 fail-closed，绝不回退到“路径存在即用”的未验证 Helper —— 否则会引导用户把 Accessibility /
     // Screen Recording 授权给旧版本 / 坏签名 / 错误 Team / 被替换的 bundle，破坏“Helper 是独立且受
     // TeamIdentifier pinning 的授权主体”这一核心边界。dev 场景由 installer 内部的
-    // ROBINRUN_CUA_HELPER_ALLOW_UNSIGNED_LOCAL 承接：通过 dev 校验时 ensureInstalled 会正常返回本地 app，
+    // ROBINDONE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL 承接：通过 dev 校验时 ensureInstalled 会正常返回本地 app，
     // 根本不会进到这个 catch；只有真正校验失败才会到这里。
     return {
       success: false,
-      error: `RobinRun Computer Use is unavailable (install/verification failed): ${messageOf(error)}`,
+      error: `RobinDone Computer Use is unavailable (install/verification failed): ${messageOf(error)}`,
     };
   }
 
@@ -545,7 +545,7 @@ export async function openCuaPermissionOnboarding(
     return {
       success: false,
       returnedFromSettings: false,
-      error: `RobinRun Computer Use permission identity verification failed: ${messageOf(error)}`,
+      error: `RobinDone Computer Use permission identity verification failed: ${messageOf(error)}`,
     };
   }
   const verifiedOptions: OpenCuaAccessibilitySettingsOptions = {
@@ -602,7 +602,7 @@ export async function prepareCuaHelperPermissionDrag(
   if (platform !== "darwin") {
     return {
       success: false,
-      error: "RobinRun Computer Use permissions are only available on macOS.",
+      error: "RobinDone Computer Use permissions are only available on macOS.",
     };
   }
   const env = options.env ?? process.env;
@@ -624,13 +624,13 @@ export async function prepareCuaHelperPermissionDrag(
     const verifiedFingerprint = captureCuaHelperBundleFingerprint(helperAppPath);
     await (options.verifyHelperInstalled ?? defaultInstaller?.verifyInstalled)?.(helperAppPath);
     if (!cuaHelperBundleFingerprintUnchanged(helperAppPath, verifiedFingerprint)) {
-      throw new Error("RobinRun Computer Use changed while its drag signature was being verified");
+      throw new Error("RobinDone Computer Use changed while its drag signature was being verified");
     }
     const identity = await (
       options.resolveHelperIdentity ?? resolveHelperPermissionSubjectIdentity
     )(helperAppPath);
     if (!cuaHelperBundleFingerprintUnchanged(helperAppPath, verifiedFingerprint)) {
-      throw new Error("RobinRun Computer Use changed while its drag identity was being resolved");
+      throw new Error("RobinDone Computer Use changed while its drag identity was being resolved");
     }
     return {
       success: true,

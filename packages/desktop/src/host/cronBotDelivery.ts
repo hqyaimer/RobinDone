@@ -1,15 +1,15 @@
-import type { RobinRunAutomationBotDeliveryTarget } from "@robinrun/shared";
+import type { RobinDoneAutomationBotDeliveryTarget } from "@robindone/shared";
 
 interface CronBotDeliveryRepo {
   getBotDeliveryTarget(
     automationId: string,
     workspaceKey?: string,
-  ): Promise<RobinRunAutomationBotDeliveryTarget | undefined>;
+  ): Promise<RobinDoneAutomationBotDeliveryTarget | undefined>;
 }
 
 interface CronBotDeliveryService {
   watchAutomationRun(params: {
-    target: RobinRunAutomationBotDeliveryTarget;
+    target: RobinDoneAutomationBotDeliveryTarget;
     runId?: string;
     taskId: string;
     workspacePath: string;

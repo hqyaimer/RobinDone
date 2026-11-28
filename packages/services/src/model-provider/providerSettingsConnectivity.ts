@@ -1,4 +1,4 @@
-import type { ModelConnectivityResult } from "@robinrun/shared";
+import type { ModelConnectivityResult } from "@robindone/shared";
 import type { ProviderSettingsConnectivityTester } from "./providerFacadeServices.js";
 
 interface FormalModelConnectivityInput {

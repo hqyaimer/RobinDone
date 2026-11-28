@@ -15,7 +15,7 @@ import type {
 import { attachTaskListRowActivity } from "@/v4/taskListRowActivity.js";
 import {
   compareTaskListItemsByTime,
-  compareRobinRunTaskListItems,
+  compareRobinDoneTaskListItems,
 } from "@/lib/taskListOrdering.js";
 import { buildTaskEntityKey } from "@/lib/taskQueryCache.js";
 import { LEGACY_SINGLE_ROOT_PROJECT_PREFIX } from "@/project-sidebar/contract.js";
@@ -79,7 +79,7 @@ export function compareProjectTaskRows(
   return (
     (kind === "timeline" || kind === "unread"
       ? compareTaskListItemsByTime(left, right, "updated")
-      : compareRobinRunTaskListItems(left, right, "updated")) ||
+      : compareRobinDoneTaskListItems(left, right, "updated")) ||
     JSON.stringify([right.hostId, buildTaskEntityKey(right)]).localeCompare(
       JSON.stringify([left.hostId, buildTaskEntityKey(left)]),
     )

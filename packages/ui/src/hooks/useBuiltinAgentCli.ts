@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- 内置 Agent CLI 的安装/卸载状态、随机进度模板与设置同步目前集中在同一 hook，先保持收口，避免把同一条交互链拆散。 */
 import { useCallback, useMemo, useState } from "react";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { useSettings } from "@/hooks/useSettingService.js";
 import {
   resolveBuiltinAgentCliStatus,
@@ -12,7 +12,7 @@ import {
 import {
   persistLastSelectedAgentProvider,
   readLastSelectedAgentProvider,
-} from "@/lib/robinrunProviderPreference.js";
+} from "@/lib/robindoneProviderPreference.js";
 
 const MIN_INSTALL_DURATION_MS = 5_000;
 const MAX_INSTALL_DURATION_MS = 10_000;
@@ -284,8 +284,8 @@ function getInstallTargetProgressAtElapsed(plan: InstallProgressPlan, elapsedMs:
 }
 
 async function simulateInstallProgress(
-  provider: RobinRunProvider,
-  setProgress: (provider: RobinRunProvider, progress: number | null) => void,
+  provider: RobinDoneProvider,
+  setProgress: (provider: RobinDoneProvider, progress: number | null) => void,
 ): Promise<void> {
   const plan = createInstallProgressPlan();
   const startedAt = Date.now();
@@ -340,10 +340,10 @@ async function simulateUninstallDelay(): Promise<void> {
 
 export function useBuiltinAgentCli() {
   const { settings, loading, refresh, update } = useSettings();
-  const [enablingProvider, setEnablingProvider] = useState<RobinRunProvider | null>(null);
-  const [disablingProvider, setDisablingProvider] = useState<RobinRunProvider | null>(null);
+  const [enablingProvider, setEnablingProvider] = useState<RobinDoneProvider | null>(null);
+  const [disablingProvider, setDisablingProvider] = useState<RobinDoneProvider | null>(null);
   const [installProgressByProvider, setInstallProgressByProvider] = useState<
-    Partial<Record<RobinRunProvider, number>>
+    Partial<Record<RobinDoneProvider, number>>
   >({});
   const [error, setError] = useState<string | null>(null);
 
@@ -352,17 +352,17 @@ export function useBuiltinAgentCli() {
   const hasPendingMutation = activeMutatingProvider !== null;
 
   const isEnabled = useCallback(
-    (provider: RobinRunProvider) => enabledProviders.includes(provider),
+    (provider: RobinDoneProvider) => enabledProviders.includes(provider),
     [enabledProviders],
   );
 
   const getEffectiveProvider = useCallback(
-    (provider: RobinRunProvider) => getEffectiveBuiltinAgentCliProvider(settings, provider),
+    (provider: RobinDoneProvider) => getEffectiveBuiltinAgentCliProvider(settings, provider),
     [settings],
   );
 
   const getStatus = useCallback(
-    (provider: RobinRunProvider): BuiltinAgentCliStatus =>
+    (provider: RobinDoneProvider): BuiltinAgentCliStatus =>
       resolveBuiltinAgentCliStatus({
         provider,
         enabledProviders,
@@ -373,12 +373,12 @@ export function useBuiltinAgentCli() {
   );
 
   const canMutateProvider = useCallback(
-    (provider: RobinRunProvider) => !hasPendingMutation || activeMutatingProvider === provider,
+    (provider: RobinDoneProvider) => !hasPendingMutation || activeMutatingProvider === provider,
     [activeMutatingProvider, hasPendingMutation],
   );
 
   const installProvider = useCallback(
-    async (provider: RobinRunProvider) => {
+    async (provider: RobinDoneProvider) => {
       if (!canMutateProvider(provider)) {
         return;
       }
@@ -424,7 +424,7 @@ export function useBuiltinAgentCli() {
   );
 
   const uninstallProvider = useCallback(
-    async (provider: RobinRunProvider) => {
+    async (provider: RobinDoneProvider) => {
       if (!canMutateProvider(provider)) {
         return;
       }
@@ -472,7 +472,8 @@ export function useBuiltinAgentCli() {
     canMutateProvider,
     getEffectiveProvider,
     getStatus,
-    getInstallProgress: (provider: RobinRunProvider) => installProgressByProvider[provider] ?? null,
+    getInstallProgress: (provider: RobinDoneProvider) =>
+      installProgressByProvider[provider] ?? null,
     installProvider,
     uninstallProvider,
     refresh,

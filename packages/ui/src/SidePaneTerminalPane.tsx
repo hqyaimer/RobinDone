@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { TerminalSession } from "@/terminal/TerminalSession.js";
 
 export function SidePaneTerminalPane({

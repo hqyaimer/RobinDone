@@ -2,7 +2,7 @@ import {
   BUILTIN_MODEL_PROVIDER_IDS,
   isStartPlanModelProviderId,
   type UsageEntitlementSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   GlmQuotaBannerBusinessCode,
   StartPlanConcurrentLimitBannerReason,

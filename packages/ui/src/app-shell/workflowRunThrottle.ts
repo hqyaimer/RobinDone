@@ -12,7 +12,7 @@
 import type {
   WorkflowRunConcurrency,
   WorkflowRunState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { isWorkflowRunConfigurable } from "@/components/workflow-timeline/workflowRunSettings.js";
 import type { WorkflowRunEventItem, WorkflowRunEventLine } from "./workflowRunPanel.js";
 

@@ -1,4 +1,4 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
 import { clearAppData } from "../helpers/desktop-app.js";
 import { skipOccupationOnboardingIfPresent } from "../helpers/occupation-onboarding.js";
 import {

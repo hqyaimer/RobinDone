@@ -6,7 +6,7 @@ import type {
   DataSyncImportResultItem,
   DataSyncListItem,
   SkillDataSyncPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { pathExists, updateJsonObjectFile } from "#src/fs/atomicFileUtils.js";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { checkRemoteSyncDirectoriesWriteAccess } from "#src/remote-sync/remoteSyncWriteAccess.js";
@@ -18,7 +18,7 @@ import { createSkillSyncSizeLimitError } from "#src/skill-sync/skillSyncErrors.j
 import { resolveSkillSyncPathWithin } from "#src/skill-sync/skillSyncPath.js";
 import {
   collectUserSkillCandidates,
-  getUserRobinrunSkillRoot,
+  getUserRobindoneSkillRoot,
   normalizeSkillNameKey,
   parseSkillMetadata,
   readSkillFileOrNull,
@@ -46,28 +46,28 @@ interface ResolvedUserSkill {
   /** 技能目录（可能是软链路径）。 */
   directoryPath: string;
   skillFilePath: string;
-  location: "robinrun" | "agents";
+  location: "robindone" | "agents";
   /** 技能目录或其位于技能根以内的上级目录是软链。 */
   isSymlink: boolean;
 }
 
 function getCliConfigPath(): string {
-  return join(resolveUserHomeDir(), ".robinrun", "cli", "config.json");
+  return join(resolveUserHomeDir(), ".robindone", "cli", "config.json");
 }
 
 function normalizeSkillConfigPath(path: string): string {
   return path.replaceAll("\\", "/");
 }
 
-/** 按归一化 name 对齐的用户级技能；同名时保留候选排序中的第一项（`.robinrun` 优先）。 */
+/** 按归一化 name 对齐的用户级技能；同名时保留候选排序中的第一项（`.robindone` 优先）。 */
 async function resolveUserSkills(): Promise<Map<string, ResolvedUserSkill>> {
-  const robinrunRoot = getUserRobinrunSkillRoot();
+  const robindoneRoot = getUserRobindoneSkillRoot();
   const result = new Map<string, ResolvedUserSkill>();
   for (const candidate of await collectUserSkillCandidates()) {
     const key = normalizeSkillNameKey(candidate.name);
     if (result.has(key)) continue;
     const directoryPath = dirname(candidate.path);
-    const location = isPathWithin(robinrunRoot, directoryPath) ? "robinrun" : "agents";
+    const location = isPathWithin(robindoneRoot, directoryPath) ? "robindone" : "agents";
     result.set(key, {
       key,
       name: candidate.name,
@@ -77,7 +77,7 @@ async function resolveUserSkills(): Promise<Map<string, ResolvedUserSkill>> {
       skillFilePath: candidate.path,
       location,
       isSymlink:
-        location === "robinrun" ? await hasSymlinkWithin(robinrunRoot, directoryPath) : false,
+        location === "robindone" ? await hasSymlinkWithin(robindoneRoot, directoryPath) : false,
     });
   }
   return result;
@@ -272,7 +272,7 @@ export function createSkillDataSyncMethods(options: {
     }
 
     if (!existing) return { key: item.key, status: "conflict" };
-    if (existing.location !== "robinrun" || existing.isSymlink) {
+    if (existing.location !== "robindone" || existing.isSymlink) {
       return failed(`target cannot be overwritten: ${existing.directoryPath}`);
     }
     // 修复：覆盖是整目录替换，原来不检查目标端嵌套在该目录里的其他技能（例如 parent/child），
@@ -351,7 +351,7 @@ export function createSkillDataSyncMethods(options: {
 
     async checkSyncWriteAccess() {
       return await checkRemoteSyncDirectoriesWriteAccess([
-        getUserRobinrunSkillRoot(),
+        getUserRobindoneSkillRoot(),
         dirname(getCliConfigPath()),
       ]);
     },
@@ -416,7 +416,7 @@ export function createSkillDataSyncMethods(options: {
           phase: "archive",
         });
       }
-      const targetRoot = getUserRobinrunSkillRoot();
+      const targetRoot = getUserRobindoneSkillRoot();
       await mkdir(targetRoot, { recursive: true });
       // 临时目录放在技能根内，保证与目标同盘，rename 是原子替换。点目录不会被技能扫描读到。
       const tempRoot = join(targetRoot, `.sync-tmp-${randomUUID()}`);

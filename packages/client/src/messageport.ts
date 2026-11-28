@@ -1,5 +1,5 @@
-import { MessagePortProtocol, ChannelClient } from "@robinrun/rpc";
-import type { IServiceAccessor } from "@robinrun/services";
+import { MessagePortProtocol, ChannelClient } from "@robindone/rpc";
+import type { IServiceAccessor } from "@robindone/services";
 import { RemoteServiceAccess } from "./remoteServiceAccess.js";
 import { isRendererProductionBuild } from "./rendererLoggingEnv.js";
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { ImagePreviewDialog } from "@/components/ai-elements/image-preview-dialog.js";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { registerImageComposerTarget } from "@/image-preview-editor/index.js";
 import "@/styles.css";
 const params = new URLSearchParams(location.search);
 const locale = params.get("locale") === "en-US" ? "en-US" : "zh-CN";
-localStorage.setItem("robinrun-locale-preference", locale);
+localStorage.setItem("robindone-locale-preference", locale);
 document.documentElement.className =
   params.get("theme") === "light" ? "theme-zai-light" : "theme-zai-dark dark";
 const src =
@@ -37,7 +37,7 @@ function Fixture() {
     [scope],
   );
   return (
-    <RobinRunIntlProvider initialLocale={locale}>
+    <RobinDoneIntlProvider initialLocale={locale}>
       <button onClick={() => setOpen(true)}>Open</button>
       <ImagePreviewDialog
         open={open}
@@ -52,7 +52,7 @@ function Fixture() {
             : [{ alt: "drawing.svg", src }]
         }
       />
-    </RobinRunIntlProvider>
+    </RobinDoneIntlProvider>
   );
 }
 createRoot(document.getElementById("root")!).render(<Fixture />);

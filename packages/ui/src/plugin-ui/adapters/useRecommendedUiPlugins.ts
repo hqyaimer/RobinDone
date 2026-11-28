@@ -1,4 +1,4 @@
-import { withPluginTelemetry } from "@robinrun/services";
+import { withPluginTelemetry } from "@robindone/services";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServices } from "@/hooks/useServices.js";
 import { useScopedPluginManagementStore } from "@/store/pluginManagementStore.js";
@@ -8,7 +8,7 @@ import {
   type StorePluginItem,
 } from "@/settings/pluginStoreListing.js";
 import { useUiPluginRecommendations } from "@/plugin-ui/adapters/useUiPluginRecommendations.js";
-import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/robinrunDraftSkillInvalidation.js";
+import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/robindoneDraftSkillInvalidation.js";
 import { refreshSharedSkillStoreForWorkspace } from "@/lib/skillStoreRefresh.js";
 import { logger } from "@/logger.js";
 

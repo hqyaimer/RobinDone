@@ -1,4 +1,4 @@
-import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robinrun/shared";
+import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robindone/shared";
 
 export type AccountApiProviderId = typeof BIGMODEL_PROVIDER_ID | typeof ZAI_PROVIDER_ID;
 
@@ -35,4 +35,4 @@ export interface RemoteApiKeySecret {
 
 export const DEFAULT_ORG_NAME = "默认机构";
 export const DEFAULT_PROJECT_NAME = "默认项目";
-export const ROBINRUN_API_KEY_NAME = "robinrun-api-key";
+export const ROBINDONE_API_KEY_NAME = "robindone-api-key";

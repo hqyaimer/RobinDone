@@ -23,7 +23,7 @@ const MARKER = "E2E_DWF_SAVE_WINDOW_BOUNDS";
 const FINAL_MARKER = "E2E_DWF_SAVE_WINDOW_BOUNDS_DONE";
 const SAVED_FILE = join(
   DEFAULT_WORKSPACE,
-  ".robinrun",
+  ".robindone",
   "workflows",
   "release-check-overlong.dwf.ts",
 );

@@ -1,4 +1,4 @@
-import type { RobinRunTaskRuntimeStatus } from "@robinrun/shared";
+import type { RobinDoneTaskRuntimeStatus } from "@robindone/shared";
 
 type ChatPlaceholderMessageKey =
   | "chat.placeholder.newTask"
@@ -24,7 +24,7 @@ export function resolveChatPlaceholderKey(options: {
 
 export function shouldDeferChatPlaceholder(options: {
   hasBoundTask: boolean;
-  taskStatus: RobinRunTaskRuntimeStatus;
+  taskStatus: RobinDoneTaskRuntimeStatus;
 }): boolean {
   const { hasBoundTask, taskStatus } = options;
 

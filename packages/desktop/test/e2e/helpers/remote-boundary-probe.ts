@@ -1,5 +1,5 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
-import { PlatformChannels, ServiceChannels } from "@robinrun/shared";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
+import { PlatformChannels, ServiceChannels } from "@robindone/shared";
 
 type Handler = (...args: unknown[]) => Promise<unknown>;
 declare global {

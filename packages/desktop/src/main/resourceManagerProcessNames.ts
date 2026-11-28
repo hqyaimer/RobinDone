@@ -1,7 +1,7 @@
 import { BrowserWindow } from "electron";
 import type { WebContents } from "electron";
 import { basename } from "node:path";
-import { formatRobinRunRendererProcessName } from "@robinrun/shared";
+import { formatRobinDoneRendererProcessName } from "@robindone/shared";
 
 /** 资源管理器里非 BrowserWindow 自带 renderer（WebContentsView / DevTools / webview）的显示名 */
 
@@ -51,14 +51,14 @@ export function buildAuxiliaryRendererName(contents: WebContents): string {
 
   // 把 Electron 已知的 WebContents 元信息编码进名称里，排查 PID 时能直接看出类型和归属线索。
   if (url?.startsWith("devtools://")) {
-    return formatRobinRunRendererProcessName(
+    return formatRobinDoneRendererProcessName(
       `devtools-${contentsId}-${hostTitle ?? ownerLabel ?? "unknown"}`,
     );
   }
 
   if (type === "window") {
-    return formatRobinRunRendererProcessName(title ?? `window-${contentsId}`);
+    return formatRobinDoneRendererProcessName(title ?? `window-${contentsId}`);
   }
 
-  return formatRobinRunRendererProcessName(`${type}-${contentsId}-${pageLabel}`);
+  return formatRobinDoneRendererProcessName(`${type}-${contentsId}-${pageLabel}`);
 }

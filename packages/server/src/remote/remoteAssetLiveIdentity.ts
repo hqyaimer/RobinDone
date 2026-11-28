@@ -1,27 +1,27 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ROBINRUN_VERSION } from "@robinrun/shared";
-import type { IRemoteBackend } from "@robinrun/server/remote/backend.js";
-import type { RemoteEnvironment } from "@robinrun/server/remote/backend.js";
+import { ROBINDONE_VERSION } from "@robindone/shared";
+import type { IRemoteBackend } from "@robindone/server/remote/backend.js";
+import type { RemoteEnvironment } from "@robindone/server/remote/backend.js";
 import {
   REMOTE_BASE,
   type DeployLoggers,
   waitForClose,
-} from "@robinrun/server/remote/deployShared.js";
+} from "@robindone/server/remote/deployShared.js";
 import {
   buildWriteLiteralFileCommand,
   quotePosixPathArg,
-} from "@robinrun/server/remote/posixShell.js";
+} from "@robindone/server/remote/posixShell.js";
 import {
   fetchRemoteAssetManifestRefFromCdn,
   type RemoteAssetManifest,
   type RemoteAssetManifestRef,
-} from "@robinrun/server/remote/remoteAssetCache.js";
+} from "@robindone/server/remote/remoteAssetCache.js";
 import {
   buildReleaseBaseCandidates,
   resolveRemoteCdnBaseUrls,
-} from "@robinrun/server/remote/remoteAssetCdn.js";
-import type { RemoteAssetNetworkPort } from "@robinrun/server/remote/remoteAssetNetwork.js";
+} from "@robindone/server/remote/remoteAssetCdn.js";
+import type { RemoteAssetNetworkPort } from "@robindone/server/remote/remoteAssetNetwork.js";
 
 const REMOTE_ASSET_COMPONENT_META_DIR = `${REMOTE_BASE}/.asset-components`;
 
@@ -205,14 +205,14 @@ async function resolveFreshComponentManifest(
   if (options.mockCdnDir) {
     try {
       const content = await readFile(
-        join(options.mockCdnDir, "releases", ROBINRUN_VERSION, `manifest-${platformArch}.json`),
+        join(options.mockCdnDir, "releases", ROBINDONE_VERSION, `manifest-${platformArch}.json`),
         "utf8",
       );
       return {
         manifest: JSON.parse(content) as RemoteAssetManifest,
         releaseBaseCandidatesForComponents: buildReleaseBaseCandidates(
           resolveRemoteCdnBaseUrls(options),
-          ROBINRUN_VERSION,
+          ROBINDONE_VERSION,
         ),
       };
     } catch (error) {
@@ -229,7 +229,7 @@ async function resolveFreshComponentManifest(
         remoteCdnBaseUrl: options.remoteCdnBaseUrl,
         remoteCdnBaseUrls: options.remoteCdnBaseUrls,
         remoteCacheDir: options.remoteCacheDir,
-        version: ROBINRUN_VERSION,
+        version: ROBINDONE_VERSION,
         platformArch,
         manifestRequestTimeoutMs: options.manifestRequestTimeoutMs,
         remoteAssetNetwork: options.remoteAssetNetwork,

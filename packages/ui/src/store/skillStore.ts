@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import {
-  normalizeAgentProviderToRobinRunAgent,
-  ROBINRUN_AGENT_PROVIDER,
-  type RobinRunProvider,
+  normalizeAgentProviderToRobinDoneAgent,
+  ROBINDONE_AGENT_PROVIDER,
+  type RobinDoneProvider,
   type SkillSummary,
   type SkillsCapability,
-} from "@robinrun/shared";
-import type { ISkillsService } from "@robinrun/services";
+} from "@robindone/shared";
+import type { ISkillsService } from "@robindone/services";
 import { shouldExposeE2EStoreBridge } from "@/lib/e2eStoreBridge.js";
 import { logger } from "@/logger.js";
 import { getServiceAuthorityId } from "@/store/serviceAuthorityKey.js";
@@ -16,22 +16,22 @@ interface SkillStoreState {
   workspaceIdentity: string | null;
   loadedWorkspacePath: string | null;
   loadedWorkspaceIdentity: string | null;
-  provider: RobinRunProvider;
-  loadedProvider: RobinRunProvider | null;
+  provider: RobinDoneProvider;
+  loadedProvider: RobinDoneProvider | null;
   skills: SkillSummary[];
   capability: SkillsCapability | null;
   loading: boolean;
   error: string | null;
   initialize: (
     workspacePath: string,
-    providerOrSkillsService: RobinRunProvider | ISkillsService,
+    providerOrSkillsService: RobinDoneProvider | ISkillsService,
     maybeSkillsService?: ISkillsService,
     workspaceIdentity?: string,
   ) => Promise<void>;
   refresh: (skillsService: ISkillsService, workspaceIdentity?: string) => Promise<void>;
   setEnabled: (
     skillId: string,
-    providerOrEnabled: RobinRunProvider | boolean,
+    providerOrEnabled: RobinDoneProvider | boolean,
     scopeOrSkillsService: SkillSummary["scope"] | ISkillsService,
     enabledOrSkillsService?: boolean | ISkillsService,
     maybeSkillsService?: ISkillsService,
@@ -44,7 +44,7 @@ let activeSkillProjectionKey: string | null = null;
 let loadedSkillServiceAuthorityId: number | null = null;
 function getSkillLoadKey(
   workspacePath: string,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   skillsService: ISkillsService,
   workspaceIdentity?: string,
 ): string {
@@ -53,7 +53,7 @@ function getSkillLoadKey(
 
 function loadSkillsOnce(
   workspacePath: string,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   skillsService: ISkillsService,
   workspaceIdentity?: string,
   options: { bypassCache?: boolean } = {},
@@ -82,7 +82,7 @@ export const useSkillStore = create<SkillStoreState>((set, get) => ({
   workspaceIdentity: null,
   loadedWorkspacePath: null,
   loadedWorkspaceIdentity: null,
-  provider: ROBINRUN_AGENT_PROVIDER,
+  provider: ROBINDONE_AGENT_PROVIDER,
   loadedProvider: null,
   skills: [],
   capability: null,
@@ -90,14 +90,14 @@ export const useSkillStore = create<SkillStoreState>((set, get) => ({
   error: null,
   async initialize(
     workspacePath: string,
-    providerOrSkillsService: RobinRunProvider | ISkillsService,
+    providerOrSkillsService: RobinDoneProvider | ISkillsService,
     maybeSkillsService?: ISkillsService,
     workspaceIdentity?: string,
   ) {
     const currentState = get();
     const hasProvider = typeof providerOrSkillsService === "string";
-    const provider = normalizeAgentProviderToRobinRunAgent(
-      hasProvider ? providerOrSkillsService : ROBINRUN_AGENT_PROVIDER,
+    const provider = normalizeAgentProviderToRobinDoneAgent(
+      hasProvider ? providerOrSkillsService : ROBINDONE_AGENT_PROVIDER,
     );
     const skillsService = hasProvider ? maybeSkillsService : providerOrSkillsService;
     const normalizedWorkspaceIdentity = workspaceIdentity?.trim() || null;
@@ -178,7 +178,7 @@ export const useSkillStore = create<SkillStoreState>((set, get) => ({
     }
     const workspaceIdentityFromState =
       workspaceIdentity?.trim() || get().workspaceIdentity || undefined;
-    const provider = normalizeAgentProviderToRobinRunAgent(get().provider);
+    const provider = normalizeAgentProviderToRobinDoneAgent(get().provider);
     const serviceAuthorityId = getServiceAuthorityId(skillsService);
     const projectionKey = `${serviceAuthorityId}::${workspaceIdentityFromState || workspacePath}::${provider}`;
     activeSkillProjectionKey = projectionKey;
@@ -235,7 +235,7 @@ export const useSkillStore = create<SkillStoreState>((set, get) => ({
   },
   async setEnabled(
     skillId: string,
-    providerOrEnabled: RobinRunProvider | boolean,
+    providerOrEnabled: RobinDoneProvider | boolean,
     scopeOrSkillsService: SkillSummary["scope"] | ISkillsService,
     enabledOrSkillsService?: boolean | ISkillsService,
     maybeSkillsService?: ISkillsService,
@@ -248,7 +248,7 @@ export const useSkillStore = create<SkillStoreState>((set, get) => ({
     const workspaceIdentityFromState =
       workspaceIdentity?.trim() || get().workspaceIdentity || undefined;
     const legacyCall = typeof providerOrEnabled === "boolean";
-    const provider = normalizeAgentProviderToRobinRunAgent(
+    const provider = normalizeAgentProviderToRobinDoneAgent(
       legacyCall ? get().provider : providerOrEnabled,
     );
     const scope = legacyCall ? undefined : (scopeOrSkillsService as SkillSummary["scope"]);
@@ -287,6 +287,6 @@ declare global {
 }
 
 if (shouldExposeE2EStoreBridge()) {
-  // E2E 诊断入口必须由 WDIO 显式打开，不能复用 ROBINRUN_ENV=test，避免产品测试环境暴露可变全局 store。
+  // E2E 诊断入口必须由 WDIO 显式打开，不能复用 ROBINDONE_ENV=test，避免产品测试环境暴露可变全局 store。
   window.__skillStoreE2E = useSkillStore;
 }

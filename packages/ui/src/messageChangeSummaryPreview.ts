@@ -1,4 +1,4 @@
-import type { RobinRunPersistedFileChange } from "@robinrun/shared";
+import type { RobinDonePersistedFileChange } from "@robindone/shared";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import type { CodeViewerWorkspaceScope } from "@/lib/codeViewerWorkspaceScope.js";
 
@@ -13,7 +13,7 @@ export function buildChangeSummaryDiffViewerSource({
 }: {
   patch?: string;
   path?: string;
-  snapshot: RobinRunPersistedFileChange["snapshots"][number] | undefined;
+  snapshot: RobinDonePersistedFileChange["snapshots"][number] | undefined;
   relativePath: string;
 } & CodeViewerWorkspaceScope): CodeViewerSource | undefined {
   const workspaceScope = {

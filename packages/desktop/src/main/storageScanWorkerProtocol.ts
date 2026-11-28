@@ -1,5 +1,5 @@
-import type { StorageRootSpec } from "@robinrun/services";
-import type { StorageScanProgress } from "@robinrun/services/node";
+import type { StorageRootSpec } from "@robindone/services";
+import type { StorageScanProgress } from "@robindone/services/node";
 
 export interface StorageScanWorkerData {
   roots: StorageRootSpec[];

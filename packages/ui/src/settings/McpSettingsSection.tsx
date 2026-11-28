@@ -3,35 +3,35 @@
  * MCP Settings Section
  *
  * Manages MCP server configuration in the settings page.
- * Supports the unified RobinRun Agent MCP source backed by settings directories.
+ * Supports the unified RobinDone Agent MCP source backed by settings directories.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { convertToRobinRunAgentMcpServer } from "@robinrun/shared";
+import { convertToRobinDoneAgentMcpServer } from "@robindone/shared";
 import {
   TID_MCP_OPEN_AUTHORIZATION_BUTTON,
   TID_PLUGIN_MCP_SERVER_ROW,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import type {
   RemoteTarget,
   WorkspaceMcpTrustDecision,
-  RobinRunWorkspaceMcpTrustResult,
-  RobinRunAvailablePluginSummary,
-  RobinRunAgentMcpServer,
-  RobinRunMcpListMode,
-  RobinRunMcpServer,
-  RobinRunMcpServerStatusSnapshot,
-  RobinRunPluginInfo,
-} from "@robinrun/shared";
+  RobinDoneWorkspaceMcpTrustResult,
+  RobinDoneAvailablePluginSummary,
+  RobinDoneAgentMcpServer,
+  RobinDoneMcpListMode,
+  RobinDoneMcpServer,
+  RobinDoneMcpServerStatusSnapshot,
+  RobinDonePluginInfo,
+} from "@robindone/shared";
 import {
-  isRobinRunAgentMcpStatusModeUnsupportedError,
+  isRobinDoneAgentMcpStatusModeUnsupportedError,
   type IServiceAccessor,
   type IMcpSyncService,
-} from "@robinrun/services";
+} from "@robindone/services";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { logger } from "@/logger.js";
 import { McpServerForm } from "@/settings/McpServerForm.js";
@@ -81,7 +81,7 @@ import { ExternalLink, Import, Plus, UploadCloud } from "lucide-react";
 import { SettingsSegmentedTabs } from "@/settings/SettingsSegmentedTabs.js";
 import { selectPluginsForScope } from "@/settings/pluginCapabilityProjection.js";
 
-const DEFAULT_MCP_SOURCE: ServerScope = "robinrunagentmcp";
+const DEFAULT_MCP_SOURCE: ServerScope = "robindoneagentmcp";
 const MCP_OAUTH_AUTHORIZATION_STATUS_REFRESH_MS = 1_000;
 const MCP_OAUTH_AUTHORIZATION_STATUS_REFRESH_DURATION_MS = 5 * 60_000;
 const MCP_OAUTH_AUTHORIZATION_FOLLOWUP_REFRESH_ATTEMPTS = 10;
@@ -89,7 +89,7 @@ const MCP_OAUTH_AUTHORIZATION_FOLLOWUP_REFRESH_ATTEMPTS = 10;
 export async function applyWorkspaceMcpTrustDecision(
   request: WorkspaceMcpTrustDecision,
   isCurrentTarget: () => boolean,
-  decide: (request: WorkspaceMcpTrustDecision) => Promise<RobinRunWorkspaceMcpTrustResult>,
+  decide: (request: WorkspaceMcpTrustDecision) => Promise<RobinDoneWorkspaceMcpTrustResult>,
 ): Promise<boolean> {
   if (!isCurrentTarget()) return false;
   const result = await decide(request);
@@ -127,24 +127,24 @@ export async function refreshMcpServerStatusList({
   workspacePath,
   mcpSyncService,
 }: {
-  beginServerStatusListRefresh: (mode?: RobinRunMcpListMode) => number;
+  beginServerStatusListRefresh: (mode?: RobinDoneMcpListMode) => number;
   markServerStatusListRefreshFailed?: (
     error: string,
     requestEpoch: number,
-    mode?: RobinRunMcpListMode,
+    mode?: RobinDoneMcpListMode,
   ) => void;
   mergeServerStatusSnapshots: (
-    statuses: Record<string, RobinRunMcpServerStatusSnapshot>,
+    statuses: Record<string, RobinDoneMcpServerStatusSnapshot>,
     requestEpoch: number,
-    mode?: RobinRunMcpListMode,
+    mode?: RobinDoneMcpListMode,
   ) => void;
   getCurrentWorkspaceKey: () => string;
-  mode?: RobinRunMcpListMode;
-  mcpServers?: RobinRunAgentMcpServer[];
+  mode?: RobinDoneMcpListMode;
+  mcpServers?: RobinDoneAgentMcpServer[];
   requestedWorkspaceKey: string;
   workspaceIdentity?: string;
   workspacePath: string;
-  // mcp/list 收敛到 IMcpSyncService——UI 不直接触达 robinrunAgentService。
+  // mcp/list 收敛到 IMcpSyncService——UI 不直接触达 robindoneAgentService。
   mcpSyncService: Pick<IMcpSyncService, "listWorkspaceMcpServerStatuses">;
 }): Promise<McpServerStatusListRefreshOutcome> {
   if (!requestedWorkspaceKey || getCurrentWorkspaceKey() !== requestedWorkspaceKey) {
@@ -168,7 +168,7 @@ export async function refreshMcpServerStatusList({
     if (getCurrentWorkspaceKey() !== requestedWorkspaceKey) {
       return "stale-workspace";
     }
-    if (refreshMode === "status" && isRobinRunAgentMcpStatusModeUnsupportedError(error)) {
+    if (refreshMode === "status" && isRobinDoneAgentMcpStatusModeUnsupportedError(error)) {
       return "status-mode-unsupported";
     }
     markServerStatusListRefreshFailed?.(
@@ -181,7 +181,7 @@ export async function refreshMcpServerStatusList({
 }
 
 export interface McpOAuthAuthorizationPendingRefresh {
-  mcpServers: RobinRunAgentMcpServer[];
+  mcpServers: RobinDoneAgentMcpServer[];
   pendingKey: string;
   workspaceKey: string;
 }
@@ -202,7 +202,7 @@ export function transitionMcpAutoStatusListRefreshKey(
 }
 
 export interface McpOAuthAuthorizationFollowupRefresh {
-  mcpServers: RobinRunAgentMcpServer[];
+  mcpServers: RobinDoneAgentMcpServer[];
   refreshKey: string;
   workspaceKey: string;
 }
@@ -217,7 +217,7 @@ export function transitionMcpOAuthAuthorizationPendingRefresh({
 }: {
   activeWorkspaceKey: string;
   existingFollowup?: McpOAuthAuthorizationFollowupRefresh | null;
-  mcpServers: RobinRunAgentMcpServer[];
+  mcpServers: RobinDoneAgentMcpServer[];
   now?: () => number;
   pendingKey: string;
   previous: McpOAuthAuthorizationPendingRefresh | null;
@@ -334,19 +334,19 @@ export function createMcpStatusListRefreshQueue(): McpStatusListRefreshQueue {
 }
 
 export function buildMcpOAuthAuthorizationStatusRefreshServers(
-  servers: RobinRunMcpServer[],
-  statusSnapshots: Record<string, RobinRunMcpServerStatusSnapshot> = {},
-): RobinRunAgentMcpServer[] {
+  servers: RobinDoneMcpServer[],
+  statusSnapshots: Record<string, RobinDoneMcpServerStatusSnapshot> = {},
+): RobinDoneAgentMcpServer[] {
   const pendingSnapshotNames = new Set(
     Object.entries(statusSnapshots)
       .filter(([, snapshot]) => Boolean(snapshot.authorization?.authorizationUrl))
       .map(([serverName]) => serverName),
   );
-  const result: RobinRunAgentMcpServer[] = [];
+  const result: RobinDoneAgentMcpServer[] = [];
   const seenNames = new Set<string>();
 
   for (const server of servers) {
-    if (server.source !== "robinrunagentmcp" || !server.enabled) {
+    if (server.source !== "robindoneagentmcp" || !server.enabled) {
       continue;
     }
     const hasPendingAuthorization =
@@ -354,26 +354,26 @@ export function buildMcpOAuthAuthorizationStatusRefreshServers(
     if (!hasPendingAuthorization || seenNames.has(server.name)) {
       continue;
     }
-    const robinrunAgentServer = convertToRobinRunAgentMcpServer(
+    const robindoneAgentServer = convertToRobinDoneAgentMcpServer(
       server.name,
       server.config,
       server.scope === "workspace" ? "workspace" : "user",
     );
-    if (!robinrunAgentServer) {
+    if (!robindoneAgentServer) {
       continue;
     }
     seenNames.add(server.name);
-    result.push(robinrunAgentServer);
+    result.push(robindoneAgentServer);
   }
 
   return result;
 }
 
 export function buildMcpOAuthAuthorizationStatusRefreshOptions(
-  mcpServers: RobinRunAgentMcpServer[],
+  mcpServers: RobinDoneAgentMcpServer[],
 ): {
   mode: "status";
-  mcpServers: RobinRunAgentMcpServer[];
+  mcpServers: RobinDoneAgentMcpServer[];
 } {
   return {
     // OAuth pending/follow-up/focus 刷新只读运行态，不能让 pending 子集进入 connect replace 路径。
@@ -382,9 +382,9 @@ export function buildMcpOAuthAuthorizationStatusRefreshOptions(
   };
 }
 
-export function buildMcpServerStatusListKey(servers: RobinRunMcpServer[]): string {
+export function buildMcpServerStatusListKey(servers: RobinDoneMcpServer[]): string {
   return servers
-    .filter((server) => server.source === "robinrunagentmcp")
+    .filter((server) => server.source === "robindoneagentmcp")
     .map((server) => {
       const enabledKey = server.enabled ? "enabled" : "disabled";
       return `${server.id}:${enabledKey}:${JSON.stringify(server.config)}`;
@@ -392,7 +392,7 @@ export function buildMcpServerStatusListKey(servers: RobinRunMcpServer[]): strin
     .join("|");
 }
 
-export function buildPluginMcpServerStatusListKey(plugins: RobinRunPluginInfo[]): string {
+export function buildPluginMcpServerStatusListKey(plugins: RobinDonePluginInfo[]): string {
   return plugins
     .map((plugin) => {
       const declaredNames = plugin.declaredMcpServerNames ?? [];
@@ -422,13 +422,13 @@ export function shouldShowPluginMcpServersInMcpSettings(isRemoteSyncContext: boo
 }
 
 export function buildPendingMcpOAuthAuthorizationRefreshKey(
-  servers: RobinRunMcpServer[],
-  statusSnapshots: Record<string, RobinRunMcpServerStatusSnapshot> = {},
+  servers: RobinDoneMcpServer[],
+  statusSnapshots: Record<string, RobinDoneMcpServerStatusSnapshot> = {},
 ): string {
   const localPendingKeys = servers
     .filter(
       (server) =>
-        server.source === "robinrunagentmcp" &&
+        server.source === "robindoneagentmcp" &&
         server.enabled &&
         Boolean(server.authorization?.authorizationUrl),
     )
@@ -445,10 +445,10 @@ function PluginMcpServerList({
   onOpenAuthorization,
 }: {
   items: PluginMcpServerItem[];
-  pluginListingById: ReadonlyMap<string, RobinRunAvailablePluginSummary["listing"]>;
+  pluginListingById: ReadonlyMap<string, RobinDoneAvailablePluginSummary["listing"]>;
   onOpenAuthorization?: (item: PluginMcpServerItem) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const openAuthorizationLabel = intl.formatMessage({
     id: "settings.mcp.oauth.openAuthorization",
   });
@@ -600,7 +600,7 @@ export function McpSettingsSection({
   unscopedServices,
   cacheAuthorityKey,
 }: McpSettingsSectionProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
   const services = useWorkspaceServices(
     workspacePath,
@@ -651,7 +651,7 @@ export function McpSettingsSection({
 
   const [showForm, setShowForm] = useState(false);
   const [formScopeKey, setFormScopeKey] = useState(parentScopeKey);
-  const [editingServer, setEditingServer] = useState<RobinRunMcpServer | null>(null);
+  const [editingServer, setEditingServer] = useState<RobinDoneMcpServer | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const query = searchQuery;
   const [editorMode, setEditorMode] = useState<McpEditorMode>("form");
@@ -748,8 +748,8 @@ export function McpSettingsSection({
   const lastAutoStatusListRefreshKeyRef = useRef("");
   const requestMcpServerStatusList = useCallback(
     async (options?: {
-      mcpServers?: RobinRunAgentMcpServer[];
-      mode?: RobinRunMcpListMode;
+      mcpServers?: RobinDoneAgentMcpServer[];
+      mode?: RobinDoneMcpListMode;
       trigger?: McpStatusListRefreshTrigger;
     }) => {
       const trigger = options?.trigger ?? "auto";
@@ -788,7 +788,7 @@ export function McpSettingsSection({
       // skipReason 已经覆盖了这个分支，这里只为类型收窄。
       if (!requestedWorkspacePath) return;
       const requestedMcpServers =
-        options?.mcpServers ?? useMcpStore.getState().getEnabledMcpServersForRobinRun("robinrun");
+        options?.mcpServers ?? useMcpStore.getState().getEnabledMcpServersForRobinDone("robindone");
       await statusListRefreshQueueRef.current?.request(async () => {
         if (!isRequestCurrent()) {
           return;
@@ -1311,7 +1311,7 @@ export function McpSettingsSection({
     [activeWorkspaceKey, services.mcpSyncService],
   );
 
-  async function handleWorkspaceMcpTrust(server: RobinRunMcpServer) {
+  async function handleWorkspaceMcpTrust(server: RobinDoneMcpServer) {
     const review = server.workspaceTrust;
     if (trustAbortRef.current) return;
     const controller = new AbortController();
@@ -1369,7 +1369,7 @@ export function McpSettingsSection({
     }
   }
 
-  async function handleSave(form: FormState, prev?: RobinRunMcpServer) {
+  async function handleSave(form: FormState, prev?: RobinDoneMcpServer) {
     if (!activeWorkspacePath) {
       return;
     }
@@ -1401,7 +1401,7 @@ export function McpSettingsSection({
     onFormScopeKeyChange?.(null);
   }
 
-  async function handleDelete(server: RobinRunMcpServer) {
+  async function handleDelete(server: RobinDoneMcpServer) {
     const confirmed = await confirmDialog({
       confirmVariant: "destructive",
       title: intl.formatMessage({ id: "settings.mcp.deleteConfirmTitle" }, { name: server.name }),
@@ -1425,7 +1425,7 @@ export function McpSettingsSection({
     onFormScopeKeyChange?.(null);
   }
 
-  function handleEdit(server: RobinRunMcpServer) {
+  function handleEdit(server: RobinDoneMcpServer) {
     const ownerWorkspace = workspaceTabs.find((tab) => tab.workspacePath === server.projectPath);
     const ownedScopeKey =
       server.scope === "workspace"
@@ -1448,7 +1448,7 @@ export function McpSettingsSection({
     setShowForm(true);
   }
 
-  function handleOpenAuthorization(server: RobinRunMcpServer) {
+  function handleOpenAuthorization(server: RobinDoneMcpServer) {
     const authorizationUrl = server.authorization?.authorizationUrl;
     if (!authorizationUrl) {
       return;

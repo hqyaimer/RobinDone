@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import {
   ProviderFamilyHeader,
   ProviderFamilyPlanModeSwitch,
@@ -41,7 +41,7 @@ document.documentElement.className =
 function Fixture() {
   const [selected, setSelected] = useState(items[0]!);
   return (
-    <RobinRunIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+    <RobinDoneIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
       <main
         style={{
           padding: 16,
@@ -67,7 +67,7 @@ function Fixture() {
         </section>
         <output data-testid="selected">{selected.key}</output>
       </main>
-    </RobinRunIntlProvider>
+    </RobinDoneIntlProvider>
   );
 }
 

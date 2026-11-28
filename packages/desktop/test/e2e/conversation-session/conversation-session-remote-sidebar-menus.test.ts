@@ -10,14 +10,14 @@ import {
   callHandoffHost,
   restoreHandoffProbes,
 } from "#e2e/helpers/remote-project-handoff-probe";
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import {
   TID_TASK_SETTINGS_BUTTON,
   TID_SETTINGS_SECTION_NAV,
   testId,
   TID_SETTINGS_BACK_BUTTON,
   TID_SSH_DIALOG,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -40,7 +40,7 @@ import {
 
 const CASE_MARKER = "E2E_REMOTE_SIDEBAR_MENUS";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/remote-sidebar-menus",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/remote-sidebar-menus",
 );
 
 async function buttonIn(selector: string, labels: RegExp) {
@@ -353,7 +353,7 @@ describe(`${CASE_MARKER}: 侧栏详情和设备菜单`, () => {
       { timeout: 30_000 },
     );
     // 当前远端断线时输入框不可操作；从本地草稿验证菜单内离线项目，覆盖实际可用入口。
-    const localProject = $('[data-project-name="RobinRunProject"]');
+    const localProject = $('[data-project-name="RobinDoneProject"]');
     await localProject.moveTo();
     await localProject.$('[data-testid="virtual-project-create-task"]').click();
     await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);

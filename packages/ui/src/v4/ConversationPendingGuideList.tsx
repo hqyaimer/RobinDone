@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
-import type { QueueItem, UserInputRow } from "@robinrun/shared/robinrun-protocol-v4";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { QueueItem, UserInputRow } from "@robindone/shared/robindone-protocol-v4";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ConversationTurnRow } from "@/v4/ConversationTurnRow.js";
 import type { ConversationRowRenderContext } from "@/v4/conversationRowContext.js";
 
@@ -32,7 +32,7 @@ function ConversationPendingGuideListImpl({
   items,
   turnId,
 }: ConversationPendingGuideListProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const rows = useMemo(() => items.map((item) => pendingGuideRow(item, turnId)), [items, turnId]);
   const status = intl.formatMessage({ id: "chat.message.turnSteer.pending" });
 

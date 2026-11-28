@@ -11,7 +11,7 @@ import type {
   IntranetProbeTcpTarget,
   IntranetProbeTcpTargetResult,
   SystemInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { ISystemService } from "./system.js";
 import { listIntegratedTerminalShellOptions } from "./integratedTerminalShells.js";
 
@@ -226,7 +226,7 @@ async function probeServiceEndpoint(params: ServiceProbeParams): Promise<Service
   try {
     const response = await fetch(params.url, {
       method: "GET",
-      headers: params.token ? { "x-robinrun-intranet-token": params.token } : undefined,
+      headers: params.token ? { "x-robindone-intranet-token": params.token } : undefined,
       signal: controller.signal,
     });
     if (!response.ok) {

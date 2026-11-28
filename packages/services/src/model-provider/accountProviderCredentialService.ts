@@ -1,4 +1,4 @@
-import type { ProviderFamilyDomain, ProjectAccessTokenMaterial } from "@robinrun/shared";
+import type { ProviderFamilyDomain, ProjectAccessTokenMaterial } from "@robindone/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 
 const log = createServiceLogger("account-project-token");

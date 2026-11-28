@@ -1,4 +1,4 @@
-import type { HighspeedMessageMeta } from "@robinrun/shared";
+import type { HighspeedMessageMeta } from "@robindone/shared";
 import { calculateHighspeedSavedDurationMs } from "@/highspeed/highspeedSavedTime.js";
 import type { HighspeedShareMetrics } from "@/highspeed/highspeedTurnStore.js";
 

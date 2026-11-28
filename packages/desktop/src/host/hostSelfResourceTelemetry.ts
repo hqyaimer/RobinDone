@@ -7,11 +7,11 @@
  * 进程内因此仍然只有一个遥测定时器；任何一步失败只丢当前样本，Host 服务不受影响。
  */
 
-import { HostResponseTypes } from "@robinrun/shared";
+import { HostResponseTypes } from "@robindone/shared";
 import {
   createNodeSelfResourceSampler,
   type NodeSelfResourceSamplerOptions,
-} from "@robinrun/shared/node";
+} from "@robindone/shared/node";
 import {
   startHostMemoryDiagnosticsLog,
   type StartHostMemoryDiagnosticsLogOptions,

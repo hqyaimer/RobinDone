@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef, useEffectEvent } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
-import type { FileEntry } from "@robinrun/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import type { FileEntry } from "@robindone/shared";
 import { FolderIcon, FolderSymlinkIcon, LoaderIcon } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { cn } from "@/components/lib/utils.js";
 
@@ -87,7 +87,7 @@ export function DirectoryBrowser({
   const listRef = useRef<HTMLDivElement>(null);
   const showHiddenDirectoriesRef = useRef(false);
   const requestGuardRef = useRef(createDirectoryBrowserRequestGuard());
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   // 同一向导收起后会重建浏览器实例；卸载必须撤销旧请求，不能让迟到结果改写恢复后的目录。
   useEffect(() => {

@@ -1,13 +1,13 @@
 import { sanitizeRemoteConnectionLog } from "./connectionLog.js";
-import { isPublicRobinRunErrorCode, type PublicRobinRunErrorCode } from "./errorCodes.js";
+import { isPublicRobinDoneErrorCode, type PublicRobinDoneErrorCode } from "./errorCodes.js";
 
 export interface RemoteConnectionFailure {
-  code: PublicRobinRunErrorCode;
+  code: PublicRobinDoneErrorCode;
   message: string;
   retryable?: boolean;
 }
 
-const systemCodes: Record<string, PublicRobinRunErrorCode> = {
+const systemCodes: Record<string, PublicRobinDoneErrorCode> = {
   ECONNREFUSED: "remote-host-unreachable",
   EHOSTUNREACH: "remote-host-unreachable",
   ENETUNREACH: "remote-host-unreachable",
@@ -23,7 +23,7 @@ const systemCodes: Record<string, PublicRobinRunErrorCode> = {
   ABORT_ERR: "remote-connection-canceled",
   ERR_SSH_HOST_KEY_MISMATCH: "remote-host-key-changed",
 };
-const phaseCodes: Record<string, PublicRobinRunErrorCode> = {
+const phaseCodes: Record<string, PublicRobinDoneErrorCode> = {
   download: "remote-download-failed",
   upload: "remote-upload-failed",
   preflight: "remote-preflight-failed",
@@ -52,7 +52,7 @@ export function normalizeRemoteConnectionError(
           ? value.trim()
           : "";
     const rawCode = typeof record.code === "string" ? record.code : "";
-    const explicitCode = isPublicRobinRunErrorCode(rawCode) ? rawCode : undefined;
+    const explicitCode = isPublicRobinDoneErrorCode(rawCode) ? rawCode : undefined;
     // 适配器已确认的领域原因优先于 cause 的文本猜测；阶段包装仍继续寻找更具体的内层原因。
     if (
       explicitCode &&

@@ -89,7 +89,7 @@ describe("E2E network capture redaction", () => {
   });
 
   it("removes expired or key-mismatched MITM leaf certificates before capture starts", async () => {
-    const root = await mkdtemp(join(tmpdir(), "robinrun-e2e-network-cert-"));
+    const root = await mkdtemp(join(tmpdir(), "robindone-e2e-network-cert-"));
     const certsDir = join(root, "certs");
     const keysDir = join(root, "keys");
     await mkdir(certsDir);
@@ -147,7 +147,7 @@ function createCertificate(
   certificate.validity.notBefore = new Date("2024-01-01T00:00:00Z");
   certificate.validity.notAfter = notAfter;
   certificate.setSubject([{ name: "commonName", value: commonName }]);
-  certificate.setIssuer([{ name: "commonName", value: "RobinRun E2E Test CA" }]);
+  certificate.setIssuer([{ name: "commonName", value: "RobinDone E2E Test CA" }]);
   certificate.sign(keys.privateKey, forge.md.sha256.create());
   return {
     certificate: forge.pki.certificateToPem(certificate),

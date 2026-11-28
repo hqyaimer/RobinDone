@@ -8,7 +8,7 @@ import {
   type OAuthProviderMeta,
   type OAuthTokenSet,
   type OAuthUserProfile,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { readApiJson } from "../../providers/api/apiJson.js";
 import { ZaiBusinessTokenResolver } from "../../providers/zaiBusinessTokenResolver.js";
 import { parseOAuthLoginAttribution } from "../callbackAttribution.js";
@@ -332,7 +332,7 @@ export class ZaiProviderAdapter implements OAuthProviderAdapter {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // robinrun OAuth token 后端现在同时服务 Z.ai 和 BigModel。
+          // robindone OAuth token 后端现在同时服务 Z.ai 和 BigModel。
           // 显式传 provider 枚举值，避免只依赖 redirect_uri 推断登录域导致兑换错路由。
           body: JSON.stringify({
             provider: ZAI_PROVIDER_ID,
@@ -356,8 +356,8 @@ export class ZaiProviderAdapter implements OAuthProviderAdapter {
       throw new Error(tokenPayload.msg?.trim() || "ZAI 后端 token 交换失败");
     }
 
-    const robinrunJwtToken = tokenPayload.data?.token;
-    if (!robinrunJwtToken) {
+    const robindoneJwtToken = tokenPayload.data?.token;
+    if (!robindoneJwtToken) {
       throw new Error("Token 交换失败：响应缺少 data.token");
     }
 
@@ -384,7 +384,7 @@ export class ZaiProviderAdapter implements OAuthProviderAdapter {
 
     return {
       accessToken: businessAccessToken,
-      robinrunJwtToken,
+      robindoneJwtToken,
       ...(expiresAt ? { expiresAt } : {}),
     };
   }

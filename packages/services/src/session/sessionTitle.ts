@@ -1,8 +1,8 @@
-import type { RobinRunPromptAttachment } from "@robinrun/shared";
+import type { RobinDonePromptAttachment } from "@robindone/shared";
 
 export function deriveSessionTitle(
   content: string,
-  attachments: readonly RobinRunPromptAttachment[],
+  attachments: readonly RobinDonePromptAttachment[],
 ): string {
   if (content.length > 0) {
     return content.slice(0, 50) + (content.length > 50 ? "..." : "");

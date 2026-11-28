@@ -11,7 +11,7 @@ import {
   parseShortcutBinding,
   serializeShortcutBinding,
   SHORTCUT_COMMANDS,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   isAppleKeyboardPlatform,
   type KeyboardShortcutPlatformInfo,

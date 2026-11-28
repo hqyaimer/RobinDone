@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, readFile, link, readdir, rm } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { SourceServerReleaseDescriptor } from "@robinrun/shared";
+import type { SourceServerReleaseDescriptor } from "@robindone/shared";
 import {
   selectSourceServerReleaseArchive,
   withSourceServerReleaseFileFault,

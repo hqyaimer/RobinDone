@@ -38,7 +38,7 @@ export class CuaAgentAdmissionGate {
     const signal = context.signal;
     if (signal?.aborted) {
       return Promise.reject(
-        signal.reason ?? new Error("RobinRun agent process start was cancelled."),
+        signal.reason ?? new Error("RobinDone agent process start was cancelled."),
       );
     }
     if (this.activeEpoch === undefined) {
@@ -48,7 +48,7 @@ export class CuaAgentAdmissionGate {
       let waiter!: AdmissionWaiter;
       const onAbort = (): void => {
         this.waiters.delete(waiter);
-        reject(signal?.reason ?? new Error("RobinRun agent process start was cancelled."));
+        reject(signal?.reason ?? new Error("RobinDone agent process start was cancelled."));
       };
       waiter = {
         resolve: () => {

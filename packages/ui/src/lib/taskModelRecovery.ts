@@ -1,6 +1,6 @@
-import type { RobinRunConfigOption, RobinRunTaskMeta } from "@robinrun/shared";
-import { getRobinRunAgentModeSelectOptions } from "@robinrun/shared";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+import type { RobinDoneConfigOption, RobinDoneTaskMeta } from "@robindone/shared";
+import { getRobinDoneAgentModeSelectOptions } from "@robindone/shared";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 
 function parseProviderQualifiedModel(
   model: string,
@@ -47,7 +47,7 @@ export function resolveGlmRecoveredTaskModelValue(taskModel: string | undefined)
 }
 
 export function resolveRecoveredTaskModelValue(
-  taskMeta: Pick<RobinRunTaskMeta, "provider" | "model">,
+  taskMeta: Pick<RobinDoneTaskMeta, "provider" | "model">,
 ): string | null {
   const normalizedTaskModel = taskMeta.model?.trim();
   if (!normalizedTaskModel || isSyntheticModelPlaceholder(normalizedTaskModel)) {
@@ -68,9 +68,9 @@ function resolveModelOptionName(modelValue: string): string {
 }
 
 function ensureModelOptionValue(
-  option: RobinRunConfigOption,
+  option: RobinDoneConfigOption,
   modelValue: string,
-): RobinRunConfigOption {
+): RobinDoneConfigOption {
   const options = option.options ?? [];
   const hasOption = options.some((candidate) => candidate.value === modelValue);
   if (hasOption && option.currentValue === modelValue) {
@@ -92,7 +92,7 @@ function ensureModelOptionValue(
   };
 }
 
-function createRecoveredModelOption(modelValue: string): RobinRunConfigOption {
+function createRecoveredModelOption(modelValue: string): RobinDoneConfigOption {
   return {
     category: "model",
     currentValue: modelValue,
@@ -108,18 +108,18 @@ function createRecoveredModelOption(modelValue: string): RobinRunConfigOption {
   };
 }
 
-function createRecoveredModeOption(modeValue: string): RobinRunConfigOption {
+function createRecoveredModeOption(modeValue: string): RobinDoneConfigOption {
   return {
     category: "mode",
     currentValue: modeValue,
     id: "mode",
     name: "Mode",
-    options: getRobinRunAgentModeSelectOptions(),
+    options: getRobinDoneAgentModeSelectOptions(),
     type: "select",
   };
 }
 
-function createRecoveredThoughtLevelOption(thoughtLevel: string): RobinRunConfigOption {
+function createRecoveredThoughtLevelOption(thoughtLevel: string): RobinDoneConfigOption {
   return {
     category: "thought_level",
     currentValue: thoughtLevel,
@@ -136,9 +136,9 @@ function createRecoveredThoughtLevelOption(thoughtLevel: string): RobinRunConfig
 }
 
 function ensureSelectOptionCurrentValue(
-  option: RobinRunConfigOption,
+  option: RobinDoneConfigOption,
   value: string,
-): RobinRunConfigOption {
+): RobinDoneConfigOption {
   const options = option.options ?? [];
   const hasOption = options.some((candidate) => candidate.value === value);
   if (hasOption && option.currentValue === value) {
@@ -164,9 +164,9 @@ export function mergeRecoveredTaskModelConfigOptions({
   taskMeta,
   configOptions,
 }: {
-  taskMeta: Pick<RobinRunTaskMeta, "provider" | "model">;
-  configOptions: readonly RobinRunConfigOption[];
-}): RobinRunConfigOption[] | null {
+  taskMeta: Pick<RobinDoneTaskMeta, "provider" | "model">;
+  configOptions: readonly RobinDoneConfigOption[];
+}): RobinDoneConfigOption[] | null {
   const recoveredModelValue = resolveRecoveredTaskModelValue(taskMeta);
   if (!recoveredModelValue) {
     return null;
@@ -201,10 +201,10 @@ export function resolveTaskRestorePreloadConfigOptions({
   taskMeta,
   cachedTaskConfigOptions,
 }: {
-  taskMeta: Pick<RobinRunTaskMeta, "provider" | "model"> &
-    Partial<Pick<RobinRunTaskMeta, "mode" | "thoughtLevel">>;
-  cachedTaskConfigOptions?: readonly RobinRunConfigOption[];
-}): RobinRunConfigOption[] {
+  taskMeta: Pick<RobinDoneTaskMeta, "provider" | "model"> &
+    Partial<Pick<RobinDoneTaskMeta, "mode" | "thoughtLevel">>;
+  cachedTaskConfigOptions?: readonly RobinDoneConfigOption[];
+}): RobinDoneConfigOption[] {
   let cachedOptions = [...(cachedTaskConfigOptions ?? [])];
   const recoveredOptions = mergeRecoveredTaskModelConfigOptions({
     taskMeta,
@@ -260,9 +260,9 @@ export function mergeGlmRecoveredTaskModelConfigOptions({
   taskMeta,
   configOptions,
 }: {
-  taskMeta: Pick<RobinRunTaskMeta, "provider" | "model">;
-  configOptions: readonly RobinRunConfigOption[];
-}): RobinRunConfigOption[] | null {
+  taskMeta: Pick<RobinDoneTaskMeta, "provider" | "model">;
+  configOptions: readonly RobinDoneConfigOption[];
+}): RobinDoneConfigOption[] | null {
   if (taskMeta.provider !== "glm") {
     return null;
   }

@@ -3,7 +3,7 @@ import type { IpcRenderer } from "electron";
 /** 与 @arms/rum-electron 内置 preload 一致 */
 export const ARMS_RUM_BRIDGE_CHANNEL = "arms:rum-bridge";
 
-type PatchedIpcRenderer = IpcRenderer & { __robinrunArmsIpcPatched?: boolean };
+type PatchedIpcRenderer = IpcRenderer & { __robindoneArmsIpcPatched?: boolean };
 
 /**
  * SDK browser-reporter 发送 JSON.stringify(events[])，主进程 IPC 拒绝 Array。
@@ -29,7 +29,7 @@ export function expandArmsRumBridgePayloads(payload: string): string[] {
 
 type ArmsEventBridgeLike = {
   send: (payload: string) => void;
-  __robinrunArmsBridgeForwardPatched?: boolean;
+  __robindoneArmsBridgeForwardPatched?: boolean;
 };
 
 /**
@@ -37,7 +37,7 @@ type ArmsEventBridgeLike = {
  * 必须包装 Bridge.send 本身，在调用内层 send 前把 events[] 拆条。
  */
 export function patchArmsEventBridgeSend(bridge: ArmsEventBridgeLike): void {
-  if (bridge.__robinrunArmsBridgeForwardPatched) {
+  if (bridge.__robindoneArmsBridgeForwardPatched) {
     return;
   }
   const innerSend = bridge.send.bind(bridge);
@@ -47,7 +47,7 @@ export function patchArmsEventBridgeSend(bridge: ArmsEventBridgeLike): void {
       innerSend(item);
     }
   };
-  bridge.__robinrunArmsBridgeForwardPatched = true;
+  bridge.__robindoneArmsBridgeForwardPatched = true;
 }
 
 export function patchArmsEventBridgeIfPresent(): boolean {
@@ -82,7 +82,7 @@ export function scheduleArmsEventBridgePatch(maxAttempts = 100): void {
 
 export function installArmsRumBridgeIpcForward(ipc: IpcRenderer): void {
   const patched = ipc as PatchedIpcRenderer;
-  if (patched.__robinrunArmsIpcPatched) {
+  if (patched.__robindoneArmsIpcPatched) {
     return;
   }
   const originalSend = ipc.send.bind(ipc);
@@ -103,5 +103,5 @@ export function installArmsRumBridgeIpcForward(ipc: IpcRenderer): void {
     }
     return originalSend(channel, ...args);
   }) as IpcRenderer["send"];
-  patched.__robinrunArmsIpcPatched = true;
+  patched.__robindoneArmsIpcPatched = true;
 }

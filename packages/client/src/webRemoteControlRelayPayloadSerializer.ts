@@ -1,8 +1,8 @@
 import {
   WEB_REMOTE_CONTROL_RPC_TRANSPORT_LIMITS,
   type WebRemoteControlAppPayload,
-} from "@robinrun/shared";
-import { type WebRemoteControlRelayV2OutgoingData } from "@robinrun/shared/web-remote-relay";
+} from "@robindone/shared";
+import { type WebRemoteControlRelayV2OutgoingData } from "@robindone/shared/web-remote-relay";
 
 export type WebRemoteControlPayloadSendResult =
   | { kind: "sent"; bytes: number }

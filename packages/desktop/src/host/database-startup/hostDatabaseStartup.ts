@@ -1,9 +1,10 @@
 import {
   getTasksIndexDatabasePath,
   markTasksStoragePrepared,
-  resolveRobinRunAgentSpawnCwd,
-} from "@robinrun/services/storage-startup";
-import type { DatabaseStartupState } from "@robinrun/shared";
+  migrateBrandProjectDirs,
+  resolveRobinDoneAgentSpawnCwd,
+} from "@robindone/services/storage-startup";
+import type { DatabaseStartupState } from "@robindone/shared";
 import { DatabaseStartupCoordinator } from "../databaseStartupCoordinator.js";
 import { StartupDiskSampler } from "../startupDiskSampler.js";
 import { prepareHostStorage, prepareSessionStorage } from "./storagePreparationProcesses.js";
@@ -61,7 +62,7 @@ export function createHostDatabaseStartup(options: {
         const directories = new Set<string>();
         for (const candidate of candidates) {
           // 历史项目 ENOTDIR/无权限不是数据库失败；与普通 Agent 使用同一 cwd 选择规则。
-          const { cwd } = await resolveRobinRunAgentSpawnCwd({
+          const { cwd } = await resolveRobinDoneAgentSpawnCwd({
             requestedCwd: candidate,
             workspacePath: candidate,
             spawnFallbackCwd: options.cwd,
@@ -84,6 +85,11 @@ export function createHostDatabaseStartup(options: {
               }),
             observePath,
           });
+        // RobinRun→RobinDone 改名迁移 A2（specs/rename-robindone-migration.md §3.4）：项目根下
+        // .robinrun/ → .robindone/。必须在 host 库就绪（项目清单可读）之后、initializeServices
+        // （触发器引擎扫描注册表）之前；单项目失败软失败（模块内自记日志），不阻断启动。
+        report("preparing_host_storage", "checking");
+        migrateBrandProjectDirs(tasksPath);
         report("starting_services");
         await options.initializeServices();
       } catch (error) {

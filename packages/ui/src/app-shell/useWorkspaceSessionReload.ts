@@ -1,17 +1,17 @@
 import { useWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useCallback, useRef, useState } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { toast } from "@/components/ui/toast.js";
 import {
   buildWorkspaceSessionReloadDraftError,
   shouldDebounceWorkspaceSessionReload,
 } from "@/lib/workspaceSessionReloadPlan.js";
 import { resolveWorkspaceModelConfigSyncScope } from "@/lib/modelConfigSync.js";
-import { prepareWorkspaceWithRobinRunSessionService } from "@/hooks/useWorkspacePrepare.js";
+import { prepareWorkspaceWithRobinDoneSessionService } from "@/hooks/useWorkspacePrepare.js";
 import { logger } from "@/logger.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
 
@@ -42,7 +42,7 @@ export function useWorkspaceSessionReload({
   const lastReloadSessionTriggeredAtRef = useRef<number | null>(null);
 
   const handleReloadSession = useCallback(
-    async (options?: { resumeTaskId?: string | null; provider?: RobinRunProvider | null }) => {
+    async (options?: { resumeTaskId?: string | null; provider?: RobinDoneProvider | null }) => {
       if (reloadSessionDisabled || reloadSessionPending) {
         return;
       }
@@ -57,13 +57,13 @@ export function useWorkspaceSessionReload({
       lastReloadSessionTriggeredAtRef.current = now;
       setReloadSessionPending(true);
 
-      const robinrunSessionStore = useRobinRunSessionStore.getState();
-      const latestWorkspaceState = robinrunSessionStore.getWorkspaceState(
+      const robindoneSessionStore = useRobinDoneSessionStore.getState();
+      const latestWorkspaceState = robindoneSessionStore.getWorkspaceState(
         workspaceAbsPath,
         workspaceIdentity,
       );
       const actionScope = resolveWorkspaceModelConfigSyncScope(latestWorkspaceState);
-      const provider: RobinRunProvider = options?.provider ?? actionScope.provider;
+      const provider: RobinDoneProvider = options?.provider ?? actionScope.provider;
       const resumeTaskId =
         options?.resumeTaskId?.trim() || latestWorkspaceState.activeTaskId || undefined;
       const shouldPrepareWorkspace = !resumeTaskId;
@@ -71,22 +71,26 @@ export function useWorkspaceSessionReload({
       // Reload session 之前只调用了服务层重建流程，没有同步 workspaceInit 状态到 UI store。
       // 草稿态下后续准备流程会继续读到旧状态，用户会误判本次重建没有生效。
       // 这里显式写入 initializing/ready/failed，保证重建状态和会话流程保持一致。
-      robinrunSessionStore.setWorkspaceInitState(
+      robindoneSessionStore.setWorkspaceInitState(
         workspaceAbsPath,
         "initializing",
         null,
         workspaceIdentity,
       );
       if (shouldPrepareWorkspace) {
-        robinrunSessionStore.setConfigOptionsStatus(workspaceAbsPath, "loading", workspaceIdentity);
+        robindoneSessionStore.setConfigOptionsStatus(
+          workspaceAbsPath,
+          "loading",
+          workspaceIdentity,
+        );
         // 草稿态点击 reload 后若不清空旧错误，输入区会继续显示上一轮失败提示，
         // 用户会误判本次重建仍失败。这里在新一轮重建开始时先清空草稿错误。
-        robinrunSessionStore.setDraftError(workspaceAbsPath, null, workspaceIdentity);
-        robinrunSessionStore.setTaskState(workspaceAbsPath, "idle", null, workspaceIdentity);
+        robindoneSessionStore.setDraftError(workspaceAbsPath, null, workspaceIdentity);
+        robindoneSessionStore.setTaskState(workspaceAbsPath, "idle", null, workspaceIdentity);
       }
 
       try {
-        await services.robinrunTaskService.restartWorkspaceProcess({
+        await services.robindoneTaskService.restartWorkspaceProcess({
           workspacePath: workspaceAbsPath,
           ...(workspaceIdentity ? { workspaceIdentity } : {}),
           provider,
@@ -94,45 +98,45 @@ export function useWorkspaceSessionReload({
         });
 
         if (shouldPrepareWorkspace) {
-          const prepareResult = await prepareWorkspaceWithRobinRunSessionService({
+          const prepareResult = await prepareWorkspaceWithRobinDoneSessionService({
             workspacePath: workspaceAbsPath,
             workspaceIdentity,
             provider,
-            robinrunSessionService: services.robinrunSessionService,
+            robindoneSessionService: services.robindoneSessionService,
           });
 
-          const latestAfterPrepare = robinrunSessionStore.getWorkspaceState(
+          const latestAfterPrepare = robindoneSessionStore.getWorkspaceState(
             workspaceAbsPath,
             workspaceIdentity,
           );
           if (latestAfterPrepare.selectedProvider === provider) {
-            const latestAfterResolve = robinrunSessionStore.getWorkspaceState(
+            const latestAfterResolve = robindoneSessionStore.getWorkspaceState(
               workspaceAbsPath,
               workspaceIdentity,
             );
             if (latestAfterResolve.selectedProvider === provider) {
-              robinrunSessionStore.setConfigOptions(
+              robindoneSessionStore.setConfigOptions(
                 workspaceAbsPath,
                 prepareResult.configOptions ?? [],
                 workspaceIdentity,
               );
-              robinrunSessionStore.setConfigOptionsStatus(
+              robindoneSessionStore.setConfigOptionsStatus(
                 workspaceAbsPath,
                 "ready",
                 workspaceIdentity,
               );
-              robinrunSessionStore.setSlashCommands(
+              robindoneSessionStore.setSlashCommands(
                 workspaceAbsPath,
                 prepareResult.slashCommands ?? [],
                 workspaceIdentity,
               );
-              robinrunSessionStore.setDraftError(workspaceAbsPath, null, workspaceIdentity);
+              robindoneSessionStore.setDraftError(workspaceAbsPath, null, workspaceIdentity);
             }
           }
         }
 
-        robinrunSessionStore.setWorkspaceInitAttempts(workspaceAbsPath, 0, workspaceIdentity);
-        robinrunSessionStore.setWorkspaceInitState(
+        robindoneSessionStore.setWorkspaceInitAttempts(workspaceAbsPath, 0, workspaceIdentity);
+        robindoneSessionStore.setWorkspaceInitState(
           workspaceAbsPath,
           "ready",
           null,
@@ -156,17 +160,25 @@ export function useWorkspaceSessionReload({
             message,
           },
         );
-        robinrunSessionStore.setWorkspaceInitState(
+        robindoneSessionStore.setWorkspaceInitState(
           workspaceAbsPath,
           "failed",
           message,
           workspaceIdentity,
         );
         if (shouldPrepareWorkspace) {
-          robinrunSessionStore.setConfigOptionsStatus(workspaceAbsPath, "error", workspaceIdentity);
+          robindoneSessionStore.setConfigOptionsStatus(
+            workspaceAbsPath,
+            "error",
+            workspaceIdentity,
+          );
           // 草稿态下 reload 前会先清空旧错误；如果失败后不回填 draftError，
           // 聊天区只剩 toast，用户看不到可重试的详细报错。这里统一回填标准化错误到输入区。
-          robinrunSessionStore.setDraftError(workspaceAbsPath, reloadDraftError, workspaceIdentity);
+          robindoneSessionStore.setDraftError(
+            workspaceAbsPath,
+            reloadDraftError,
+            workspaceIdentity,
+          );
         }
         toast(intl.formatMessage({ id: "appHeader.reloadSessionFailed" }));
       } finally {
@@ -177,8 +189,8 @@ export function useWorkspaceSessionReload({
       intl,
       reloadSessionDisabled,
       reloadSessionPending,
-      services.robinrunTaskService,
-      services.robinrunSessionService,
+      services.robindoneTaskService,
+      services.robindoneSessionService,
       workspaceAbsPath,
       workspaceIdentity,
     ],
@@ -202,7 +214,7 @@ export function useSessionRuntimeRestart(
     remoteSessionId ?? undefined,
     workspaceIdentity,
   );
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const key = `${workspaceIdentity || workspacePath}\0${sessionId ?? ""}`;
   const flight = useRef<{ key: string; promise: Promise<boolean> } | null>(null);
@@ -210,7 +222,7 @@ export function useSessionRuntimeRestart(
     if (!sessionId) return Promise.resolve(false);
     if (flight.current?.key === key) return flight.current.promise;
     setPendingKey(key);
-    const request = services.robinrunAgentService
+    const request = services.robindoneAgentService
       .restartSessionRuntime({
         workspacePath,
         sessionId,
@@ -240,6 +252,6 @@ export function useSessionRuntimeRestart(
       });
     flight.current = { key, promise: request };
     return request;
-  }, [key, services.robinrunAgentService, workspacePath, workspaceIdentity, sessionId, intl]);
+  }, [key, services.robindoneAgentService, workspacePath, workspaceIdentity, sessionId, intl]);
   return { restart, pending: pendingKey === key };
 }

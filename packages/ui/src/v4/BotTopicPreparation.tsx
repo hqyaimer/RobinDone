@@ -1,10 +1,10 @@
 import { pendingTopicPreparations } from "@/v4/topicPreparationRenderUnits.js";
 import { useContext, useMemo } from "react";
 import { LoaderCircleIcon } from "lucide-react";
-import type { BotTopicPreparation as Preparation, FeishuBotProvider } from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
+import type { BotTopicPreparation as Preparation, FeishuBotProvider } from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { DeliveryContext } from "@/v4/botGroupDeliveryContext.js";
 import { ConversationUserInputBubble } from "@/v4/ConversationUserInputBubble.js";
 
@@ -27,7 +27,7 @@ export function BotTopicPreparationList({
   acceptedRows?: readonly ConversationRow[];
   provider?: FeishuBotProvider;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const pending = useMemo(
     () => pendingTopicPreparations(items, acceptedRows),
     [items, acceptedRows],

@@ -12,7 +12,7 @@ export function installGenUiTweakRuntime(callTool) {
 
   const send = (message) =>
     Promise.resolve()
-      .then(() => callTool("__robinrun_visualization_annotations__", message))
+      .then(() => callTool("__robindone_visualization_annotations__", message))
       .catch(() => null);
   const liveTarget = (panel) => {
     const target = panel.target.deref();
@@ -459,7 +459,7 @@ export function installGenUiTweakRuntime(callTool) {
       dispose(panel);
     }
     observer.disconnect();
-    globalThis.removeEventListener("robinrun:set_globals", onGlobals);
+    globalThis.removeEventListener("robindone:set_globals", onGlobals);
     globalThis.removeEventListener("pointerdown", onPointerEvent, true);
     globalThis.removeEventListener("mousedown", onPointerEvent, true);
     globalThis.removeEventListener("click", onPointerEvent, true);
@@ -479,12 +479,12 @@ export function installGenUiTweakRuntime(callTool) {
   });
   if (callTool != null) {
     observer.observe(document, { childList: true, subtree: true });
-    globalThis.addEventListener("robinrun:set_globals", onGlobals);
+    globalThis.addEventListener("robindone:set_globals", onGlobals);
     globalThis.addEventListener("pointerdown", onPointerEvent, true);
     globalThis.addEventListener("mousedown", onPointerEvent, true);
     globalThis.addEventListener("click", onPointerEvent, true);
     globalThis.addEventListener("keydown", onKeyDown);
     globalThis.addEventListener("pagehide", onPageHide);
-    onGlobals({ detail: { globals: globalThis.robinrun } });
+    onGlobals({ detail: { globals: globalThis.robindone } });
   }
 }

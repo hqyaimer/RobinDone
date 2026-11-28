@@ -1,9 +1,9 @@
-import type { IGitService } from "@robinrun/services";
+import type { IGitService } from "@robindone/services";
 import type {
   GitBranchMutationIssue,
   GitBranchMutationResult,
   GitIdentity,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   buildGitBranchCommitPreviewFiles,
   getPrimaryGitBranchIssue,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import { useOptionalPlatform } from "@/hooks/usePlatform.js";
 import { useRemoteDevicePresentationInputs } from "@/hooks/useSourceServerStatuses.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";

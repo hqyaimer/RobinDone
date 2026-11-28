@@ -9,7 +9,7 @@ import {
   TID_V4_MODEL_CONFIG,
   TID_V4_SESSION_PANE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   getE2EAppDataPaths,
@@ -243,7 +243,7 @@ describe("上下文窗口与输出预算冷恢复 E2E", () => {
 
 function patchFixtureSelection(sessionId: string, unknownModel: boolean): void {
   // node:sqlite 仅有同步 API；这里只写测试专属库中指定 session 的新字段。
-  const database = new DatabaseSync(join(paths.homeDir, ".robinrun", "cli", "db", "db.sqlite"));
+  const database = new DatabaseSync(join(paths.homeDir, ".robindone", "cli", "db", "db.sqlite"));
   try {
     const result = database
       .prepare(`UPDATE session_entry
@@ -327,17 +327,17 @@ async function installContextWindowProjectionRecorder(
         subscribe: (listener: (state: SessionStoreState) => void) => () => void;
       }
       interface RecorderHost {
-        __robinrunContextWindowColdResumeE2E?: {
+        __robindoneContextWindowColdResumeE2E?: {
           dom: number[];
           observer: MutationObserver;
           store: number[];
           unsubscribe: () => void;
         };
-        __robinrunSessionStoreE2E?: SessionStoreBridge;
+        __robindoneSessionStoreE2E?: SessionStoreBridge;
       }
       const host = window as unknown as RecorderHost;
-      host.__robinrunContextWindowColdResumeE2E?.observer.disconnect();
-      host.__robinrunContextWindowColdResumeE2E?.unsubscribe();
+      host.__robindoneContextWindowColdResumeE2E?.observer.disconnect();
+      host.__robindoneContextWindowColdResumeE2E?.unsubscribe();
 
       const dom: number[] = [];
       const store: number[] = [];
@@ -363,9 +363,9 @@ async function installContextWindowProjectionRecorder(
         subtree: true,
       });
 
-      const bridge = host.__robinrunSessionStoreE2E;
+      const bridge = host.__robindoneSessionStoreE2E;
       if (!bridge) {
-        throw new Error("RobinRun session E2E store bridge 未注册");
+        throw new Error("RobinDone session E2E store bridge 未注册");
       }
       const recordStore = (state: SessionStoreState) => {
         const runtime =
@@ -375,7 +375,7 @@ async function installContextWindowProjectionRecorder(
       const unsubscribe = bridge.subscribe(recordStore);
       recordStore(bridge.getState());
       recordDom();
-      host.__robinrunContextWindowColdResumeE2E = {
+      host.__robindoneContextWindowColdResumeE2E = {
         dom,
         observer,
         store,
@@ -393,9 +393,9 @@ async function readContextWindowProjectionRecorder(): Promise<number[]> {
   const recorder = await browser.execute(() => {
     const value = (
       window as unknown as {
-        __robinrunContextWindowColdResumeE2E?: ContextWindowProjectionRecorder;
+        __robindoneContextWindowColdResumeE2E?: ContextWindowProjectionRecorder;
       }
-    ).__robinrunContextWindowColdResumeE2E;
+    ).__robindoneContextWindowColdResumeE2E;
     return value ? { dom: [...value.dom], store: [...value.store] } : null;
   });
   if (!recorder) {
@@ -444,7 +444,7 @@ async function waitForModelIoSequence(
 }
 
 async function readSuccessfulModelIo(sessionId: string): Promise<ModelIoMatch[]> {
-  const debugDir = join(paths.homeDir, ".robinrun", "cli", "debug");
+  const debugDir = join(paths.homeDir, ".robindone", "cli", "debug");
   const files = (await readdir(debugDir).catch(() => []))
     .filter((name) => name.startsWith("model-io-") && name.endsWith(".jsonl"))
     .sort();

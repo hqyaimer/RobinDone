@@ -21,7 +21,7 @@ export type {
   IntegratedTerminalShellSelection,
   Locale,
   LocalePreference,
-  RobinRunInteractionBehavior,
+  RobinDoneInteractionBehavior,
   TabId,
   TabState,
   ResourceUsageCategory,
@@ -32,7 +32,7 @@ export type {
   RemoteTargetSnapshot,
   RemoteWorkspaceSessionEntry,
   PersistedWorkspaceSessionEntry,
-  RobinRunProjectEntry,
+  RobinDoneProjectEntry,
 } from "./protocol.js";
 export type { WorkspacePurpose } from "./workspacePurpose.js";
 export { DEFAULT_LOCALE } from "./protocol.js";
@@ -40,9 +40,9 @@ export {
   DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
   DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
 } from "./protocol.js";
-export { ROBINRUN_VERSION, ROBINRUN_COMMIT, ROBINRUN_BUILD_TIME } from "./version.js";
+export { ROBINDONE_VERSION, ROBINDONE_COMMIT, ROBINDONE_BUILD_TIME } from "./version.js";
 export type { HelloMessage, HelloAckMessage } from "./handshake.js";
-export type { ArmsRumEnv, RobinRunEnv, RobinRunProductFlavor } from "./env.js";
+export type { ArmsRumEnv, RobinDoneEnv, RobinDoneProductFlavor } from "./env.js";
 export type { RemoteAssetInstallMode } from "./remoteAssetInstallMode.js";
 export type {
   RemoteResourcePackageId,
@@ -73,19 +73,19 @@ export {
   serializeShortcutBinding,
 } from "./shortcutCommands.js";
 export {
-  ROBINRUN_ENV,
-  ROBINRUN_PRODUCT_FLAVOR,
-  ROBINRUN_APP_VERSION_ENV,
-  ROBINRUN_BUILD_COMMIT_ID_ENV,
-  RUNTIME_ROBINRUN_DEBUG,
-  ROBINRUN_ARMS_RUM_ENDPOINT,
-  ROBINRUN_TELEMETRY_REPORT_ENDPOINT,
-  ROBINRUN_AUTO_UPDATE_ENABLED,
-  ROBINRUN_UPDATE_FEED_BASE,
-  ROBINRUN_MAC_AUTO_UPDATE_READY,
-  mapRobinRunEnvToArmsRumEnv,
-  normalizeRobinRunEnv,
-  normalizeRobinRunProductFlavor,
+  ROBINDONE_ENV,
+  ROBINDONE_PRODUCT_FLAVOR,
+  ROBINDONE_APP_VERSION_ENV,
+  ROBINDONE_BUILD_COMMIT_ID_ENV,
+  RUNTIME_ROBINDONE_DEBUG,
+  ROBINDONE_ARMS_RUM_ENDPOINT,
+  ROBINDONE_TELEMETRY_REPORT_ENDPOINT,
+  ROBINDONE_AUTO_UPDATE_ENABLED,
+  ROBINDONE_UPDATE_FEED_BASE,
+  ROBINDONE_MAC_AUTO_UPDATE_READY,
+  mapRobinDoneEnvToArmsRumEnv,
+  normalizeRobinDoneEnv,
+  normalizeRobinDoneProductFlavor,
 } from "./env.js";
 export * from "./errors.js";
 export {
@@ -95,33 +95,33 @@ export {
 export * from "./rendererActionTrace.js";
 export * from "./validation.js";
 export * from "./api.js";
-export * from "./robinrun-protocol/index.js";
+export * from "./robindone-protocol/index.js";
 export * from "./account-provider-state.js";
 // re-home：旧协议承重面的幸存文件（消费者继续走 barrel，零感知）
-export * from "./robinrun-protocol-legacy-types.js";
-export * from "./robinrun-task-types-core.js";
+export * from "./robindone-protocol-legacy-types.js";
+export * from "./robindone-task-types-core.js";
 export * from "./task-realtime-core.js";
 export * from "./remote-workspace-identity.js";
-export * from "./robinrun-api-retry-status.js";
-export * from "./robinrun-network-debug-status.js";
-export * from "./robinrun-session-visible-content.js";
+export * from "./robindone-api-retry-status.js";
+export * from "./robindone-network-debug-status.js";
+export * from "./robindone-session-visible-content.js";
 export * from "./official-mcp-auth.js";
 export * from "./official-mcp-tool-error.js";
 export * from "./conversation-message-projection-policy.js";
 export * from "./conversation-share.js";
 export * from "./conversation-share-content.js";
 export * from "./conversation-preview-artifacts.js";
-export * from "./robinrun-session-task-status.js";
-export * from "./robinrun-session-content-profile.js";
-export * from "./robinrun-tool-projection-memory.js";
-export * from "./robinrun-slash-command-help.js";
-export * from "./robinrunEndpoint.js";
-export * from "./robinrun-source-headers.js";
-export * from "./robinrun-agent-policy.js";
-export * from "./robinrun-media-policy.js";
+export * from "./robindone-session-task-status.js";
+export * from "./robindone-session-content-profile.js";
+export * from "./robindone-tool-projection-memory.js";
+export * from "./robindone-slash-command-help.js";
+export * from "./robindoneEndpoint.js";
+export * from "./robindone-source-headers.js";
+export * from "./robindone-agent-policy.js";
+export * from "./robindone-media-policy.js";
 export * from "./media-preview.js";
 export * from "./plugin-display-name.js";
-export * from "./robinrun-agent-runtime.js";
+export * from "./robindone-agent-runtime.js";
 export * from "./runtimeEnv.js";
 export * from "./dynamic-workflow-feature.js";
 export * from "./markdown-artifact-images.js";
@@ -267,7 +267,7 @@ export type {
   UpdateStatePayload,
   WSLDistro,
   WindowControlsOverlayReadyPayload,
-  RobinRunStdioTapDevState,
+  RobinDoneStdioTapDevState,
 } from "./platform.js";
 export type {
   CuaAccessibilitySettingsResult,
@@ -275,15 +275,15 @@ export type {
   OpenCuaPermissionOnboardingOptions,
   PrepareCuaHelperPermissionDragResult,
 } from "./cuaAccessibilitySettings.js";
-export type { RobinRunTaskCreateResult } from "./robinrun-task-types.js";
-export * from "./robinrun-task-types.js";
+export type { RobinDoneTaskCreateResult } from "./robindone-task-types.js";
+export * from "./robindone-task-types.js";
 export * from "./automation-types.js";
 export * from "./off-peak-types.js";
 export * from "./background-task-control-merge.js";
 export * from "./background-task-controls.js";
 export * from "./background-task-notifications.js";
 export * from "./background-bash-jobs.js";
-export * from "./robinrun-agent-model-state.js";
+export * from "./robindone-agent-model-state.js";
 export * from "./task-realtime.js";
 export { formatTimestamp, formatLogPrefix } from "./log-format.js";
 export * from "./model-provider-types.js";
@@ -315,7 +315,7 @@ export * from "./runtime-tool-runtime.js";
 export * from "./git.js";
 export * from "./bots.js";
 export * from "./assistant-message-parts.js";
-export * from "./robinrunPersistedMessageMerge.js";
+export * from "./robindonePersistedMessageMerge.js";
 export * from "./assistant-presentation.js";
 export * from "./tool-call-summary.js";
 export * from "./tool-identity.js";

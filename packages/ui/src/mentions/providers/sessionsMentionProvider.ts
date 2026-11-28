@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ProjectTree } from "@robinrun/services";
-import type { RobinRunProvider, RobinRunTaskMeta } from "@robinrun/shared";
+import type { ProjectTree } from "@robindone/services";
+import type { RobinDoneProvider, RobinDoneTaskMeta } from "@robindone/shared";
 import { buildSessionMentionMarkdown } from "@/mentions/mentionMarkdown.js";
 import { filterMentionItemsWithOptions } from "@/mentions/mentionSearch.js";
 import type { MentionCategoryResult, MentionItem } from "@/mentions/mentionTypes.js";
@@ -14,8 +14,8 @@ interface SessionMentionItem extends MentionItem {
 }
 
 function compareSessionTasks(
-  left: RobinRunTaskMeta,
-  right: RobinRunTaskMeta,
+  left: RobinDoneTaskMeta,
+  right: RobinDoneTaskMeta,
   currentWorkspaceKey?: string,
 ) {
   if (currentWorkspaceKey) {
@@ -30,19 +30,19 @@ function compareSessionTasks(
   return left.title.localeCompare(right.title);
 }
 
-function getSessionLabel(task: RobinRunTaskMeta): string {
+function getSessionLabel(task: RobinDoneTaskMeta): string {
   const title = task.title.replace(/^#(?:sess|session)_[a-zA-Z0-9._-]+\s*/, "").trim();
   return title || "Untitled session";
 }
 
-function getWorkspaceLabel(task: RobinRunTaskMeta): string {
+function getWorkspaceLabel(task: RobinDoneTaskMeta): string {
   const raw = task.workspacePath.trim() || task.workspaceIdentity?.trim() || "";
   return raw.split(/[\\/]/).filter(Boolean).at(-1) ?? raw;
 }
 
 function mapTaskToMentionItem(
-  task: RobinRunTaskMeta,
-  provider: RobinRunProvider,
+  task: RobinDoneTaskMeta,
+  provider: RobinDoneProvider,
 ): SessionMentionItem {
   const sessionId = task.taskId;
   const itemProvider = task.provider ?? provider;
@@ -66,8 +66,8 @@ function mapTaskToMentionItem(
 }
 
 export function collectSessionMentionItems(
-  tasks: RobinRunTaskMeta[],
-  provider: RobinRunProvider,
+  tasks: RobinDoneTaskMeta[],
+  provider: RobinDoneProvider,
   options: {
     workspacePath?: string;
     workspaceIdentity?: string;
@@ -76,7 +76,7 @@ export function collectSessionMentionItems(
   const currentWorkspaceKey = options.workspacePath
     ? buildTaskWorkspaceKey(options.workspacePath, options.workspaceIdentity)
     : undefined;
-  const taskBySessionId = new Map<string, RobinRunTaskMeta>();
+  const taskBySessionId = new Map<string, RobinDoneTaskMeta>();
   for (const task of tasks) {
     if (task.migrationSource) {
       continue;
@@ -94,7 +94,7 @@ export function collectSessionMentionItems(
 }
 
 export function useSessionsMentionProvider(
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   workspacePath: string,
   workspaceIdentity: string | undefined,
   query: string,
@@ -155,7 +155,7 @@ export function useSessionsMentionProvider(
         workspaceScope !== "current-workspace" ||
         buildTaskWorkspaceKey(task.workspacePath, task.workspaceIdentity) === currentKey,
     );
-    const buckets = new Map<string, { id: string; title: string; tasks: RobinRunTaskMeta[] }>();
+    const buckets = new Map<string, { id: string; title: string; tasks: RobinDoneTaskMeta[] }>();
     for (const task of visibleTasks) {
       const id =
         workspaceScope === "current-workspace"

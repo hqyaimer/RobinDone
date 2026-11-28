@@ -7,20 +7,20 @@ import {
   ModelPropertiesConfig,
   ProviderApiConfig,
   ProviderConfig,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import {
   NodePersonalProviderConfigRepository,
   NodeProviderRegistryRuntime,
   createNodeModelSelectionFacade,
-} from "@robinrun/provider-node";
+} from "@robindone/provider-node";
 import {
-  createRobinRunAgentService,
-  createRobinRunTaskServiceAdapter,
+  createRobinDoneAgentService,
+  createRobinDoneTaskServiceAdapter,
   getDataBaseDir,
   setDataBaseDir,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import { TaskIndexRepo } from "../../../../services/src/session/taskIndexRepo.js";
-import { createRobinRunTaskIndexSyncer } from "../../../../services/src/robinrun-agent/robinrunTaskIndexSyncer.js";
+import { createRobinDoneTaskIndexSyncer } from "../../../../services/src/robindone-agent/robindoneTaskIndexSyncer.js";
 import { getE2EAppDataPaths } from "./desktop-app.js";
 import {
   createBotsServiceHarness,
@@ -47,7 +47,7 @@ export async function createBotWorkerIntegration(baseUrl: string, dropTextContai
     if (errors.length) throw new AggregateError(errors, "Bot worker fixture cleanup failed");
   };
   try {
-    const personalFilePath = join(home, ".robinrun/v2/provider_config.json");
+    const personalFilePath = join(home, ".robindone/v2/provider_config.json");
     const modelSelection = {
       providerId: "e2e-bot-worker",
       modelId: "e2e-bot-model",
@@ -86,10 +86,10 @@ export async function createBotWorkerIntegration(baseUrl: string, dropTextContai
       ),
     }));
     personal.dispose();
-    const builtin = resolve("../../config/provider/robinrun-builtin.json");
+    const builtin = resolve("../../config/provider/robindone-builtin.json");
     const runtime = new NodeProviderRegistryRuntime({
       personalFilePath,
-      robinrunBuiltinFilePath: builtin,
+      robindoneBuiltinFilePath: builtin,
       watch: false,
       personalPollingIntervalMs: false,
     });
@@ -138,7 +138,7 @@ export async function createBotWorkerIntegration(baseUrl: string, dropTextContai
     });
     const reverseReplies: unknown[] = [];
     const reverseResources: unknown[] = [];
-    const agent = createRobinRunAgentService({
+    const agent = createRobinDoneAgentService({
       // 项目化创建要求先预留 task 归属；旧夹具漏接此 Host 端口，在调用 CLI 前即失败。
       prepareSessionCreation: async (target) => {
         const prepared = projects.reserveCreatedTask({
@@ -155,17 +155,17 @@ export async function createBotWorkerIntegration(baseUrl: string, dropTextContai
       commandResolver: () => ({
         command: process.execPath,
         args: [
-          resolve("../../apps/robinrun-cli/packages/cli/dist/robinrun.cjs"),
+          resolve("../../apps/robindone-cli/packages/cli/dist/robindone.cjs"),
           "app-server",
           "--stdio",
         ],
         env: {
           HOME: home,
           USERPROFILE: home,
-          ROBINRUN_DATA_BASE_DIR: home,
-          ROBINRUN_RUNTIME_ENV: "development",
-          ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE: builtin,
-          ROBINRUN_PERSONAL_PROVIDER_CONFIG_FILE: personalFilePath,
+          ROBINDONE_DATA_BASE_DIR: home,
+          ROBINDONE_RUNTIME_ENV: "development",
+          ROBINDONE_BUILTIN_PROVIDER_CONFIG_FILE: builtin,
+          ROBINDONE_PERSONAL_PROVIDER_CONFIG_FILE: personalFilePath,
         },
       }),
       modelSelectionReadinessSource: modelSelectionService,
@@ -216,15 +216,15 @@ export async function createBotWorkerIntegration(baseUrl: string, dropTextContai
             ...rest,
           );
     }
-    const syncer = createRobinRunTaskIndexSyncer({ agentService: agent, taskIndexRepo: repo });
+    const syncer = createRobinDoneTaskIndexSyncer({ agentService: agent, taskIndexRepo: repo });
     cleanup.push(() => syncer.disposeAll());
     cleanup.push(() => bot.service.disposeAllAndWait());
-    const task = createRobinRunTaskServiceAdapter({
-      robinrunAgentService: agent,
+    const task = createRobinDoneTaskServiceAdapter({
+      robindoneAgentService: agent,
       taskIndexRepo: repo,
       taskIndexSyncer: syncer,
     });
-    Object.assign(bot.robinrunTaskService, task);
+    Object.assign(bot.robindoneTaskService, task);
     return {
       home,
       workspacePath,

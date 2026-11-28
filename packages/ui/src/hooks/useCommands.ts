@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import type { ICommandsService } from "@robinrun/services";
+import type { ICommandsService } from "@robindone/services";
 import { useCommandsStore } from "@/store/commandsStore.js";
 import type {
   CommandAgentSource,
@@ -8,7 +8,7 @@ import type {
   CommandDeleteParams,
   CommandSetEnabledParams,
   CommandUpdateParams,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 interface UseCommandsOptions {
   // service 曾隐式取自 useServices()，而 workspacePath 由调用方按 Scope target 传入，

@@ -1,19 +1,19 @@
-import type { IRobinRunAgentService } from "@robinrun/services";
+import type { IRobinDoneAgentService } from "@robindone/services";
 import {
   attributeHostProcessTree,
   createProcessResourceSampler,
   createProcessResourceTableReader,
   type ProcessResourceSampler,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import {
   HostResponseTypes,
   type HostResourceUsageSnapshotRequestMessage,
   type HostResourceUsageSnapshotResultResponse,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface CreateHostResourceUsageResponderOptions {
   getAgentService: () =>
-    | Pick<IRobinRunAgentService, "collectLocalRuntimeChildProcesses">
+    | Pick<IRobinDoneAgentService, "collectLocalRuntimeChildProcesses">
     | undefined;
   postMessage: (message: HostResourceUsageSnapshotResultResponse) => void;
   hostPid?: number;

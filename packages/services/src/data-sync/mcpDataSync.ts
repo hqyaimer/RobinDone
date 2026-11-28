@@ -6,19 +6,19 @@ import type {
   DataSyncImportResultItem,
   McpDataSyncPayload,
   McpServerConfig,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { updateJsonObjectFile } from "#src/fs/atomicFileUtils.js";
 import {
   cloneMcpConfig,
   collectEffectiveUserMcpRecords,
-  getUserRobinrunMcpConfigPath,
+  getUserRobindoneMcpConfigPath,
   normalizeMcpNameKey,
   readServerEnabled,
-  readRobinrunServerMap,
+  readRobindoneServerMap,
   resolveUserHomeDir,
   rewriteFilesystemMcpConfig,
   setServerEnabled,
-  writeRobinrunServerMap,
+  writeRobindoneServerMap,
   type McpPathRewrite,
   type UserMcpRecord,
 } from "#src/mcp-sync/mcpSyncService.js";
@@ -33,7 +33,7 @@ const COMPAT_CONFIG_ERROR =
 
 interface ResolvedUserMcp {
   byKey: Map<string, UserMcpRecord>;
-  /** `.robinrun` 中没有任何 server，实际生效的是 `~/.agents/mcp.json`。 */
+  /** `.robindone` 中没有任何 server，实际生效的是 `~/.agents/mcp.json`。 */
   usesCompatConfig: boolean;
 }
 
@@ -138,7 +138,7 @@ export function createMcpDataSyncMethods(): IDataSyncCategoryService<McpDataSync
     },
 
     async checkSyncWriteAccess() {
-      return await checkRemoteSyncDirectoryWriteAccess(dirname(getUserRobinrunMcpConfigPath()));
+      return await checkRemoteSyncDirectoryWriteAccess(dirname(getUserRobindoneMcpConfigPath()));
     },
 
     async exportSyncItems(params) {
@@ -170,7 +170,7 @@ export function createMcpDataSyncMethods(): IDataSyncCategoryService<McpDataSync
         results: params.items.map((item) => ({ key: item.key, status: "failed", error })),
       });
       try {
-        // 远端只在使用 ~/.agents 兼容配置时，写入 .robinrun 会让它整体失效：整类拒绝。
+        // 远端只在使用 ~/.agents 兼容配置时，写入 .robindone 会让它整体失效：整类拒绝。
         if ((await resolveUserMcp()).usesCompatConfig) return failAll(COMPAT_CONFIG_ERROR);
         const payloadByKey = new Map(params.payload.items.map((item) => [item.key, item]));
         const paths: McpPathRewrite = {
@@ -181,15 +181,15 @@ export function createMcpDataSyncMethods(): IDataSyncCategoryService<McpDataSync
         };
         let results: DataSyncImportResultItem[] = [];
         // 写前重读 → 只改选中的 server → 原子替换（0600）；文件损坏时抛错，不写入。
-        await updateJsonObjectFile(getUserRobinrunMcpConfigPath(), (config) => {
-          const servers = { ...readRobinrunServerMap(config) };
+        await updateJsonObjectFile(getUserRobindoneMcpConfigPath(), (config) => {
+          const servers = { ...readRobindoneServerMap(config) };
           results = params.items.map((item) =>
             applyImportItem(servers, item, payloadByKey.get(item.key), paths),
           );
           const changed = results.some(
             (result) => result.status === "created" || result.status === "updated",
           );
-          return changed ? writeRobinrunServerMap(config, servers) : config;
+          return changed ? writeRobindoneServerMap(config, servers) : config;
         });
         return { results };
       } catch (error) {

@@ -1,16 +1,16 @@
 import { StoreContext } from "@/store/StoreProvider.js";
-import { createRobinRunStore } from "@/store/index.js";
-import type { IBroadcastService } from "@robinrun/services";
+import { createRobinDoneStore } from "@/store/index.js";
+import type { IBroadcastService } from "@robindone/services";
 import { PluginStoreDetailView } from "@/settings/PluginStoreDetailView.js";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { PluginStoreListView } from "@/settings/PluginStoreListView.js";
 import type { StorePluginItem } from "@/settings/pluginStoreListing.js";
 import "@/styles.css";
 
-const store = createRobinRunStore({
+const store = createRobinDoneStore({
   send: async () => {},
   onMessage: () => ({ dispose() {} }),
   acquireClaim: async () => ({ status: "unavailable" }),
@@ -83,7 +83,7 @@ function Fixture() {
   };
   return (
     <StoreContext.Provider value={store}>
-      <RobinRunIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+      <RobinDoneIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
         <TooltipProvider>
           <main className="@container/plugin-store min-h-screen bg-background p-4 text-foreground">
             {detailOpen ? (
@@ -140,7 +140,7 @@ function Fixture() {
             <output data-testid="ui-opened">{uiOpened}</output>
           </main>
         </TooltipProvider>
-      </RobinRunIntlProvider>
+      </RobinDoneIntlProvider>
     </StoreContext.Provider>
   );
 }

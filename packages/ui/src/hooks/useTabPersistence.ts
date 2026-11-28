@@ -6,8 +6,8 @@
  */
 import { useEffect, useRef } from "react";
 import { useState } from "react";
-import type { AppSettings } from "@robinrun/shared";
-import type { ISettingService } from "@robinrun/services";
+import type { AppSettings } from "@robindone/shared";
+import type { ISettingService } from "@robindone/services";
 import { readPersistedWorkspaceSessionEntries } from "@/lib/remoteWorkspaceHistory.js";
 import { useTabStoreApi } from "../store/TabStoreProvider.js";
 import { isWorkspaceTab, type TabStoreState } from "../store/tabStore.js";

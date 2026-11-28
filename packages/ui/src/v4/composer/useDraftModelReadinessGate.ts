@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  isRobinRunAgentProvider,
-  ROBINRUN_AGENT_PROVIDER,
-  type RobinRunProvider,
-} from "@robinrun/shared";
-import type { IModelSelectionService, ModelSelectionView } from "@robinrun/services";
+  isRobinDoneAgentProvider,
+  ROBINDONE_AGENT_PROVIDER,
+  type RobinDoneProvider,
+} from "@robindone/shared";
+import type { IModelSelectionService, ModelSelectionView } from "@robindone/services";
 import {
   buildModelConfigMissingUiError,
   type ModelConfigMissingUiError,
@@ -46,14 +46,14 @@ export function resolveModelSelectionReadinessStatus(
 export function useDraftModelReadinessGate(params: {
   workspacePath: string;
   workspaceIdentity?: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   sessionId: string | null;
   modelSelectionService: Pick<IModelSelectionService, "getView" | "onDidChange">;
 }): DraftModelReadinessGate {
   const { workspacePath, workspaceIdentity, provider, sessionId, modelSelectionService } = params;
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const displayProvider = provider ?? ROBINRUN_AGENT_PROVIDER;
-  const enabled = sessionId === null && isRobinRunAgentProvider(displayProvider);
+  const displayProvider = provider ?? ROBINDONE_AGENT_PROVIDER;
+  const enabled = sessionId === null && isRobinDoneAgentProvider(displayProvider);
   const gateKey = `${workspaceKey}\u0000${displayProvider}`;
   const scope = useMemo(() => ({ gateKey }), [enabled, gateKey, modelSelectionService]);
   const [state, setState] = useState<DraftModelReadinessState>(() => ({

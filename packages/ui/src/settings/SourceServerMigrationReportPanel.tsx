@@ -1,7 +1,10 @@
-import type { SourceServerMigrationReport, SourceServerMigrationReportRow } from "@robinrun/shared";
+import type {
+  SourceServerMigrationReport,
+  SourceServerMigrationReportRow,
+} from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   getSourceMigrationPhaseMessageId,
   getSourceMigrationStatusMessageId,
@@ -32,7 +35,7 @@ export function SourceServerMigrationReportPanel({
   onAbandon: (workspacePath: string, migrationId: string) => void;
   onRetry: (workspacePath: string, migrationId: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const latestMigrationIdByPath = new Map<string, string>();
   for (const row of report.rows) {
     if (!latestMigrationIdByPath.has(row.workspacePath)) {

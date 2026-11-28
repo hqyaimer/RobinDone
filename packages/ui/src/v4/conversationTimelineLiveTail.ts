@@ -1,5 +1,5 @@
-import type { BotTopicPreparation } from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
+import type { BotTopicPreparation } from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
 import {
   sameItems,
   type ConversationTurnRenderUnit,

@@ -1,6 +1,6 @@
-import type { WorkspaceFileEntry } from "@robinrun/shared";
+import type { WorkspaceFileEntry } from "@robindone/shared";
 import { logger } from "@/logger.js";
-import { unpackWorkspaceFileEntries } from "@robinrun/shared/workspaceFileEntriesCodec";
+import { unpackWorkspaceFileEntries } from "@robindone/shared/workspaceFileEntriesCodec";
 import {
   filterWorkspaceFileSearchCandidates,
   mapWorkspaceFileEntriesToSearchCandidates,
@@ -67,7 +67,7 @@ export function createWorkerWorkspaceFileSearchFilterBackend(): WorkspaceFileSea
   try {
     worker = new Worker(new URL("./workspaceFileSearchFilter.worker.ts", import.meta.url), {
       type: "module",
-      name: "robinrun-workspace-file-search",
+      name: "robindone-workspace-file-search",
     });
   } catch (error) {
     // 降级路径：非常老的事件循环/测试环境不支持 module worker 时回退同步打分。

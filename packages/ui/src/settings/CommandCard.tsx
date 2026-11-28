@@ -1,20 +1,20 @@
 import { Terminal } from "lucide-react";
-import type { UserCommand, RobinRunCommand } from "@robinrun/shared";
-import { isPluginCommand, isUserCommand } from "@robinrun/shared";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { UserCommand, RobinDoneCommand } from "@robindone/shared";
+import { isPluginCommand, isUserCommand } from "@robindone/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { Switch } from "@/components/ui/switch.js";
 import { settingsResourceRowInteraction } from "@/settings/settingsResourceRowInteraction.js";
 import { PluginStoreAvatar } from "@/settings/PluginStoreAvatar.js";
 import type { StorePluginItem } from "@/settings/pluginStoreListing.js";
 
-export function isEditableUserCommand(command: RobinRunCommand): command is UserCommand {
-  return isUserCommand(command) && command.location.source === "robinrun";
+export function isEditableUserCommand(command: RobinDoneCommand): command is UserCommand {
+  return isUserCommand(command) && command.location.source === "robindone";
 }
 
 interface CommandCardProps {
-  command: RobinRunCommand;
-  onEdit?: (command: RobinRunCommand) => void;
-  onToggle?: (command: RobinRunCommand, enabled: boolean) => void;
+  command: RobinDoneCommand;
+  onEdit?: (command: RobinDoneCommand) => void;
+  onToggle?: (command: RobinDoneCommand, enabled: boolean) => void;
   isOperating?: boolean;
   pluginIconItem?: Pick<StorePluginItem, "name" | "listing">;
 }
@@ -26,7 +26,7 @@ export function CommandCard({
   isOperating,
   pluginIconItem,
 }: CommandCardProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const canEdit = isEditableUserCommand(command);
   const editable = canEdit && Boolean(onEdit) && !isOperating;
 

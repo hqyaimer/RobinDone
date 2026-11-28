@@ -8,7 +8,7 @@ import {
   type TriggerProfileEntry,
   type TriggerRouting,
   type TriggerStatus,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
 

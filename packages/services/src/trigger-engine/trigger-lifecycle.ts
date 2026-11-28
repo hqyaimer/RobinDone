@@ -3,7 +3,7 @@ import {
   parseTriggerSessionKey,
   type TriggerEntry,
   type TriggerStatus,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { TriggerTaskPort } from "./contract.js";
 import { appendAudit, mutateRegistry, type RegistryWritableState } from "./registry-io.js";
 

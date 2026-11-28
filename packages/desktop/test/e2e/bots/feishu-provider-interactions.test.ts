@@ -1,4 +1,4 @@
-import type { RobinRunStreamEvent } from "@robinrun/shared";
+import type { RobinDoneStreamEvent } from "@robindone/shared";
 
 import {
   createBotsServiceHarness,
@@ -55,7 +55,7 @@ describe("Bot provider interaction E2E", () => {
           multiSelect: true,
         },
       ],
-    } as RobinRunStreamEvent);
+    } as RobinDoneStreamEvent);
 
     const token = requests
       .map((request) => request.body ?? "")
@@ -66,11 +66,11 @@ describe("Bot provider interaction E2E", () => {
     const callback = (command: string, formValue?: Record<string, string>) =>
       harness.service.handleProviderCallbackResponse("feishu", {
         botId: "feishu-e2e",
-        robinrunFeishuSynchronousCardAction: true,
+        robindoneFeishuSynchronousCardAction: true,
         event: {
           operator: { operator_id: { open_id: "ou_e2e_user" } },
           action: {
-            behaviors: [{ type: "callback", value: { command, robinrunCardText: "Question" } }],
+            behaviors: [{ type: "callback", value: { command, robindoneCardText: "Question" } }],
             ...(formValue ? { form_value: formValue } : {}),
           },
           context: { card_update_token: "card-update-token-e2e" },
@@ -157,7 +157,7 @@ describe("Bot provider interaction E2E", () => {
       taskId: "task-e2e-bot",
       traceId: "run-e2e-il-before",
       content: "交互前的普通输出",
-    } as RobinRunStreamEvent);
+    } as RobinDoneStreamEvent);
     await listener?.({
       type: "elicitation_request",
       taskId: "task-e2e-bot",
@@ -169,7 +169,7 @@ describe("Bot provider interaction E2E", () => {
         interaction: "plan_approval",
         plan: "# 完整计划\n\n执行生命周期调整。",
       },
-    } as RobinRunStreamEvent);
+    } as RobinDoneStreamEvent);
 
     const token = requests
       .map((request) => request.body ?? "")
@@ -186,7 +186,7 @@ describe("Bot provider interaction E2E", () => {
               type: "callback",
               value: {
                 command: `/elicitation ${token} approve`,
-                robinrunCardText: "Review this implementation plan.",
+                robindoneCardText: "Review this implementation plan.",
               },
             },
           ],
@@ -199,7 +199,7 @@ describe("Bot provider interaction E2E", () => {
       taskId: "task-e2e-bot",
       traceId: "run-e2e-il-after",
       content: "交互后的新输出",
-    } as RobinRunStreamEvent);
+    } as RobinDoneStreamEvent);
 
     const messagePosts = requests.filter(
       (request) =>

@@ -1,14 +1,14 @@
-import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
+import type { ProjectTask as RobinDoneTaskMeta } from "@/project-sidebar/contract.js";
 import type {
-  RobinRunGroupedTaskView,
-  RobinRunGroupedTaskViewNode,
+  RobinDoneGroupedTaskView,
+  RobinDoneGroupedTaskViewNode,
   GroupedDraftTaskPlacement,
 } from "@/project-sidebar/grouped/types.js";
 
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 import { taskKey } from "@/project-sidebar/grouped/ids.js";
 
-function cloneView(view: RobinRunGroupedTaskView): RobinRunGroupedTaskView {
+function cloneView(view: RobinDoneGroupedTaskView): RobinDoneGroupedTaskView {
   return {
     nodes: view.nodes.map((node) =>
       node.type === "task" ? { ...node } : { ...node, tasks: [...node.tasks] },
@@ -16,22 +16,22 @@ function cloneView(view: RobinRunGroupedTaskView): RobinRunGroupedTaskView {
   };
 }
 
-function cloneNodes(view: RobinRunGroupedTaskView): RobinRunGroupedTaskViewNode[] {
+function cloneNodes(view: RobinDoneGroupedTaskView): RobinDoneGroupedTaskViewNode[] {
   return [...view.nodes];
 }
 
 function cloneGroupNode(
-  node: Extract<RobinRunGroupedTaskViewNode, { type: "group" }>,
-): Extract<RobinRunGroupedTaskViewNode, { type: "group" }> {
+  node: Extract<RobinDoneGroupedTaskViewNode, { type: "group" }>,
+): Extract<RobinDoneGroupedTaskViewNode, { type: "group" }> {
   return { ...node, tasks: [...node.tasks] };
 }
 
 function removeTaskFromView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   targetTaskKey: string,
 ): {
-  nextView: RobinRunGroupedTaskView;
-  task: RobinRunTaskMeta | null;
+  nextView: RobinDoneGroupedTaskView;
+  task: RobinDoneTaskMeta | null;
 } {
   const nodes = cloneNodes(view);
   for (let index = 0; index < nodes.length; index += 1) {
@@ -57,11 +57,11 @@ function removeTaskFromView(
 }
 
 function insertTaskIntoGroup(
-  view: RobinRunGroupedTaskView,
-  task: RobinRunTaskMeta,
+  view: RobinDoneGroupedTaskView,
+  task: RobinDoneTaskMeta,
   groupId: string,
   beforeTaskKey: string | null,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const nodes = cloneNodes(view);
   const groupIndex = nodes.findIndex((node) => node.type === "group" && node.group.id === groupId);
   const groupNode = nodes[groupIndex];
@@ -79,9 +79,9 @@ function insertTaskIntoGroup(
 }
 
 function removeTaskFromGroupedView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   targetTaskKey: string,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const nextView = cloneView(view);
   for (const node of nextView.nodes) {
     if (node.type !== "group") {
@@ -104,15 +104,15 @@ function removeTaskFromGroupedView(
 }
 
 function filterGroupedViewByTaskKeys(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   hiddenTaskKeys: ReadonlySet<string>,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   if (hiddenTaskKeys.size === 0) {
     return view;
   }
 
   let changed = false;
-  const nodes: RobinRunGroupedTaskView["nodes"] = [];
+  const nodes: RobinDoneGroupedTaskView["nodes"] = [];
   for (const node of view.nodes) {
     if (node.type === "task") {
       if (!hiddenTaskKeys.has(taskKey(node.task))) {
@@ -136,9 +136,9 @@ function filterGroupedViewByTaskKeys(
 }
 
 function findTaskInGroupedView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   targetTaskKey: string,
-): RobinRunTaskMeta | null {
+): RobinDoneTaskMeta | null {
   for (const node of view.nodes) {
     if (node.type === "task" && taskKey(node.task) === targetTaskKey) {
       return node.task;
@@ -154,9 +154,9 @@ function findTaskInGroupedView(
 }
 
 function replaceTaskInGroupedView(
-  view: RobinRunGroupedTaskView,
-  nextTask: RobinRunTaskMeta,
-): RobinRunGroupedTaskView {
+  view: RobinDoneGroupedTaskView,
+  nextTask: RobinDoneTaskMeta,
+): RobinDoneGroupedTaskView {
   const targetTaskKey = taskKey(nextTask);
   return {
     nodes: view.nodes.map((node) => {
@@ -171,7 +171,7 @@ function replaceTaskInGroupedView(
   };
 }
 
-function getGroupedTaskGroupIds(view: RobinRunGroupedTaskView): string[] {
+function getGroupedTaskGroupIds(view: RobinDoneGroupedTaskView): string[] {
   return view.nodes.flatMap((node) => (node.type === "group" ? [node.group.id] : []));
 }
 
@@ -190,7 +190,10 @@ function pruneCollapsedGroupedTaskGroupIds(
   return new Set([...collapsedGroupIds].filter((groupId) => knownGroupIds.has(groupId)));
 }
 
-function getTaskGroupIdInView(view: RobinRunGroupedTaskView, targetTaskKey: string): string | null {
+function getTaskGroupIdInView(
+  view: RobinDoneGroupedTaskView,
+  targetTaskKey: string,
+): string | null {
   for (const node of view.nodes) {
     if (node.type !== "group") {
       continue;
@@ -206,29 +209,32 @@ type GroupedTaskLocation =
   | {
       parent: "root";
       nodeIndex: number;
-      task: RobinRunTaskMeta;
+      task: RobinDoneTaskMeta;
     }
   | {
       parent: "group";
       groupId: string;
       nodeIndex: number;
       taskIndex: number;
-      task: RobinRunTaskMeta;
+      task: RobinDoneTaskMeta;
     };
 
 type GroupedTaskInsertPosition = "before" | "after";
 
-function findTopLevelTaskIndex(view: RobinRunGroupedTaskView, targetTaskKey: string): number {
+function findTopLevelTaskIndex(view: RobinDoneGroupedTaskView, targetTaskKey: string): number {
   return view.nodes.findIndex(
     (node) => node.type === "task" && taskKey(node.task) === targetTaskKey,
   );
 }
 
-function findGroupIndex(view: RobinRunGroupedTaskView, groupId: string): number {
+function findGroupIndex(view: RobinDoneGroupedTaskView, groupId: string): number {
   return view.nodes.findIndex((node) => node.type === "group" && node.group.id === groupId);
 }
 
-function findGroupIdByTaskKey(view: RobinRunGroupedTaskView, targetTaskKey: string): string | null {
+function findGroupIdByTaskKey(
+  view: RobinDoneGroupedTaskView,
+  targetTaskKey: string,
+): string | null {
   for (const node of view.nodes) {
     if (node.type !== "group") {
       continue;
@@ -241,7 +247,7 @@ function findGroupIdByTaskKey(view: RobinRunGroupedTaskView, targetTaskKey: stri
 }
 
 function findTaskLocation(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   targetTaskKey: string,
 ): GroupedTaskLocation | null {
   for (let nodeIndex = 0; nodeIndex < view.nodes.length; nodeIndex += 1) {
@@ -273,7 +279,7 @@ function findTaskLocation(
 }
 
 function resolveGroupedDraftTaskPlacementForTask(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   targetTaskKey: string | null | undefined,
 ): GroupedDraftTaskPlacement {
   if (!targetTaskKey) {
@@ -286,11 +292,11 @@ function resolveGroupedDraftTaskPlacementForTask(
 }
 
 function insertTaskNearTask(
-  view: RobinRunGroupedTaskView,
-  task: RobinRunTaskMeta,
+  view: RobinDoneGroupedTaskView,
+  task: RobinDoneTaskMeta,
   overTaskKey: string,
   position: GroupedTaskInsertPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const nodes = cloneNodes(view);
   const overLocation = findTaskLocation({ nodes }, overTaskKey);
   if (!overLocation) {
@@ -315,13 +321,13 @@ function insertTaskNearTask(
 }
 
 function moveTaskOverTask(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   params: {
     activeTaskKey: string;
     overTaskKey: string;
     position: GroupedTaskInsertPosition;
   },
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   if (params.activeTaskKey === params.overTaskKey) {
     return view;
   }
@@ -342,12 +348,12 @@ function moveTaskOverTask(
 }
 
 function moveTaskToGroupStart(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   params: {
     activeTaskKey: string;
     groupId: string;
   },
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const { nextView, task } = removeTaskFromView(view, params.activeTaskKey);
   if (!task) {
     return view;
@@ -363,12 +369,12 @@ function moveTaskToGroupStart(
 }
 
 function moveTaskToGroupEnd(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   params: {
     activeTaskKey: string;
     groupId: string;
   },
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const { nextView, task } = removeTaskFromView(view, params.activeTaskKey);
   if (!task) {
     return view;
@@ -386,7 +392,7 @@ function moveTaskToGroupEnd(
 }
 
 function moveGroupAroundTopLevelNode(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   params: {
     activeGroupId: string;
     over:
@@ -400,7 +406,7 @@ function moveGroupAroundTopLevelNode(
         };
     position: GroupedTaskInsertPosition;
   },
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   if (params.over.type === "group" && params.activeGroupId === params.over.groupId) {
     return view;
   }
@@ -437,10 +443,10 @@ function moveGroupAroundTopLevelNode(
 }
 
 function moveTaskByMenu(
-  view: RobinRunGroupedTaskView,
-  targetTask: RobinRunTaskMeta,
+  view: RobinDoneGroupedTaskView,
+  targetTask: RobinDoneTaskMeta,
   targetGroupId: string | null,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const targetTaskKey = taskKey(targetTask);
   const currentGroupId = getTaskGroupIdInView(view, targetTaskKey);
   if (currentGroupId === targetGroupId) {
@@ -460,9 +466,9 @@ function moveTaskByMenu(
 }
 
 function moveTaskToTopByMenu(
-  view: RobinRunGroupedTaskView,
-  targetTask: RobinRunTaskMeta,
-): RobinRunGroupedTaskView {
+  view: RobinDoneGroupedTaskView,
+  targetTask: RobinDoneTaskMeta,
+): RobinDoneGroupedTaskView {
   const targetTaskKey = taskKey(targetTask);
   const location = findTaskLocation(view, targetTaskKey);
   if (

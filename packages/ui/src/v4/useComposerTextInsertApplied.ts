@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 
 export function useComposerTextInsertApplied(workspacePath: string, workspaceIdentity?: string) {
   return useCallback(
@@ -15,18 +15,18 @@ export function useComposerTextInsertApplied(workspacePath: string, workspaceIde
           resolve(applied);
         };
         const handleAbort = () => {
-          const request = useRobinRunSessionStore
+          const request = useRobinDoneSessionStore
             .getState()
             .getWorkspaceState(workspacePath, workspaceIdentity).composerTextInsertRequest;
           finish(false);
           if (request?.requestId === requestId) {
-            useRobinRunSessionStore
+            useRobinDoneSessionStore
               .getState()
               .clearComposerTextInsertRequest(workspacePath, requestId, workspaceIdentity);
           }
         };
         const inspect = () => {
-          const state = useRobinRunSessionStore
+          const state = useRobinDoneSessionStore
             .getState()
             .getWorkspaceState(workspacePath, workspaceIdentity);
           if (state.composerTextInsertVersion > requestId) {
@@ -42,7 +42,7 @@ export function useComposerTextInsertApplied(workspacePath: string, workspaceIde
           resolve(false);
           return;
         }
-        unsubscribe = useRobinRunSessionStore.subscribe(inspect);
+        unsubscribe = useRobinDoneSessionStore.subscribe(inspect);
         signal.addEventListener("abort", handleAbort, { once: true });
         inspect();
       }),

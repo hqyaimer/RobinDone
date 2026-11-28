@@ -1,13 +1,13 @@
 import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { z } from "zod";
-import { GEN_UI_OUTPUT_DIRECTORY } from "@robinrun/shared/node";
+import { GEN_UI_OUTPUT_DIRECTORY } from "@robindone/shared/node";
 import {
   GEN_UI_STATIC_DOMAINS,
   buildGenUiScopeKey,
   genUiStateTargetSchema,
-} from "@robinrun/shared/gen-ui";
-import type { PluginSandboxHandle, PluginSandboxRegisterInput } from "@robinrun/shared/mcp-apps";
+} from "@robindone/shared/gen-ui";
+import type { PluginSandboxHandle, PluginSandboxRegisterInput } from "@robindone/shared/mcp-apps";
 import type { IGenUiService } from "../contract.js";
 import { getAppConfigDir } from "../../paths.js";
 import { assertGenUiFragment, readGenUiDocument } from "./files.js";
@@ -59,7 +59,7 @@ export function createGenUiService(
         workspaceIdentity: input.workspaceIdentity,
         sessionId: input.sessionId,
         scopeId: input.instanceKey,
-        html: `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!--__ROBINRUN_GEN_UI_STYLES__--><script type="application/json" id="robinrun-gen-ui-initial-state">${initial}</script><script src="__ROBINRUN_GEN_UI_RUNTIME__"></script></head><body>${input.html}<!--__ROBINRUN_GEN_UI_INNER_KIT__--></body></html>`,
+        html: `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!--__ROBINDONE_GEN_UI_STYLES__--><script type="application/json" id="robindone-gen-ui-initial-state">${initial}</script><script src="__ROBINDONE_GEN_UI_RUNTIME__"></script></head><body>${input.html}<!--__ROBINDONE_GEN_UI_INNER_KIT__--></body></html>`,
         csp: {
           connectDomains: [],
           resourceDomains: GEN_UI_STATIC_DOMAINS.map((host) => `https://${host}`),

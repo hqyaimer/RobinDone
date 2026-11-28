@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import {
   getConversationFindState,
@@ -65,7 +65,7 @@ export function TaskFindDialog({
   onOpenFileChanges,
 }: TaskFindDialogProps) {
   const isOfficeMode = useIsOfficeMode();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const titleId = useId();
   const descriptionId = useId();
   const [query, setQuery] = useState("");

@@ -2,16 +2,16 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
-import { createOfficialMcpTrustedOriginRegistry } from "@robinrun/shared";
+import { createOfficialMcpTrustedOriginRegistry } from "@robindone/shared";
 import {
-  createRobinRunAgentService,
+  createRobinDoneAgentService,
   getDataBaseDir,
   setDataBaseDir,
-} from "@robinrun/services/node";
+} from "@robindone/services/node";
 import {
   getTasksIndexDatabasePath,
   prepareTasksIndexStorage,
-} from "@robinrun/services/storage-startup";
+} from "@robindone/services/storage-startup";
 import { getE2EAppDataPaths } from "#e2e/helpers/desktop-app";
 import {
   OFFICIAL_AUTH_ROUTING_PLUGIN,
@@ -23,10 +23,10 @@ export async function runOfficialMcpRoutingRuntime(artifactDir: string): Promise
   const paths = getE2EAppDataPaths();
   const home = await mkdtemp(join(paths.homeDir, "mcp-auth-runtime-"));
   const previous = getDataBaseDir();
-  const origin = process.env.ROBINRUN_E2E_OFFICIAL_AUTH_ROUTING_URL;
+  const origin = process.env.ROBINDONE_E2E_OFFICIAL_AUTH_ROUTING_URL;
   assert(origin, "Missing controlled MCP origin");
   const evidenceFile = join(home, "rejected-requests.ndjson");
-  const cliRoot = join(home, ".robinrun", "cli");
+  const cliRoot = join(home, ".robindone", "cli");
   const workspaceA = join(home, "project-a");
   const workspaceB = join(home, "project-b");
   await Promise.all(
@@ -48,26 +48,26 @@ export async function runOfficialMcpRoutingRuntime(artifactDir: string): Promise
   const exited: number[] = [];
   try {
     await prepareTasksIndexStorage(getTasksIndexDatabasePath(), () => {});
-    const service = createRobinRunAgentService({
+    const service = createRobinDoneAgentService({
       mcpStatusIdleTimeoutMs: 1_000,
       commandResolver: ({ workspacePath }) => ({
         command: process.execPath,
         args: [
           resolve("test/e2e/fixtures/mcp/official-auth-routing-proxy.mjs"),
-          resolve("../../apps/robinrun-cli/packages/cli/dist/robinrun.cjs"),
+          resolve("../../apps/robindone-cli/packages/cli/dist/robindone.cjs"),
           evidenceFile,
           workspacePath.endsWith("plugin-workspace") ? "probe" : "passthrough",
         ],
         env: {
           HOME: home,
           USERPROFILE: home,
-          ROBINRUN_DATA_BASE_DIR: home,
-          ROBINRUN_OFFICIAL_MCP_DEV_TRUSTED_ORIGINS: origin,
+          ROBINDONE_DATA_BASE_DIR: home,
+          ROBINDONE_OFFICIAL_MCP_DEV_TRUSTED_ORIGINS: origin,
         },
       }),
       officialMcpTrustedOrigins: createOfficialMcpTrustedOriginRegistry({
         devTrustedOriginsRaw: origin,
-        resolveRobinRunApiOrigin: () => "https://example.com",
+        resolveRobinDoneApiOrigin: () => "https://example.com",
       }),
       officialMcpAuthHeadersResolver: {
         async resolveHeaders(request) {

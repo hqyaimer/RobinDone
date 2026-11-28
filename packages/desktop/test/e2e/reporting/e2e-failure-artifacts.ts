@@ -80,9 +80,9 @@ export class E2EFailureArtifactCollector {
   constructor(options: E2EFailureArtifactCollectorOptions) {
     this.artifactDir = resolve(options.artifactDir);
     this.browser = options.browser;
-    this.enabled = options.enabled ?? process.env.ROBINRUN_E2E_FAILURE_ARTIFACTS === "1";
+    this.enabled = options.enabled ?? process.env.ROBINDONE_E2E_FAILURE_ARTIFACTS === "1";
     this.workerId = sanitizeFilePart(
-      options.workerId ?? process.env.ROBINRUN_E2E_WORKER_ID ?? "main",
+      options.workerId ?? process.env.ROBINDONE_E2E_WORKER_ID ?? "main",
     );
   }
 
@@ -118,25 +118,25 @@ export class E2EFailureArtifactCollector {
       activeCapture.recorder = await startElectronWindowRecording({
         browser: this.browser,
         captureTimeoutMs: readTimeoutEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_CAPTURE_TIMEOUT_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_CAPTURE_TIMEOUT_MS",
           DEFAULT_FAILURE_VIDEO_CAPTURE_TIMEOUT_MS,
         ),
         encodeTimeoutMs: readTimeoutEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_ENCODE_TIMEOUT_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_ENCODE_TIMEOUT_MS",
           DEFAULT_FAILURE_VIDEO_ENCODE_TIMEOUT_MS,
         ),
         frameDir: join(caseDir, "frames"),
         frameIntervalMs: readDurationEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_FRAME_INTERVAL_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_FRAME_INTERVAL_MS",
           DEFAULT_FAILURE_VIDEO_FRAME_INTERVAL_MS,
         ),
         outputPath: join(caseDir, "video.webm"),
         preRollDurationMs: readDurationEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_PRE_ROLL_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_PRE_ROLL_MS",
           DEFAULT_FAILURE_VIDEO_PRE_ROLL_MS,
         ),
         stopTimeoutMs: readTimeoutEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_STOP_TIMEOUT_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_STOP_TIMEOUT_MS",
           DEFAULT_FAILURE_VIDEO_STOP_TIMEOUT_MS,
         ),
       });
@@ -175,7 +175,7 @@ export class E2EFailureArtifactCollector {
     try {
       const recordingResult = await activeCapture.recorder?.stop({
         tailDurationMs: readDurationEnv(
-          "ROBINRUN_E2E_FAILURE_VIDEO_TAIL_MS",
+          "ROBINDONE_E2E_FAILURE_VIDEO_TAIL_MS",
           DEFAULT_FAILURE_VIDEO_TAIL_MS,
         ),
       });

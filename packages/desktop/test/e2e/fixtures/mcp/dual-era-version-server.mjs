@@ -6,7 +6,7 @@ import { dirname } from "node:path";
 
 const requireFromBrowserUse = createRequire(
   new URL(
-    "../../../../../../apps/robinrun-cli/packages/browser-use-plugin/package.json",
+    "../../../../../../apps/robindone-cli/packages/browser-use-plugin/package.json",
     import.meta.url,
   ),
 );

@@ -1,4 +1,4 @@
-import type { AppSettings } from "@robinrun/shared";
+import type { AppSettings } from "@robindone/shared";
 import type { ISettingService } from "./setting.js";
 
 export interface SettingServiceUpdatedEvent {

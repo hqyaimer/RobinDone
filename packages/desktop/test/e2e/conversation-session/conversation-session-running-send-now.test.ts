@@ -3,7 +3,7 @@ import {
   TID_CHAT_QUEUE_SEND_NOW_BUTTON,
   TID_V4_QUEUE_ITEM_SEND_NOW,
   TID_V4_TIMELINE,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   readSettings,
@@ -284,7 +284,7 @@ describe("会话区 Running Queue 立即引导 E2E", () => {
     // 工作段布局与来源提示能力无关，沿用默认 queue 交互，不切能力（切能力会重启窗口）。
     // 全局新建的 draft 在独立 cwd；冷恢复按默认项目找会话，所以先回到默认项目的 draft。
     await prepareV4ConversationE2E();
-    expect((await readSettings()).robinrunInteractionBehavior).toBe("queue");
+    expect((await readSettings()).robindoneInteractionBehavior).toBe("queue");
     await ensureReadonlyToolFixtureFile();
     const runId = Date.now();
     const markers: SendNowTimelineMarkers = {

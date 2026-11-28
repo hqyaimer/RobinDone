@@ -18,11 +18,11 @@ import {
   DEFAULT_REMOTE_ASSET_INSTALL_MODE,
   REMOTE_WORKSPACE_DIRECTORY_UNRESPONSIVE_ERROR_CODE,
   resolveWorkspaceKey,
-  ROBINRUN_VERSION,
+  ROBINDONE_VERSION,
   type ConnectionProfile,
   type SourceServerRunningTask,
   type RemoteTarget,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { useCancelPendingRemoteConnection } from "@/hooks/useCancelPendingRemoteConnection.js";
 import { useConfirmDialogStore } from "@/store/confirmDialogStore.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
@@ -30,7 +30,7 @@ import { useRemoteConnectionForm } from "@/hooks/useRemoteConnectionForm.js";
 import { useRemoteConnectionLogs } from "@/hooks/useRemoteConnectionLogs.js";
 import { useSourceServerManagementSnapshot } from "@/hooks/useSourceServerManagementSnapshot.js";
 import { useSourceServerOperationLogs } from "@/hooks/useSourceServerOperationLogs.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getErrorMessage } from "@/lib/errorMessage.js";
 import { formatTaskRelativeTime } from "@/lib/taskListItemPresentation.js";
 import {
@@ -125,7 +125,7 @@ export function useRemoteConnectionFlow(options: RemoteConnectionFlowOptions) {
     !preferredSourceServerId &&
     !preferredProfileId &&
     !preferredTarget;
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
   const acknowledgeBoundary = useRemoteBoundaryAcknowledgement();
   const cancelPendingRemoteConnection = useCancelPendingRemoteConnection();
@@ -1323,7 +1323,7 @@ export function useRemoteConnectionFlow(options: RemoteConnectionFlowOptions) {
     deviceBusy: reinstallDeviceBusy,
     installState: reinstallServer?.installState,
     lastSeenVersion: reinstallServer?.lastSeenVersion,
-    localVersion: ROBINRUN_VERSION,
+    localVersion: ROBINDONE_VERSION,
   });
   const reinstallAvailable =
     Boolean(reinstallProfile) && reinstallAvailability.visible && reinstallAvailability.enabled;
@@ -1337,7 +1337,7 @@ export function useRemoteConnectionFlow(options: RemoteConnectionFlowOptions) {
           recognizedDeviceName ??
           activeProfileName ??
           formatRemoteLinkRailTarget(pendingRemoteTarget),
-        version: ROBINRUN_VERSION,
+        version: ROBINDONE_VERSION,
         formatMessage: intl.formatMessage,
       }),
     );
@@ -2246,7 +2246,7 @@ export function useRemoteConnectionFlow(options: RemoteConnectionFlowOptions) {
       recognizedDeviceName: recognizedDeviceName,
       profileName: activeProfileName,
       recognizedDeviceMeta: recognizedServer ? formatDeviceCardMeta(recognizedServer) : undefined,
-      localVersion: ROBINRUN_VERSION,
+      localVersion: ROBINDONE_VERSION,
       onUseRemoteDownload:
         pendingRemoteTarget?.kind === "ssh"
           ? () => {

@@ -1,10 +1,10 @@
 import { memo, useMemo } from "react";
 import { ActivityIcon, BotIcon, SquareTerminalIcon, Workflow } from "lucide-react";
-import { TID_V4_COMPOSER_BACKGROUND_WORK_TRIGGER } from "@robinrun/shared/test-ids";
-import type { BackgroundWorkSummary } from "@robinrun/shared/robinrun-protocol-v4";
+import { TID_V4_COMPOSER_BACKGROUND_WORK_TRIGGER } from "@robindone/shared/test-ids";
+import type { BackgroundWorkSummary } from "@robindone/shared/robindone-protocol-v4";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export interface ComposerBackgroundWorkCounts {
   bashCount: number;
@@ -56,7 +56,7 @@ function ConversationBackgroundWorkTriggerImpl({
   onOpen,
   openTarget = "panel",
 }: ConversationBackgroundWorkTriggerProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const counts = useMemo(
     () => getComposerBackgroundWorkCounts(backgroundWorks, runningSubagentCount),
     [backgroundWorks, runningSubagentCount],

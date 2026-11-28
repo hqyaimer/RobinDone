@@ -10,10 +10,10 @@ import {
 } from "react";
 import {
   type CodingPlanResetType,
-  type RobinRunContextUsageBreakdownItem,
-  type RobinRunProvider,
-} from "@robinrun/shared";
-import { TID_CHAT_CONTEXT_USAGE_TRIGGER } from "@robinrun/shared/test-ids";
+  type RobinDoneContextUsageBreakdownItem,
+  type RobinDoneProvider,
+} from "@robindone/shared";
+import { TID_CHAT_CONTEXT_USAGE_TRIGGER } from "@robindone/shared/test-ids";
 import {
   Context,
   ContextContentBody,
@@ -28,7 +28,7 @@ import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { resolveCodingPlanUsageRemainingState } from "@/CodingPlanUsageRemainingPanel.js";
 import { CodingPlanQuotaResetStatusContent } from "@/components/coding-plan-quota-reset/CodingPlanQuotaResetStatus.js";
 import { useCodingPlanQuotaResetUi } from "@/hooks/useCodingPlanQuotaResetUi.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   CODING_PLAN_QUOTA_RESET_AUTOMATIC_PROCESSING_MS,
   CODING_PLAN_QUOTA_RESET_TYPES,
@@ -64,7 +64,7 @@ import {
   shouldDismissContextQuotaResetOpportunityReminder,
 } from "@/chat-input-toolbar/contextQuotaResetOpportunityReminder.js";
 
-type ContextUsageBreakdownSource = RobinRunContextUsageBreakdownItem["source"];
+type ContextUsageBreakdownSource = RobinDoneContextUsageBreakdownItem["source"];
 
 interface ContextUsageBreakdownSegment {
   chars: number;
@@ -164,7 +164,7 @@ const BREAKDOWN_SOURCE_ORDER: Record<ContextUsageBreakdownSource, number> = {
 };
 
 export function buildContextUsageBreakdownSegments(
-  breakdown: readonly RobinRunContextUsageBreakdownItem[] | undefined,
+  breakdown: readonly RobinDoneContextUsageBreakdownItem[] | undefined,
 ): ContextUsageBreakdownSegment[] {
   const charsBySource = new Map<ContextUsageBreakdownSource, number>();
   for (const item of breakdown ?? []) {
@@ -209,7 +209,7 @@ export function getRenderableTaskUsage<T extends { used: number; size: number }>
     return null;
   }
 
-  // RobinRun Protocol 迁移后会单独补齐真实 contextUsed/contextWindow。
+  // RobinDone Protocol 迁移后会单独补齐真实 contextUsed/contextWindow。
   // used=0 或非法值不代表可展示的上下文占用，避免把初始化/异常兜底渲染成误导性的 0%。
   if (
     !Number.isFinite(taskUsage.used) ||
@@ -223,7 +223,7 @@ export function getRenderableTaskUsage<T extends { used: number; size: number }>
   return taskUsage;
 }
 
-export function getContextCompressionCommand(_provider: RobinRunProvider): string {
+export function getContextCompressionCommand(_provider: RobinDoneProvider): string {
   return "/compact";
 }
 
@@ -257,10 +257,10 @@ export function ChatContextUsage({
     used: number;
     size: number;
     cache?: { hitRate: number | null };
-    breakdown?: RobinRunContextUsageBreakdownItem[];
+    breakdown?: RobinDoneContextUsageBreakdownItem[];
   } | null;
-  selectedProvider: RobinRunProvider;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  selectedProvider: RobinDoneProvider;
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   locale: string;
   onSendCompressionCommand?: (command: string) => void;
   compressionDisabled?: boolean;

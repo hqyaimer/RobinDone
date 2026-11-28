@@ -2,7 +2,7 @@ import {
   PlatformChannels,
   type FileApplicationInfo,
   type FileApplicationTarget,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type Handler = (...args: unknown[]) => unknown;
 declare global {

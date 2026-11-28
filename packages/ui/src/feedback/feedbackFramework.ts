@@ -1,11 +1,11 @@
 import {
   DEFAULT_FEEDBACK_TICKET_FRAMEWORK,
-  type RobinRunProvider,
+  type RobinDoneProvider,
   type FeedbackTicketFramework,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export function inferFeedbackFrameworkFromAgentProvider(
-  _provider: RobinRunProvider | null | undefined,
+  _provider: RobinDoneProvider | null | undefined,
 ): FeedbackTicketFramework {
   return DEFAULT_FEEDBACK_TICKET_FRAMEWORK;
 }

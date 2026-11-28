@@ -4,8 +4,8 @@ import {
   parseRemoteWorkspaceIdentity,
   ServiceChannels,
   type SourceServerManagementSnapshot,
-} from "@robinrun/shared";
-import { TID_SETTINGS_BACK_BUTTON } from "@robinrun/shared/test-ids";
+} from "@robindone/shared";
+import { TID_SETTINGS_BACK_BUTTON } from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByDom, readSettings } from "#e2e/helpers/desktop-app";
 import {
   execInRemoteContainer,
@@ -29,9 +29,9 @@ import {
 import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
 
 const MARKER = "E2E_SSH_PROBE_VALIDATION";
-const FIXTURE_ROOT = "/tmp/robinrun-probe-validation";
+const FIXTURE_ROOT = "/tmp/robindone-probe-validation";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-probe-validation",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-probe-validation",
 );
 const INVALID_CASES = [
   { mode: "empty", detail: "PLATFORM" },
@@ -49,16 +49,16 @@ const INVALID_CASES = [
 function fixtureShell(originalShell: string): string {
   return `#!/bin/sh
 case "$*" in
-  *__ROBINRUN_PROBE_PLATFORM__*)
+  *__ROBINDONE_PROBE_PLATFORM__*)
     mode=$(cat ${FIXTURE_ROOT}/mode)
     case "$mode" in
       empty) printf 'E2E_PROBE_EMPTY_OUTPUT\\n' >&2; exit 0 ;;
-      missing-platform) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_PLATFORM__$/ {n;s/.*//;}'; exit 0 ;;
-      missing-arch) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_ARCH__$/ {n;s/.*//;}'; exit 0 ;;
-      missing-root) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_ROOT__$/ {n;s/.*//;}'; exit 0 ;;
-      missing-installed) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_INSTALLED__$/ {N;d;}'; exit 0 ;;
-      invalid-installed) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_INSTALLED__$/ {n;s/.*/unknown/;}'; exit 0 ;;
-      missing-end) ${originalShell} "$@" | sed '/^__ROBINRUN_PROBE_END__$/d'; exit 0 ;;
+      missing-platform) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_PLATFORM__$/ {n;s/.*//;}'; exit 0 ;;
+      missing-arch) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_ARCH__$/ {n;s/.*//;}'; exit 0 ;;
+      missing-root) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_ROOT__$/ {n;s/.*//;}'; exit 0 ;;
+      missing-installed) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_INSTALLED__$/ {N;d;}'; exit 0 ;;
+      invalid-installed) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_INSTALLED__$/ {n;s/.*/unknown/;}'; exit 0 ;;
+      missing-end) ${originalShell} "$@" | sed '/^__ROBINDONE_PROBE_END__$/d'; exit 0 ;;
       uname-failure) PATH=${FIXTURE_ROOT}/bin:$PATH; export PATH ;;
     esac
     ;;
@@ -201,7 +201,7 @@ describe(`${MARKER}: 探测失败不伪装为系统不支持或未安装`, () =>
     expect(source.installState).toBe("installed");
     const currentBefore = await readRemoteContainerFile(
       container,
-      "/home/dev/.robinrun/server/current.json",
+      "/home/dev/.robindone/server/current.json",
     );
     await disconnectRemoteSource(sourceId, MARKER);
     await writeRemoteContainerFile(container, `${FIXTURE_ROOT}/mode`, "missing-installed\n");
@@ -247,7 +247,7 @@ describe(`${MARKER}: 探测失败不伪装为系统不支持或未安装`, () =>
       "installed",
     );
     expect(
-      await readRemoteContainerFile(container, "/home/dev/.robinrun/server/current.json"),
+      await readRemoteContainerFile(container, "/home/dev/.robindone/server/current.json"),
     ).toBe(currentBefore);
     const profile = recovered.profiles.find((item) => item.sourceServerId === sourceId)!;
     const logs = await callHandoffHost<Array<{ message: string }>>(

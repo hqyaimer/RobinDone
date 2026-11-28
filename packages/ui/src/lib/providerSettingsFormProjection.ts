@@ -1,4 +1,4 @@
-import type { ProviderSettingsView } from "@robinrun/services";
+import type { ProviderSettingsView } from "@robindone/services";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
 import type { ProviderOrderView } from "@/lib/modelProviderOrdering.js";
 

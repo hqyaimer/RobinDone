@@ -5,20 +5,20 @@
 // shared channels.ts（旧 host 通道表）。
 // 运行时 zod schema 与 resolveWorkspaceKey 已迁 task-realtime-core.ts（幸存面）；
 // 基础传输类型（TaskRealtimeReason/TaskStreamMirrorOp/TaskStreamWatermark 等）已迁
-// robinrun-task-types-core.ts。本文件与旧 realtime 总线组同生命周期。
+// robindone-task-types-core.ts。本文件与旧 realtime 总线组同生命周期。
 import type {
-  RobinRunTaskClientMode,
-  RobinRunTaskRuntimeCommand,
-  RobinRunTaskMeta,
+  RobinDoneTaskClientMode,
+  RobinDoneTaskRuntimeCommand,
+  RobinDoneTaskMeta,
   TraceId,
   TaskRealtimeReason,
   TaskStreamWatermark,
   TaskStreamMirrorUserMessageOp,
   TaskStreamMirrorStreamEventOp,
   TaskStreamMirrorOp,
-} from "./robinrun-task-types-core.js";
-import type { RobinRunPermissionResponse } from "./robinrun-protocol-legacy-types.js";
-import type { WorkspaceHookReviewDecision } from "./robinrun-protocol-v4/workspace-hook-review.js";
+} from "./robindone-task-types-core.js";
+import type { RobinDonePermissionResponse } from "./robindone-protocol-legacy-types.js";
+import type { WorkspaceHookReviewDecision } from "./robindone-protocol-v4/workspace-hook-review.js";
 
 export interface TaskRealtimeEnvelope {
   eventId: string;
@@ -42,7 +42,7 @@ export interface TaskSnapshotInvalidatedEvent extends TaskRealtimeInvalidationBa
 export interface WorkspaceTaskListInvalidatedEvent extends TaskRealtimeInvalidationBaseEvent {
   type: "workspace_task_list_invalidated";
   taskId?: string;
-  taskMeta?: RobinRunTaskMeta;
+  taskMeta?: RobinDoneTaskMeta;
 }
 
 export interface TaskStreamMirrorTarget {
@@ -112,7 +112,7 @@ export type TaskOwnerCommandRequest =
       runId: string;
       permissionRequestId: string;
       optionId: string;
-      response: RobinRunPermissionResponse;
+      response: RobinDonePermissionResponse;
     }
   | {
       commandRequestId: string;
@@ -150,7 +150,7 @@ export type TaskOwnerCommandRequest =
       workspaceKey: string;
       taskId: string;
       runId: string;
-      taskCommand: Extract<RobinRunTaskRuntimeCommand, { type: "send_prompt" }>;
+      taskCommand: Extract<RobinDoneTaskRuntimeCommand, { type: "send_prompt" }>;
     }
   | {
       commandRequestId: string;
@@ -161,7 +161,7 @@ export type TaskOwnerCommandRequest =
       taskId: string;
       runId: string;
       commandId: string;
-      clientMode: Extract<RobinRunTaskClientMode, "web-remote-replayable">;
+      clientMode: Extract<RobinDoneTaskClientMode, "web-remote-replayable">;
     }
   | {
       commandRequestId: string;
@@ -172,7 +172,7 @@ export type TaskOwnerCommandRequest =
       taskId: string;
       runId: string;
       commandId: string;
-      clientMode: Extract<RobinRunTaskClientMode, "web-remote-replayable">;
+      clientMode: Extract<RobinDoneTaskClientMode, "web-remote-replayable">;
     };
 
 export type TaskOwnerCommandDelivery = TaskOwnerCommandRequest & {
@@ -185,7 +185,7 @@ export type TaskOwnerCommandErrorCode =
   | "OWNER_COMMAND_FAILED";
 
 export type TaskOwnerCommandResult =
-  | { commandRequestId: string; success: true; taskCommand?: RobinRunTaskRuntimeCommand }
+  | { commandRequestId: string; success: true; taskCommand?: RobinDoneTaskRuntimeCommand }
   | {
       commandRequestId: string;
       success: false;

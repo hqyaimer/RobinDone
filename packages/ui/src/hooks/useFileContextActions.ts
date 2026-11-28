@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { OpenInEditorRemoteTarget } from "@robinrun/shared";
+import type { OpenInEditorRemoteTarget } from "@robindone/shared";
 import { toast } from "@/components/ui/toast.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getContainingDirectoryPath } from "@/lib/path.js";
 import { logger } from "@/logger.js";
 import { getSystemFileLocatorEditorId } from "@/workspace-file-tree/helpers.js";
@@ -34,7 +34,7 @@ function resolveFileManagerOpenPath(target: FileContextActionTarget): string {
 
 export function useFileContextActions(options: FileContextActionOptions = {}) {
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const canOpenLocalFileManager = Boolean(options.canOpenLocalFileManager);
   const isRemoteWorkspace = Boolean(options.isRemoteWorkspace);
   const remoteTarget = options.remoteTarget;

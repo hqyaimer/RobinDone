@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export type EnabledStatusFilter = "all" | "enabled" | "disabled";
 
@@ -26,7 +26,7 @@ export function EnabledStatusFilterSelect({
   onValueChange: (value: EnabledStatusFilter) => void;
   ariaLabel?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <Select value={value} onValueChange={(next) => onValueChange(next as EnabledStatusFilter)}>
       <SelectTrigger

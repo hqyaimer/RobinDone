@@ -3,7 +3,7 @@ import type { CreateTaskRequest } from "@/app-shell/types.js";
 import { ServiceProvider, useComposerClientNamespace } from "@/hooks/useServices.js";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 import {
   closestCenter,
   DndContext,
@@ -19,10 +19,10 @@ import {
   isRemoteWorkspaceIdentity,
   type BrowserViewScreenshotSurfacePreparePayload,
   type GitChangeSourceId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { FileManagerPane } from "@/WorkspaceFileTree.js";
 import type { FileManagerTarget } from "@/lib/workspaceSidePane.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { composerScopeKey, resolveComposerScope } from "@/v4/composer/composerDraftStore.js";
 import { SidePaneTerminalPane } from "@/SidePaneTerminalPane.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
@@ -113,7 +113,7 @@ import {
 import { inferMediaPreview, type CodeViewerSource } from "@/lib/codeViewer.js";
 import type { MessageFileLinkTarget } from "@/components/ai-elements/message.js";
 import { getVisibleSidePaneTabs } from "@/lib/workspaceSidePane.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   BugIcon,
   ChevronRightIcon,
@@ -472,7 +472,7 @@ export function AnimatedSidePanePanel({
   });
   const pluginUiWorkspaceKey =
     pluginUiTarget.workspaceIdentity?.trim() || pluginUiTarget.workspacePath;
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const developerToolsEnabled = useDeveloperToolsVisibility();
   const isMobileTextInputViewport = useIsMobileTextInputViewport();
@@ -480,7 +480,7 @@ export function AnimatedSidePanePanel({
   const isResizeDisabled = !isVisible;
   const workspaceKey = workspaceIdentity?.trim() || workspaceAbsPath;
   const composerClientNamespace = useComposerClientNamespace();
-  const draftProjectId = useRobinRunSessionStore(
+  const draftProjectId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.draftProjectId,
   );
   const draftScopeKey = composerScopeKey(

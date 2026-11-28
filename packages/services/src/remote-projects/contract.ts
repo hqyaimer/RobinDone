@@ -1,6 +1,6 @@
-import type { RemoteTargetSnapshot, RemoteWorkspaceSessionEntry } from "@robinrun/shared";
+import type { RemoteTargetSnapshot, RemoteWorkspaceSessionEntry } from "@robindone/shared";
 import type { ProjectRoot } from "#src/project-storage/contract.js";
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 
 export interface RemoteProjectHost {

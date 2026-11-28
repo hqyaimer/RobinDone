@@ -7,12 +7,12 @@ import {
 import { createDiffsWorkerHighlighterOptions } from "@/lib/diffsHighlighterEngine.js";
 import { logger } from "@/logger.js";
 import { DEFAULT_CODE_PREVIEW_SETTINGS } from "@/store/index.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 
 function createDiffsWorker(): Worker {
   return new Worker(new URL("../workers/diffs.worker.ts", import.meta.url), {
     type: "module",
-    name: "robinrun-diffs-worker",
+    name: "robindone-diffs-worker",
   });
 }
 
@@ -60,7 +60,7 @@ function WorkerRenderOptionsSync({
 }
 
 export function DiffsWorkerPoolProvider({ children }: { children: ReactNode }) {
-  const codePreviewSettings = useRobinRunStore(
+  const codePreviewSettings = useRobinDoneStore(
     (state) => state.codePreviewSettings ?? DEFAULT_CODE_PREVIEW_SETTINGS,
   );
 

@@ -25,7 +25,7 @@ import {
   SearchIcon,
   X,
 } from "lucide-react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
 import { useRemoteConnectionEntryVisibility } from "@/hooks/useRemoteConnectionEntryVisibility.js";
 import { cn } from "@/components/lib/utils.js";
@@ -35,14 +35,14 @@ import {
   isMainAgentGroupId,
   isWorkerGroupId,
   workerGroupId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   TID_COMPOSER_AGENT_TRIGGER,
   TID_COMPOSER_PROJECT_DETACH,
   TID_COMPOSER_REMOTE_CONNECTION,
   TID_COMPOSER_WORK_OUTSIDE_PROJECT,
   TID_COMPOSER_WORKSPACE_TRIGGER,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { runUserAction, runUserActionAsync } from "@/lib/userActionTelemetry.js";
 
 import type {
@@ -67,7 +67,7 @@ import {
   resolveComposerScope,
   V4_DRAFT_SCOPE_ROOT,
 } from "@/v4/composer/composerDraftStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 
 export function ProjectComposerMenu({
   workspacePath,
@@ -108,7 +108,7 @@ export function ProjectComposerMenu({
   /** 分支等控件位于项目选择器与编辑按钮之间。 */
   children?: ReactNode;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState("");
   const showRemoteConnectionEntry = useRemoteConnectionEntryVisibility();
   // Bugfix: Web 普通模式没有完整远程 workspace 会话链路，不能只依赖全局 feature visibility。
@@ -127,10 +127,10 @@ export function ProjectComposerMenu({
     refresh,
   } = useProjectSelectionDirectory();
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const projectId = useRobinRunSessionStore(
+  const projectId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.draftProjectId,
   );
-  const activeTaskId = useRobinRunSessionStore(
+  const activeTaskId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.activeTaskId,
   );
   const createProjectTask: ProjectSidebarProps["onCreateTask"] = (request) =>
@@ -140,14 +140,14 @@ export function ProjectComposerMenu({
             ...request,
             // 远程目录确认曾遗漏草稿分组；两个项目入口必须从同一草稿 owner 读取组织意图。
             taskGroupId: !activeTaskId
-              ? useRobinRunSessionStore
+              ? useRobinDoneSessionStore
                   .getState()
                   .getWorkspaceState(workspacePath, workspaceIdentity).draftTaskGroupId
               : null,
           }
         : request,
     );
-  const draftVersion = useRobinRunSessionStore(
+  const draftVersion = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.draftFocusVersion,
   );
   // 草稿重建和聊天切换都会使旧返回意图失效，即使后来又回到同一路径也不能复活旧操作。
@@ -210,7 +210,7 @@ export function ProjectComposerMenu({
     setPending(true);
     setSubmissionPending?.(true);
     const isCurrent = () => {
-      const draft = useRobinRunSessionStore.getState().workspaces[workspaceKey];
+      const draft = useRobinDoneSessionStore.getState().workspaces[workspaceKey];
       // Store 先提交、React 后渲染；迟到结果不能利用这一间隙复活旧草稿意图。
       return (
         mounted.current &&
@@ -678,13 +678,13 @@ function ComposerAgentMenu({
   workspacePath: string;
   workspaceIdentity?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const composerClientNamespace = useComposerClientNamespace();
   const {
     groups: { structure },
   } = useProjectDirectory();
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const draftTaskGroupId = useRobinRunSessionStore(
+  const draftTaskGroupId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.draftTaskGroupId,
   );
   // 停用即隐藏（2026-11-17 裁决）：下拉与侧栏同一投影口径，只列 active worker 的组。
@@ -725,7 +725,7 @@ function ComposerAgentMenu({
       { ...(saved ?? { text: "" }), projectId: project.id, taskGroupId },
       scope,
     );
-    useRobinRunSessionStore
+    useRobinDoneSessionStore
       .getState()
       .setDraftTaskGroup(workspacePath, taskGroupId, workspaceIdentity);
     logger.info("[ProjectComposerMenu] 选择对话智能体", { projectId: project.id, taskGroupId });

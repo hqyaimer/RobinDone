@@ -2,12 +2,12 @@ import { assertValidAutomationScheduleRule } from "#src/session/automationCronVa
 export { InvalidAutomationScheduleRuleError } from "#src/session/automationCronValidation.js";
 import type {
   ProjectExecutionSnapshot,
-  RobinRunAutomation,
-  RobinRunAutomationCreateParams,
-  RobinRunAutomationRun,
-  RobinRunAutomationUpdateParams,
-} from "@robinrun/shared";
-import { resolveWorkspaceKey } from "@robinrun/shared";
+  RobinDoneAutomation,
+  RobinDoneAutomationCreateParams,
+  RobinDoneAutomationRun,
+  RobinDoneAutomationUpdateParams,
+} from "@robindone/shared";
+import { resolveWorkspaceKey } from "@robindone/shared";
 import { AutomationRepo } from "#src/session/automationRepo.js";
 import {
   assertValidAutomationIntervalCarrier,
@@ -76,7 +76,7 @@ export class AutomationService {
     ) => Promise<ProjectExecutionSnapshot>,
   ) {}
 
-  async create(params: RobinRunAutomationCreateParams): Promise<RobinRunAutomation> {
+  async create(params: RobinDoneAutomationCreateParams): Promise<RobinDoneAutomation> {
     const createdAt = Date.now();
     const relativeDelayMinutes = params.relativeDelayMinutes;
     if (
@@ -177,7 +177,7 @@ export class AutomationService {
   async list(scope?: {
     workspacePath?: string;
     workspaceIdentity?: string;
-  }): Promise<RobinRunAutomation[]> {
+  }): Promise<RobinDoneAutomation[]> {
     return this.repo.list(scope);
   }
 
@@ -192,15 +192,15 @@ export class AutomationService {
   async get(
     automationId: string,
     scope?: AutomationWorkspaceScope,
-  ): Promise<RobinRunAutomation | null> {
+  ): Promise<RobinDoneAutomation | null> {
     return this.repo.get(automationId, resolveScopeKey(scope));
   }
 
   async update(
     automationId: string,
-    params: RobinRunAutomationUpdateParams,
+    params: RobinDoneAutomationUpdateParams,
     scope?: AutomationWorkspaceScope,
-  ): Promise<RobinRunAutomation | null> {
+  ): Promise<RobinDoneAutomation | null> {
     const workspaceKey = resolveScopeKey(scope);
     const existing = await this.repo.get(automationId, workspaceKey);
     if (!existing) return null;
@@ -235,7 +235,7 @@ export class AutomationService {
     // 有限任务只提交 recurring=true 时，旧 maxRuns 会被 repo.update 原样保留，
     // 形成“无限循环 + 有限上限”的矛盾隐藏状态。领域层统一补 null，兼容旧客户端并原子清除旧上限；
     // 同时顺手修复历史上已经存在的同类脏数据。
-    const normalizedParams: RobinRunAutomationUpdateParams = hasIntervalCarrier
+    const normalizedParams: RobinDoneAutomationUpdateParams = hasIntervalCarrier
       ? forceIntervalCarrierRecurring(restParams)
       : nextRecurring &&
           restParams.maxRuns === undefined &&
@@ -245,7 +245,7 @@ export class AutomationService {
 
     const options: {
       nextRunAt?: number | null;
-      lifecycleStatus?: RobinRunAutomation["lifecycleStatus"];
+      lifecycleStatus?: RobinDoneAutomation["lifecycleStatus"];
       resetRetry?: boolean;
     } = {};
 
@@ -266,7 +266,7 @@ export class AutomationService {
     const effectiveDirectScheduleRule = hasDirectScheduleRule
       ? directScheduleRule
       : carrierScheduleRule;
-    const normalizedWithSchedule: RobinRunAutomationUpdateParams =
+    const normalizedWithSchedule: RobinDoneAutomationUpdateParams =
       effectiveDirectScheduleRule !== undefined
         ? { ...normalizedParams, scheduleRule: effectiveDirectScheduleRule }
         : normalizedParams;
@@ -402,7 +402,7 @@ export class AutomationService {
   async runNow(
     automationId: string,
     scope?: AutomationWorkspaceScope,
-  ): Promise<{ automation: RobinRunAutomation; run: RobinRunAutomationRun } | null> {
+  ): Promise<{ automation: RobinDoneAutomation; run: RobinDoneAutomationRun } | null> {
     const workspaceKey = resolveScopeKey(scope);
     const existing = await this.repo.get(automationId, workspaceKey);
     if (!existing) return null;
@@ -412,7 +412,7 @@ export class AutomationService {
   async listRuns(
     automationId: string,
     scope?: AutomationWorkspaceScope,
-  ): Promise<RobinRunAutomationRun[]> {
+  ): Promise<RobinDoneAutomationRun[]> {
     return this.repo.listRuns(automationId, resolveScopeKey(scope));
   }
   async deleteRun(runId: string, scope?: AutomationWorkspaceScope): Promise<void> {

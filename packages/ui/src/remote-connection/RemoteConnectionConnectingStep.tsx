@@ -1,4 +1,4 @@
-import { redactFeedbackText } from "@robinrun/shared";
+import { redactFeedbackText } from "@robindone/shared";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { RemotePasswordInput } from "@/remote-connection/RemotePasswordInput.js";
 import {
@@ -14,7 +14,7 @@ import {
   type SourceServerInstallPreview,
   type SourceServerOperationLog,
   type SourceServerRunningTask,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 /* eslint-disable max-lines -- 连接阶段清单、日志和错误恢复共享同一视图状态，保持原子交互。 */
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
@@ -25,12 +25,12 @@ import {
   MinusIcon,
   XIcon,
 } from "lucide-react";
-import { type RemoteTarget } from "@robinrun/shared";
-import { TID_SSH_ERROR } from "@robinrun/shared/test-ids";
+import { type RemoteTarget } from "@robindone/shared";
+import { TID_SSH_ERROR } from "@robindone/shared/test-ids";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import type { RemoteConnectionLogEntry } from "@/hooks/useRemoteConnectionLogs.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useFeedbackStore } from "@/feedback/feedbackStore.js";
 import {
   formatRemoteLinkRailTarget,
@@ -323,7 +323,7 @@ export function RemoteConnectionConnectingStep({
   onCancelConnection?: () => void;
   onContinueToDirectory?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const credentialInputId = useId();
   const platform = usePlatform();
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);

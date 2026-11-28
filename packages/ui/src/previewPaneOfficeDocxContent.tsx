@@ -35,7 +35,7 @@ let nextDocxPreviewClassId = 0;
 
 function createDocxPreviewClassName(): string {
   nextDocxPreviewClassId += 1;
-  return `robinrun-docx-preview-${nextDocxPreviewClassId}`;
+  return `robindone-docx-preview-${nextDocxPreviewClassId}`;
 }
 
 function isSameDocxPreviewFit(current: DocxPreviewFit | null, next: DocxPreviewFit): boolean {

@@ -1,4 +1,4 @@
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 
 export const REMOTE_WORKSPACE_RPC_CONTRACT_VERSION = 1 as const;
 
@@ -13,9 +13,9 @@ export const REMOTE_WORKSPACE_RPC_CHANNELS = [
   "onboardingRecordService",
   "credentialService",
   "broadcastService",
-  "robinrunTaskService",
-  "robinrunAgentService",
-  "robinrunSessionService",
+  "robindoneTaskService",
+  "robindoneAgentService",
+  "robindoneSessionService",
   "conversationShareService",
   "botsService",
   "fileWatcherService",

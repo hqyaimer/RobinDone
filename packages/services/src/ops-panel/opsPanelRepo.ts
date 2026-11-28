@@ -19,7 +19,7 @@ import {
   type OpsWakeupState,
   type ProgressCreatedBy,
   type ProgressEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { getTasksIndexDatabasePath } from "#src/paths.js";
 import {
   isTasksStorageMigrated,

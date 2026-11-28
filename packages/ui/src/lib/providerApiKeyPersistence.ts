@@ -1,5 +1,5 @@
-import type { IProviderSettingsService, ProviderSettingsView } from "@robinrun/services";
-import { isApiKeyAccess } from "@robinrun/provider";
+import type { IProviderSettingsService, ProviderSettingsView } from "@robindone/services";
+import { isApiKeyAccess } from "@robindone/provider";
 
 type ProviderSettingsApiKeyService = Pick<
   IProviderSettingsService,

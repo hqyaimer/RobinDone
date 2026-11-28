@@ -1,5 +1,5 @@
-import type { PipSessionEvent } from "@robinrun/robinrun-cua/pip-session";
-import { ServiceChannels } from "@robinrun/shared";
+import type { PipSessionEvent } from "@robindone/robindone-cua/pip-session";
+import { ServiceChannels } from "@robindone/shared";
 
 import { createServiceDescriptor } from "../descriptors.js";
 

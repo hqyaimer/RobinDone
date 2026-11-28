@@ -1,8 +1,8 @@
 import { createRoot } from "react-dom/client";
-import type { IPluginManagementService } from "@robinrun/services";
+import type { IPluginManagementService } from "@robindone/services";
 import { createPluginManagementStore } from "@/store/pluginManagementStore.js";
 import { PluginStoreInstallButton } from "@/settings/PluginStoreCard.js";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import "@/styles.css";
 
@@ -32,7 +32,7 @@ store.subscribe((state) => logger.debug("install-state", JSON.stringify(state.ac
 function Fixture() {
   const state = store();
   return (
-    <RobinRunIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+    <RobinDoneIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
       <main className="flex flex-col gap-4 bg-background p-4 text-foreground">
         {["first", "second"].map((name) => (
           <div key={name}>
@@ -62,7 +62,7 @@ function Fixture() {
           </div>
         ))}
       </main>
-    </RobinRunIntlProvider>
+    </RobinDoneIntlProvider>
   );
 }
 createRoot(document.getElementById("root")!).render(<Fixture />);

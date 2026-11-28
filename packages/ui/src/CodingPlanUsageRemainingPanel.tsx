@@ -1,19 +1,19 @@
 /* eslint-disable max-lines -- Coding Plan 用量视图集中维护来源选择、额度投影和重置入口；本阶段只迁移 Account Access，不拆分既有 UI 结构。 */
 import type {
   UsageEntitlementSnapshot,
-  RobinRunAccountAccess,
-  RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
+  RobinDoneAccountAccess,
+  RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
 import {
   BIGMODEL_PROVIDER_ID,
   BUILTIN_MODEL_PROVIDER_IDS,
   type OAuthProviderId,
   ZAI_PROVIDER_ID,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { ChevronRightIcon, Loader2 } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   findCodingPlanQuotaLimit,
   formatQuotaRemainingPercentage,
@@ -29,7 +29,7 @@ import type {
 export interface CodingPlanUsageRemainingEntitlement {
   sourceId?: SidebarUsageCodingPlanSourceId;
   providerId: SidebarUsageCodingPlanProviderId;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   label?: string;
   snapshot: UsageEntitlementSnapshot | null;
   loading: boolean;
@@ -38,7 +38,7 @@ export interface CodingPlanUsageRemainingEntitlement {
 
 export interface CodingPlanUsageAvailableProvider {
   providerId: SidebarUsageCodingPlanProviderId;
-  accountAccess: RobinRunProviderAccountAccess | RobinRunAccountAccess;
+  accountAccess: RobinDoneProviderAccountAccess | RobinDoneAccountAccess;
   label: string;
 }
 
@@ -238,7 +238,7 @@ export function CodingPlanUsageRemainingPanel({
   onUsageClick?: () => void;
   selectedProviderId?: SidebarUsageCodingPlanSourceId;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const state = useMemo(
     () =>
       resolveCodingPlanUsageRemainingState({

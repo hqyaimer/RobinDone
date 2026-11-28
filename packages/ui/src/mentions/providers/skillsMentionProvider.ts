@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import type { Locale, SkillScope, RobinRunProvider } from "@robinrun/shared";
+import type { Locale, SkillScope, RobinDoneProvider } from "@robindone/shared";
 import type { MentionCategoryResult, MentionItem } from "@/mentions/mentionTypes.js";
 import { filterMentionItemsWithOptions } from "@/mentions/mentionSearch.js";
 import { buildSkillMentionMarkdown } from "@/mentions/mentionMarkdown.js";
 import { useSkills } from "@/hooks/useSkills.js";
 import { filterSkillsForProvider } from "@/lib/skillSourceFilter.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { resolveSkillDisplayDescription, resolveSkillSourceLabel } from "@/lib/builtinSkillI18n.js";
 
 export function mapSkillsToMentionItemsForTest(
@@ -60,14 +60,14 @@ export function useSkillsMentionProvider(
   workspacePath: string,
   workspaceIdentity: string | undefined,
   sessionId: string | null,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   query: string,
   enabled: boolean,
   requireQuery: boolean,
   emptyText: string,
   title: string,
 ): MentionCategoryResult {
-  const { locale } = useRobinRunIntl();
+  const { locale } = useRobinDoneIntl();
   const { skills, loading, error } = useSkills({
     workspacePath,
     workspaceIdentity,

@@ -264,7 +264,7 @@
           "id": "toolu_parent_cd",
           "name": "Bash",
           "input": {
-            "command": "mkdir -p .robinrun-e2e/cd-child && cd .robinrun-e2e/cd-child && printf 'R3_PARENT_CD_DONE\\n'",
+            "command": "mkdir -p .robindone-e2e/cd-child && cd .robindone-e2e/cd-child && printf 'R3_PARENT_CD_DONE\\n'",
             "dangerouslyDisableSandbox": true
           }
         }

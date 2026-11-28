@@ -1,18 +1,18 @@
-import { isHighspeedProviderId } from "@robinrun/shared";
-import { modelSelectionSchema, type ModelSelection } from "@robinrun/shared/model-selection";
-import { submissionModeSchema, type SubmissionMode } from "@robinrun/shared/robinrun-protocol-v4";
-import type { ModelSelectionView } from "@robinrun/services";
+import { isHighspeedProviderId } from "@robindone/shared";
+import { modelSelectionSchema, type ModelSelection } from "@robindone/shared/model-selection";
+import { submissionModeSchema, type SubmissionMode } from "@robindone/shared/robindone-protocol-v4";
+import type { ModelSelectionView } from "@robindone/services";
 import { logger } from "@/logger.js";
 import { composerScopeKey, type ComposerScope } from "@/v4/composer/composerDraftStore.js";
 
 // 沿用旧 key，读取时兼容只保存 ModelSelection 的历史记录。
-const COMPOSER_RECENT_KEY_PREFIX = "robinrun-model-selection-recent-v1";
+const COMPOSER_RECENT_KEY_PREFIX = "robindone-model-selection-recent-v1";
 /**
  * 全局权限模式（2026-11-21 实测裁决）：用户在任意会话显式选择的权限（模式切换/提交回执）
  * 都写这一个跨工作区键，新会话草稿缺省继承它——否则每个新会话都要手动重选一次权限。
  * 只存 mode：模型偏好保持工作区维度的 Recent 语义不变。
  */
-const COMPOSER_GLOBAL_MODE_KEY = "robinrun-composer-mode-global:v1";
+const COMPOSER_GLOBAL_MODE_KEY = "robindone-composer-mode-global:v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -79,7 +79,7 @@ function resolveComposerRecentKey(
   workspaceIdentity?: string,
   scope?: ComposerScope,
 ): string {
-  if (scope) return `robinrun-composer-recent:v2:${composerScopeKey(scope)}`;
+  if (scope) return `robindone-composer-recent:v2:${composerScopeKey(scope)}`;
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
   return `${COMPOSER_RECENT_KEY_PREFIX}:${workspaceKey}`;
 }

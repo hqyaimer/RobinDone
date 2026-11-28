@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { TID_CHAT_SUMMARY_PANEL, TID_V4_COMPOSER_INPUT } from "@robinrun/shared/test-ids";
+import { TID_CHAT_SUMMARY_PANEL, TID_V4_COMPOSER_INPUT } from "@robindone/shared/test-ids";
 import { clearAppData, setInputValueByTestIdDom } from "../helpers/desktop-app.js";
 import {
   getUpstreamRequestRecordCount,
@@ -26,7 +26,7 @@ import {
 
 const CASE_MARKER = "E2E_R3_COMPACT_GOAL";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-compact-goal",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/r3-compact-goal",
 );
 
 async function clickGoalAction(action: "pause" | "resume"): Promise<boolean> {
@@ -142,7 +142,7 @@ describe(`${CASE_MARKER}: 远端 session 的手动 compact 与 goal 暂停/继�
     facts.afterCompactTurnUsesSummary = true;
     const remoteCompact = await runSSHCommand(
       prepared.config,
-      'F=$(ls -t ~/.robinrun/cli/log/*.jsonl | head -n1); grep -c "compact" "$F" || true',
+      'F=$(ls -t ~/.robindone/cli/log/*.jsonl | head -n1); grep -c "compact" "$F" || true',
     );
     facts.remoteLogCompactMentions = Number.parseInt(remoteCompact.stdout.trim() || "0", 10);
 

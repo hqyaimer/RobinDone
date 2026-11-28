@@ -7,19 +7,19 @@ import {
   type RefObject,
 } from "react";
 import {
-  robinrunProviderRuntimeHeadersErrorCode,
-  type RobinRunApiRetryStatus,
-  type RobinRunConfigOption,
-  type RobinRunConfigSelectValue,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  robindoneProviderRuntimeHeadersErrorCode,
+  type RobinDoneApiRetryStatus,
+  type RobinDoneConfigOption,
+  type RobinDoneConfigSelectValue,
+  type RobinDoneProvider,
+} from "@robindone/shared";
 import {
   TID_CHAT_MODE_SELECT_ITEM,
   TID_CHAT_MODE_SELECT_TRIGGER,
   TID_CHAT_THOUGHT_LEVEL_SELECT_ITEM,
   TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import {
   Select,
@@ -33,7 +33,7 @@ import {
   shouldRestoreChatInputFocusAfterPickerClose,
 } from "@/lib/pickerFocus.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import {
   ChevronDownIcon,
@@ -44,8 +44,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
-  ROBINRUN_MODE_OPTION_DESCRIPTION_IDS,
-  ROBINRUN_MODE_OPTION_LABEL_IDS,
+  ROBINDONE_MODE_OPTION_DESCRIPTION_IDS,
+  ROBINDONE_MODE_OPTION_LABEL_IDS,
 } from "./display-help.js";
 import { RollingToolbarLabel } from "@/chat-input-toolbar/RollingToolbarLabel.js";
 
@@ -61,7 +61,10 @@ type ConfigSelectTriggerVariant = ComponentProps<typeof SelectTrigger>["variant"
 /** Radix Select 在受控值与子项注册竞争时可能发出空值等未渲染值；直接上抛会把
  * 系统事件误当成用户选择（如 Automations 编辑页仅打开详情就被标记未保存修改）。
  * 用户只能点到已渲染的 option，值域外的选择回调一律丢弃。 */
-export function isConfigSelectValueInOptions(option: RobinRunConfigOption, value: string): boolean {
+export function isConfigSelectValueInOptions(
+  option: RobinDoneConfigOption,
+  value: string,
+): boolean {
   return option.options?.some((entry) => String(entry.value) === value) ?? false;
 }
 
@@ -74,7 +77,7 @@ const HIGH_PERMISSION_MODE_VALUES = new Set([
   "yolo",
 ]);
 
-function getConfigSelectTriggerTestId(option: RobinRunConfigOption): string | undefined {
+function getConfigSelectTriggerTestId(option: RobinDoneConfigOption): string | undefined {
   if (option.category === "thought_level") {
     return TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER;
   }
@@ -87,8 +90,8 @@ function getConfigSelectTriggerTestId(option: RobinRunConfigOption): string | un
 }
 
 function getConfigSelectItemTestId(
-  option: RobinRunConfigOption,
-  entry: RobinRunConfigSelectValue,
+  option: RobinDoneConfigOption,
+  entry: RobinDoneConfigSelectValue,
 ): string | undefined {
   if (option.category === "thought_level") {
     return testId(TID_CHAT_THOUGHT_LEVEL_SELECT_ITEM, entry.value);
@@ -124,8 +127,8 @@ export function ChatApiRetryStatus({
   intl,
   locale,
 }: {
-  apiRetry: RobinRunApiRetryStatus | null;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  apiRetry: RobinDoneApiRetryStatus | null;
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   locale: string;
 }) {
   const retryLabel = useMemo(() => {
@@ -133,14 +136,14 @@ export function ChatApiRetryStatus({
       return null;
     }
 
-    // 当前 RobinRun Agent 只会推送某一刻的 retryDelayMs 快照，不会每秒递减。
+    // 当前 RobinDone Agent 只会推送某一刻的 retryDelayMs 快照，不会每秒递减。
     // 继续把这个值渲染成“X 秒后继续”会给用户造成倒计时在卡住的错觉。
     // 这里先收敛成稳定的重试状态文案，只展示第几次重试。
     const formatter = new Intl.NumberFormat(locale);
     return intl.formatMessage(
       {
         id:
-          apiRetry.error === robinrunProviderRuntimeHeadersErrorCode.configNetwork
+          apiRetry.error === robindoneProviderRuntimeHeadersErrorCode.configNetwork
             ? "chat.configReadRetryStatus"
             : "chat.apiRetryStatus",
       },
@@ -173,9 +176,9 @@ export function ChatApiRetryStatus({
 }
 
 export function getModeOptionDisplayLabel(
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
-  provider: RobinRunProvider | undefined,
-  entry: Pick<RobinRunConfigSelectValue, "name" | "value">,
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
+  provider: RobinDoneProvider | undefined,
+  entry: Pick<RobinDoneConfigSelectValue, "name" | "value">,
 ): string {
   const labelMessageId = getModeOptionLabelMessageId(provider, entry);
   if (!labelMessageId) {
@@ -186,32 +189,32 @@ export function getModeOptionDisplayLabel(
 }
 
 export function getModeOptionLabelMessageId(
-  provider: RobinRunProvider | undefined,
-  entry: Pick<RobinRunConfigSelectValue, "value">,
+  provider: RobinDoneProvider | undefined,
+  entry: Pick<RobinDoneConfigSelectValue, "value">,
 ): string | null {
   if (!provider) {
     return null;
   }
 
-  return ROBINRUN_MODE_OPTION_LABEL_IDS[provider]?.[entry.value] ?? null;
+  return ROBINDONE_MODE_OPTION_LABEL_IDS[provider]?.[entry.value] ?? null;
 }
 
 export function getModeOptionDescriptionMessageId(
-  provider: RobinRunProvider | undefined,
-  entry: Pick<RobinRunConfigSelectValue, "value">,
+  provider: RobinDoneProvider | undefined,
+  entry: Pick<RobinDoneConfigSelectValue, "value">,
 ): string | null {
   if (!provider) {
     return null;
   }
 
-  return ROBINRUN_MODE_OPTION_DESCRIPTION_IDS[provider]?.[entry.value] ?? null;
+  return ROBINDONE_MODE_OPTION_DESCRIPTION_IDS[provider]?.[entry.value] ?? null;
 }
 
 export function getConfigOptionEntryLabel(
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
-  provider: RobinRunProvider | undefined,
-  option: RobinRunConfigOption,
-  entry: RobinRunConfigSelectValue,
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
+  provider: RobinDoneProvider | undefined,
+  option: RobinDoneConfigOption,
+  entry: RobinDoneConfigSelectValue,
 ): string {
   if (option.category === "mode") {
     return getModeOptionDisplayLabel(intl, provider, entry);
@@ -221,10 +224,10 @@ export function getConfigOptionEntryLabel(
 }
 
 export function getConfigOptionEntryDescription(
-  intl: ReturnType<typeof useRobinRunIntl>["intl"],
-  provider: RobinRunProvider | undefined,
-  option: RobinRunConfigOption,
-  entry: RobinRunConfigSelectValue,
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"],
+  provider: RobinDoneProvider | undefined,
+  option: RobinDoneConfigOption,
+  entry: RobinDoneConfigSelectValue,
 ): string | undefined {
   if (option.category !== "mode") {
     return entry.description;
@@ -279,7 +282,7 @@ export function ConfigSelect({
   provider,
   restoreFocusSelector = '[data-testid="chat-input"]',
 }: {
-  option: RobinRunConfigOption;
+  option: RobinDoneConfigOption;
   onValueChange: (value: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -293,10 +296,10 @@ export function ConfigSelect({
   triggerSize?: ConfigSelectTriggerSize;
   leadingIcon?: LucideIcon;
   labelVisibilityClassName?: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   restoreFocusSelector?: string | null;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   // 注意：handleContentKeyDown 必须在 early return 之前调用。
   // 之前 `if (option.type !== "select" ...) return null` 写在 useCallback 之前，

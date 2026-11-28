@@ -1,8 +1,8 @@
-import type { RobinRunTaskMeta, RobinRunWorkspaceTaskListChanged } from "@robinrun/shared";
+import type { RobinDoneTaskMeta, RobinDoneWorkspaceTaskListChanged } from "@robindone/shared";
 import type {
   SessionSummary,
   SessionsIndexReconcileResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 export interface TaskWorkspace {
   workspacePath: string;
@@ -13,7 +13,7 @@ export interface TaskFactTarget extends TaskWorkspace {
 }
 export type TaskFactMutation = { type: "rename"; title: string } | { type: "delete" };
 export interface CliTaskFacts {
-  meta: RobinRunTaskMeta;
+  meta: RobinDoneTaskMeta;
   titleSource?: string;
   lastOutcome?: "completed" | "interrupted" | "error";
   deleted?: boolean;
@@ -21,13 +21,13 @@ export interface CliTaskFacts {
 
 /** 存储端口只接受 CLI 事实，不能据 Host 时钟或运行态推导会话事实。 */
 export interface TaskFactStore {
-  applyCliFacts(facts: CliTaskFacts): Promise<RobinRunTaskMeta>;
+  applyCliFacts(facts: CliTaskFacts): Promise<RobinDoneTaskMeta>;
   applyCliDeletion(target: TaskFactTarget): Promise<void>;
   markCliOrphan(target: TaskFactTarget): Promise<void>;
   listReconciliationRows(
     target: TaskWorkspace,
-  ): Promise<Array<{ meta: RobinRunTaskMeta; handoffPending: number }>>;
-  getTaskMeta(target: TaskFactTarget): Promise<RobinRunTaskMeta | null>;
+  ): Promise<Array<{ meta: RobinDoneTaskMeta; handoffPending: number }>>;
+  getTaskMeta(target: TaskFactTarget): Promise<RobinDoneTaskMeta | null>;
 }
 export interface TaskFactSource {
   reconcile(target: TaskWorkspace, sessionIds: string[]): Promise<SessionsIndexReconcileResult>;
@@ -35,14 +35,14 @@ export interface TaskFactSource {
 }
 export interface TaskFactChange {
   target: TaskFactTarget;
-  meta?: RobinRunTaskMeta;
-  reason: RobinRunWorkspaceTaskListChanged["reason"];
+  meta?: RobinDoneTaskMeta;
+  reason: RobinDoneWorkspaceTaskListChanged["reason"];
 }
 export interface TaskFactsContract {
-  ingest(target: TaskWorkspace, summary: SessionSummary): Promise<RobinRunTaskMeta>;
+  ingest(target: TaskWorkspace, summary: SessionSummary): Promise<RobinDoneTaskMeta>;
   removed(target: TaskFactTarget): Promise<void>;
-  refresh(target: TaskFactTarget): Promise<RobinRunTaskMeta | null>;
-  mutate(target: TaskFactTarget, intent: TaskFactMutation): Promise<RobinRunTaskMeta | null>;
+  refresh(target: TaskFactTarget): Promise<RobinDoneTaskMeta | null>;
+  mutate(target: TaskFactTarget, intent: TaskFactMutation): Promise<RobinDoneTaskMeta | null>;
   reconcile(
     target: TaskWorkspace,
     presentSessionIds: ReadonlySet<string>,

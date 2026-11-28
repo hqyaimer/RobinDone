@@ -1,24 +1,24 @@
-export interface RobinRunStreamingToolInputState {
+export interface RobinDoneStreamingToolInputState {
   deltaCount?: number;
   lastPreviewAt?: number;
   lastPreviewRawInputLength?: number;
   rawInput: string;
 }
 
-export interface RobinRunStreamingToolInputPreview {
+export interface RobinDoneStreamingToolInputPreview {
   complete: boolean;
   input: unknown;
   rawInput: string;
 }
 
-export type RobinRunStreamingToolInputPreviewMode = "active-live" | "background-summary";
+export type RobinDoneStreamingToolInputPreviewMode = "active-live" | "background-summary";
 
-export const ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_EAGER_DELTA_COUNT = 1;
-export const ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS = 750;
-export const ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH = 8 * 1024;
-export const ROBINRUN_FILE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS = 1_000;
-export const ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_TIME_BUDGET_MAX_RAW_INPUT =
-  ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH;
+export const ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_EAGER_DELTA_COUNT = 1;
+export const ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS = 750;
+export const ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH = 8 * 1024;
+export const ROBINDONE_FILE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS = 1_000;
+export const ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_TIME_BUDGET_MAX_RAW_INPUT =
+  ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH;
 
 const PARTIAL_JSON_STRING_FIELD_KEYS = [
   "file_path",
@@ -51,10 +51,10 @@ const PARTIAL_JSON_STRING_FIELD_KEYS = [
   "script",
 ] as const;
 
-export function appendRobinRunStreamingToolInputDelta(
-  state: RobinRunStreamingToolInputState | undefined,
+export function appendRobinDoneStreamingToolInputDelta(
+  state: RobinDoneStreamingToolInputState | undefined,
   delta: string,
-): RobinRunStreamingToolInputState {
+): RobinDoneStreamingToolInputState {
   return {
     ...state,
     deltaCount: (state?.deltaCount ?? 0) + 1,
@@ -62,10 +62,10 @@ export function appendRobinRunStreamingToolInputDelta(
   };
 }
 
-export function buildRobinRunStreamingToolInputPreview(
+export function buildRobinDoneStreamingToolInputPreview(
   rawInput: string,
   completeInput?: unknown,
-): RobinRunStreamingToolInputPreview {
+): RobinDoneStreamingToolInputPreview {
   if (completeInput !== undefined) {
     return {
       complete: true,
@@ -90,10 +90,10 @@ export function buildRobinRunStreamingToolInputPreview(
   };
 }
 
-export function shouldMaterializeRobinRunStreamingToolInputPreview(
-  state: RobinRunStreamingToolInputState,
+export function shouldMaterializeRobinDoneStreamingToolInputPreview(
+  state: RobinDoneStreamingToolInputState,
   options: {
-    mode?: RobinRunStreamingToolInputPreviewMode;
+    mode?: RobinDoneStreamingToolInputPreviewMode;
     now?: number;
     toolName?: string;
   } = {},
@@ -102,41 +102,41 @@ export function shouldMaterializeRobinRunStreamingToolInputPreview(
     return false;
   }
   const deltaCount = state.deltaCount ?? 0;
-  if (deltaCount <= ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_EAGER_DELTA_COUNT) {
+  if (deltaCount <= ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_EAGER_DELTA_COUNT) {
     return true;
   }
   const lastPreviewAt = state.lastPreviewAt ?? 0;
-  if (isRobinRunFileStreamingToolInputPreviewTool(options.toolName)) {
+  if (isRobinDoneFileStreamingToolInputPreviewTool(options.toolName)) {
     // 性能修复：Write/Edit 的半截 JSON 会触发全量内容恢复和行级 diff。
     // 大字节 chunk 不能绕过一秒窗口，否则模型输出越快，UI 反而更新越频繁。
     return (
       (options.now ?? Date.now()) - lastPreviewAt >=
-      ROBINRUN_FILE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS
+      ROBINDONE_FILE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS
     );
   }
   const lastPreviewRawInputLength = state.lastPreviewRawInputLength ?? 0;
   const rawGrowth = state.rawInput.length - lastPreviewRawInputLength;
-  if (rawGrowth >= ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH) {
+  if (rawGrowth >= ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_RAW_GROWTH) {
     return true;
   }
   const intervalElapsed =
     (options.now ?? Date.now()) - lastPreviewAt >=
-    ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS;
+    ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_PREVIEW_MIN_INTERVAL_MS;
   if (!intervalElapsed) {
     return false;
   }
   // 性能修复：大 Write/Edit 参数通常会被 provider 以 4KB 左右的慢速 chunk 推送。
   // 若只按时间预算，active 任务仍会每个 chunk 解析累计 JSON；超过小输入范围后改由 raw growth 控制。
-  return state.rawInput.length <= ROBINRUN_ACTIVE_STREAMING_TOOL_INPUT_TIME_BUDGET_MAX_RAW_INPUT;
+  return state.rawInput.length <= ROBINDONE_ACTIVE_STREAMING_TOOL_INPUT_TIME_BUDGET_MAX_RAW_INPUT;
 }
 
-export function isRobinRunFileStreamingToolInputPreviewTool(toolName?: string): boolean {
+export function isRobinDoneFileStreamingToolInputPreviewTool(toolName?: string): boolean {
   const normalized = toolName?.trim().toLowerCase();
   return normalized === "write" || normalized === "edit";
 }
 
-export function markRobinRunStreamingToolInputPreviewMaterialized(
-  state: RobinRunStreamingToolInputState,
+export function markRobinDoneStreamingToolInputPreviewMaterialized(
+  state: RobinDoneStreamingToolInputState,
   now = Date.now(),
 ): void {
   state.lastPreviewAt = now;

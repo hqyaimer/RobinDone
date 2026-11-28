@@ -1,5 +1,5 @@
 {
-  "name": "@robinrun/provider",
+  "name": "@robindone/provider",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,8 +11,8 @@
     "lint": "oxlint"
   },
   "dependencies": {
-    "@robinrun/model-option-map": "workspace:*",
-    "@robinrun/shared": "workspace:*",
+    "@robindone/model-option-map": "workspace:*",
+    "@robindone/shared": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 import { logger } from "@/logger.js";
 
-const PREFIX = "robinrun:start-plan-reminder:v1:";
+const PREFIX = "robindone:start-plan-reminder:v1:";
 interface RecordEntry {
   expiresAt: number;
   owner: object | null;

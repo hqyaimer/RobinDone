@@ -1,4 +1,4 @@
-import type { TelemetryRendererContext } from "@robinrun/shared";
+import type { TelemetryRendererContext } from "@robindone/shared";
 
 interface StartupCoordinatorLike {
   onRendererReady(input: { hasPendingOAuthCallback: boolean; rendererId: number }): boolean;

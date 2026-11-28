@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { McpSource, RobinRunMcpServer } from "@robinrun/shared";
+import type { McpSource, RobinDoneMcpServer } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
 import {
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { PluginScopeMenu } from "@/settings/PluginScopeMenu.js";
 import type { ConfigWorkspaceTarget } from "@/workspace-config-catalog/index.js";
 import { SettingsFormTextarea } from "@/settings/SettingsFormTextarea.js";
@@ -41,7 +41,7 @@ function McpScopeMenu({
   workspaceTabs: ConfigWorkspaceTarget[];
   onChange: (scopeKey: string) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const scopeLabel = intl.formatMessage({ id: "settings.scope.label" });
 
   return (
@@ -70,7 +70,7 @@ export function McpServerForm({
   workspaceTabs,
   onScopeKeyChange,
 }: {
-  initial?: RobinRunMcpServer;
+  initial?: RobinDoneMcpServer;
   editingId?: string;
   editorMode: McpEditorMode;
   source?: McpSource;
@@ -78,11 +78,11 @@ export function McpServerForm({
   workspaceTabs: ConfigWorkspaceTarget[];
   onScopeKeyChange: (scopeKey: string) => void;
   onEditorModeChange: (mode: McpEditorMode) => void;
-  onSave: (form: FormState, prevServer?: RobinRunMcpServer) => void;
+  onSave: (form: FormState, prevServer?: RobinDoneMcpServer) => void;
   onCancel: () => void;
-  onDelete?: (server: RobinRunMcpServer) => void;
+  onDelete?: (server: RobinDoneMcpServer) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const initialForm: FormState = initial
     ? serverToForm(initial)
     : {

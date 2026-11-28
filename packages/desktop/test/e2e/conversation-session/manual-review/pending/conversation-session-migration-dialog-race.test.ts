@@ -1,10 +1,10 @@
 import { join } from "node:path";
-import type { IServiceAccessor, ISettingsSyncService } from "@robinrun/services";
+import type { IServiceAccessor, ISettingsSyncService } from "@robindone/services";
 import {
   TID_TASK_SETTINGS_BUTTON,
   TID_SETTINGS_SECTION_NAV,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clickTestIdByDom, waitForTestIdByDom } from "#e2e/helpers/desktop-app";
 import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
 import { startElectronWindowRecording } from "#e2e/helpers/electron-window-recorder";
@@ -190,7 +190,7 @@ describe("E2E_DSYNC_16_MIGRATION_RACE", () => {
           return Buffer.from(png, "base64");
         },
         outputPath: join(
-          process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts",
+          process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts",
           `migration-race-${handled}.webm`,
         ),
       });

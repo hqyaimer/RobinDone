@@ -1,30 +1,33 @@
 import {
-  robinrunProtocolTraceSchema,
-  type RobinRunProtocolTrace,
-} from "./robinrun-protocol/trace.js";
+  robindoneProtocolTraceSchema,
+  type RobinDoneProtocolTrace,
+} from "./robindone-protocol/trace.js";
 import { channelContentPartsSchema, type ChannelContentPart } from "./channel-mention.js";
 /* oxlint-disable eslint(max-lines) -- Bot 共享合约集中维护 provider、状态和 schema，保持类型与校验就近。 */
 import { z } from "zod";
 import { modelSelectionSchema, type ModelSelection } from "./model-selection.js";
 import { conversationQuotesSchema } from "./conversationSelection.js";
-import { ROBINRUN_AGENT_PROVIDER, ROBINRUN_AGENT_PROVIDER_LABEL } from "./robinrun-agent-policy.js";
-import type {
-  RobinRunConfigOption,
-  RobinRunElicitationRequest,
-  RobinRunElicitationQuestion,
-  RobinRunPermissionRequest,
-  RobinRunPromptAttachment,
-  RobinRunProvider,
-  RobinRunStreamEvent,
-  RobinRunTaskMeta,
-  RobinRunTaskRuntimeStatus,
-} from "./robinrun-task-types-core.js";
 import {
-  robinrunInteractionRequestOriginSchema,
-  robinrunPermissionResponseSchema,
-  type RobinRunInteractionRequestOrigin,
-  type RobinRunPermissionResponse,
-} from "./robinrun-protocol-legacy-types.js";
+  ROBINDONE_AGENT_PROVIDER,
+  ROBINDONE_AGENT_PROVIDER_LABEL,
+} from "./robindone-agent-policy.js";
+import type {
+  RobinDoneConfigOption,
+  RobinDoneElicitationRequest,
+  RobinDoneElicitationQuestion,
+  RobinDonePermissionRequest,
+  RobinDonePromptAttachment,
+  RobinDoneProvider,
+  RobinDoneStreamEvent,
+  RobinDoneTaskMeta,
+  RobinDoneTaskRuntimeStatus,
+} from "./robindone-task-types-core.js";
+import {
+  robindoneInteractionRequestOriginSchema,
+  robindonePermissionResponseSchema,
+  type RobinDoneInteractionRequestOrigin,
+  type RobinDonePermissionResponse,
+} from "./robindone-protocol-legacy-types.js";
 import type { Locale } from "./protocol.js";
 
 export const botProviders = [
@@ -44,7 +47,7 @@ export type FeishuBotProvider = Extract<BotProvider, "feishu" | "lark">;
  * 定时任务完成后的 Bot 回推目标。只保留未来仍稳定的会话地址；当前消息 id/context token
  * 属于一次入站交互，不能持久化后复用。该字段由 Host 注入，模型工具参数不直接暴露。
  */
-export const robinrunAutomationBotDeliveryTargetSchema = z
+export const robindoneAutomationBotDeliveryTargetSchema = z
   .object({
     provider: z.enum(["feishu", "lark", "weixin"]),
     botId: z.string().trim().min(1),
@@ -55,8 +58,8 @@ export const robinrunAutomationBotDeliveryTargetSchema = z
   })
   .strict();
 
-export type RobinRunAutomationBotDeliveryTarget = z.infer<
-  typeof robinrunAutomationBotDeliveryTargetSchema
+export type RobinDoneAutomationBotDeliveryTarget = z.infer<
+  typeof robindoneAutomationBotDeliveryTargetSchema
 >;
 
 export function isFeishuBotProvider(provider: BotProvider): provider is FeishuBotProvider {
@@ -136,7 +139,7 @@ export interface BotPendingPermissionOption {
   optionId: string;
   command: "approve" | "deny";
   label: string;
-  response: RobinRunPermissionResponse;
+  response: RobinDonePermissionResponse;
   handledAt?: number;
 }
 
@@ -144,10 +147,10 @@ export interface BotPendingElicitation {
   taskId: string;
   requestId: string;
   runId: string;
-  origin?: RobinRunInteractionRequestOrigin;
+  origin?: RobinDoneInteractionRequestOrigin;
   actorKey?: string;
   currentQuestionIndex: number;
-  questions: RobinRunElicitationQuestion[];
+  questions: RobinDoneElicitationQuestion[];
   answers: Record<string, string[]>;
   renderContext?: {
     kind: "plan_approval";
@@ -168,7 +171,7 @@ export interface BotOutboundElicitationRequest {
   taskId: string;
   runId: string;
   currentQuestionIndex: number;
-  questions: RobinRunElicitationQuestion[];
+  questions: RobinDoneElicitationQuestion[];
   answers?: Record<string, string[]>;
   status?: "pending" | "completed" | "cancelled";
   expandedCustomAnswerQuestionIndexes?: number[];
@@ -176,7 +179,7 @@ export interface BotOutboundElicitationRequest {
 }
 
 export interface BotDraftOptions {
-  provider: RobinRunProvider;
+  provider: RobinDoneProvider;
   modelSelection?: ModelSelection;
   mode?: string;
 }
@@ -221,7 +224,7 @@ export const botGroupDeliverySchema = z
       .regex(/^[a-f0-9]{64}$/u)
       .optional(),
     appId: z.string().optional(),
-    trace: robinrunProtocolTraceSchema.optional(),
+    trace: robindoneProtocolTraceSchema.optional(),
     authorizationId: z.string().optional(),
     id: z.string().min(1),
     taskId: z.string().min(1),
@@ -600,7 +603,7 @@ export interface BotInboundMessage {
 }
 
 export interface BotOutboundMessage {
-  trace?: RobinRunProtocolTrace;
+  trace?: RobinDoneProtocolTrace;
   contentParts?: ChannelContentPart[];
   groupCard?: BotGroupCard;
   threadId?: string;
@@ -631,10 +634,10 @@ export interface BotOutboundMessage {
 export interface BotTaskSummary {
   taskId: string;
   title: string;
-  status: RobinRunTaskRuntimeStatus | "persisted-completed" | "persisted-error" | "unknown";
+  status: RobinDoneTaskRuntimeStatus | "persisted-completed" | "persisted-error" | "unknown";
   workspacePath: string;
   workspaceIdentity?: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   model?: string;
 }
 
@@ -660,17 +663,17 @@ export interface BotTaskBroadcastPayload {
   taskId: string;
   event: BotTaskBroadcastEvent;
   updatedAt: number;
-  task?: RobinRunTaskMeta;
-  provider?: RobinRunProvider;
-  configOptions?: RobinRunConfigOption[];
+  task?: RobinDoneTaskMeta;
+  provider?: RobinDoneProvider;
+  configOptions?: RobinDoneConfigOption[];
   prompt?: {
     content: string;
-    attachments?: RobinRunPromptAttachment[];
+    attachments?: RobinDonePromptAttachment[];
     messageId: string;
     sentAt: number;
   };
-  permissionRequest?: RobinRunPermissionRequest;
-  elicitationRequest?: RobinRunElicitationRequest;
+  permissionRequest?: RobinDonePermissionRequest;
+  elicitationRequest?: RobinDoneElicitationRequest;
   requestId?: string;
   error?: string;
 }
@@ -679,7 +682,7 @@ export interface BotTaskStreamBroadcastPayload {
   workspacePath: string;
   workspaceIdentity?: string;
   taskId: string;
-  event: RobinRunStreamEvent;
+  event: RobinDoneStreamEvent;
   updatedAt: number;
 }
 
@@ -715,12 +718,12 @@ export const botAllowedCommandsSchema = z
 
 export const botCommandPolicySchema = botAllowedCommandsSchema;
 
-// 修复原因：第三方 CLI provider 已移除，RobinRunProvider 只剩 glm，但旧 bot 配置与状态文件里可能仍存有
+// 修复原因：第三方 CLI provider 已移除，RobinDoneProvider 只剩 glm，但旧 bot 配置与状态文件里可能仍存有
 // 已移除 provider 的历史值。改成严格 literal 会让整份文件 parse 失败、Bot 全部不可用；
 // 因此解析时继续接受这些历史值，并统一归一到当前唯一的 agent provider。
 const legacyBotAgentProviderSchema = z
   .enum(["codex", "claude", "opencode", "gemini", "glm"])
-  .transform((): typeof ROBINRUN_AGENT_PROVIDER => ROBINRUN_AGENT_PROVIDER);
+  .transform((): typeof ROBINDONE_AGENT_PROVIDER => ROBINDONE_AGENT_PROVIDER);
 
 export const botCurrentOptionsSchema = z
   .object({
@@ -728,7 +731,7 @@ export const botCurrentOptionsSchema = z
     mode: z.string().min(1).optional(),
     sandboxMode: z.string().min(1).optional(),
     approvalPolicy: z.string().min(1).optional(),
-    // 兼容旧 bot-config.json；CLI provider 现在统一由 RobinRun Protocol 侧配置决定。
+    // 兼容旧 bot-config.json；CLI provider 现在统一由 RobinDone Protocol 侧配置决定。
     cli: legacyBotAgentProviderSchema.optional(),
   })
   .strict();
@@ -763,7 +766,7 @@ const botPendingElicitationSchema = z
     taskId: z.string().min(1),
     requestId: z.string().min(1),
     runId: z.string().min(1),
-    origin: robinrunInteractionRequestOriginSchema.optional(),
+    origin: robindoneInteractionRequestOriginSchema.optional(),
     actorKey: z.string().min(1).optional(),
     currentQuestionIndex: z.number().int().min(0),
     questions: z.array(botElicitationQuestionSchema),
@@ -889,7 +892,7 @@ export const botsStateFileSchema = z
               optionId: z.string().min(1),
               command: z.enum(["approve", "deny"]),
               label: z.string().min(1),
-              response: robinrunPermissionResponseSchema,
+              response: robindonePermissionResponseSchema,
               handledAt: z.number().optional(),
             }),
           )
@@ -938,7 +941,7 @@ export function normalizeBotReplyGranularity(
   return supported.includes(candidate) ? candidate : supported[0]!;
 }
 
-export const BOT_ROBINRUN_PROVIDER_OPTIONS: Array<{
-  id: RobinRunProvider;
+export const BOT_ROBINDONE_PROVIDER_OPTIONS: Array<{
+  id: RobinDoneProvider;
   label: string;
-}> = [{ id: ROBINRUN_AGENT_PROVIDER, label: ROBINRUN_AGENT_PROVIDER_LABEL }];
+}> = [{ id: ROBINDONE_AGENT_PROVIDER, label: ROBINDONE_AGENT_PROVIDER_LABEL }];

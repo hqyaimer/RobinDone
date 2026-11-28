@@ -4,7 +4,7 @@ import {
   requestVerificationClaimHeaders,
   isRequestVerificationMessage,
   type RequestVerificationClientConfig,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 /* eslint-disable max-lines -- Coding Plan provider 需要集中维护 BigModel 支付宝与 Z.ai Stripe/PayPal 接口映射，拆分会让共享鉴权和响应解包更难追踪。 */
 import type {
   ApiClient,
@@ -60,29 +60,29 @@ import type {
   ManualClaimPlanClaimRequest,
   ManualClaimPlanClaimResult,
   ManualClaimPlanPreviewSnapshot,
-  RobinRunModelContextBudgetStrategy,
+  RobinDoneModelContextBudgetStrategy,
   DynamicWorkflowClientConfig,
-} from "@robinrun/shared";
-import type { ModelSelectionView } from "@robinrun/provider";
+} from "@robindone/shared";
+import type { ModelSelectionView } from "@robindone/provider";
 import type { OffPeakClientConfig } from "./codingPlanSubscription.js";
 import {
   BIGMODEL_PROVIDER_ID,
   BUILTIN_MODEL_PROVIDER_IDS,
   REQUEST_VERIFICATION_REQUIRED,
   CODING_PLAN_SYSTEM_BUSY,
-  buildRuntimeRobinRunApiUrl,
+  buildRuntimeRobinDoneApiUrl,
   isZaiCodingPlanProviderId,
   resolveBigModelApiOrigin,
   resolveZaiBusinessBaseUrl,
   ZAI_PROVIDER_ID,
-  ROBINRUN_VERSION,
-  DEFAULT_ROBINRUN_MODEL_CONTEXT_BUDGET_STRATEGY,
+  ROBINDONE_VERSION,
+  DEFAULT_ROBINDONE_MODEL_CONTEXT_BUDGET_STRATEGY,
   createDynamicWorkflowClientConfig,
   normalizeDynamicWorkflowMode,
   resolveDynamicWorkflowClientConfig,
   DEFAULT_DYNAMIC_WORKFLOW_MODE,
-  ROBINRUN_DYNAMIC_WORKFLOW_MODE_ENV,
-} from "@robinrun/shared";
+  ROBINDONE_DYNAMIC_WORKFLOW_MODE_ENV,
+} from "@robindone/shared";
 import type { ICredentialService } from "../credential/credential.js";
 import { readApiJson } from "../providers/api/apiJson.js";
 import { createServiceLogger } from "../logger/serviceLogger.js";
@@ -94,11 +94,11 @@ import {
 
 const BIGMODEL_CODING_PLAN_API_PREFIX = "/api/biz";
 const ZAI_CODING_PLAN_PAY_API_PREFIX = "/api/pay";
-const ROBINRUN_CLIENT_CONFIG_API_PREFIX = "/api/v1/client/configs";
+const ROBINDONE_CLIENT_CONFIG_API_PREFIX = "/api/v1/client/configs";
 const REQUEST_TIMEOUT_MS = 15_000;
 const CLIENT_CONFIG_CACHE_TTL_MS = 60 * 60 * 1000;
 const CODING_PLAN_ZAI_OVERSEAS_PAYMENT_REQUIRED = "coding_plan_zai_overseas_payment_required";
-const ROBINRUN_JWT_TOKEN_KEY = "robinrunjwttoken";
+const ROBINDONE_JWT_TOKEN_KEY = "robindonejwttoken";
 const log = createServiceLogger("codingPlanSubscription");
 
 // 合并时曾丢失秒到毫秒的边界转换，导致客户端用本机时间误判待生效权益。
@@ -153,7 +153,7 @@ interface ManualClaimPlanClaimPayload {
   };
 }
 
-interface RobinRunClientConfigEnvelope {
+interface RobinDoneClientConfigEnvelope {
   code?: number;
   msg?: string;
   success?: boolean;
@@ -216,9 +216,9 @@ export class BigModelCodingPlanSubscriptionProvider {
   protected readonly apiClient: ApiClient;
   protected readonly credentialService: Pick<ICredentialService, "load">;
   private readonly resolveOffPeakModelSelectionView?: () => Promise<ModelSelectionView>;
-  private clientConfigSnapshot: RobinRunClientConfigEnvelope | null = null;
+  private clientConfigSnapshot: RobinDoneClientConfigEnvelope | null = null;
   private clientConfigSnapshotExpiresAt = 0;
-  private clientConfigRequest: Promise<RobinRunClientConfigEnvelope> | null = null;
+  private clientConfigRequest: Promise<RobinDoneClientConfigEnvelope> | null = null;
 
   constructor(options: BigModelCodingPlanSubscriptionProviderOptions) {
     this.apiClient = options.apiClient;
@@ -276,11 +276,11 @@ export class BigModelCodingPlanSubscriptionProvider {
   }
 
   async getManualClaimPlanPreviews(): Promise<ManualClaimPlanPreviewSnapshot> {
-    const token = (await this.credentialService.load(ROBINRUN_JWT_TOKEN_KEY))?.trim();
+    const token = (await this.credentialService.load(ROBINDONE_JWT_TOKEN_KEY))?.trim();
     const url = new URL(
-      buildRuntimeRobinRunApiUrl(process.env, "/api/v1/robinrun-plan/billing/preview"),
+      buildRuntimeRobinDoneApiUrl(process.env, "/api/v1/robindone-plan/billing/preview"),
     );
-    url.searchParams.set("app_version", ROBINRUN_VERSION);
+    url.searchParams.set("app_version", ROBINDONE_VERSION);
     url.searchParams.set("platform", resolveClientPlatformKey());
     const payload = await readCodingPlanApiJson<RemoteEnvelope<ManualClaimPlanPreviewPayload>>(
       this.apiClient,
@@ -291,7 +291,7 @@ export class BigModelCodingPlanSubscriptionProvider {
         timeoutMs: REQUEST_TIMEOUT_MS,
       },
     );
-    // 新 RobinRun billing 接口沿用平台 envelope（code=0 成功），不能复用
+    // 新 RobinDone billing 接口沿用平台 envelope（code=0 成功），不能复用
     // BigModel 支付接口的 code=200 解包器，否则合法 preview 会被误判失败。
     if (payload.code !== undefined && payload.code !== 0) {
       throw new Error(payload.msg?.trim() || "manual_claim_preview_failed");
@@ -338,7 +338,7 @@ export class BigModelCodingPlanSubscriptionProvider {
   }
 
   async claimManualPlan(request: ManualClaimPlanClaimRequest): Promise<ManualClaimPlanClaimResult> {
-    const token = (await this.credentialService.load(ROBINRUN_JWT_TOKEN_KEY))?.trim();
+    const token = (await this.credentialService.load(ROBINDONE_JWT_TOKEN_KEY))?.trim();
     if (!token) {
       return { success: false, code: 401, message: "" };
     }
@@ -346,14 +346,14 @@ export class BigModelCodingPlanSubscriptionProvider {
       Omit<RemoteEnvelope<ManualClaimPlanClaimPayload>, "code"> & { code?: number | string }
     >(
       this.apiClient,
-      new URL(buildRuntimeRobinRunApiUrl(process.env, "/api/v1/robinrun-plan/billing/claim")),
+      new URL(buildRuntimeRobinDoneApiUrl(process.env, "/api/v1/robindone-plan/billing/claim")),
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           ...requestVerificationClaimHeaders(request),
-          "X-RobinRun-App-Version": ROBINRUN_VERSION,
+          "X-RobinDone-App-Version": ROBINDONE_VERSION,
           "X-Platform": resolveClientPlatformKey(),
         },
         body: JSON.stringify({ plan_id: request.planId }),
@@ -415,7 +415,7 @@ export class BigModelCodingPlanSubscriptionProvider {
    * forceRefresh 供"打开 Automations 入口补拉"（1h 快照否则灰度翻转最长 1h 不可见）。
    */
   async getOffPeakClientConfig(options?: { forceRefresh?: boolean }): Promise<OffPeakClientConfig> {
-    if (process.env["ROBINRUN_OFFPEAK_MOCK"] === "1") {
+    if (process.env["ROBINDONE_OFFPEAK_MOCK"] === "1") {
       // mock 已经明确替代远端曝光配置，不能再先等待 /client/configs：
       // 离线 Desktop E2E 会一直停在 Loading，根本无法进入闲时执行链。
       const modelSelectionView = await this.resolveOffPeakModelSelectionView?.();
@@ -433,7 +433,7 @@ export class BigModelCodingPlanSubscriptionProvider {
   /**
    * 动态工作流灰度快照：与闲时任务同走
    * client/configs，零新增请求。三条边界：
-   *   1. 本地覆盖（ROBINRUN_DYNAMIC_WORKFLOW_MODE）在任何网络动作之前裁决，命中即返回——
+   *   1. 本地覆盖（ROBINDONE_DYNAMIC_WORKFLOW_MODE）在任何网络动作之前裁决，命中即返回——
    *      preview 构建和开发者手测因此不受 1h 快照与首次 Host 竞态影响；
    *   2. forceRefresh 与 Off-Peak 同义，清掉快照后重拉（灰度翻转最长 1h 不可见）；
    *   3. 请求失败 fail-closed：返回 default（disabled）并 warn，绝不把异常抛给调用方——
@@ -443,7 +443,7 @@ export class BigModelCodingPlanSubscriptionProvider {
     forceRefresh?: boolean;
   }): Promise<DynamicWorkflowClientConfig> {
     // 覆盖合法即短路：判据（normalize）与快照构造（resolve）都留在 shared，这里不复述取值域。
-    if (normalizeDynamicWorkflowMode(process.env[ROBINRUN_DYNAMIC_WORKFLOW_MODE_ENV])) {
+    if (normalizeDynamicWorkflowMode(process.env[ROBINDONE_DYNAMIC_WORKFLOW_MODE_ENV])) {
       return resolveDynamicWorkflowClientConfig({ remote: undefined, env: process.env });
     }
     if (options?.forceRefresh) {
@@ -464,9 +464,9 @@ export class BigModelCodingPlanSubscriptionProvider {
     }
   }
 
-  async getModelContextBudgetStrategy(): Promise<RobinRunModelContextBudgetStrategy> {
+  async getModelContextBudgetStrategy(): Promise<RobinDoneModelContextBudgetStrategy> {
     // 3.12.2：预算统一为 preflight-v1；保留兼容方法，但不能再为每次建会话等待远端配置。
-    return DEFAULT_ROBINRUN_MODEL_CONTEXT_BUDGET_STRATEGY;
+    return DEFAULT_ROBINDONE_MODEL_CONTEXT_BUDGET_STRATEGY;
   }
 
   async getBillingDiscount(): Promise<CodingPlanBillingDiscountConfig | undefined> {
@@ -498,8 +498,8 @@ export class BigModelCodingPlanSubscriptionProvider {
         imRef: request.imRef ?? null,
         ticket: request.ticket ?? null,
         randstr: request.randstr ?? null,
-        // Coding Plan 试算接口默认按 Maas 渠道处理，不显式标记会丢失 robinrun 来源归因。
-        salesChannel: request.salesChannel ?? "robinrun",
+        // Coding Plan 试算接口默认按 Maas 渠道处理，不显式标记会丢失 robindone 来源归因。
+        salesChannel: request.salesChannel ?? "robindone",
       },
     );
   }
@@ -806,7 +806,7 @@ export class BigModelCodingPlanSubscriptionProvider {
     return unwrapEnvelope(payload, endpoint.providerId);
   }
 
-  private async getClientConfigs(): Promise<RobinRunClientConfigEnvelope> {
+  private async getClientConfigs(): Promise<RobinDoneClientConfigEnvelope> {
     if (this.clientConfigSnapshot && this.clientConfigSnapshotExpiresAt > Date.now()) {
       return this.clientConfigSnapshot;
     }
@@ -814,14 +814,14 @@ export class BigModelCodingPlanSubscriptionProvider {
       return await this.clientConfigRequest;
     }
 
-    // client/configs 和其他 RobinRun 平台接口必须共享运行时 endpoint；
-    // E2E/测试环境会通过 ROBINRUN_BASE_URL 指向本地 mock，硬编码线上域名会让套餐状态不可控。
+    // client/configs 和其他 RobinDone 平台接口必须共享运行时 endpoint；
+    // E2E/测试环境会通过 ROBINDONE_BASE_URL 指向本地 mock，硬编码线上域名会让套餐状态不可控。
     const url = resolveCodingPlanClientConfigUrl(process.env);
-    url.searchParams.set("app_version", ROBINRUN_VERSION);
+    url.searchParams.set("app_version", ROBINDONE_VERSION);
     url.searchParams.set("platform", resolveClientPlatformKey());
     // StartPlanCard 和套餐列表都来自同一个 client/configs。
     // 同屏分别读取 preview/products 时必须合并请求，避免未登录设置页重复打远端配置。
-    this.clientConfigRequest = readCodingPlanApiJson<RobinRunClientConfigEnvelope>(
+    this.clientConfigRequest = readCodingPlanApiJson<RobinDoneClientConfigEnvelope>(
       this.apiClient,
       url,
       {
@@ -868,12 +868,12 @@ export class BigModelCodingPlanSubscriptionProvider {
     if (!token) {
       throw new Error("bigmodel_oauth_required");
     }
-    const robinrunJwtToken = (await this.credentialService.load(ROBINRUN_JWT_TOKEN_KEY))?.trim();
-    if (robinrunJwtToken && token === robinrunJwtToken) {
-      // 旧版 BigModel OAuth callback 曾把 robinrun JWT 同时写进
+    const robindoneJwtToken = (await this.credentialService.load(ROBINDONE_JWT_TOKEN_KEY))?.trim();
+    if (robindoneJwtToken && token === robindoneJwtToken) {
+      // 旧版 BigModel OAuth callback 曾把 robindone JWT 同时写进
       // oauth:bigmodel:access_token，付费套餐预览会拿它去打 bigmodel.cn 并报令牌过期。
       // 这里在服务边界拦截旧污染状态，避免继续向 BigModel 业务接口发送错误凭据。
-      log.warn(undefined, "BigModel access token is stale robinrun JWT; login required");
+      log.warn(undefined, "BigModel access token is stale robindone JWT; login required");
       throw new Error("bigmodel_oauth_required");
     }
     return token;
@@ -993,7 +993,7 @@ export class BigModelCodingPlanSubscriptionProvider {
           createTeamPlanProjectApiKeyPrewarmStatusFromEnsureResult(result),
         );
       } catch (error) {
-        // 多团队套餐每个项目都需要独立 robinrun-team-api-key。
+        // 多团队套餐每个项目都需要独立 robindone-team-api-key。
         // 单个团队项目创建失败不能阻断 pricing 返回，否则会让其他团队入口一起不可见。
         log.warn(undefined, "Team Plan project api key prewarm failed", {
           family: this.codingPlanProviderId(),
@@ -1024,7 +1024,7 @@ export class BigModelCodingPlanSubscriptionProvider {
 }
 
 export function resolveCodingPlanClientConfigUrl(env: NodeJS.ProcessEnv): URL {
-  return new URL(buildRuntimeRobinRunApiUrl(env, ROBINRUN_CLIENT_CONFIG_API_PREFIX));
+  return new URL(buildRuntimeRobinDoneApiUrl(env, ROBINDONE_CLIENT_CONFIG_API_PREFIX));
 }
 
 function resolveFallbackEnterpriseTeamPlanProduct(
@@ -1326,27 +1326,27 @@ function normalizeStaticProductProviderIds<T>(
 }
 
 function unwrapClientConfigProducts(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
 ): CodingPlanStaticProductsConfig {
   if (payload.code !== undefined && payload.code !== 0) {
-    throw new Error(payload.msg?.trim() || "RobinRun client config request failed");
+    throw new Error(payload.msg?.trim() || "RobinDone client config request failed");
   }
   const products = payload.data?.configs?.codingPlanStaticProducts;
   if (!products || typeof products !== "object") {
-    throw new Error("RobinRun client config missing Coding Plan products");
+    throw new Error("RobinDone client config missing Coding Plan products");
   }
   return normalizeStaticProductProviderIds(products);
 }
 
 function unwrapClientConfigTeamProducts(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
 ): CodingPlanStaticTeamProductsConfig {
   if (payload.code !== undefined && payload.code !== 0) {
-    throw new Error(payload.msg?.trim() || "RobinRun client config request failed");
+    throw new Error(payload.msg?.trim() || "RobinDone client config request failed");
   }
   const products: unknown = payload.data?.configs?.codingPlanStaticTeamProducts;
   if (!products || typeof products !== "object") {
-    throw new Error("RobinRun client config missing Coding Plan team products");
+    throw new Error("RobinDone client config missing Coding Plan team products");
   }
   for (const providerProducts of Object.values(products)) {
     if (
@@ -1355,7 +1355,7 @@ function unwrapClientConfigTeamProducts(
     ) {
       // 远端配置没有运行时类型保障；无效静态目录必须整体降级为读取失败，
       // 让 UI 继续使用实时 pricing 恢复团队订阅身份，不能在合并阶段抛错。
-      throw new Error("RobinRun client config has invalid Coding Plan team products");
+      throw new Error("RobinDone client config has invalid Coding Plan team products");
     }
   }
   return normalizeStaticProductProviderIds(products as CodingPlanStaticTeamProductsConfig);
@@ -1403,10 +1403,10 @@ function isValidCardCopyConfigItem(value: unknown): boolean {
 }
 
 function unwrapClientConfigBillingDiscount(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
 ): CodingPlanBillingDiscountConfig | undefined {
   if (payload.code !== undefined && payload.code !== 0) {
-    throw new Error(payload.msg?.trim() || "RobinRun client config request failed");
+    throw new Error(payload.msg?.trim() || "RobinDone client config request failed");
   }
   const configs = payload.data?.configs;
   if (!configs || !("codingPlanBillingDiscount" in configs)) {
@@ -1416,10 +1416,10 @@ function unwrapClientConfigBillingDiscount(
 }
 
 function unwrapClientConfigStartPlanPreview(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
 ): StartPlanPreviewConfig | null {
   if (payload.code !== undefined && payload.code !== 0) {
-    throw new Error(payload.msg?.trim() || "RobinRun client config request failed");
+    throw new Error(payload.msg?.trim() || "RobinDone client config request failed");
   }
   const preview = payload.data?.configs?.startPlanPreview;
   if (!preview) {
@@ -1430,7 +1430,7 @@ function unwrapClientConfigStartPlanPreview(
     typeof preview.name !== "string" ||
     !Array.isArray(preview.entitlements)
   ) {
-    throw new Error("RobinRun client config invalid Start Plan preview");
+    throw new Error("RobinDone client config invalid Start Plan preview");
   }
   return {
     planId: preview.planId,
@@ -1440,10 +1440,10 @@ function unwrapClientConfigStartPlanPreview(
 }
 
 function unwrapClientConfigForceUpdate(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
 ): ForceUpdateConfig | null {
   if (payload.code !== undefined && payload.code !== 0) {
-    throw new Error(payload.msg?.trim() || "RobinRun client config request failed");
+    throw new Error(payload.msg?.trim() || "RobinDone client config request failed");
   }
 
   const forceUpdate = payload.data?.configs?.forceUpdate;
@@ -1560,21 +1560,21 @@ function dropUndefined(value: Record<string, unknown>): Record<string, unknown> 
 
 /**
  * 闲时任务灰度判据（纯函数供单测）：远端只提供曝光开关，模型成员和事实
- * 来自 RobinRun Built-in Provider / Model Config。
- * mock 模式（ROBINRUN_OFFPEAK_MOCK=1）只替代产品曝光与套餐状态；模型候选仍来自 Registry。
+ * 来自 RobinDone Built-in Provider / Model Config。
+ * mock 模式（ROBINDONE_OFFPEAK_MOCK=1）只替代产品曝光与套餐状态；模型候选仍来自 Registry。
  */
 export function resolveOffPeakClientConfig(
-  payload: RobinRunClientConfigEnvelope,
+  payload: RobinDoneClientConfigEnvelope,
   env: NodeJS.ProcessEnv,
   modelSelectionView: ModelSelectionView = EMPTY_OFF_PEAK_MODEL_SELECTION_VIEW,
 ): OffPeakClientConfig {
   const hasModels = modelSelectionView.providers.some((provider) => provider.models.length > 0);
-  if (env["ROBINRUN_OFFPEAK_MOCK"] === "1") {
+  if (env["ROBINDONE_OFFPEAK_MOCK"] === "1") {
     return {
       enabled: hasModels,
       modelSelectionView,
-      // ROBINRUN_OFFPEAK_MOCK_NO_PLAN=1 演示「非 coding plan 锁定」态；缺省视为已订阅。
-      codingPlanActive: env["ROBINRUN_OFFPEAK_MOCK_NO_PLAN"] !== "1",
+      // ROBINDONE_OFFPEAK_MOCK_NO_PLAN=1 演示「非 coding plan 锁定」态；缺省视为已订阅。
+      codingPlanActive: env["ROBINDONE_OFFPEAK_MOCK_NO_PLAN"] !== "1",
     };
   }
   const raw = payload.data?.configs?.offPeak;

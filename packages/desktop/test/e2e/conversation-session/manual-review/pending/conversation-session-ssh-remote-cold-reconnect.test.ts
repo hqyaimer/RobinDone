@@ -3,7 +3,7 @@ import {
   disconnectRemoteSource,
   requestRemoteProjectConnection,
 } from "#e2e/helpers/remote-project-actions";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import { clearAppData, readSettings, seedSettings } from "../../../helpers/desktop-app.js";
 import { selectUpstreamProviderModelById } from "../../../helpers/upstream-provider.js";
 import {
@@ -173,7 +173,7 @@ describe(`${CASE_MARKER}: SSH cold restart and automatic reconnect`, () => {
     expect(await getV4PaneSnapshot()).toMatchObject({ sessionId: null, rowCount: 0 });
     expect(await $('[data-testid="remote-conversation-banner"]').isDisplayed()).toBe(true);
     await browser.saveScreenshot(
-      `${process.env.ROBINRUN_E2E_ARTIFACT_DIR}/rdux09-cold-offline.png`,
+      `${process.env.ROBINDONE_E2E_ARTIFACT_DIR}/rdux09-cold-offline.png`,
     );
 
     await requestRemoteProjectConnection(taskB.identity, CASE_MARKER);

@@ -3,7 +3,7 @@ import type {
   ConversationRow,
   TurnHeaderRow,
   UserInputRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { ConversationCuaGroupRenderItem } from "@/v4/conversationCuaGroups.js";
 
 export type AssistantWorkRow = Exclude<ConversationRow, TurnHeaderRow | UserInputRow>;

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
+import type { IServiceAccessor } from "@robindone/services";
 
 interface SourceSettingsServicesEntry {
   attachmentId: string;

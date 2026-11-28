@@ -1,8 +1,8 @@
 import { Spinner } from "@/components/ui/spinner.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function TaskListLoadingHint() {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div className="flex items-center gap-2 px-2.5 py-1 text-ui-base text-foreground-subtlest">

@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { parseRemoteWorkspaceIdentity, ServiceChannels } from "@robinrun/shared";
-import type { RemoteProjectDirectory, RemoteProjectHost } from "@robinrun/services";
+import { parseRemoteWorkspaceIdentity, ServiceChannels } from "@robindone/shared";
+import type { RemoteProjectDirectory, RemoteProjectHost } from "@robindone/services";
 import { clearAppData } from "#e2e/helpers/desktop-app";
 import {
   callHandoffHost,
@@ -25,7 +25,7 @@ import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
 
 const MARKER = "E2E_SSH_HOST_CAPACITY";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-host-capacity",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-host-capacity",
 );
 const readDirectory = () =>
   callHandoffHost<RemoteProjectDirectory>(ServiceChannels.RemoteProjects, "readDirectory");

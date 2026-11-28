@@ -1,6 +1,6 @@
-import type { McpServerConfig, RobinRunMcpServer } from "@robinrun/shared";
+import type { McpServerConfig, RobinDoneMcpServer } from "@robindone/shared";
 
-export const MCP_SECTIONS = ["robinrunagentmcp"] as const;
+export const MCP_SECTIONS = ["robindoneagentmcp"] as const;
 
 export type ServerScope = (typeof MCP_SECTIONS)[number];
 
@@ -8,9 +8,9 @@ export const SOURCE_META: Record<
   ServerScope,
   { label: string; section: string; badgeClass: string }
 > = {
-  robinrunagentmcp: {
-    label: "RobinRun Agent",
-    section: "RobinRun Agent",
+  robindoneagentmcp: {
+    label: "RobinDone Agent",
+    section: "RobinDone Agent",
     badgeClass: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
   },
 };
@@ -34,7 +34,7 @@ export interface FormState {
 
 export const EMPTY_FORM: FormState = {
   name: "",
-  scope: "robinrunagentmcp",
+  scope: "robindoneagentmcp",
   storageLevel: "user",
   type: "stdio",
   command: "",
@@ -51,7 +51,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function serverToForm(server: RobinRunMcpServer): FormState {
+export function serverToForm(server: RobinDoneMcpServer): FormState {
   const cfg = server.config;
   let type: FormState["type"];
   if (cfg.type === "sse") {
@@ -65,7 +65,7 @@ export function serverToForm(server: RobinRunMcpServer): FormState {
   }
   return {
     name: server.name,
-    scope: "robinrunagentmcp",
+    scope: "robindoneagentmcp",
     storageLevel: server.scope === "workspace" ? "workspace" : "user",
     type,
     command: cfg.command ?? "",
@@ -221,7 +221,7 @@ export function jsonDraftToForm(jsonText: string, fallback: FormState): FormStat
   };
 }
 
-// 与 shared 层 convertToRobinRunAgentMcpServer 的 isMcpProtocolVersion 守卫保持同一语义：
+// 与 shared 层 convertToRobinDoneAgentMcpServer 的 isMcpProtocolVersion 守卫保持同一语义：
 // 非法枚举值在 UI 读取侧就归一为未设置（等价 auto），不留给连接阶段。
 function isMcpProtocolVersion(value: unknown): value is "legacy" | "auto" | "2026-07-28" {
   return value === "legacy" || value === "auto" || value === "2026-07-28";

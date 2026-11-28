@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   archiveTaskKey,
   type ArchiveSort,
@@ -34,7 +34,7 @@ export function ArchiveGroupCard({
   disabled: boolean;
   onAction: (rows: ProjectTask[], operation: ArchiveOperation) => Promise<void>;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const dateFormat = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",

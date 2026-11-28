@@ -1,9 +1,9 @@
-import type { RobinRunStreamEvent, RobinRunTaskRuntimeStatus } from "@robinrun/shared";
+import type { RobinDoneStreamEvent, RobinDoneTaskRuntimeStatus } from "@robindone/shared";
 import type { TaskChatMessage } from "@/lib/taskChatMessageTypes.js";
-import { hasRunningRobinRunTimeline } from "@/lib/robinrunTimelineRuntime.js";
+import { hasRunningRobinDoneTimeline } from "@/lib/robindoneTimelineRuntime.js";
 
 type TaskStreamMirrorBatchEvent = Extract<
-  RobinRunStreamEvent,
+  RobinDoneStreamEvent,
   { type: "task_stream_mirror_batch" }
 >;
 type TaskStreamMirrorOp = TaskStreamMirrorBatchEvent["ops"][number];
@@ -22,7 +22,7 @@ export function shouldMarkMainActiveFromStreamMirrorOps(
   });
 }
 
-export function shouldMarkMainActiveFromStreamEvent(event: RobinRunStreamEvent): boolean {
+export function shouldMarkMainActiveFromStreamEvent(event: RobinDoneStreamEvent): boolean {
   switch (event.type) {
     case "task_run_started":
     case "goal_iteration_started":
@@ -58,19 +58,19 @@ function isTaskChatTimelineMessage(message: TaskChatMessage): boolean {
   );
 }
 
-function isTaskRuntimeBusy(taskStatus: RobinRunTaskRuntimeStatus): boolean {
+function isTaskRuntimeBusy(taskStatus: RobinDoneTaskRuntimeStatus): boolean {
   return taskStatus === "creating" || taskStatus === "restoring" || taskStatus === "streaming";
 }
 
 export function hasForegroundActivityFromMessages(messages: readonly TaskChatMessage[]): boolean {
-  return hasForegroundStreamingAssistantMessage(messages) || hasRunningRobinRunTimeline(messages);
+  return hasForegroundStreamingAssistantMessage(messages) || hasRunningRobinDoneTimeline(messages);
 }
 
 export function isMainActivityRuntimeBusy(params: {
   currentStatus?: "idle" | "submitting" | "streaming" | "error";
   runtimeState?: {
     activeInputId?: unknown;
-    status: RobinRunTaskRuntimeStatus;
+    status: RobinDoneTaskRuntimeStatus;
   } | null;
   isMainActive: boolean;
   hasForegroundActivity?: boolean;
@@ -95,7 +95,7 @@ export function isMainActivityRuntimeBusy(params: {
 
 function isMainAgentStreamEvent(
   event: Extract<
-    RobinRunStreamEvent,
+    RobinDoneStreamEvent,
     { type: "agent_message_chunk" | "agent_thought_chunk" | "tool_call" | "tool_call_update" }
   >,
 ): boolean {

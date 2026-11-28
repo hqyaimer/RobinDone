@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { workerRegistryFileName, workerRegistrySchema } from "@robinrun/shared";
+import { workerRegistryFileName, workerRegistrySchema } from "@robindone/shared";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { logger } from "@/logger.js";
 
-// 订阅句柄只用到 dispose；不引入 @robinrun/rpc 的类型（project-sidebar 模块未声明 rpc 依赖）。
+// 订阅句柄只用到 dispose；不引入 @robindone/rpc 的类型（project-sidebar 模块未声明 rpc 依赖）。
 interface WorkerWatchSubscription {
   dispose(): void;
 }
@@ -19,7 +19,7 @@ export interface WorkerRosterEntry {
 
 /**
  * worker 编制只读投影（2026-11-15 裁决）：读取项目工作区的
- * `.robinrun/agents/workers.json`（编制唯一事实源，由主智能体经 ManageWorkers 维护）。
+ * `.robindone/agents/workers.json`（编制唯一事实源，由主智能体经 ManageWorkers 维护）。
  * 侧栏只渲染；新建/改名/停用的入口全部收敛到主智能体，UI 无写路径。
  *
  * remote 项目当前宿主读不到其工作区文件（P2.1：进入智能体页不切工作区），读取失败
@@ -35,10 +35,10 @@ export function useWorkers(projectRootPath: string | null): {
   const [available, setAvailable] = useState(false);
 
   const registryPath = projectRootPath
-    ? `${projectRootPath.replace(/[\\/]+$/, "")}/.robinrun/agents/${workerRegistryFileName}`
+    ? `${projectRootPath.replace(/[\\/]+$/, "")}/.robindone/agents/${workerRegistryFileName}`
     : null;
   const agentsDirPath = projectRootPath
-    ? `${projectRootPath.replace(/[\\/]+$/, "")}/.robinrun/agents`
+    ? `${projectRootPath.replace(/[\\/]+$/, "")}/.robindone/agents`
     : null;
 
   const load = useCallback(async () => {
@@ -84,11 +84,11 @@ export function useWorkers(projectRootPath: string | null): {
   // Bug 根因（2026-11-16）：此前监听 workers.json 文件本身——ManageWorkers 走 tmp+rename
   // 原子写（换 inode），fileWatcherService 在 rename 后检测到 identity 失配会发一次事件
   // 然后【永久关闭】watcher；首次创建时文件不存在，watch 直接 reject 且从不重试。两侧
-  // 叠加导致名册变化只有重进项目页（重挂载）才可见。改为监听 `.robinrun/agents` 目录：
+  // 叠加导致名册变化只有重进项目页（重挂载）才可见。改为监听 `.robindone/agents` 目录：
   // 目录 inode 稳定，注册表原子换名只触发事件不毁 watcher；非递归监听下 worker 自己往
   // <id>/tmp、knowledge 深处写文件不会触发（只有直接子项增删触发），噪音天然受限。
   // 目录尚未创建（项目还没有编制）时 watch 会 reject，用定时重试覆盖首次创建场景。
-  // 2026-11-21 起 `.robinrun/agents` 改由项目保存/恢复时预创建（packages/services project
+  // 2026-11-21 起 `.robindone/agents` 改由项目保存/恢复时预创建（packages/services project
   // 的 ensureWorkerRosterDirectories），新建项目挂载即成功、不再产生失败 watch；此重试
   // 保留为兜底，仅覆盖早于该修复注册、尚未重新触碰（重开/置顶/改根）的存量项目。
   // 首建竞态修复（2026-11-18 验收）：watch 只报告 attach 之后的变化，不回放已存在的

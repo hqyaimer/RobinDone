@@ -1,4 +1,4 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
 import { join } from "node:path";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import {
@@ -7,9 +7,9 @@ import {
   ServiceChannels,
   buildRemoteHostWorkspaceIdentity,
   remoteHostIdFromWorkspaceIdentity,
-} from "@robinrun/shared";
-import { TID_TASK_ITEM, testId } from "@robinrun/shared/test-ids";
-import type { ProjectTree } from "@robinrun/services";
+} from "@robindone/shared";
+import { TID_TASK_ITEM, testId } from "@robindone/shared/test-ids";
+import type { ProjectTree } from "@robindone/services";
 import { clearAppData, clickTestIdByDom } from "#e2e/helpers/desktop-app";
 import { getToastMessages } from "#e2e/helpers/conversation-session-toast";
 import {
@@ -37,7 +37,7 @@ import { selectTaskOrganizeMode } from "#e2e/helpers/workspace-agent-warmup";
 // attachment”），旧点击在连接迟到成功后释放共享 session，最新点击也失败。
 const CASE_MARKER = "E2E_RPN18_CONCURRENT_REMOTE_TASK_NAVIGATION";
 const artifactDir = join(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ??
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ??
     ".e2e-artifacts/rpn-18-concurrent-remote-task-navigation",
 );
 const ERROR_TOAST = /Error:|renderer attachment|navigation-cancelled/u;
@@ -132,7 +132,7 @@ async function createRemoteHistoryTask(target: {
 }): Promise<string> {
   const created = await callRemoteFixture<{ session: { sessionId: string } }>(
     target.workspaceIdentity,
-    ServiceChannels.RobinRunAgent,
+    ServiceChannels.RobinDoneAgent,
     "createSession",
     [
       {
@@ -150,7 +150,7 @@ async function createRemoteHistoryTask(target: {
     ],
   );
   const taskId = created.session.sessionId;
-  await callRemoteFixture(target.workspaceIdentity, ServiceChannels.RobinRunTask, "resumeTask", [
+  await callRemoteFixture(target.workspaceIdentity, ServiceChannels.RobinDoneTask, "resumeTask", [
     { taskId, workspacePath: target.workspacePath, workspaceIdentity: target.workspaceIdentity },
   ]);
   return taskId;
@@ -242,7 +242,7 @@ const connectHostRequests = () =>
 
 /** 本次运行的 Main 日志（含 Host 转发行），按文件名排序拼接。 */
 async function readMainLogLines(): Promise<string[]> {
-  const directory = await browser.electron.execute(() => process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR);
+  const directory = await browser.electron.execute(() => process.env.ROBINDONE_E2E_RUNTIME_LOG_DIR);
   if (!directory) throw new Error(`${CASE_MARKER}: 缺少本次 Main 日志目录`);
   const files = (await readdir(directory)).filter((name) => name.endsWith(".log")).sort();
   const contents = await Promise.all(files.map((name) => readFile(join(directory, name), "utf8")));
@@ -268,14 +268,14 @@ async function closeWorkspaceTabs(identities: string[]) {
     await browser.execute((workspaceIdentity) => {
       const store = (
         window as Window & {
-          __robinrunTabStoreE2E?: {
+          __robindoneTabStoreE2E?: {
             getState(): {
               tabs: Array<{ id: string; workspaceIdentity?: string }>;
               closeTab(id: string, origin?: "user-close"): void;
             };
           };
         }
-      ).__robinrunTabStoreE2E;
+      ).__robindoneTabStoreE2E;
       const tab = store
         ?.getState()
         .tabs.find((item) => item.workspaceIdentity === workspaceIdentity);

@@ -1,25 +1,25 @@
-import { ROBINRUN_VERSION } from "@robinrun/shared";
-import type { IRemoteBackend, RemoteEnvironment } from "@robinrun/server/remote/backend.js";
+import { ROBINDONE_VERSION } from "@robindone/shared";
+import type { IRemoteBackend, RemoteEnvironment } from "@robindone/server/remote/backend.js";
 import {
   REMOTE_BASE,
   type DeployLoggers,
   type RemoteAssetDeployOptions,
-} from "@robinrun/server/remote/deployShared.js";
+} from "@robindone/server/remote/deployShared.js";
 import {
   readRemoteAssetComponentMeta,
   writeRemoteAssetComponentMeta,
-} from "@robinrun/server/remote/remoteAssetLiveIdentity.js";
+} from "@robindone/server/remote/remoteAssetLiveIdentity.js";
 import {
   fetchRemoteAssetManifestFromCdn,
   resolveRemoteAssetComponentCacheVersion,
   selectRemoteAssetManifestComponents,
   type RemoteAssetManifest,
-} from "@robinrun/server/remote/remoteAssetCache.js";
+} from "@robindone/server/remote/remoteAssetCache.js";
 import {
   LocalUploadAssetInstaller,
   type RemoteAssetInstaller,
-} from "@robinrun/server/remote/remoteAssetInstaller.js";
-import type { RemoteAssetNetworkPort } from "@robinrun/server/remote/remoteAssetNetwork.js";
+} from "@robindone/server/remote/remoteAssetInstaller.js";
+import type { RemoteAssetNetworkPort } from "@robindone/server/remote/remoteAssetNetwork.js";
 
 const REMOTE_NODE_PTY_PATH = `${REMOTE_BASE}/build/Release/pty.node`;
 const REMOTE_NODE_PTY_SPAWN_HELPER_PATH = `${REMOTE_BASE}/build/Release/spawn-helper`;
@@ -300,7 +300,7 @@ async function resolveComponentManifest(
         remoteCdnBaseUrl: options.remoteCdnBaseUrl,
         remoteCdnBaseUrls: options.remoteCdnBaseUrls,
         remoteCacheDir: options.remoteCacheDir,
-        version: ROBINRUN_VERSION,
+        version: ROBINDONE_VERSION,
         platformArch: `${env.platform}-${env.arch}`,
         manifestRequestTimeoutMs: options.manifestRequestTimeoutMs,
         remoteAssetNetwork: options.remoteAssetNetwork,

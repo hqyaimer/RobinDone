@@ -1,18 +1,18 @@
 import type {
   McpServerStatus,
-  RobinRunMcpServer,
-  RobinRunMcpServerStatusSnapshot,
-} from "@robinrun/shared";
+  RobinDoneMcpServer,
+  RobinDoneMcpServerStatusSnapshot,
+} from "@robindone/shared";
 
 type MappedMcpServerStatus = {
-  authorization?: RobinRunMcpServerStatusSnapshot["authorization"];
+  authorization?: RobinDoneMcpServerStatusSnapshot["authorization"];
   error?: string;
-  failureKind?: RobinRunMcpServerStatusSnapshot["failureKind"];
+  failureKind?: RobinDoneMcpServerStatusSnapshot["failureKind"];
   serverRequestId?: string;
   status: McpServerStatus;
 };
 
-function mapRuntimeStatusToUi(snapshot: RobinRunMcpServerStatusSnapshot): MappedMcpServerStatus {
+function mapRuntimeStatusToUi(snapshot: RobinDoneMcpServerStatusSnapshot): MappedMcpServerStatus {
   switch (snapshot.status) {
     case "connected":
     case "connecting":
@@ -44,13 +44,13 @@ function mapRuntimeStatusToUi(snapshot: RobinRunMcpServerStatusSnapshot): Mapped
 }
 
 export function mergeMcpServerStatusSnapshots(
-  servers: RobinRunMcpServer[],
-  statuses: Record<string, RobinRunMcpServerStatusSnapshot>,
+  servers: RobinDoneMcpServer[],
+  statuses: Record<string, RobinDoneMcpServerStatusSnapshot>,
   options: { markMissingConnectingAsError?: boolean } = {},
-): RobinRunMcpServer[] {
+): RobinDoneMcpServer[] {
   const markMissingConnectingAsError = options.markMissingConnectingAsError ?? true;
   return servers.map((server) => {
-    if (server.source !== "robinrunagentmcp") {
+    if (server.source !== "robindoneagentmcp") {
       return server;
     }
     const snapshot = statuses[server.name];

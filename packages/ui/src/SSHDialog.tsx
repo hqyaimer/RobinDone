@@ -7,11 +7,11 @@ import {
   TID_SSH_DIALOG,
   TID_SSH_ERROR,
   TID_SSH_SUCCESS,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { AlertTriangleIcon } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button.js";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import {
   useRemoteConnectionFlow,
   type RemoteConnectionFlowOptions,
@@ -41,7 +41,7 @@ export function RemoteConnectionDialog(props: RemoteConnectionDialogProps) {
     hideTriggerWhenClosed = false,
     allowBackground = true,
   } = props;
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const flow = useRemoteConnectionFlow(props);
   const { open, currentStep, error, handleOpenChange } = flow;
   usePublishRemoteConnectionProgress(flow.minimizedProgress);

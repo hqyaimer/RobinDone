@@ -1,5 +1,5 @@
 import { createWebPlatform } from "#src/platform/index.js";
-import { mobilePluginDiscoveryTelemetrySchema } from "@robinrun/shared";
+import { mobilePluginDiscoveryTelemetrySchema } from "@robindone/shared";
 import {
   sessionCreateTelemetrySchema,
   WEB_REMOTE_CONTROL_WORKSPACE_RECONNECT_TIMEOUT_MS,
@@ -7,7 +7,7 @@ import {
   resolveWebRemoteControlRelayWsUrl,
   matchesWebRemoteControlRoutePath,
   resolveWebRemoteControlWorkspaceKey,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 /* eslint-disable max-lines -- Web 远程控制启动、错误页和 web 平台桥接暂时集中在入口编排。 */
 import type { ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -15,20 +15,20 @@ import {
   AppErrorBoundary,
   ensurePendingTaskDraft,
   Root,
-  RobinRunIntlProvider,
+  RobinDoneIntlProvider,
   generateMobileDeviceFingerprint,
   installDocumentHiddenMotionPause,
   setStreamClientId,
   setWebRemoteControlTerminalTransportState,
   type Theme,
   type WebRemoteControlTerminalTransportState as UiWebRemoteControlTerminalTransportState,
-} from "@robinrun/ui";
+} from "@robindone/ui";
 import "./styles.css";
 import {
   connectViaProtocol,
   connectViaWebSocket,
   createAcknowledgedWebRemoteControlRelayProtocol,
-} from "@robinrun/client";
+} from "@robindone/client";
 
 import { WebCallbackPage } from "./auth/WebCallbackPage.js";
 import { WebLoginPage } from "./auth/WebLoginPage.js";
@@ -64,7 +64,7 @@ import type {
   WebRemoteControlAppPayload,
   WebRemoteControlExternalWorkspaceBridge,
   ServerRemoteInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 import {
   WebRemoteControlEntry,
@@ -144,7 +144,7 @@ async function markCurrentWebRemoteControlBridgeTaskRead({
   }
 
   const result = await markWebRemoteControlTaskRead({
-    service: services.robinrunTaskService,
+    service: services.robindoneTaskService,
     target: {
       taskId: task.taskId,
       workspacePath: task.workspacePath,
@@ -172,7 +172,7 @@ async function markOpenedWebRemoteControlBridgeTaskRead({
   const result = await markWebRemoteControlBridgeTaskRead({
     bridge,
     expectedUnreadAt,
-    service: services.robinrunTaskService,
+    service: services.robindoneTaskService,
   });
   if (!result.ok) {
     logWebRemoteControlTaskReadFailure(result.error, {
@@ -183,7 +183,7 @@ async function markOpenedWebRemoteControlBridgeTaskRead({
 }
 
 function resolveWebThemePreference(defaultTheme: Theme = WEB_REMOTE_CONTROL_DEFAULT_THEME): Theme {
-  const saved = localStorage.getItem("robinrun-theme");
+  const saved = localStorage.getItem("robindone-theme");
   return resolveWebRemoteControlInitialTheme({ storedTheme: saved, defaultTheme });
 }
 
@@ -286,7 +286,7 @@ function isWebOAuthCallback(params: URLSearchParams): boolean {
 }
 
 function renderWebAuthCallbackPage(): void {
-  document.title = "RobinRun - Web Remote Control Sign In";
+  document.title = "RobinDone - Web Remote Control Sign In";
   const callbackState = parseOAuthState(
     new URLSearchParams(window.location.search).get("state") ?? "",
   );
@@ -311,7 +311,7 @@ async function renderConversationSharePage(): Promise<void> {
   document.documentElement.lang = routeLocale;
   // 分享页必须设置 title：否则浏览器标签只显示 index.html 的通用标题。
   // 会话标题要等 preview 加载完，先给一个语言正确的兜底。
-  document.title = routeLocale === "zh-CN" ? "RobinRun 会话分享" : "RobinRun Conversation Share";
+  document.title = routeLocale === "zh-CN" ? "RobinDone 会话分享" : "RobinDone Conversation Share";
   const shareCode = resolveConversationShareCodeFromPath(window.location.pathname);
   if (!shareCode) {
     root.render(
@@ -324,7 +324,7 @@ async function renderConversationSharePage(): Promise<void> {
   }
 
   const endpointOrigin =
-    import.meta.env.VITE_ROBINRUN_BASE_URL?.trim().replace(/\/+$/u, "") || window.location.origin;
+    import.meta.env.VITE_ROBINDONE_BASE_URL?.trim().replace(/\/+$/u, "") || window.location.origin;
   const mockMode =
     import.meta.env.DEV && import.meta.env.VITE_CONVERSATION_SHARE_PREVIEW_MOCK === "true";
   // Share 加载失败不能只有通用 network 文案：需要区分 mock、endpoint 配置或跨域 fetch。
@@ -341,12 +341,12 @@ async function renderConversationSharePage(): Promise<void> {
       ).MockConversationSharePreviewClient()
     : new ConversationSharePreviewClient({ baseUrl: `${endpointOrigin}/api/v1` });
   const getMockToken = () =>
-    mockMode && window.sessionStorage.getItem("robinrun:share:mock-auth") === "owner"
+    mockMode && window.sessionStorage.getItem("robindone:share:mock-auth") === "owner"
       ? "mock-owner-token"
       : null;
   const onLogout = () => {
     if (mockMode) {
-      window.sessionStorage.removeItem("robinrun:share:mock-auth");
+      window.sessionStorage.removeItem("robindone:share:mock-auth");
       window.location.reload();
       return;
     }
@@ -356,10 +356,10 @@ async function renderConversationSharePage(): Promise<void> {
     <ConversationShareLandingLoader
       shareCode={shareCode}
       client={client}
-      getAccessToken={() => getMockToken() ?? webAuthService.getRobinRunJwtToken()}
+      getAccessToken={() => getMockToken() ?? webAuthService.getRobinDoneJwtToken()}
       onLogin={(provider) => {
         if (mockMode) {
-          window.sessionStorage.setItem("robinrun:share:mock-auth", "owner");
+          window.sessionStorage.setItem("robindone:share:mock-auth", "owner");
           window.location.reload();
           return;
         }
@@ -378,7 +378,7 @@ async function renderConversationSharePage(): Promise<void> {
 }
 
 function renderWebLoginPage(): void {
-  document.title = "RobinRun - Web Remote Control Sign In";
+  document.title = "RobinDone - Web Remote Control Sign In";
   root.render(<WebLoginPage onLogin={(provider) => remoteEntry.startLogin(provider)} />);
 }
 
@@ -411,7 +411,7 @@ const remoteEntry = new WebRemoteControlEntry({
     if (view.kind === "callback") renderWebAuthCallbackPage();
     else if (view.kind === "login") renderWebLoginPage();
     else if (view.kind === "devices") {
-      document.title = "RobinRun - Web Remote Control";
+      document.title = "RobinDone - Web Remote Control";
       root.render(
         <WebRemoteControlDeviceListPage
           view={view}
@@ -487,7 +487,7 @@ function createWebRemoteControlRequestId(prefix: string): string {
 }
 
 function seedStableWebRemoteControlClientId(deviceSid: string): void {
-  const storageKey = `robinrun-web-remote-client-id:${deviceSid}`;
+  const storageKey = `robindone-web-remote-client-id:${deviceSid}`;
   try {
     const existing = globalThis.localStorage?.getItem(storageKey)?.trim();
     if (existing) {
@@ -549,7 +549,7 @@ export function createHomeOnlyWebRemoteControlServices(): RootServices {
     }),
     update: async () => {},
     updateDataBaseDir: async () => {},
-    // 个性化指令编辑的是桌面 Host 的 ~/.robinrun/AGENTS.md；未连接 bridge 前没有本机 Host，明确报错。
+    // 个性化指令编辑的是桌面 Host 的 ~/.robindone/AGENTS.md；未连接 bridge 前没有本机 Host，明确报错。
     getUserInstructions: unsupported("settingService.getUserInstructions"),
     saveUserInstructions: unsupported("settingService.saveUserInstructions"),
   };
@@ -571,8 +571,8 @@ export function createHomeOnlyWebRemoteControlServices(): RootServices {
   // Bugfix: 手机端只有断开的远程 workspace 时，不能为了进入任务首页强行创建 bridge。
   // 这里提供只读/空结果服务，吸收 Root 首屏 OAuth、模型供应商、Git、技能等后台初始化，
   // 避免断连这种预期状态被误报成未处理异常；真正聊天能力仍需重连成功后切到 bridge services。
-  const homeOnlyRobinRunTaskService = createEmptyHomeOnlyService<
-    RootServices["robinrunTaskService"]
+  const homeOnlyRobinDoneTaskService = createEmptyHomeOnlyService<
+    RootServices["robindoneTaskService"]
   >({
     initialize: async () => ({ available: false }),
     releaseWorkspacePreparation: async () => {},
@@ -664,23 +664,23 @@ export function createHomeOnlyWebRemoteControlServices(): RootServices {
     broadcastService: createEmptyHomeOnlyService<RootServices["broadcastService"]>({
       send: async () => {},
     }),
-    robinrunTaskService: homeOnlyRobinRunTaskService,
-    robinrunAgentService: createEmptyHomeOnlyService<RootServices["robinrunAgentService"]>({
+    robindoneTaskService: homeOnlyRobinDoneTaskService,
+    robindoneAgentService: createEmptyHomeOnlyService<RootServices["robindoneAgentService"]>({
       initialize: async (params: { workspacePath: string; workspaceIdentity?: string }) => ({
         available: false,
         workspaceKey: params.workspaceIdentity?.trim() || params.workspacePath,
-        reason: "RobinRun agent service is not available before workspace bridge is connected.",
+        reason: "RobinDone agent service is not available before workspace bridge is connected.",
       }),
       disposeAll: () => {},
     }),
-    robinrunSessionService: createEmptyHomeOnlyService<RootServices["robinrunSessionService"]>({
+    robindoneSessionService: createEmptyHomeOnlyService<RootServices["robindoneSessionService"]>({
       initializeWorkspace: async (params: {
         workspacePath: string;
         workspaceIdentity?: string;
       }) => ({
         available: false,
         workspaceKey: params.workspaceIdentity?.trim() || params.workspacePath,
-        reason: "RobinRun session service is not available before workspace bridge is connected.",
+        reason: "RobinDone session service is not available before workspace bridge is connected.",
       }),
     }),
     // 分享发布首期只属于 desktop local host；Web 首页和 /remote 不建立独立发布权威。
@@ -818,7 +818,7 @@ function renderWebRemoteControlLoading(
   state: WebRemoteControlTerminalTransportState,
   device: WebRemoteControlConnectingDevice,
 ): void {
-  document.title = "RobinRun - Web Remote Control";
+  document.title = "RobinDone - Web Remote Control";
   root.render(
     <WebRemoteControlLoadingScreen
       state={state}
@@ -893,7 +893,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     | WebRemoteControlWorkspaceBridgeServiceRegistration
     | undefined;
   let sendMobileDiagnosticPayload:
-    | ((payload: WebRemoteControlAppPayload & { robinrun_type: "mobile-diagnostic" }) => void)
+    | ((payload: WebRemoteControlAppPayload & { robindone_type: "mobile-diagnostic" }) => void)
     | undefined;
   const workspaceListUpdateListeners = new Set<WebRemoteControlWorkspaceListUpdateListener>();
 
@@ -924,7 +924,7 @@ async function bootstrapExternalRelayWebRemoteControl(
       return;
     }
     sendMobileDiagnosticPayload?.({
-      robinrun_type: "mobile-diagnostic",
+      robindone_type: "mobile-diagnostic",
       event: diagnostic.type,
       timestamp: diagnostic.timestamp,
       state: diagnostic.state,
@@ -942,7 +942,7 @@ async function bootstrapExternalRelayWebRemoteControl(
 
   const sendMobileFailureDiagnostic = (failure: WebRemoteControlFailure) => {
     sendMobileDiagnosticPayload?.({
-      robinrun_type: "mobile-diagnostic",
+      robindone_type: "mobile-diagnostic",
       event: "failure",
       timestamp: Date.now(),
       state: terminalTransportState,
@@ -1147,11 +1147,11 @@ async function bootstrapExternalRelayWebRemoteControl(
       if (terminated) {
         return;
       }
-      if (payload.robinrun_type === "mobile-task-view-request") {
+      if (payload.robindone_type === "mobile-task-view-request") {
         taskViewPublisher.request(payload.epoch);
         return;
       }
-      if (payload.robinrun_type === "rpc-frame" || payload.robinrun_type === "rpc-frame-ack") {
+      if (payload.robindone_type === "rpc-frame" || payload.robindone_type === "rpc-frame-ack") {
         if (!pendingRelayProtocol?.acceptPayload(payload))
           activeRelayProtocol?.acceptPayload(payload);
         return;
@@ -1159,11 +1159,11 @@ async function bootstrapExternalRelayWebRemoteControl(
       if (requester.acceptPayload(payload)) {
         return;
       }
-      if (payload.robinrun_type === "workspace-list-updated") {
+      if (payload.robindone_type === "workspace-list-updated") {
         applyWorkspaceListUpdated(payload.result);
         return;
       }
-      if (payload.robinrun_type === "bridge-degraded") {
+      if (payload.robindone_type === "bridge-degraded") {
         acceptWebRemoteControlBridgeInvalidation(
           pendingRelayProtocol,
           payload.bridgeSessionId,
@@ -1177,7 +1177,7 @@ async function bootstrapExternalRelayWebRemoteControl(
         );
         return;
       }
-      if (payload.robinrun_type === "workspace-bridge-error") {
+      if (payload.robindone_type === "workspace-bridge-error") {
         if (
           pendingRelayProtocol &&
           payload.bridgeSessionId === pendingRelayProtocol.getBridgeSessionId()
@@ -1196,7 +1196,7 @@ async function bootstrapExternalRelayWebRemoteControl(
         }
         return;
       }
-      if (payload.robinrun_type === "app-error") {
+      if (payload.robindone_type === "app-error") {
         renderBootstrapFailure(toWebRemoteControlFailure(payload.reason, payload.error));
       }
     },
@@ -1278,11 +1278,11 @@ async function bootstrapExternalRelayWebRemoteControl(
   const requestBootstrap = async (): Promise<WebRemoteControlWindowBootstrapResult> => {
     const requestId = createWebRemoteControlRequestId("bootstrap");
     const response = await requestAppPayload(
-      { robinrun_type: "bootstrap-request", requestId, terminalClientSessionId },
+      { robindone_type: "bootstrap-request", requestId, terminalClientSessionId },
       (
         payload,
-      ): payload is Extract<WebRemoteControlAppPayload, { robinrun_type: "bootstrap-response" }> =>
-        payload.robinrun_type === "bootstrap-response" && payload.requestId === requestId,
+      ): payload is Extract<WebRemoteControlAppPayload, { robindone_type: "bootstrap-response" }> =>
+        payload.robindone_type === "bootstrap-response" && payload.requestId === requestId,
     );
     return response.result;
   };
@@ -1319,7 +1319,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     const response = await requestWithRelayRecovery(() => {
       const requestId = createWebRemoteControlRequestId("platform");
       const request = {
-        robinrun_type: "platform-request",
+        robindone_type: "platform-request",
         requestId,
         method,
         args,
@@ -1330,9 +1330,9 @@ async function bootstrapExternalRelayWebRemoteControl(
           payload,
         ): payload is Extract<
           WebRemoteControlPlatformResponsePayload,
-          { robinrun_type: "platform-response" }
+          { robindone_type: "platform-response" }
         > =>
-          payload.robinrun_type === "platform-response" &&
+          payload.robindone_type === "platform-response" &&
           payload.requestId === requestId &&
           payload.method === method,
       );
@@ -1347,13 +1347,14 @@ async function bootstrapExternalRelayWebRemoteControl(
     const requestWorkspaceList = async () => {
       const requestId = createWebRemoteControlRequestId("workspace-list");
       return requestAppPayload(
-        { robinrun_type: "workspace-list-request", requestId },
+        { robindone_type: "workspace-list-request", requestId },
         (
           payload,
         ): payload is Extract<
           WebRemoteControlAppPayload,
-          { robinrun_type: "workspace-list-response" }
-        > => payload.robinrun_type === "workspace-list-response" && payload.requestId === requestId,
+          { robindone_type: "workspace-list-response" }
+        > =>
+          payload.robindone_type === "workspace-list-response" && payload.requestId === requestId,
       );
     };
     const response = await requestWithRelayRecovery(() => requestWorkspaceList(), {
@@ -1368,7 +1369,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     currentWorkspaceKey = workspaceKey;
     currentTaskId = taskId;
     transport.sendPayload({
-      robinrun_type: "mobile-view-state-update",
+      robindone_type: "mobile-view-state-update",
       viewState: {
         activeWorkspaceKey: workspaceKey,
         ...(taskId ? { activeTaskId: taskId } : {}),
@@ -1385,7 +1386,7 @@ async function bootstrapExternalRelayWebRemoteControl(
       const requestId = createWebRemoteControlRequestId("workspace-reconnect");
       return requestAppPayload(
         {
-          robinrun_type: "workspace-reconnect-request",
+          robindone_type: "workspace-reconnect-request",
           requestId,
           workspaceKey,
         },
@@ -1393,9 +1394,9 @@ async function bootstrapExternalRelayWebRemoteControl(
           payload,
         ): payload is Extract<
           WebRemoteControlAppPayload,
-          { robinrun_type: "workspace-reconnect-response" }
+          { robindone_type: "workspace-reconnect-response" }
         > =>
-          payload.robinrun_type === "workspace-reconnect-response" &&
+          payload.robindone_type === "workspace-reconnect-response" &&
           payload.requestId === requestId &&
           payload.workspaceKey === workspaceKey,
         {
@@ -1420,7 +1421,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     options?: WebRemoteControlWorkspaceSwitchOptions & {
       project?: Extract<
         WebRemoteControlAppPayload,
-        { robinrun_type: "workspace-bridge-open" }
+        { robindone_type: "workspace-bridge-open" }
       >["project"];
     },
   ): Promise<{
@@ -1438,7 +1439,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     const response = await requestWithRelayRecovery(() =>
       requestAppPayload(
         {
-          robinrun_type: "workspace-bridge-open",
+          robindone_type: "workspace-bridge-open",
           terminalClientSessionId,
           requestId: createWebRemoteControlRequestId("workspace-bridge"),
           bridgeSessionId,
@@ -1454,9 +1455,9 @@ async function bootstrapExternalRelayWebRemoteControl(
           payload,
         ): payload is Extract<
           WebRemoteControlAppPayload,
-          { robinrun_type: "workspace-bridge-ready" }
+          { robindone_type: "workspace-bridge-ready" }
         > =>
-          payload.robinrun_type === "workspace-bridge-ready" &&
+          payload.robindone_type === "workspace-bridge-ready" &&
           payload.bridgeSessionId === bridgeSessionId,
       ),
     );
@@ -1538,10 +1539,10 @@ async function bootstrapExternalRelayWebRemoteControl(
   ) => {
     if (terminated || versionGuard.isBlocked()) return;
     ready = true;
-    document.title = "RobinRun - Web Remote Control";
+    document.title = "RobinDone - Web Remote Control";
     root.render(
       <AppErrorBoundary key={bridge.bridgeSessionId}>
-        <RobinRunIntlProvider
+        <RobinDoneIntlProvider
           settingService={services.settingService}
           broadcastService={services.broadcastService}
           preferSettingServiceLocale
@@ -1557,7 +1558,7 @@ async function bootstrapExternalRelayWebRemoteControl(
                     .safeParse(event);
                   if (parsed.success)
                     transport.sendPayload({
-                      robinrun_type: "telemetry-report",
+                      robindone_type: "telemetry-report",
                       event: parsed.data,
                     });
                 },
@@ -1625,7 +1626,7 @@ async function bootstrapExternalRelayWebRemoteControl(
             supportsEmbeddedBrowser={false}
             allowRemoteWorkspace={false}
           />
-        </RobinRunIntlProvider>
+        </RobinDoneIntlProvider>
       </AppErrorBoundary>,
     );
   };
@@ -1666,7 +1667,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     currentWorkspaceKey = workspaceKey;
     currentTaskId = taskId;
     await updateMobileViewState(workspaceKey, taskId);
-    document.title = "RobinRun - Web Remote Control";
+    document.title = "RobinDone - Web Remote Control";
     if (terminated || versionGuard.isBlocked()) return;
     // Bug 原因：staging 合并 a861a83cbc 丢了这里的 ready 标记，home-only 挂载后每次配对状态抖动
     // 都会被 onStateChange 当成首屏重渲染加载页，配对恢复后再整页重挂，引导与本地状态全部丢失。
@@ -1674,7 +1675,7 @@ async function bootstrapExternalRelayWebRemoteControl(
     ready = true;
     root.render(
       <AppErrorBoundary key={`home-only-${workspaceKey}`}>
-        <RobinRunIntlProvider>
+        <RobinDoneIntlProvider>
           <Root
             composerClientNamespace={`mobile:${relayParams.deviceMid ?? relayParams.deviceSid}`}
             services={createHomeOnlyWebRemoteControlServices()}
@@ -1687,7 +1688,7 @@ async function bootstrapExternalRelayWebRemoteControl(
                     .safeParse(event);
                   if (parsed.success)
                     transport.sendPayload({
-                      robinrun_type: "telemetry-report",
+                      robindone_type: "telemetry-report",
                       event: parsed.data,
                     });
                 },
@@ -1739,7 +1740,7 @@ async function bootstrapExternalRelayWebRemoteControl(
             supportsEmbeddedBrowser={false}
             allowRemoteWorkspace={false}
           />
-        </RobinRunIntlProvider>
+        </RobinDoneIntlProvider>
       </AppErrorBoundary>,
     );
   };
@@ -1837,11 +1838,11 @@ async function bootstrapWebApp() {
       onClose: () => {},
     });
     const platform = createWebPlatform();
-    document.title = "RobinRun - Web + Server";
+    document.title = "RobinDone - Web + Server";
 
     root.render(
       <AppErrorBoundary>
-        <RobinRunIntlProvider
+        <RobinDoneIntlProvider
           settingService={services.settingService}
           broadcastService={services.broadcastService}
         >
@@ -1857,7 +1858,7 @@ async function bootstrapWebApp() {
             supportsEmbeddedBrowser={false}
             allowRemoteWorkspace={false}
           />
-        </RobinRunIntlProvider>
+        </RobinDoneIntlProvider>
       </AppErrorBoundary>,
     );
   } catch (error) {

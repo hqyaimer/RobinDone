@@ -1,8 +1,8 @@
 import { buildFileMentionMarkdown } from "@/mentions/mentionMarkdown.js";
 
-export const WORKSPACE_FILE_DRAG_MIME = "application/x-robinrun-workspace-file";
-export const WORKSPACE_FILE_ADD_TO_CHAT_EVENT = "robinrun:add-workspace-file-to-chat";
-export const WORKSPACE_FILE_DRAG_STATE_EVENT = "robinrun:workspace-file-drag-state";
+export const WORKSPACE_FILE_DRAG_MIME = "application/x-robindone-workspace-file";
+export const WORKSPACE_FILE_ADD_TO_CHAT_EVENT = "robindone:add-workspace-file-to-chat";
+export const WORKSPACE_FILE_DRAG_STATE_EVENT = "robindone:workspace-file-drag-state";
 
 export interface WorkspaceFileDragPayload {
   type: "file" | "directory";

@@ -6,9 +6,9 @@ export function isRendererProductionBuild(): boolean {
   const rendererLoggingDisabled =
     (
       globalThis as typeof globalThis & {
-        __ROBINRUN_RENDERER_DISABLE_LOGGING__?: boolean;
+        __ROBINDONE_RENDERER_DISABLE_LOGGING__?: boolean;
       }
-    ).__ROBINRUN_RENDERER_DISABLE_LOGGING__ === true;
+    ).__ROBINDONE_RENDERER_DISABLE_LOGGING__ === true;
   return (
     rendererLoggingDisabled ||
     ((import.meta as ImportMeta & { env?: RendererImportMetaEnv }).env ?? {}).PROD === true

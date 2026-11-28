@@ -1,20 +1,20 @@
-# RobinRun 发布流水线（2026-11-23 发布工程第一批）
+# RobinDone 发布流水线（2026-11-23 发布工程第一批）
 #
 # 触发：推送 v* tag。三平台矩阵各自原生出包（mac 包必须在 macOS 上构建：
 # dmg/codesign 工具链不可跨平台；linux rpm 需要 rpmbuild，由 ubuntu runner 安装）。
 #
-# 产物链路（方案 B：静态 manifest + Release 附件，见 docs/desktop/robinrun-release-updates.md）：
+# 产物链路（方案 B：静态 manifest + Release 附件，见 docs/desktop/robindone-release-updates.md）：
 # 1. build 矩阵：pnpm bundle:desktop -- --os <os> --arch <arch>，构建期 env 把
-#    ROBINRUN_AUTO_UPDATE=1 与静态 feed base 钉进安装包；
+#    ROBINDONE_AUTO_UPDATE=1 与静态 feed base 钉进安装包；
 # 2. release job：gh release create 上传安装包 + latest*.yml + blockmap；
 # 3. 用 scripts/release/rewrite-update-manifests.mjs 把清单改写为绝对 URL，
 #    推到本仓库 updates 分支（客户端 feed = raw.githubusercontent.com/<repo>/updates/<platform>/latest.yml）。
 #
 # 签名状态（首版）：
-# - mac 未签名：不设 ROBINRUN_ENABLE_MAC_SIGN / ROBINRUN_MAC_AUTO_UPDATE，打出的包
+# - mac 未签名：不设 ROBINDONE_ENABLE_MAC_SIGN / ROBINDONE_MAC_AUTO_UPDATE，打出的包
 #   Gatekeeper 需右键打开，且客户端自动更新被构建期门控整体禁用（Squirrel.Mac 硬限制），
-#   新版本走"提示 + 手动下载"。上签名后补 ROBINRUN_ENABLE_MAC_SIGN=1 + 证书 secret
-#   + ROBINRUN_MAC_AUTO_UPDATE=1 三个 env 即恢复完整自动更新（配置已就绪，见
+#   新版本走"提示 + 手动下载"。上签名后补 ROBINDONE_ENABLE_MAC_SIGN=1 + 证书 secret
+#   + ROBINDONE_MAC_AUTO_UPDATE=1 三个 env 即恢复完整自动更新（配置已就绪，见
 #   docs/desktop/macos-dmg-signing-notarization.md 的公证两段式）。
 # - Windows 未签名：SmartScreen 提示"更多信息 → 仍要运行"；自动更新可用。
 # - Linux：AppImage 自动更新可用；deb/rpm 更新本质是装系统包需提权，客户端虽带
@@ -60,15 +60,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     env:
-      # 产品身份（首跑实测教训）：CI 没有 .env 文件，ROBINRUN_ENV 缺省会回落 test，
-      # 整条链（tsup/vite define + electron-builder 身份）随之打成 "RobinRun Preview" +
+      # 产品身份（首跑实测教训）：CI 没有 .env 文件，ROBINDONE_ENV 缺省会回落 test，
+      # 整条链（tsup/vite define + electron-builder 身份）随之打成 "RobinDone Preview" +
       # _TEST 产物后缀，且 Preview 身份在客户端整体禁用自动更新——发布构建必须显式 production。
-      ROBINRUN_ENV: production
+      ROBINDONE_ENV: production
       # 构建期可选能力（scripts/build-time-config.mjs → define 注入）：
-      # 开启自动更新并把静态 feed base 钉进安装包；不设 ROBINRUN_MAC_AUTO_UPDATE
+      # 开启自动更新并把静态 feed base 钉进安装包；不设 ROBINDONE_MAC_AUTO_UPDATE
       # （未签名 mac 自动更新禁用，见文件头注释）。
-      ROBINRUN_AUTO_UPDATE: "1"
-      ROBINRUN_UPDATE_FEED_BASE: https://raw.githubusercontent.com/${{ github.repository }}/updates
+      ROBINDONE_AUTO_UPDATE: "1"
+      ROBINDONE_UPDATE_FEED_BASE: https://raw.githubusercontent.com/${{ github.repository }}/updates
     steps:
       - uses: actions/checkout@v4
 
@@ -206,7 +206,7 @@ jobs:
           REPO_CLONE="$(mktemp -d)/repo"
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$REPO_CLONE"
           cd "$REPO_CLONE"
-          git config user.name "robinrun-release-bot"
+          git config user.name "robindone-release-bot"
           git config user.email "actions@github.com"
           if git ls-remote --exit-code --heads origin updates >/dev/null 2>&1; then
             # 显式 refspec（首跑实测）：浅克隆下 `git fetch origin updates` 只写 FETCH_HEAD，
@@ -223,7 +223,7 @@ jobs:
           fi
           cp -r "${GITHUB_WORKSPACE}/updates-staging"/. .
           # 强更策略文件（forceUpdateGuard 读取）：只在不存在时播种 downloadUrl；
-          # minimalVersion 由人工按需编辑（见 docs/desktop/robinrun-release-updates.md），发布流水线不覆盖。
+          # minimalVersion 由人工按需编辑（见 docs/desktop/robindone-release-updates.md），发布流水线不覆盖。
           if [ ! -f min-version.json ]; then
             printf '{"downloadUrl":"https://github.com/%s/releases/latest"}\n' "$GITHUB_REPOSITORY" > min-version.json
           fi

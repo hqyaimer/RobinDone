@@ -1,9 +1,9 @@
-import { TID_SIDE_PANE_TOGGLE } from "@robinrun/shared/test-ids";
+import { TID_SIDE_PANE_TOGGLE } from "@robindone/shared/test-ids";
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { WINDOWS_CAPTION_CONTROL_CLASS } from "@/windowCaptionControls.js";
 
 export function WorkspaceSidePaneToggleButton({
@@ -17,7 +17,7 @@ export function WorkspaceSidePaneToggleButton({
   shortcutLabel?: string;
   useWindowsCaptionSpacing?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const SidePaneToggleIcon = isSidePaneOpen ? PanelRightClose : PanelRightOpen;
 
   return (

@@ -1,5 +1,5 @@
 import type { ProviderSettingsFormModel } from "@/lib/providerSettingsFormTypes.js";
-import { clearManualModelConfig } from "@robinrun/provider";
+import { clearManualModelConfig } from "@robindone/provider";
 import {
   createProviderModelDraftValues,
   type ProviderModelDraftValues,

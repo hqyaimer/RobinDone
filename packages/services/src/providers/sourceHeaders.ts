@@ -2,17 +2,17 @@ import { readFileSync } from "node:fs";
 import { version as readOsVersion } from "node:os";
 import { join } from "node:path";
 import {
-  buildRobinRunSourceHeadersFromContext,
-  normalizeRobinRunSourceHeaderValue,
-  ROBINRUN_ENV,
-  ROBINRUN_SOURCE_HEADERS,
-  ROBINRUN_VERSION,
-} from "@robinrun/shared";
+  buildRobinDoneSourceHeadersFromContext,
+  normalizeRobinDoneSourceHeaderValue,
+  ROBINDONE_ENV,
+  ROBINDONE_SOURCE_HEADERS,
+  ROBINDONE_VERSION,
+} from "@robindone/shared";
 import { getAppConfigDir } from "../paths.js";
 
-export { ROBINRUN_SOURCE_HEADERS };
+export { ROBINDONE_SOURCE_HEADERS };
 
-interface RobinRunSourceHeaderOptions {
+interface RobinDoneSourceHeaderOptions {
   appVersion?: string;
   arch?: string;
   clientLanguage?: string;
@@ -25,7 +25,7 @@ interface RobinRunSourceHeaderOptions {
 let cachedDeviceMid: { stateFile: string; value: string } | null = null;
 
 function normalizePrintableHeaderValue(value: string | undefined): string | undefined {
-  return normalizeRobinRunSourceHeaderValue(value);
+  return normalizeRobinDoneSourceHeaderValue(value);
 }
 
 function resolveClientLanguage(): string {
@@ -62,13 +62,13 @@ function readExistingDeviceMid(): string | undefined {
   }
 }
 
-export function buildRobinRunSourceHeaders(
-  options: RobinRunSourceHeaderOptions = {},
+export function buildRobinDoneSourceHeaders(
+  options: RobinDoneSourceHeaderOptions = {},
 ): Record<string, string> {
   const platform = options.platform ?? process.platform;
   const arch = options.arch ?? process.arch;
-  const appVersion = normalizePrintableHeaderValue(options.appVersion ?? ROBINRUN_VERSION);
-  const releaseChannel = normalizePrintableHeaderValue(options.releaseChannel ?? ROBINRUN_ENV);
+  const appVersion = normalizePrintableHeaderValue(options.appVersion ?? ROBINDONE_VERSION);
+  const releaseChannel = normalizePrintableHeaderValue(options.releaseChannel ?? ROBINDONE_ENV);
   const clientLanguage =
     normalizePrintableHeaderValue(options.clientLanguage) ?? resolveClientLanguage();
   const clientTimezone =
@@ -76,7 +76,7 @@ export function buildRobinRunSourceHeaders(
   const osVersion = normalizePrintableHeaderValue(options.osVersion ?? readOsVersion());
   const deviceMid = readExistingDeviceMid();
 
-  return buildRobinRunSourceHeadersFromContext({
+  return buildRobinDoneSourceHeadersFromContext({
     appVersion,
     arch,
     clientLanguage,

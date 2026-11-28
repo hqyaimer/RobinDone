@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { useClaudeSessionMigration } from "@/hooks/useClaudeSessionMigration.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useSettingsSync } from "@/hooks/useSettingsSync.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getPathLeaf } from "@/lib/path.js";
 import { logger } from "@/logger.js";
 import {
@@ -22,7 +22,7 @@ import {
   type OnboardingWorkspaceCandidate,
 } from "@/onboarding/OnboardingFlowParts.js";
 import { OnboardingAgentsFileStep } from "@/onboarding/OnboardingAgentsFileStep.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import {
   shouldAutoScanOnboardingSessions,
   useOnboardingMigration,
@@ -50,7 +50,7 @@ export function OnboardingDialog(props: {
   workspaceIdentity?: string;
   isDesktop?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
   const settingsSync = useSettingsSync({
     workspacePath: props.workspacePath,
@@ -60,8 +60,8 @@ export function OnboardingDialog(props: {
     workspacePath: props.workspacePath ?? null,
     isDesktop: props.isDesktop,
   });
-  const onboardingDialogRequested = useRobinRunStore((state) => state.onboardingDialogRequested);
-  const clearOnboardingDialogRequest = useRobinRunStore(
+  const onboardingDialogRequested = useRobinDoneStore((state) => state.onboardingDialogRequested);
+  const clearOnboardingDialogRequest = useRobinDoneStore(
     (state) => state.clearOnboardingDialogRequest,
   );
   const [wizardStep, setWizardStep] = useState<OnboardingWizardStep>("session");
@@ -314,7 +314,7 @@ export function OnboardingDialog(props: {
           { id: "onboarding.agentsFile.confirmDescription" },
           {
             source: agentsFileMigration.status?.sourcePath ?? "~/.claude/CLAUDE.md",
-            target: agentsFileMigration.status?.targetPath ?? "~/.robinrun/AGENTS.md",
+            target: agentsFileMigration.status?.targetPath ?? "~/.robindone/AGENTS.md",
           },
         ),
         confirmLabel: intl.formatMessage({ id: "onboarding.agentsFile.confirmAction" }),

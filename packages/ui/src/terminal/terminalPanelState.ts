@@ -1,5 +1,5 @@
-import type { IServiceAccessor } from "@robinrun/services";
-import { createUuid } from "@robinrun/shared";
+import type { IServiceAccessor } from "@robindone/services";
+import { createUuid } from "@robindone/shared";
 
 export interface TerminalSessionDescriptor {
   id: string;

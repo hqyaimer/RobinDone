@@ -1,9 +1,9 @@
 packages:
   - apps/dev-docs
   - packages/*
-  - apps/robinrun-cli
-  - apps/robinrun-cli/packages/*
-  - apps/robinrun-cli/tools/*
+  - apps/robindone-cli
+  - apps/robindone-cli/packages/*
+  - apps/robindone-cli/tools/*
 supportedArchitectures:
   os:
     - current

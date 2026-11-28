@@ -12,7 +12,7 @@
  * 默认键位保持既有行为，零变化。
  */
 import { useEffect, useRef } from "react";
-import type { ShortcutCommandId, RobinRunConfigOption } from "@robinrun/shared";
+import type { ShortcutCommandId, RobinDoneConfigOption } from "@robindone/shared";
 import {
   isShortcutRecordingActive,
   matchesShortcutBinding,
@@ -26,7 +26,7 @@ type ChatToolbarShortcutKey = "m" | "ctrlShiftM" | "t" | null;
 
 /** 旧 chatInputControlShortcuts.getChatToolbarShortcutKey 原样恢复。 */
 export function getChatToolbarShortcutKey(
-  category: RobinRunConfigOption["category"],
+  category: RobinDoneConfigOption["category"],
 ): ChatToolbarShortcutKey {
   switch (category) {
     case "model":
@@ -42,7 +42,7 @@ export function getChatToolbarShortcutKey(
 
 /** 计算 select 选项的下一次循环取值（模式循环用）。 */
 export function getNextConfigSelectValue(
-  option: Pick<RobinRunConfigOption, "type" | "currentValue" | "options">,
+  option: Pick<RobinDoneConfigOption, "type" | "currentValue" | "options">,
 ): string | null {
   if (option.type !== "select" || !option.options?.length) {
     return null;
@@ -71,9 +71,9 @@ interface ToolbarShortcutState {
   hasAnyOption: boolean;
   toolbarDisabled: boolean;
   modelMenuDisabled: boolean;
-  modelOption?: RobinRunConfigOption;
-  modeOption?: RobinRunConfigOption;
-  thoughtOption?: RobinRunConfigOption;
+  modelOption?: RobinDoneConfigOption;
+  modeOption?: RobinDoneConfigOption;
+  thoughtOption?: RobinDoneConfigOption;
 }
 
 type ToolbarShortcutAction = "openModelMenu" | "cycleSessionMode" | "cycleThoughtLevel";
@@ -110,7 +110,7 @@ export function resolveToolbarShortcutAction(
     action: ToolbarShortcutAction;
     commandId: ShortcutCommandId;
     expectedKey: ChatToolbarShortcutKey;
-    option?: RobinRunConfigOption;
+    option?: RobinDoneConfigOption;
     disabled?: boolean;
   }> = [
     {
@@ -158,9 +158,9 @@ export function useToolbarShortcutBindings(params: {
   hasAnyOption: boolean;
   toolbarDisabled: boolean;
   modelMenuDisabled: boolean;
-  modelOption?: RobinRunConfigOption;
-  modeOption?: RobinRunConfigOption;
-  thoughtOption?: RobinRunConfigOption;
+  modelOption?: RobinDoneConfigOption;
+  modeOption?: RobinDoneConfigOption;
+  thoughtOption?: RobinDoneConfigOption;
   onOpenModelMenu: () => void;
   /** Ctrl+Shift+M：参考 thought level，按选项顺序快速切换会话模式，不打开菜单。 */
   onCycleSessionMode: () => void;

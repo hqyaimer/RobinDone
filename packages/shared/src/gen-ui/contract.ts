@@ -5,18 +5,18 @@ export const GEN_UI_HTML_MAX_BYTES = 5_000_000;
 export const GEN_UI_STATE_MAX_BYTES = 16 * 1024;
 export const GEN_UI_STATE_MAX_ENTRIES = 100;
 export const GEN_UI_CONTEXT_MAX_BYTES = 64 * 1024;
-export const GEN_UI_GLOBALS_EVENT = "robinrun:set_globals";
-export const GEN_UI_STATE_CONTEXT_KEY = "robinrun/genUiState";
-export const GEN_UI_TWEAK_CONTEXT_KEY = "robinrun/genUiTweaks";
-export const GEN_UI_STYLE_CONTEXT_KEY = "robinrun/genUiStyles";
+export const GEN_UI_GLOBALS_EVENT = "robindone:set_globals";
+export const GEN_UI_STATE_CONTEXT_KEY = "robindone/genUiState";
+export const GEN_UI_TWEAK_CONTEXT_KEY = "robindone/genUiTweaks";
+export const GEN_UI_STYLE_CONTEXT_KEY = "robindone/genUiStyles";
 export const genUiStyleVariablesSchema = z.record(
   z.string().regex(/^--gen-ui-[a-z-]+$/),
   z.string(),
 );
-export const GEN_UI_STATE_METHOD = "robinrun/gen-ui/state";
-export const GEN_UI_FOLLOW_UP_METHOD = "robinrun/gen-ui/follow-up";
-export const GEN_UI_TWEAK_METHOD = "robinrun/gen-ui/tweak";
-export const GEN_UI_PRESENTATION_METHOD = "robinrun/gen-ui/presentation";
+export const GEN_UI_STATE_METHOD = "robindone/gen-ui/state";
+export const GEN_UI_FOLLOW_UP_METHOD = "robindone/gen-ui/follow-up";
+export const GEN_UI_TWEAK_METHOD = "robindone/gen-ui/tweak";
+export const GEN_UI_PRESENTATION_METHOD = "robindone/gen-ui/presentation";
 export const GEN_UI_STATIC_DOMAINS = [
   "cdnjs.cloudflare.com",
   "esm.sh",
@@ -25,9 +25,9 @@ export const GEN_UI_STATIC_DOMAINS = [
   "fonts.googleapis.com",
   "fonts.gstatic.com",
   "fonts.bunny.net",
-  // 自有 CDN：visualize/gen-ui 页面引用 robinrun.z.ai 上的图片等静态资源（与上面公共 CDN 同走 resourceDomains，
+  // 自有 CDN：visualize/gen-ui 页面引用 robindone.z.ai 上的图片等静态资源（与上面公共 CDN 同走 resourceDomains，
   // 会同时进 img/script/style/media/font 五类 src，可控性高于公共 CDN）
-  "robinrun.z.ai",
+  "robindone.z.ai",
 ] as const;
 
 /** This is a wire-format check. The executor owns normalization and filesystem authorization. */

@@ -1,4 +1,4 @@
-import type { BotsConfigFile, BotsStateFile } from "@robinrun/shared";
+import type { BotsConfigFile, BotsStateFile } from "@robindone/shared";
 
 import {
   createBotsServiceHarness,
@@ -78,9 +78,9 @@ describe("Bot remote workspace delivery E2E", () => {
           ensureConnectedCalls += 1;
           return { ok: true };
         },
-        getRobinRunTaskService: async () => {
+        getRobinDoneTaskService: async () => {
           remoteTaskServiceCalls += 1;
-          return harness.robinrunTaskService;
+          return harness.robindoneTaskService;
         },
       },
     });

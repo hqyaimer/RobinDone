@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { buildRemoteHostWorkspaceIdentity } from "@robinrun/shared";
+import { buildRemoteHostWorkspaceIdentity } from "@robindone/shared";
 import { readProjectCatalog } from "#src/project-catalog/index.js";
 import type {
   ProjectNavigationPort,

@@ -1,4 +1,4 @@
-import type { ArmsCustomEventPayload } from "@robinrun/shared";
+import type { ArmsCustomEventPayload } from "@robindone/shared";
 import { clearAppData } from "../helpers/desktop-app.js";
 import {
   prepareV4ConversationE2E,
@@ -70,9 +70,9 @@ async function clearSessionOpenArmsEvents(): Promise<void> {
   await browser.execute(() => {
     (
       window as Window & {
-        __robinrunArmsCustomEventsE2E?: Array<ArmsCustomEventPayload & { recordedAt?: number }>;
+        __robindoneArmsCustomEventsE2E?: Array<ArmsCustomEventPayload & { recordedAt?: number }>;
       }
-    ).__robinrunArmsCustomEventsE2E = [];
+    ).__robindoneArmsCustomEventsE2E = [];
   });
 }
 
@@ -82,9 +82,11 @@ async function readSessionOpenArmsEvents(sessionId: string): Promise<ArmsCustomE
       const events =
         (
           window as Window & {
-            __robinrunArmsCustomEventsE2E?: Array<ArmsCustomEventPayload & { recordedAt?: number }>;
+            __robindoneArmsCustomEventsE2E?: Array<
+              ArmsCustomEventPayload & { recordedAt?: number }
+            >;
           }
-        ).__robinrunArmsCustomEventsE2E ?? [];
+        ).__robindoneArmsCustomEventsE2E ?? [];
       return events
         .filter(
           (event) =>

@@ -25,7 +25,7 @@ const artifacts = [
   producer_product_turn_id: base.productTurnId,
   artifact_version: 1,
   state: "current",
-  ref: `robinrun-artifact://share/${id}`,
+  ref: `robindone-artifact://share/${id}`,
   artifact_type: mime.startsWith("image/") ? "image" : "text",
   display_name: name,
   extension: name.split(".").at(-1),
@@ -61,11 +61,11 @@ const preview = {
       origin: "realUser",
       text: "这个图里面是啥内容",
       attachments: input.map(([id, fileName, mime]) => ({
-        ref: `robinrun-artifact://share/${id}`,
+        ref: `robindone-artifact://share/${id}`,
         fileName,
         mime,
         bytes: png.length,
-        ...(id === "image-1" ? { previewRef: "robinrun-artifact://share/thumb-1" } : {}),
+        ...(id === "image-1" ? { previewRef: "robindone-artifact://share/thumb-1" } : {}),
       })),
     },
     {
@@ -90,7 +90,7 @@ try {
           reducedMotion: "reduce",
         });
         await context.addInitScript(
-          (theme) => localStorage.setItem("robinrun-theme", theme),
+          (theme) => localStorage.setItem("robindone-theme", theme),
           theme,
         );
         const page = await context.newPage();

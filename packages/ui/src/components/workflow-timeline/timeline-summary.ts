@@ -1,7 +1,7 @@
 import {
   workflowRunStepCounts,
   type WorkflowRunState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type { WorkflowCausalityGraphData } from "@/components/workflow-graph/types.js";
 import { workflowSubagentModelCardLabel } from "./subagent-model-label.js";
 import type { WorkflowTimelineModel } from "./timeline-model.js";
@@ -200,7 +200,7 @@ export function workflowSummaryParts(
       ),
     );
   }
-  // 步数走 @robinrun/shared 的唯一实现：表内 + 表外（撞界后没进表的实例仍算步数）。
+  // 步数走 @robindone/shared 的唯一实现：表内 + 表外（撞界后没进表的实例仍算步数）。
   const { settled, total } = workflowRunStepCounts(run);
   parts.push(format({ id: "chat.toolCall.workflow.card.steps" }, { done: settled, total }));
   if (options.tokens !== false) {

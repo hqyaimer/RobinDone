@@ -4,7 +4,7 @@
  */
 import { create } from "zustand";
 import type {
-  RobinRunAgentMcpServer,
+  RobinDoneAgentMcpServer,
   CliMcpSource,
   McpConfig,
   McpScope,
@@ -12,11 +12,11 @@ import type {
   McpServerStatus,
   McpSource,
   NativeMcpServerRecord,
-  RobinRunMcpListMode,
-  RobinRunMcpServerStatusSnapshot,
-  RobinRunMcpServer,
-} from "@robinrun/shared";
-import { convertToRobinRunAgentMcpServer } from "@robinrun/shared";
+  RobinDoneMcpListMode,
+  RobinDoneMcpServerStatusSnapshot,
+  RobinDoneMcpServer,
+} from "@robindone/shared";
+import { convertToRobinDoneAgentMcpServer } from "@robindone/shared";
 import { logger } from "@/logger.js";
 import {
   fetchNativeMcpServers,
@@ -27,8 +27,8 @@ import {
   type MigrateLegacyResult,
 } from "@/store/mcpStoreDesktop.js";
 import {
-  importLegacyCommonServersToRobinRunAgent,
-  migrateStoredCommonMcpToRobinRunAgent,
+  importLegacyCommonServersToRobinDoneAgent,
+  migrateStoredCommonMcpToRobinDoneAgent,
 } from "@/store/mcpStoreMigration.js";
 import {
   buildServerList,
@@ -56,8 +56,8 @@ interface UpdateServerStatusOptions {
 interface McpStoreState {
   config: McpConfig;
   nativeServers: NativeMcpServerRecord[];
-  servers: RobinRunMcpServer[];
-  statusSnapshots: Record<string, RobinRunMcpServerStatusSnapshot>;
+  servers: RobinDoneMcpServer[];
+  statusSnapshots: Record<string, RobinDoneMcpServerStatusSnapshot>;
   currentProjectPath: string;
   currentWorkspaceIdentity?: string;
   currentAuthorityKey?: string;
@@ -96,13 +96,13 @@ interface McpStoreState {
     projectPath?: string,
   ) => Promise<void>;
   deleteScopedMcpServer: (source: McpSource, name: string, projectPath?: string) => void;
-  addRobinRunAgentMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
-  updateRobinRunAgentMcpServer: (
+  addRobinDoneAgentMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
+  updateRobinDoneAgentMcpServer: (
     name: string,
     config: McpServerConfig,
     projectPath?: string,
   ) => void;
-  deleteRobinRunAgentMcpServer: (name: string, projectPath?: string) => void;
+  deleteRobinDoneAgentMcpServer: (name: string, projectPath?: string) => void;
   addClaudeCliMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
   updateClaudeCliMcpServer: (name: string, config: McpServerConfig, projectPath?: string) => void;
   deleteClaudeCliMcpServer: (name: string, projectPath?: string) => void;
@@ -122,25 +122,25 @@ interface McpStoreState {
     error?: string,
     options?: UpdateServerStatusOptions,
   ) => void;
-  beginServerStatusListRefresh: (mode?: RobinRunMcpListMode) => number;
+  beginServerStatusListRefresh: (mode?: RobinDoneMcpListMode) => number;
   markServerStatusListRefreshFailed: (
     error: string,
     requestEpoch: number,
-    mode?: RobinRunMcpListMode,
+    mode?: RobinDoneMcpListMode,
   ) => void;
   mergeServerStatusSnapshots: (
-    statuses: Record<string, RobinRunMcpServerStatusSnapshot>,
+    statuses: Record<string, RobinDoneMcpServerStatusSnapshot>,
     requestEpoch: number,
     mode?: "connect" | "status",
   ) => void;
-  getServer: (id: string) => RobinRunMcpServer | undefined;
+  getServer: (id: string) => RobinDoneMcpServer | undefined;
   setCurrentProjectPath: (
     path: string,
     workspaceIdentity?: string,
     directoryService?: McpDirectoryService | null,
     authorityKey?: string,
   ) => void;
-  getEnabledMcpServersForRobinRun: (provider: string) => RobinRunAgentMcpServer[];
+  getEnabledMcpServersForRobinDone: (provider: string) => RobinDoneAgentMcpServer[];
   checkAllServerStatus: (
     tester: (config: McpServerConfig) => Promise<{ success: boolean; error?: string }>,
   ) => Promise<void>;
@@ -153,7 +153,7 @@ interface McpStoreState {
 export const useMcpStore = create<McpStoreState>((set, get) => {
   let loadMcpPromise: Promise<boolean> | null = null;
   let loadMcpWorkspaceKey: string | null = null;
-  const statusListEpochs: Record<RobinRunMcpListMode, number> = {
+  const statusListEpochs: Record<RobinDoneMcpListMode, number> = {
     connect: 0,
     status: 0,
   };
@@ -285,8 +285,8 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
 
     loadConfig: () => {
       const config = loadPersistedConfig();
-      // MCP 启停状态已经迁移到 ~/.robinrun/cli/config.json，不能再读取旧 localStorage，
-      // 否则旧的本地开关会覆盖新的 RobinRun Agent 配置来源。
+      // MCP 启停状态已经迁移到 ~/.robindone/cli/config.json，不能再读取旧 localStorage，
+      // 否则旧的本地开关会覆盖新的 RobinDone Agent 配置来源。
       const enabledStates: Record<string, boolean> = {};
       const deletedPreload = new Set<string>(safeReadJson<string[]>(MCP_DELETED_PRELOAD_KEY, []));
       const servers = buildServerList(config, [], enabledStates, deletedPreload, []);
@@ -339,7 +339,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
             activeDirectoryService,
           );
           if (!activeDirectoryService) {
-            servers = await migrateStoredCommonMcpToRobinRunAgent(
+            servers = await migrateStoredCommonMcpToRobinDoneAgent(
               mcpPlatformService,
               servers,
               latestWorkspacePath,
@@ -407,12 +407,12 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
       safeWriteJson(MCP_DELETED_PRELOAD_KEY, Array.from(deletedPreloadMcpServers));
     },
 
-    addMcpServer: (name, config) => get().addRobinRunAgentMcpServer(name, config),
-    updateMcpServer: (name, config) => get().updateRobinRunAgentMcpServer(name, config),
-    deleteMcpServer: (name) => get().deleteRobinRunAgentMcpServer(name),
+    addMcpServer: (name, config) => get().addRobinDoneAgentMcpServer(name, config),
+    updateMcpServer: (name, config) => get().updateRobinDoneAgentMcpServer(name, config),
+    deleteMcpServer: (name) => get().deleteRobinDoneAgentMcpServer(name),
     addScopedMcpServer: async (source, name, config, projectPath) => {
       invalidateStatusListRequests();
-      const targetSource: CliMcpSource = source === "mcp" ? "robinrunagentmcp" : source;
+      const targetSource: CliMcpSource = source === "mcp" ? "robindoneagentmcp" : source;
       // 设置页保存后会马上触发 agent 侧 mcp/list 重连。
       // 先等配置落盘，再更新本地 store，避免 agent 读到旧 timeoutMs 后展示旧健康状态。
       await persistScopedChange(targetSource, {
@@ -426,7 +426,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
     },
     updateScopedMcpServer: async (source, name, config, projectPath) => {
       invalidateStatusListRequests();
-      const targetSource: CliMcpSource = source === "mcp" ? "robinrunagentmcp" : source;
+      const targetSource: CliMcpSource = source === "mcp" ? "robindoneagentmcp" : source;
       // 修复原因同新增：本地状态变化会驱动健康状态刷新，必须在磁盘配置更新后发生。
       await persistScopedChange(targetSource, {
         action: "upsert",
@@ -439,7 +439,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
     },
     deleteScopedMcpServer: (source, name, projectPath) => {
       invalidateStatusListRequests();
-      const targetSource: CliMcpSource = source === "mcp" ? "robinrunagentmcp" : source;
+      const targetSource: CliMcpSource = source === "mcp" ? "robindoneagentmcp" : source;
       persistScopedChange(targetSource, {
         action: "delete",
         source: targetSource,
@@ -483,12 +483,12 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
       get().updateScopedMcpServer("opencodemcp", name, config, projectPath),
     deleteOpenCodeMcpServer: (name, projectPath) =>
       get().deleteScopedMcpServer("opencodemcp", name, projectPath),
-    addRobinRunAgentMcpServer: (name, config, projectPath) =>
-      get().addScopedMcpServer("robinrunagentmcp", name, config, projectPath),
-    updateRobinRunAgentMcpServer: (name, config, projectPath) =>
-      get().updateScopedMcpServer("robinrunagentmcp", name, config, projectPath),
-    deleteRobinRunAgentMcpServer: (name, projectPath) =>
-      get().deleteScopedMcpServer("robinrunagentmcp", name, projectPath),
+    addRobinDoneAgentMcpServer: (name, config, projectPath) =>
+      get().addScopedMcpServer("robindoneagentmcp", name, config, projectPath),
+    updateRobinDoneAgentMcpServer: (name, config, projectPath) =>
+      get().updateScopedMcpServer("robindoneagentmcp", name, config, projectPath),
+    deleteRobinDoneAgentMcpServer: (name, projectPath) =>
+      get().deleteScopedMcpServer("robindoneagentmcp", name, projectPath),
 
     toggleServer: async (id, enabled) => {
       invalidateStatusListRequests();
@@ -560,7 +560,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
         servers: state.servers.map((server) => {
           const enabled = state.enabledStates[server.id] ?? server.enabled;
           if (
-            server.source !== "robinrunagentmcp" ||
+            server.source !== "robindoneagentmcp" ||
             !enabled ||
             (!server.changed && server.status !== "unknown")
           ) {
@@ -590,7 +590,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
         statusSnapshots: {},
         servers: state.servers.map((server) => {
           const enabled = state.enabledStates[server.id] ?? server.enabled;
-          if (server.source !== "robinrunagentmcp" || !enabled || server.status !== "connecting") {
+          if (server.source !== "robindoneagentmcp" || !enabled || server.status !== "connecting") {
             return server;
           }
           return {
@@ -668,14 +668,14 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
       }
     },
 
-    getEnabledMcpServersForRobinRun: (_provider) => {
+    getEnabledMcpServersForRobinDone: (_provider) => {
       const { servers, enabledStates, currentProjectPath } = get();
-      const candidates = new Map<string, RobinRunMcpServer>();
+      const candidates = new Map<string, RobinDoneMcpServer>();
 
       for (const server of servers) {
         const isEnabled = enabledStates[server.id] ?? server.enabled;
         if (!isEnabled) continue;
-        if (server.source !== "robinrunagentmcp") continue;
+        if (server.source !== "robindoneagentmcp") continue;
         if (server.scope === "workspace" && server.projectPath !== currentProjectPath) continue;
 
         const existing = candidates.get(server.name);
@@ -684,14 +684,14 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
         }
       }
 
-      const result: RobinRunAgentMcpServer[] = [];
+      const result: RobinDoneAgentMcpServer[] = [];
       for (const server of candidates.values()) {
-        const robinrunAgentServer = convertToRobinRunAgentMcpServer(
+        const robindoneAgentServer = convertToRobinDoneAgentMcpServer(
           server.name,
           server.config,
           server.scope === "workspace" ? "workspace" : "user",
         );
-        if (robinrunAgentServer) result.push(robinrunAgentServer);
+        if (robindoneAgentServer) result.push(robindoneAgentServer);
       }
       return result;
     },
@@ -717,7 +717,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
 
     mergePreloadedMcpServers: (preloaded) => {
       const { deletedPreloadMcpServers, nativeServers } = get();
-      const targetSource: CliMcpSource = "robinrunagentmcp";
+      const targetSource: CliMcpSource = "robindoneagentmcp";
       const nextNativeServers = nativeServers.slice();
       let changed = false;
 
@@ -748,7 +748,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
     },
 
     deletePreloadedMcpServer: (source, name) => {
-      const targetSource: CliMcpSource = source === "mcp" ? "robinrunagentmcp" : source;
+      const targetSource: CliMcpSource = source === "mcp" ? "robindoneagentmcp" : source;
       const key = makeServerId(targetSource, name);
       persistScopedChange(targetSource, { action: "delete", source: targetSource, name });
       set((state) => {
@@ -782,7 +782,7 @@ export const useMcpStore = create<McpStoreState>((set, get) => {
         get().nativeServers.length > 0
           ? get().nativeServers
           : await fetchNativeMcpServers(mcpPlatformService, { workspacePath: latestWorkspacePath });
-      const migration = await importLegacyCommonServersToRobinRunAgent(
+      const migration = await importLegacyCommonServersToRobinDoneAgent(
         mcpPlatformService,
         result.servers ?? {},
         currentNativeServers,

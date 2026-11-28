@@ -4,10 +4,10 @@ import {
   TID_OPS_PANEL_DETAIL,
   TID_OPS_PANEL_LIST,
   TID_OPS_PANEL_ROOT,
-} from "@robinrun/shared/test-ids";
-import type { OpsPanelEntry, ProgressEntry } from "@robinrun/shared";
+} from "@robindone/shared/test-ids";
+import type { OpsPanelEntry, ProgressEntry } from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { buildChangeSummaryFilePreviewSource } from "@/messageChangeSummaryPreview.js";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import { groupOpsPanelEntries, useOpsPanelView } from "./useOpsPanelView.js";
@@ -74,7 +74,7 @@ export function OpsPanelPage(props: {
   /** 进度 links 点击 → 右栏 code-viewer 打开文件（装配面注入；缺席时链接降级为纯文本）。 */
   onOpenCodeViewer?: (source: CodeViewerSource) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // hook 自含（三路合并刷新 + 写动作），装配面只传 workspacePath——避免在巨型 Shell
   // 组件里追加 hook 依赖；服务缺席（旧 wire/测试 double）渲染不可用空态。
   const { view, progress, error, available, actions } = useOpsPanelView(props.workspacePath);
@@ -161,7 +161,11 @@ export function OpsPanelPage(props: {
                           type="button"
                           className="break-all text-left text-ui-xs text-primary hover:underline"
                           onClick={() =>
-                            openProgressLink(link, props.workspacePath as string, props.onOpenCodeViewer!)
+                            openProgressLink(
+                              link,
+                              props.workspacePath as string,
+                              props.onOpenCodeViewer!,
+                            )
                           }
                         >
                           {link}

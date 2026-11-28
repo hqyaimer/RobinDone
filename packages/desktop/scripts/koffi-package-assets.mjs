@@ -68,7 +68,7 @@ export function stageKoffiIntoBundledAgents({ koffiPackageRoot, glmDir, targetPl
 export function verifyStagedKoffi({
   resourcesDir,
   targetPlatform,
-  pluginRelativePath = "packages/robinrun-cua-plugin",
+  pluginRelativePath = "packages/robindone-cua-plugin",
 }) {
   const platformKey = koffiPlatformKey(targetPlatform);
   const koffiRoot = resolve(resourcesDir, "glm", pluginRelativePath, "node_modules", "koffi");

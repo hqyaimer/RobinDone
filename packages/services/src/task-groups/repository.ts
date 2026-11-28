@@ -13,7 +13,7 @@ import {
   mainAgentGroupId,
   resolveWorkspaceKey,
   workerGroupId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   GroupNode,
   GroupTaskFact,
@@ -227,7 +227,7 @@ export class TaskGroupRepository {
     });
   }
   /**
-   * worker 会话组织组（2026-11-16 物化裁决）：确定性 id（robinrun-worker-<workerId>）幂等。
+   * worker 会话组织组（2026-11-16 物化裁决）：确定性 id（robindone-worker-<workerId>）幂等。
    * 不存在则以随机非灰色新建并置顶根层排序（展示顺序由 UI 排在主智能体之后、用户组之前）；
    * 已存在且 title 不同则同步标题——workers.json 注册表是身份事实源，注册表赢，用户的
    * 改色与归属不被覆盖。workerId 形状在此兜底校验（facade 已有 zod 同款校验）。

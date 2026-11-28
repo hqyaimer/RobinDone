@@ -7,10 +7,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { buildRewardsUrl, resolveRewardsOrigin, ROBINRUN_ENV } from "@robinrun/shared";
+import { buildRewardsUrl, resolveRewardsOrigin, ROBINDONE_ENV } from "@robindone/shared";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
 import { resolveTheme } from "@/useTheme.js";
 import { RewardsWebview } from "@/rewards/RewardsWebview.js";
 import { logger } from "@/logger.js";
@@ -20,11 +20,11 @@ export const useOpenRewards = () => useContext(RewardsContext);
 export function RewardsProvider({ children, desktop }: { children: ReactNode; desktop: boolean }) {
   const [opened, setOpened] = useState(false);
   const platform = usePlatform();
-  const { locale } = useRobinRunIntl();
-  const theme = useRobinRunStore((s) => s.theme);
-  const user = useRobinRunStore((s) => s.user);
-  const loginAttempt = useRobinRunStore((s) => s.loginEntryAttempt);
-  const requestLogin = useRobinRunStore((s) => s.requestLoginEntry);
+  const { locale } = useRobinDoneIntl();
+  const theme = useRobinDoneStore((s) => s.theme);
+  const user = useRobinDoneStore((s) => s.user);
+  const loginAttempt = useRobinDoneStore((s) => s.loginEntryAttempt);
+  const requestLogin = useRobinDoneStore((s) => s.requestLoginEntry);
   // 登录后营销实例会重建；续接意图由窗口级 Provider 持有，不能挂在旧 controller 上。
   const pendingLogin = useRef<number | null>(null);
   const openPage = useCallback(async () => {
@@ -32,7 +32,7 @@ export function RewardsProvider({ children, desktop }: { children: ReactNode; de
     else
       await platform.openExternal(
         buildRewardsUrl(
-          resolveRewardsOrigin({ env: ROBINRUN_ENV }),
+          resolveRewardsOrigin({ env: ROBINDONE_ENV }),
           locale,
           resolveTheme(theme) === "dark" ? "zai-dark" : "zai-light",
         ),

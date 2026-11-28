@@ -17,7 +17,7 @@ export interface DesktopProductIdentity {
   readonly cuaHelperInstallVariant: "preview" | null;
 }
 
-export const ROBINRUN_PREVIEW_IDENTITY_ENV: "ROBINRUN_PREVIEW_IDENTITY";
+export const ROBINDONE_PREVIEW_IDENTITY_ENV: "ROBINDONE_PREVIEW_IDENTITY";
 
 export function isPreviewIdentityRequested(env?: Record<string, string | undefined>): boolean;
 export function resolveDesktopProductFlavor(

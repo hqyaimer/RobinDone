@@ -1,5 +1,5 @@
-import type { IServiceAccessor, ProviderSettingsView } from "@robinrun/services";
-import type { ProviderFamilyConnectionSelection } from "@robinrun/shared";
+import type { IServiceAccessor, ProviderSettingsView } from "@robindone/services";
+import type { ProviderFamilyConnectionSelection } from "@robindone/shared";
 import type { AccountConnectionLoss } from "@/root/accountConnectionRefreshObserver.js";
 import {
   resolveFirstSubscribedTeamPlanConnectionWithContext,

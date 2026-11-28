@@ -1,1 +1,1 @@
-export * from "@robinrun/shared/conversation-telemetry/providerTelemetryIdentity";
+export * from "@robindone/shared/conversation-telemetry/providerTelemetryIdentity";

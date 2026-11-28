@@ -1,13 +1,13 @@
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 import type {
   PendingInteractionSummary,
   SessionSummary,
   SessionWorkflowActivity,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 // UI-only sidecar：不进入 shared task meta/schema，也不写回 tasks-index。
 // 字段名使用明确的内部前缀，避免调用方把它误当成持久化 task 属性。
-export const TASK_LIST_ROW_ACTIVITY_FIELD = "__robinrunSessionActivity" as const;
+export const TASK_LIST_ROW_ACTIVITY_FIELD = "__robindoneSessionActivity" as const;
 
 export interface TaskListRowActivity {
   phase: SessionSummary["phase"];
@@ -18,11 +18,11 @@ export interface TaskListRowActivity {
   workflowActivity?: SessionWorkflowActivity;
 }
 
-export type TaskListMetaWithActivity = RobinRunTaskMeta & {
+export type TaskListMetaWithActivity = RobinDoneTaskMeta & {
   [TASK_LIST_ROW_ACTIVITY_FIELD]: TaskListRowActivity;
 };
 
-export function attachTaskListRowActivity<T extends RobinRunTaskMeta>(
+export function attachTaskListRowActivity<T extends RobinDoneTaskMeta>(
   task: T,
   activity: TaskListRowActivity,
 ): T & TaskListMetaWithActivity {
@@ -32,13 +32,13 @@ export function attachTaskListRowActivity<T extends RobinRunTaskMeta>(
   };
 }
 
-export function getTaskListRowActivity(task: RobinRunTaskMeta): TaskListRowActivity | null {
+export function getTaskListRowActivity(task: RobinDoneTaskMeta): TaskListRowActivity | null {
   const activity = (task as Partial<TaskListMetaWithActivity>)[TASK_LIST_ROW_ACTIVITY_FIELD];
   return activity ?? null;
 }
 
 /** 只采信 sessions-index 的实时 phase；tasks-index 残留 status=running 不能置顶历史任务。 */
-export function isTaskListRowRunning(task: RobinRunTaskMeta): boolean {
+export function isTaskListRowRunning(task: RobinDoneTaskMeta): boolean {
   const phase = getTaskListRowActivity(task)?.phase;
   return phase === "prewarming" || phase === "running";
 }
@@ -51,12 +51,12 @@ export function isTaskListRowRunning(task: RobinRunTaskMeta): boolean {
  * 都落在按 updatedAt 排序的非运行层，随进度事件互相换位。后台 bash / 分离子代理同理。
  * 转圈图标仍只认 phase（isTaskListRowRunning），这里只决定排序层。
  */
-export function isTaskListRowActive(task: RobinRunTaskMeta): boolean {
+export function isTaskListRowActive(task: RobinDoneTaskMeta): boolean {
   return isTaskListRowRunning(task) || getTaskListRowActivity(task)?.hasBackgroundWork === true;
 }
 
 export function getTaskListAttention(
-  task: RobinRunTaskMeta,
+  task: RobinDoneTaskMeta,
 ): { kind: "permission" | "userInput"; count: number } | null {
   const summary = getTaskListRowActivity(task)?.pendingInteractions;
   if (!summary) {
@@ -73,9 +73,9 @@ export function getTaskListAttention(
 }
 
 export function mergeTaskListMembershipFields(
-  activityTask: RobinRunTaskMeta,
-  membershipTask: RobinRunTaskMeta,
-): RobinRunTaskMeta {
+  activityTask: RobinDoneTaskMeta,
+  membershipTask: RobinDoneTaskMeta,
+): RobinDoneTaskMeta {
   const activity = getTaskListRowActivity(activityTask);
   if (!activity) {
     return membershipTask;

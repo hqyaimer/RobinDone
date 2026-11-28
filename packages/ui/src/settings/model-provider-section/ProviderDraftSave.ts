@@ -1,4 +1,4 @@
-import { isApiKeyAccess, type ProviderApiType } from "@robinrun/provider";
+import { isApiKeyAccess, type ProviderApiType } from "@robindone/provider";
 import {
   getProviderFormLabel,
   type ProviderSettingsFormProvider,

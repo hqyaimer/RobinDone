@@ -20,7 +20,7 @@ const TRIGGER_ID = "trg-aaa11111";
 let workspace = "";
 
 async function writeRegistry(): Promise<string> {
-  const triggersRoot = join(workspace, ".robinrun", "triggers");
+  const triggersRoot = join(workspace, ".robindone", "triggers");
   await mkdir(triggersRoot, { recursive: true });
   const registryPath = join(triggersRoot, "triggers.json");
   await writeFile(
@@ -87,7 +87,7 @@ describe("trigger engine scheduling", () => {
   let onRejection: ((reason: unknown) => void) | undefined;
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-eng-"));
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-eng-"));
   });
 
   afterEach(async () => {
@@ -238,7 +238,7 @@ describe("trigger engine scheduling", () => {
 
     // 注册表提供订阅者（ownerAgentId），绑定文件提供原 taskId。
     await writeRegistry();
-    const stateDir = join(workspace, ".robinrun", "triggers", "state");
+    const stateDir = join(workspace, ".robindone", "triggers", "state");
     await mkdir(stateDir, { recursive: true });
     await writeFile(
       join(stateDir, "sessions.json"),
@@ -278,7 +278,7 @@ describe("trigger engine scheduling", () => {
   // 静默拿不到忙查询、聚合器退化为逐批投递。本用例走真实 webhook 路径 + 真实定时器
   // （绕开本文件伪定时器用例的 fs 抖动），锁「引擎选项 isTaskBusy → 聚合器」端到端。
   it("engine options.isTaskBusy wiring: busy session holds webhook events, idle merges one batch", async () => {
-    const triggersRoot = join(workspace, ".robinrun", "triggers");
+    const triggersRoot = join(workspace, ".robindone", "triggers");
     await mkdir(join(triggersRoot, "state"), { recursive: true });
     const registryPath = join(triggersRoot, "triggers.json");
     const WEBHOOK_PATH = "hooks/busy-test";
@@ -460,12 +460,12 @@ describe("trigger engine scheduling", () => {
       now: T0.getTime(),
       toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"],
     });
-    const triggersRoot = join(workspace, ".robinrun", "triggers");
+    const triggersRoot = join(workspace, ".robindone", "triggers");
     const scriptDir = join(triggersRoot, TRIGGER_ID, "script");
     await mkdir(scriptDir, { recursive: true });
     await writeFile(
       join(scriptDir, "index.mjs"),
-      `const seen = await globalThis.robinrun.emit({ summary: "one pass", data: { pass: true } });
+      `const seen = await globalThis.robindone.emit({ summary: "one pass", data: { pass: true } });
        process.exit(0);`,
       "utf8",
     );

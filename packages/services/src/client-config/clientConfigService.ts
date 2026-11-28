@@ -1,10 +1,10 @@
 import {
-  buildRobinRunEndpointUrls,
+  buildRobinDoneEndpointUrls,
   clientConfigReadOptionsSchema,
   parseClientConfigSnapshot,
   type ApiClient,
   type ClientConfigSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { IClientConfigService } from "./clientConfig.js";
 
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -68,7 +68,7 @@ export function createClientConfigService(dependencies: {
       const context = await dependencies.resolveRequestContext();
       const url = new URL(
         "/api/v1/client/configs",
-        buildRobinRunEndpointUrls(context.endpointOrigin).origin,
+        buildRobinDoneEndpointUrls(context.endpointOrigin).origin,
       );
       url.searchParams.set("app_version", context.appVersion);
       url.searchParams.set("platform", context.platform);

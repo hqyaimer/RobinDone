@@ -1,6 +1,6 @@
-// sessions-index 传输面（desktop/host 实现）：桥到 IRobinRunAgentService 的 v4 sessions-index 转发面
+// sessions-index 传输面（desktop/host 实现）：桥到 IRobinDoneAgentService 的 v4 sessions-index 转发面
 // （与 agentConversationTransport 同构；web 直连 relay 时换实现即可）。
-import type { IRobinRunAgentService } from "@robinrun/services";
+import type { IRobinDoneAgentService } from "@robindone/services";
 import {
   sessionsIndexTopicFrameSchema,
   TopicWireFrameAssembler,
@@ -10,8 +10,8 @@ import {
   type TopicFrameDeliveryKind,
   type V4ConversationResyncResult,
   type V4SessionsIndexSubscribeResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import { sessionsIndexTopic } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
+import { sessionsIndexTopic } from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 import { ensureAgentV4ConnectionHandshake } from "@/v4/agentV4ConnectionHandshake.js";
 import { createAckActivationBarrier } from "@/v4/ackActivationBarrier.js";
@@ -49,7 +49,7 @@ export interface AgentSessionsIndexTransportTarget {
 }
 
 type SessionsIndexV4AgentService = Pick<
-  IRobinRunAgentService,
+  IRobinDoneAgentService,
   | "subscribeSessionsIndexV4"
   | "resyncSessionsIndexV4"
   | "unsubscribeSessionsIndexV4"
@@ -58,7 +58,7 @@ type SessionsIndexV4AgentService = Pick<
 > &
   Partial<
     Pick<
-      IRobinRunAgentService,
+      IRobinDoneAgentService,
       "helloConversationV4" | "initializeConversationV4" | "onAgentRuntimeLifecycle"
     >
   >;
@@ -78,7 +78,7 @@ export function createAgentSessionsIndexTransport(
     }
     return ensureAgentV4ConnectionHandshake(
       agentService as Pick<
-        IRobinRunAgentService,
+        IRobinDoneAgentService,
         "helloConversationV4" | "initializeConversationV4"
       >,
     );

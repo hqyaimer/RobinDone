@@ -1,9 +1,9 @@
-import type { ChromeBrowserDataImportResult } from "@robinrun/shared";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { ChromeBrowserDataImportResult } from "@robindone/shared";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function formatImportSummary(
   result: ChromeBrowserDataImportResult,
-  formatMessage: ReturnType<typeof useRobinRunIntl>["intl"]["formatMessage"],
+  formatMessage: ReturnType<typeof useRobinDoneIntl>["intl"]["formatMessage"],
 ): string {
   if (!result.success) {
     const errorMessageId =

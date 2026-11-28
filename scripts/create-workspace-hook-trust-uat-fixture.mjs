@@ -42,17 +42,17 @@ if (parsed.values.verify !== undefined) {
 
 const workspacePath = parsed.values.target
   ? resolve(parsed.values.target)
-  : await mkdtemp(join(tmpdir(), "robinrun-workspace-hook-trust-uat-"));
+  : await mkdtemp(join(tmpdir(), "robindone-workspace-hook-trust-uat-"));
 
 if (parsed.values.target) {
   await mkdir(workspacePath);
 }
 
-const robinrunDirectory = join(workspacePath, ".robinrun");
-const recorderPath = join(robinrunDirectory, "workspace-hook-trust-uat-recorder.mjs");
-const configPath = join(robinrunDirectory, "config.json");
+const robindoneDirectory = join(workspacePath, ".robindone");
+const recorderPath = join(robindoneDirectory, "workspace-hook-trust-uat-recorder.mjs");
+const configPath = join(robindoneDirectory, "config.json");
 const evidencePath = join(workspacePath, ".workspace-hook-trust-uat", "executions.jsonl");
-await mkdir(robinrunDirectory, { recursive: true });
+await mkdir(robindoneDirectory, { recursive: true });
 
 const recorder = `import { appendFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -84,7 +84,7 @@ const config = {
               type: "process",
               command: "node",
               args: [
-                ".robinrun/workspace-hook-trust-uat-recorder.mjs",
+                ".robindone/workspace-hook-trust-uat-recorder.mjs",
                 "SessionStart",
                 "session-start-a",
               ],
@@ -96,7 +96,7 @@ const config = {
               type: "process",
               command: "node",
               args: [
-                ".robinrun/workspace-hook-trust-uat-recorder.mjs",
+                ".robindone/workspace-hook-trust-uat-recorder.mjs",
                 "SessionStart",
                 "session-start-b",
               ],
@@ -114,7 +114,7 @@ const config = {
               type: "process",
               command: "node",
               args: [
-                ".robinrun/workspace-hook-trust-uat-recorder.mjs",
+                ".robindone/workspace-hook-trust-uat-recorder.mjs",
                 "UserPromptSubmit",
                 "prompt-submit",
               ],
@@ -164,7 +164,7 @@ if (parsed.values.json) {
       `config:    ${configPath}`,
       `evidence:  ${evidencePath}`,
       "",
-      "Open the workspace in RobinRun Desktop, then follow:",
+      "Open the workspace in RobinDone Desktop, then follow:",
       "docs/testing/workspace-hook-trust-manual-acceptance.md",
       "",
     ].join("\n"),
@@ -181,7 +181,7 @@ if (parsed.values.json) {
  * 这里在每轮开始前做廉价断言，让污染在数秒内暴露，而不是等测完才发现。
  */
 async function verifyFixture(workspacePath, asJson) {
-  const targetConfigPath = join(workspacePath, ".robinrun", "config.json");
+  const targetConfigPath = join(workspacePath, ".robindone", "config.json");
   const targetEvidencePath = join(workspacePath, ".workspace-hook-trust-uat", "executions.jsonl");
   const problems = [];
   let declarations = [];

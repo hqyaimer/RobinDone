@@ -42,7 +42,7 @@ const runtimeModuleLookupRoots = [
 const pnpmCommand = "pnpm";
 const DEFAULT_TARGET_OS = "mac";
 const DEFAULT_TARGET_ARCH = "arm64";
-const desktopDistDir = process.env.ROBINRUN_DESKTOP_DIST_DIR || "dist";
+const desktopDistDir = process.env.ROBINDONE_DESKTOP_DIST_DIR || "dist";
 const desktopDistRoot = resolve(desktopRoot, desktopDistDir);
 const desktopProductIdentity = resolveDesktopProductIdentity(process.env);
 
@@ -160,7 +160,7 @@ export function resolveElectronMirror(env = process.env) {
 
 export function createElectronRuntimeMirrorEnv(mirror) {
   return {
-    ROBINRUN_ELECTRON_RUNTIME_MIRROR: mirror,
+    ROBINDONE_ELECTRON_RUNTIME_MIRROR: mirror,
     // @electron/get 的 Electron runtime 环境变量是全局读取的。
     // 如果传给 electron-builder 主进程，会覆盖 dmg-builder 等 generic artifact 的 mirrorOptions。
     ELECTRON_MIRROR: "",
@@ -219,8 +219,8 @@ export function createElectronBuilderBinariesMirrorEnv(mirror) {
 
 export function createBundleProcessEnvs({ os, arch, electronMirror, electronBuilderMirror }) {
   const commonEnv = {
-    ROBINRUN_TARGET_OS: os,
-    ROBINRUN_TARGET_ARCH: arch,
+    ROBINDONE_TARGET_OS: os,
+    ROBINDONE_TARGET_ARCH: arch,
     ...createElectronRuntimeMirrorEnv(electronMirror),
   };
   const clearedElectronBuilderEnv = createElectronBuilderBinariesMirrorEnv("");
@@ -304,8 +304,8 @@ function printHelp() {
   -h, --help                   查看帮助
 
 环境变量:
-  ROBINRUN_TARGET_OS              与 --os 等价
-  ROBINRUN_TARGET_ARCH            与 --arch 等价
+  ROBINDONE_TARGET_OS              与 --os 等价
+  ROBINDONE_TARGET_ARCH            与 --arch 等价
 `);
 }
 
@@ -327,10 +327,10 @@ function normalizeArch(rawArch) {
 
 function parseArgs(argv) {
   const options = {
-    os: process.env.ROBINRUN_TARGET_OS ?? null,
-    arch: process.env.ROBINRUN_TARGET_ARCH ?? null,
-    skipPrepare: process.env.ROBINRUN_SKIP_PREPARE === "1",
-    skipBuild: process.env.ROBINRUN_SKIP_BUILD === "1",
+    os: process.env.ROBINDONE_TARGET_OS ?? null,
+    arch: process.env.ROBINDONE_TARGET_ARCH ?? null,
+    skipPrepare: process.env.ROBINDONE_SKIP_PREPARE === "1",
+    skipBuild: process.env.ROBINDONE_SKIP_BUILD === "1",
     dryRun: false,
     positionals: [],
   };

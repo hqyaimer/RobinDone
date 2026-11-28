@@ -1,4 +1,4 @@
-import type { StartPlanPreviewConfig } from "@robinrun/shared";
+import type { StartPlanPreviewConfig } from "@robindone/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useOptionalServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";

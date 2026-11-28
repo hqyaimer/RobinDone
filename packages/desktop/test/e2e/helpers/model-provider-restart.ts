@@ -4,11 +4,11 @@ import { dirname, join } from "node:path";
 import {
   BUILTIN_MODEL_PROVIDER_IDS,
   BUILTIN_PROVIDER_TEMPLATE_IDS,
-  ROBINRUN_AGENT_PROVIDER,
+  ROBINDONE_AGENT_PROVIDER,
   encodeCustomModelValue,
   type ProviderFamilyConnectionSelection,
-} from "@robinrun/shared";
-import { TID_CHAT_MODEL_SELECT_TRIGGER, TID_V4_MODEL_CONFIG } from "@robinrun/shared/test-ids";
+} from "@robindone/shared";
+import { TID_CHAT_MODEL_SELECT_TRIGGER, TID_V4_MODEL_CONFIG } from "@robindone/shared/test-ids";
 import { getE2EAppDataPaths } from "./desktop-app.js";
 import { getUpstreamApiKey } from "./upstream-provider.js";
 import { waitForSqliteTable } from "./e2e-sqlite-readiness.js";
@@ -33,13 +33,13 @@ async function currentComposerRecentKey(): Promise<string> {
     // 首次草稿可能尚无导航缓存；直接读当前草稿 owner，不能用旧 workspace 键或猜测项目。
     const state = (
       window as Window & {
-        __robinrunSessionStoreE2E?: {
+        __robindoneSessionStoreE2E?: {
           getState(): { workspaces: Record<string, { draftProjectId?: string | null }> };
         };
       }
-    ).__robinrunSessionStoreE2E?.getState().workspaces[workspacePath];
+    ).__robindoneSessionStoreE2E?.getState().workspaces[workspacePath];
     if (!state) throw new Error(`当前工作区草稿状态未就绪: ${workspacePath}`);
-    return `robinrun-composer-recent:v2:${JSON.stringify(["desktop", "local", state.draftProjectId ?? null])}`;
+    return `robindone-composer-recent:v2:${JSON.stringify(["desktop", "local", state.draftProjectId ?? null])}`;
   }, paths.workspace);
 }
 
@@ -91,15 +91,15 @@ export async function seedBigModelOAuthCredential() {
 /** 为需要经过 Highspeed 网关鉴权的 E2E 补齐登录 JWT。 */
 export async function seedHighspeedLoginCredential() {
   await writeJsonPatch(CREDENTIALS_FILE, {
-    robinrunjwttoken: "e2e-highspeed-robinrun-jwt",
+    robindonejwttoken: "e2e-highspeed-robindone-jwt",
   });
 }
 
 /**
- * 为需要实际进入 BigModel Start Plan 的 E2E 补齐 robinrun JWT。
+ * 为需要实际进入 BigModel Start Plan 的 E2E 补齐 robindone JWT。
  *
  * Start Plan 与个人 Coding Plan 共用 OAuth 用户身份，但请求授权读取的是
- * `robinrunjwttoken`；只 seed business access token 会让菜单把 Start Plan 判成未认证。
+ * `robindonejwttoken`；只 seed business access token 会让菜单把 Start Plan 判成未认证。
  */
 export async function seedBigModelStartPlanCredential() {
   await writeJsonPatch(CREDENTIALS_FILE, {
@@ -110,7 +110,7 @@ export async function seedBigModelStartPlanCredential() {
       id: "bigmodel-e2e-user",
       username: "bigmodel-e2e-user",
     }),
-    robinrunjwttoken: "e2e-bigmodel-start-plan-jwt",
+    robindonejwttoken: "e2e-bigmodel-start-plan-jwt",
   });
 }
 
@@ -174,11 +174,11 @@ export async function seedPersistedModelSelection(params: {
           },
         }),
       );
-      window.localStorage.setItem("robinrun-last-agent-provider", appProvider);
+      window.localStorage.setItem("robindone-last-agent-provider", appProvider);
     },
     key,
     params,
-    ROBINRUN_AGENT_PROVIDER,
+    ROBINDONE_AGENT_PROVIDER,
   );
 }
 
@@ -239,7 +239,7 @@ export async function waitForLastSelectedAgentConfig(params: {
     const storedAgentPreferences = await browser.execute(() =>
       Object.fromEntries(
         Object.entries(window.localStorage).filter(([key]) =>
-          key.startsWith("robinrun-last-agent-"),
+          key.startsWith("robindone-last-agent-"),
         ),
       ),
     );
@@ -335,7 +335,7 @@ export async function waitForV4DraftModelConfig(params: { model: string; thought
 }
 
 export async function waitForPlanModelIoRequest(expectedText: string) {
-  const debugDir = join(paths.homeDir, ".robinrun", "cli", "debug");
+  const debugDir = join(paths.homeDir, ".robindone", "cli", "debug");
   let matched: { model?: string; thinking?: { type?: string } } | null = null;
   await browser.waitUntil(
     async () => {

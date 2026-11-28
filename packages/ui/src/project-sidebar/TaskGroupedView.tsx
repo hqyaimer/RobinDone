@@ -23,7 +23,7 @@ import {
   isWorkerGroupId,
   workerGroupId,
   workerIdFromWorkerGroupId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { TaskRenameDialog } from "@/TaskRenameDialog.js";
@@ -80,8 +80,8 @@ import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { resolveRemoteWorkspaceSessionIdForTarget } from "@/hooks/useResolvedRemoteWorkspaceSessionId.js";
 import { useRemoteWorkspaceSessionStore } from "@/store/remoteWorkspaceSessionStore.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
 import { logger } from "@/logger.js";
 
@@ -130,24 +130,24 @@ export function TaskGroupedView({
   onAddProject?: () => void;
   /**
    * 智能体页进入的项目（2026-11-15 数据范围裁决）：驱动 worker 名册读取与会话组织组
-   * 物化（2026-11-16：active worker 各物化为 robinrun-worker-<workerId> 任务组），并把
+   * 物化（2026-11-16：active worker 各物化为 robindone-worker-<workerId> 任务组），并把
    * 页面收敛到本项目——其他项目（含已软删除项目）的智能体与会话不进本页。
    * null（树模式/web 远控回退）= 全量渲染、不读名册。worker 身份仍只读：新建/改名/
    * 停用全部由主智能体经 ManageWorkers 维护，UI 只做组投影同步（标题随注册表）。
    */
   enteredProject?: VirtualProject | null;
-  /** worker 组的"查看文件"入口：打开该 worker 的 `.robinrun/agents/<id>/` 工作目录。 */
+  /** worker 组的"查看文件"入口：打开该 worker 的 `.robindone/agents/<id>/` 工作目录。 */
   onOpenWorkerFolder?: (target: SidebarFileTreeTarget) => void;
   /** 当前工作区的远程会话 id（远程项目文件树服务解析需要；本地为 undefined）。 */
   workspaceRemoteSessionId?: string;
 }) {
   const { groups: organization, loading } = useProjectDirectory();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const presentation = useContext(ProjectTaskListContext);
-  const { robinrunTaskService: service, windowControllerService: controller } =
+  const { robindoneTaskService: service, windowControllerService: controller } =
     useBaseWorkspaceServices();
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
-  const activeTaskId = useRobinRunSessionStore(
+  const activeTaskId = useRobinDoneSessionStore(
     (state) => state.workspaces[workspaceKey]?.activeTaskId ?? null,
   );
   const [collapsed, setCollapsed] = useState(readGroupedTaskCollapsedGroupIds);
@@ -354,7 +354,7 @@ export function TaskGroupedView({
       getTaskRemoteSessionId(task),
     );
     if (mutation.kind === "archive" && mutation.archived)
-      useRobinRunSessionStore
+      useRobinDoneSessionStore
         .getState()
         .removeTaskState(task.workspacePath, task.taskId, task.workspaceIdentity);
     await refresh();
@@ -482,7 +482,7 @@ export function TaskGroupedView({
     id: allExpanded ? "taskGroup.collapseAll" : "taskGroup.expandAll",
   });
   // worker 名册 → 会话组织组物化（2026-11-16 裁决）：active worker 各拥有确定性任务组
-  // （robinrun-worker-<workerId>），经既有任务组管线渲染——worker 与主智能体平级、可展开、
+  // （robindone-worker-<workerId>），经既有任务组管线渲染——worker 与主智能体平级、可展开、
   // 会话可访问可继续，composer 智能体下拉也自动纳入。组行只是投影：workers.json 仍是
   // 身份事实源，标题随名册同步（注册表赢），颜色/顺序存组行（用户可改，禁止改名/解散）。
   // structure 已有同 id 且标题一致的组时跳过写，防止 ensure→广播→refresh 的写放大回环。
@@ -548,7 +548,7 @@ export function TaskGroupedView({
           activeDragTaskKey={drag.activeTaskKey}
           activeDragGroupId={drag.activeGroupId}
           tooltipsDisabled={drag.dragging}
-          // worker 组才有自己的工作目录（.robinrun/agents/<id>/）；主智能体与用户组不提供该入口。
+          // worker 组才有自己的工作目录（.robindone/agents/<id>/）；主智能体与用户组不提供该入口。
           onOpenFolder={
             isWorkerGroupId(agent.group.id) && onOpenWorkerFolder && workersRootPath
               ? () => {
@@ -556,7 +556,7 @@ export function TaskGroupedView({
                   // 与文件树行路径、祖先目录推导用同一形状，避免混合分隔符展开失败。
                   const base = workersRootPath.replace(/[\\/]+$/, "");
                   const separator = base.includes("\\") ? "\\" : "/";
-                  const folder = `${base}${separator}.robinrun${separator}agents${separator}${workerIdFromWorkerGroupId(agent.group.id)}`;
+                  const folder = `${base}${separator}.robindone${separator}agents${separator}${workerIdFromWorkerGroupId(agent.group.id)}`;
                   // Bug 原因：曾把 worker 目录本身当作 workspacePath 传给文件面板入口，
                   // handleOpenFileManager 按"目标工作区 ≠ 当前工作区"走跨工作区分支
                   // （requestFileManager → addTab 激活新 workspace tab），当前会话被

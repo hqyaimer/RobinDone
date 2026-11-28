@@ -1,4 +1,4 @@
-import type { BotOutboundMessage } from "@robinrun/shared";
+import type { BotOutboundMessage } from "@robindone/shared";
 
 type ReplyTarget = Pick<BotOutboundMessage, "replyToMessageId" | "threadId" | "rootMessageId">;
 

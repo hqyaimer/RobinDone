@@ -2,8 +2,8 @@ import type {
   IWindowControllerService,
   WindowHostControllerFrame,
   WindowHostControllerTaskListResult,
-  RobinRunTaskListQuery,
-} from "@robinrun/services";
+  RobinDoneTaskListQuery,
+} from "@robindone/services";
 import {
   CONTROLLER_TASKS_INDEX_TOPIC,
   CONTROLLER_WORKSPACES_TOPIC,
@@ -12,7 +12,7 @@ import {
   type WindowHostControllerCursor,
   type WindowHostControllerTaskFrame,
   type WindowHostControllerTaskRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 
 export interface WindowControllerTaskListRegistry {
@@ -27,7 +27,7 @@ export interface WindowControllerTaskListRegistry {
   list(
     queryKey: string,
     version: WindowControllerTaskListVersion,
-    query: RobinRunTaskListQuery,
+    query: RobinDoneTaskListQuery,
   ): Promise<WindowHostControllerTaskListResult>;
 }
 
@@ -63,7 +63,7 @@ function taskAddressKey(address: WindowHostControllerTaskRow["address"]): string
 }
 
 function queryContainsWorkspace(
-  query: RobinRunTaskListQuery,
+  query: RobinDoneTaskListQuery,
   address: WindowHostControllerTaskRow["address"],
 ): boolean {
   if (query.workspaceScopes === "host") return !address.sourceServerId && !address.remoteSessionId;
@@ -100,7 +100,7 @@ export function getWindowControllerTaskListRegistry(
     {
       versionKey: string;
       promise: Promise<WindowHostControllerTaskListResult>;
-      query: RobinRunTaskListQuery;
+      query: RobinDoneTaskListQuery;
     }
   >();
   const taskRows = new Map<string, WindowHostControllerTaskRow>();

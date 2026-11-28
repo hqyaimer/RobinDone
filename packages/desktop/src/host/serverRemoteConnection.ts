@@ -1,5 +1,5 @@
 import { WebSocket, type RawData } from "ws";
-import { RemoteServiceAccess } from "@robinrun/client";
+import { RemoteServiceAccess } from "@robindone/client";
 import {
   ChannelClient,
   ChannelServer,
@@ -8,16 +8,16 @@ import {
   VSBuffer,
   type ISocket,
   type IServerChannel,
-} from "@robinrun/rpc";
-import type { IServiceAccessor } from "@robinrun/services";
+} from "@robindone/rpc";
+import type { IServiceAccessor } from "@robindone/services";
 import {
-  ROBINRUN_RPC_HOST_CAPABILITY_HEADER,
+  ROBINDONE_RPC_HOST_CAPABILITY_HEADER,
   TOPIC_RESOURCE_RELAY_CHANNEL,
   serverRemoteHostCapabilitySchema,
   serverRemoteInfoSchema,
   type ServerConnectOptions,
   type ServerRemoteInfo,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   connectWebSocketOverDuplex,
   createReusableDuplexHttpAgent,
@@ -264,7 +264,7 @@ function connectNodeWebSocket(
     const socket = new WebSocket(authenticatedUrl(wsUrl, target), {
       headers: {
         ...(token ? { authorization: `Bearer ${token}` } : {}),
-        [ROBINRUN_RPC_HOST_CAPABILITY_HEADER]: capability,
+        [ROBINDONE_RPC_HOST_CAPABILITY_HEADER]: capability,
       },
     });
     let settled = false;
@@ -393,7 +393,7 @@ export async function connectServerRemoteOverDuplex(
       url: endpoints.hostWsUrl,
       headers: {
         ...authorization,
-        [ROBINRUN_RPC_HOST_CAPABILITY_HEADER]: capability.data.capability,
+        [ROBINDONE_RPC_HOST_CAPABILITY_HEADER]: capability.data.capability,
       },
       createConnection: options.createConnection,
       agent,

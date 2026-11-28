@@ -1,6 +1,6 @@
-import type { IPlatformService, UpdateStatePayload } from "@robinrun/shared";
+import type { IPlatformService, UpdateStatePayload } from "@robindone/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { toast } from "@/components/ui/toast.js";
 import { UpdateStatusDialog } from "@/UpdateStatusDialog.js";
@@ -29,7 +29,7 @@ export function UpdateStatusDialogController({
   edgeToEdge?: boolean;
   showOverlay?: boolean;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const requestConfirmation = useConfirmDialog();
   const [autoDownloadAndInstallUpdates, setAutoDownloadAndInstallUpdates] = useState(false);
   const [updateActionInFlight, setUpdateActionInFlightState] = useState<UpdateActionInFlight>(null);

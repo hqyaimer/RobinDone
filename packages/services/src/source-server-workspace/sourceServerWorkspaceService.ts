@@ -3,7 +3,7 @@ import {
   sourceServerResolveWorkspaceResultSchema,
   sourceServerMigrationPathActionSchema,
   sourceServerMigrationReportSchema,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { SourceServerWorkspaceAliasRepo } from "../session/sourceServerWorkspaceAliasRepo.js";
 import type { ISourceServerWorkspaceService } from "./sourceServerWorkspace.js";
 

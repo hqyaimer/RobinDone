@@ -1,12 +1,12 @@
-import type { ProviderSettingsView } from "@robinrun/services";
+import type { ProviderSettingsView } from "@robindone/services";
 import {
-  type RobinRunProviderAccountAccess,
-  robinrunProviderAccountAccessSchema,
-} from "@robinrun/shared";
+  type RobinDoneProviderAccountAccess,
+  robindoneProviderAccountAccessSchema,
+} from "@robindone/shared";
 
 export interface EntitledAccountProviderAccess {
   readonly providerId: string;
-  readonly access: RobinRunProviderAccountAccess;
+  readonly access: RobinDoneProviderAccountAccess;
   readonly label?: string;
 }
 
@@ -21,7 +21,7 @@ export function resolveEntitledAccountProviderAccess(
 
   // Registry Access 是静态 accountType/mode 约束，动态 planKind 与 Team scope
   // 只能由账号服务在请求期解析。旧 Schema 会把所有真实 Registry Provider 误判为空。
-  const parsed = robinrunProviderAccountAccessSchema.safeParse(provider.effectiveConfig.access);
+  const parsed = robindoneProviderAccountAccessSchema.safeParse(provider.effectiveConfig.access);
   if (!parsed.success || parsed.data.entitled !== true) return null;
   const label = provider.providerName?.trim();
   return {
@@ -59,7 +59,7 @@ export function resolveAccountProviderInspectionAccess(
     )
   )
     return null;
-  const parsed = robinrunProviderAccountAccessSchema.safeParse(provider.effectiveConfig.access);
+  const parsed = robindoneProviderAccountAccessSchema.safeParse(provider.effectiveConfig.access);
   if (!parsed.success || parsed.data.mode === "off-peak") return null;
   if (!provider.accountState && parsed.data.entitled !== true) return null;
   return { providerId, access: parsed.data };

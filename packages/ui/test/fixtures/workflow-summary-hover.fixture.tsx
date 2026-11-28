@@ -1,10 +1,10 @@
 import "@/styles.css";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { WorkflowToolSummary } from "@/v4/WorkflowToolSummary.js";
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale="en-US">
+  <RobinDoneIntlProvider initialLocale="en-US">
     <TooltipProvider>
       <WorkflowToolSummary
         toolCallId="hover"
@@ -14,5 +14,5 @@ createRoot(document.getElementById("root")!).render(
         }}
       />
     </TooltipProvider>
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

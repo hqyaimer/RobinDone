@@ -4,7 +4,7 @@ import {
   createFailClosedAccountProviderConfigSnapshot,
   type AccountProviderConfigSnapshot,
   type ProviderSource,
-} from "@robinrun/provider";
+} from "@robindone/provider";
 import {
   NodeProviderConfigRuntime,
   type NodeProviderConfigRuntimeOptions,
@@ -43,7 +43,7 @@ export class NodeProviderRegistryRuntime {
     await this.#configRuntime.start();
     if (this.#accountSource instanceof MutableAccountProviderConfigSource) {
       const account = await this.#accountSource.read();
-      if (account.basedOnRobinRunBuiltinRevision === "uninitialized") {
+      if (account.basedOnRobinDoneBuiltinRevision === "uninitialized") {
         this.#accountSource.replace(
           createFailClosedAccountProviderConfigSnapshot(await this.configService.read()),
           "initial-fail-closed",
@@ -57,8 +57,8 @@ export class NodeProviderRegistryRuntime {
     return this.#configRuntime.personalRepository;
   }
 
-  onDidCheckRobinRunBuiltin(listener: () => Promise<void>): () => void {
-    return this.#configRuntime.onDidCheckRobinRunBuiltin(listener);
+  onDidCheckRobinDoneBuiltin(listener: () => Promise<void>): () => void {
+    return this.#configRuntime.onDidCheckRobinDoneBuiltin(listener);
   }
 
   dispose(): void {

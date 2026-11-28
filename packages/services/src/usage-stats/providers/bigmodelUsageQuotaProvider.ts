@@ -18,8 +18,8 @@ import type {
   UsageQuotaLimit,
   UsageStatsRequest,
   UsageStatsSnapshot,
-  RobinRunAccountAccess,
-} from "@robinrun/shared";
+  RobinDoneAccountAccess,
+} from "@robindone/shared";
 import {
   ApiError,
   BUILTIN_MODEL_PROVIDER_IDS,
@@ -28,9 +28,9 @@ import {
   isZaiCodingPlanProviderId,
   buildBigModelApiUrl,
   buildRuntimeZaiBusinessUrl,
-  buildRuntimeRobinRunApiUrl,
-} from "@robinrun/shared";
-import type { ProviderFamilyDomain } from "@robinrun/shared";
+  buildRuntimeRobinDoneApiUrl,
+} from "@robindone/shared";
+import type { ProviderFamilyDomain } from "@robindone/shared";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import type { ICredentialService } from "../../credential/credential.js";
 import type { IAccountRequestAuthService } from "../../model-provider/accountRequestAuthService.js";
@@ -66,13 +66,13 @@ import { fetchBigModelSubscriptionSummary } from "./bigmodelSubscriptionProvider
 import {
   fetchMcpQuotaSnapshot,
   type OfficialMcpCredentialSource,
-} from "./robinrunMcpQuotaProvider.js";
+} from "./robindoneMcpQuotaProvider.js";
 import type { BigModelUsageQuotaEnvelope } from "./bigmodelUsageQuotaMapper.js";
 import { normalizeLimits, pickPrimaryLimit } from "./bigmodelUsageQuotaMapper.js";
 
 const BIGMODEL_QUOTA_PATH = "/api/monitor/usage/quota/limit";
 const CODING_PLAN_RESET_BASE_PATH = "/api/v1/coding-plan/reset";
-const ROBINRUN_JWT_TOKEN_KEY = "robinrunjwttoken";
+const ROBINDONE_JWT_TOKEN_KEY = "robindonejwttoken";
 const ZAI_OAUTH_ACCESS_TOKEN_KEY = "oauth:zai:access_token";
 const BIGMODEL_OAUTH_ACCESS_TOKEN_KEY = "oauth:bigmodel:access_token";
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -161,7 +161,7 @@ interface TeamPlanContext {
 }
 
 interface CodingPlanResetAuthorization {
-  robinrunAuthorization: string;
+  robindoneAuthorization: string;
   codingPlanAuthorization: string;
   teamContext: TeamPlanContext | null;
 }
@@ -316,7 +316,7 @@ export class BigModelUsageQuotaProvider {
 
   private async resolveRequestAccountAccess(
     accountAccess: UsageEntitlementRequest["accountAccess"],
-  ): Promise<RobinRunAccountAccess | undefined> {
+  ): Promise<RobinDoneAccountAccess | undefined> {
     if (!accountAccess) return undefined;
     if (!("mode" in accountAccess)) return accountAccess;
     return (await this.accountRequestAuthService.resolveAccessCurrent(accountAccess)) ?? undefined;
@@ -351,7 +351,7 @@ export class BigModelUsageQuotaProvider {
 
   private async getStartPlanSnapshot(
     providerId: string,
-    accountAccess: RobinRunAccountAccess | undefined,
+    accountAccess: RobinDoneAccountAccess | undefined,
     invalidateBalanceCache = false,
   ): Promise<UsageEntitlementSnapshot> {
     const generatedAt = Date.now();
@@ -453,7 +453,7 @@ export class BigModelUsageQuotaProvider {
 
   private async resolveStartPlanAuthorization(
     providerId: string,
-    accountAccess: RobinRunAccountAccess | undefined,
+    accountAccess: RobinDoneAccountAccess | undefined,
   ): Promise<{
     authorization: string;
     provider: ResolvedQuotaAuthorization["provider"];
@@ -526,7 +526,7 @@ export class BigModelUsageQuotaProvider {
     const authorization = await this.resolveCodingPlanResetAuthorization(request);
     const payload = await readCodingPlanResetApiJson(
       this.apiClient,
-      buildRuntimeRobinRunApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/status`),
+      buildRuntimeRobinDoneApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/status`),
       {
         method: "GET",
         timeoutMs: REQUEST_TIMEOUT_MS,
@@ -559,7 +559,7 @@ export class BigModelUsageQuotaProvider {
     const authorization = await this.resolveCodingPlanResetAuthorization(request);
     const payload = await readCodingPlanResetApiJson(
       this.apiClient,
-      buildRuntimeRobinRunApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/use`),
+      buildRuntimeRobinDoneApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/use`),
       {
         method: "POST",
         timeoutMs: REQUEST_TIMEOUT_MS,
@@ -589,7 +589,7 @@ export class BigModelUsageQuotaProvider {
     try {
       payload = await readCodingPlanResetApiJson(
         this.apiClient,
-        buildRuntimeRobinRunApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/opportunity`),
+        buildRuntimeRobinDoneApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/opportunity`),
         {
           method: "POST",
           timeoutMs: REQUEST_TIMEOUT_MS,
@@ -635,7 +635,7 @@ export class BigModelUsageQuotaProvider {
     const authorization = await this.resolveCodingPlanResetAuthorization(request);
     const payload = await readCodingPlanResetApiJson(
       this.apiClient,
-      buildRuntimeRobinRunApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/history/read`),
+      buildRuntimeRobinDoneApiUrl(this.env, `${CODING_PLAN_RESET_BASE_PATH}/history/read`),
       {
         method: "POST",
         timeoutMs: REQUEST_TIMEOUT_MS,
@@ -657,9 +657,10 @@ export class BigModelUsageQuotaProvider {
       providerId: request.preferredProviderId,
       accountAccess,
     });
-    const robinrunJwt = (await this.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() ?? "";
-    if (!robinrunJwt) {
-      throw new Error("coding_plan_reset_robinrun_jwt_required");
+    const robindoneJwt =
+      (await this.credentialService?.load(ROBINDONE_JWT_TOKEN_KEY))?.trim() ?? "";
+    if (!robindoneJwt) {
+      throw new Error("coding_plan_reset_robindone_jwt_required");
     }
     // reset 同时支持 Z.ai 与 BigModel Coding Plan。固定读取 oauth:bigmodel:access_token
     // 会让只登录 Z.ai 的用户在请求发出前失败；业务 JWT 必须跟随当前 provider family
@@ -671,7 +672,9 @@ export class BigModelUsageQuotaProvider {
       throw new Error("coding_plan_reset_maas_jwt_required");
     }
     return {
-      robinrunAuthorization: /^Bearer\s/i.test(robinrunJwt) ? robinrunJwt : `Bearer ${robinrunJwt}`,
+      robindoneAuthorization: /^Bearer\s/i.test(robindoneJwt)
+        ? robindoneJwt
+        : `Bearer ${robindoneJwt}`,
       codingPlanAuthorization: codingPlanJwt,
       teamContext: resolveTeamPlanContext(accountAccess),
     };
@@ -837,7 +840,7 @@ export class BigModelUsageQuotaProvider {
   ): Promise<ResolvedQuotaAuthorization | null> {
     if (request.allowEnvApiKey !== false && request.requirePreferredProvider !== true) {
       const envApiKey =
-        readEnv(this.env, "ROBINRUN_BIGMODEL_USAGE_API_KEY") ??
+        readEnv(this.env, "ROBINDONE_BIGMODEL_USAGE_API_KEY") ??
         readEnv(this.env, "BIGMODEL_USAGE_API_KEY");
       if (envApiKey) {
         return {
@@ -980,7 +983,7 @@ function createCodingPlanResetHeaders(
   includeTargetScope: boolean,
 ): Record<string, string> {
   const headers: Record<string, string> = {
-    Authorization: authorization.robinrunAuthorization,
+    Authorization: authorization.robindoneAuthorization,
     "X-Bigmodel-Authorization": authorization.codingPlanAuthorization,
   };
   if (!includeTargetScope) {
@@ -1097,7 +1100,7 @@ function readCodingPlanResetEnvelopeData<TSchema extends z.ZodType>(
   return result.data;
 }
 
-function resolveTeamPlanContext(accountAccess: RobinRunAccountAccess): TeamPlanContext | null {
+function resolveTeamPlanContext(accountAccess: RobinDoneAccountAccess): TeamPlanContext | null {
   return accountAccess.planKind === "team-coding-plan"
     ? {
         organizationId: accountAccess.organizationId,
@@ -1656,7 +1659,7 @@ function addDaysToDateKey(dateKey: string, days: number): string {
 
 function resolveQuotaUrlFromEnv(env: NodeJS.ProcessEnv): string | undefined {
   return (
-    readEnv(env, "ROBINRUN_BIGMODEL_USAGE_QUOTA_URL") ?? readEnv(env, "BIGMODEL_USAGE_QUOTA_URL")
+    readEnv(env, "ROBINDONE_BIGMODEL_USAGE_QUOTA_URL") ?? readEnv(env, "BIGMODEL_USAGE_QUOTA_URL")
   );
 }
 

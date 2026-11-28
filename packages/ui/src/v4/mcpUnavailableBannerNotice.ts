@@ -2,8 +2,8 @@ import type {
   ConversationRow,
   ConversationRowsPartition,
   ToolCallRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import type { OfficialMcpToolErrorCode } from "@robinrun/shared";
+} from "@robindone/shared/robindone-protocol-v4";
+import type { OfficialMcpToolErrorCode } from "@robindone/shared";
 import { memoizeByRows } from "@/v4/conversationProjectionStore.js";
 
 /**

@@ -5,11 +5,11 @@ import { join } from "node:path";
 import {
   DEFAULT_LOCALE,
   type Locale,
-  ROBINRUN_BUILD_TIME,
-  ROBINRUN_COMMIT,
-  ROBINRUN_ENV,
-  ROBINRUN_VERSION,
-} from "@robinrun/shared";
+  ROBINDONE_BUILD_TIME,
+  ROBINDONE_COMMIT,
+  ROBINDONE_ENV,
+  ROBINDONE_VERSION,
+} from "@robindone/shared";
 import { createCustomAboutDialogHtml } from "./aboutWindow.js";
 
 interface DesktopBuildMetadata {
@@ -52,7 +52,7 @@ interface AboutSnapshotOptions {
   };
 }
 
-const ABOUT_APPLICATION_NAME = "RobinRun Desktop App";
+const ABOUT_APPLICATION_NAME = "RobinDone Desktop App";
 // 自定义 About 内容本体是 256x280；原生窗口如果同尺寸会让内容贴满透明窗口边界。
 // 这里给 BrowserWindow 额外留出背景呼吸空间，避免正式 About 看起来比 demo 更局促。
 const ABOUT_WINDOW_WIDTH = 256;
@@ -68,18 +68,18 @@ const ABOUT_MESSAGES: Record<
   }
 > = {
   "zh-CN": {
-    aboutTitle: "关于 RobinRun",
+    aboutTitle: "关于 RobinDone",
     versionLabel: "版本",
     okButtonLabel: "确定",
     optimizedForAppleSilicon: "已针对 Apple Silicon 优化。",
-    copyright: (year) => `版权所有 © ${year} RobinRun。`,
+    copyright: (year) => `版权所有 © ${year} RobinDone。`,
   },
   "en-US": {
-    aboutTitle: "About RobinRun",
+    aboutTitle: "About RobinDone",
     versionLabel: "version",
     okButtonLabel: "OK",
     optimizedForAppleSilicon: "Optimized for Apple Silicon.",
-    copyright: (year) => `Copyright © ${year} RobinRun.`,
+    copyright: (year) => `Copyright © ${year} RobinDone.`,
   },
 };
 
@@ -150,10 +150,12 @@ export function createAboutSnapshot(options: AboutSnapshotOptions = {}): AboutSn
   };
 
   return {
-    appVersion: normalizeValue(options.appVersion ?? buildMetadata?.appVersion ?? ROBINRUN_VERSION),
-    buildCommitId: normalizeValue(buildMetadata?.buildCommitId ?? ROBINRUN_COMMIT),
-    buildTime: normalizeValue(buildMetadata?.buildTime ?? ROBINRUN_BUILD_TIME),
-    environment: normalizeValue(options.environment ?? ROBINRUN_ENV),
+    appVersion: normalizeValue(
+      options.appVersion ?? buildMetadata?.appVersion ?? ROBINDONE_VERSION,
+    ),
+    buildCommitId: normalizeValue(buildMetadata?.buildCommitId ?? ROBINDONE_COMMIT),
+    buildTime: normalizeValue(buildMetadata?.buildTime ?? ROBINDONE_BUILD_TIME),
+    environment: normalizeValue(options.environment ?? ROBINDONE_ENV),
     electronVersion: normalizeValue(runtimeVersions.electron),
     electronBuilderVersion: resolveElectronBuilderVersion(buildMetadata),
     chromiumVersion: normalizeValue(runtimeVersions.chrome),

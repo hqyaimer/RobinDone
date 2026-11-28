@@ -12,6 +12,6 @@
 ## 消费面
 
 - services/ops-panel：SQLite repo + 串行队列服务 + IOpsPanelService（UI 通道）
-- robinrun-protocol：CLI↔Host 反向端口（opsPanel/\* 方法）
-- robinrun-cli contracts/core：ManageOpsPanel 工具（master/worker 同名双变体）
+- robindone-protocol：CLI↔Host 反向端口（opsPanel/\* 方法）
+- robindone-cli contracts/core：ManageOpsPanel 工具（master/worker 同名双变体）
 - packages/ui/src/ops-panel：用户面板（主视图页）

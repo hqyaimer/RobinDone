@@ -45,7 +45,7 @@ describe("TriggerBrowserHost（引擎托管浏览器）", () => {
   const launched: FakeLauncher[] = [];
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), "robinrun-trg-browser-"));
+    workspace = await mkdtemp(join(tmpdir(), "robindone-trg-browser-"));
     launched.length = 0;
   });
 

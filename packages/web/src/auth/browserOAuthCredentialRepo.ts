@@ -6,11 +6,11 @@ import {
   type OAuthCachedSessionRestoreResult,
   type UserInfo,
   resolveJwtExpiration,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { toUserInfo } from "./zaiWebOAuthProvider.js";
 
 const ACTIVE_PROVIDER_KEY = "oauth:active_provider";
-const ROBINRUN_JWT_TOKEN_KEY = "robinrunjwttoken";
+const ROBINDONE_JWT_TOKEN_KEY = "robindonejwttoken";
 const ZAI_ACCESS_TOKEN_KEY = "oauth:zai:access_token";
 const ZAI_USER_INFO_KEY = "oauth:zai:user_info";
 const BIGMODEL_ACCESS_TOKEN_KEY = "oauth:bigmodel:access_token";
@@ -66,7 +66,7 @@ interface BrowserOAuthCredentialRepoOptions {
 }
 
 interface WebZaiTokenSet {
-  robinrunJwtToken: string;
+  robindoneJwtToken: string;
   zaiAccessToken: string;
   expiresAt?: number;
 }
@@ -95,13 +95,13 @@ export class BrowserOAuthCredentialRepo {
   saveTokenSet(tokenSet: WebZaiTokenSet | OAuthTokenSet, provider: WebOAuthProviderId): void {
     const accessToken =
       "zaiAccessToken" in tokenSet ? tokenSet.zaiAccessToken : tokenSet.accessToken;
-    const robinrunJwtToken = tokenSet.robinrunJwtToken;
+    const robindoneJwtToken = tokenSet.robindoneJwtToken;
 
     this.localStorage.setItem(providerKeys(provider).accessToken, accessToken);
-    if (robinrunJwtToken) {
-      this.localStorage.setItem(ROBINRUN_JWT_TOKEN_KEY, robinrunJwtToken);
+    if (robindoneJwtToken) {
+      this.localStorage.setItem(ROBINDONE_JWT_TOKEN_KEY, robindoneJwtToken);
     } else {
-      this.localStorage.removeItem(ROBINRUN_JWT_TOKEN_KEY);
+      this.localStorage.removeItem(ROBINDONE_JWT_TOKEN_KEY);
     }
   }
 
@@ -147,20 +147,20 @@ export class BrowserOAuthCredentialRepo {
 
   loadCachedSessionState(): OAuthCachedSessionRestoreResult {
     const activeProvider = this.localStorage.getItem(ACTIVE_PROVIDER_KEY);
-    const robinrunJwtToken = this.localStorage.getItem(ROBINRUN_JWT_TOKEN_KEY);
+    const robindoneJwtToken = this.localStorage.getItem(ROBINDONE_JWT_TOKEN_KEY);
     // 一次只有一个 activeProvider（切换 provider = 重新登录并覆盖），所以按它选 key 段读。
     const keys = isWebOAuthProviderId(activeProvider) ? providerKeys(activeProvider) : null;
     const accessToken = keys ? this.localStorage.getItem(keys.accessToken) : null;
     const rawUserInfo = keys ? this.localStorage.getItem(keys.userInfo) : null;
 
-    if (!keys || !hasText(robinrunJwtToken) || !hasText(accessToken) || !hasText(rawUserInfo)) {
+    if (!keys || !hasText(robindoneJwtToken) || !hasText(accessToken) || !hasText(rawUserInfo)) {
       if (this.hasAnyStoredCredential()) {
         this.clearAll();
       }
       return { status: "signed-out" };
     }
 
-    if (resolveJwtExpiration(robinrunJwtToken, this.now()).kind === "expired") {
+    if (resolveJwtExpiration(robindoneJwtToken, this.now()).kind === "expired") {
       // Web localStorage 之前只检查 JWT 是否存在，过期后仍会恢复伪登录态。
       this.clearAll();
       return { status: "reauthentication-required", reason: "jwt-expired" };
@@ -180,16 +180,16 @@ export class BrowserOAuthCredentialRepo {
     return { status: "signed-out" };
   }
 
-  loadRobinRunJwtToken(): string | null {
+  loadRobinDoneJwtToken(): string | null {
     const session = this.loadCachedSessionState();
     if (session.status !== "authenticated") return null;
-    return this.localStorage.getItem(ROBINRUN_JWT_TOKEN_KEY)?.trim() || null;
+    return this.localStorage.getItem(ROBINDONE_JWT_TOKEN_KEY)?.trim() || null;
   }
 
   private hasAnyStoredCredential(): boolean {
     return Boolean(
       this.localStorage.getItem(ACTIVE_PROVIDER_KEY) ||
-      this.localStorage.getItem(ROBINRUN_JWT_TOKEN_KEY) ||
+      this.localStorage.getItem(ROBINDONE_JWT_TOKEN_KEY) ||
       this.localStorage.getItem(ZAI_ACCESS_TOKEN_KEY) ||
       this.localStorage.getItem(ZAI_USER_INFO_KEY) ||
       this.localStorage.getItem(BIGMODEL_ACCESS_TOKEN_KEY) ||
@@ -199,7 +199,7 @@ export class BrowserOAuthCredentialRepo {
 
   clearAll(): void {
     this.localStorage.removeItem(ACTIVE_PROVIDER_KEY);
-    this.localStorage.removeItem(ROBINRUN_JWT_TOKEN_KEY);
+    this.localStorage.removeItem(ROBINDONE_JWT_TOKEN_KEY);
     // 两个 provider 的 key 段一起清：切换 provider 时不能留下上一个身份的残片，
     // 否则 loadCachedSessionState 可能读到半套凭据。
     this.localStorage.removeItem(ZAI_ACCESS_TOKEN_KEY);

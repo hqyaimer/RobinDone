@@ -1,4 +1,4 @@
-import type { CommandStorageLevel } from "@robinrun/shared";
+import type { CommandStorageLevel } from "@robindone/shared";
 import { getPluginWorkspaceKey } from "@/settings/PluginScopeMenu.js";
 import type { ConfigWorkspaceTarget } from "@/workspace-config-catalog/index.js";
 

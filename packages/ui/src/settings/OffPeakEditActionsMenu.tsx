@@ -1,8 +1,8 @@
 /* 闲时任务编辑页顶栏动作菜单：Save 右侧「⋯」→ 按状态给 暂停/继续 + 删除。
    与列表卡片菜单同义，供编辑页内直接操作；queued→暂停、paused→继续，终态只留删除。
    样式与定时任务编辑页顶栏菜单同源。 */
-import { type RobinRunOffPeakTask } from "@robinrun/shared";
-import { TID_OFFPEAK_CARD_MENU } from "@robinrun/shared/test-ids";
+import { type RobinDoneOffPeakTask } from "@robindone/shared";
+import { TID_OFFPEAK_CARD_MENU } from "@robindone/shared/test-ids";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
   AutomationPauseActionIcon,
   AutomationTrashIcon,
 } from "@/settings/AutomationDesignPrimitives.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function OffPeakEditActionsMenu({
   task,
@@ -24,12 +24,12 @@ export function OffPeakEditActionsMenu({
   onContinue,
   onDelete,
 }: {
-  task: RobinRunOffPeakTask;
-  onPause?: (task: RobinRunOffPeakTask) => void;
-  onContinue?: (task: RobinRunOffPeakTask) => void;
-  onDelete?: (task: RobinRunOffPeakTask) => void;
+  task: RobinDoneOffPeakTask;
+  onPause?: (task: RobinDoneOffPeakTask) => void;
+  onContinue?: (task: RobinDoneOffPeakTask) => void;
+  onDelete?: (task: RobinDoneOffPeakTask) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

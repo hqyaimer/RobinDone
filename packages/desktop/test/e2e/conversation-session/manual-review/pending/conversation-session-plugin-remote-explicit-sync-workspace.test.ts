@@ -10,7 +10,7 @@ import {
   TID_WORKSPACE_HEADER,
   TID_WORKSPACE_MORE_BUTTON,
   TID_WORKSPACE_PATH,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, getE2EAppDataPaths } from "../../../helpers/desktop-app.js";
 import {
   addMarketplaceSourceThroughAgent,
@@ -115,7 +115,7 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
     const localInstalledBefore = await readFile(localInstalledPath, "utf8");
     const workspaceConfigBefore = await readRemoteFile(
       target,
-      posix.join(workspacePath, ".robinrun", "config.json"),
+      posix.join(workspacePath, ".robindone", "config.json"),
     );
 
     provider = await createSSHLifecycleProvider(target, CASE_MARKER);
@@ -148,7 +148,7 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
       source: "missing",
     });
     expect(
-      await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json")),
+      await readRemoteFile(target, posix.join(workspacePath, ".robindone", "config.json")),
     ).toBe(workspaceConfigBefore);
 
     // 票 14：Header「同步插件」打开数据同步弹窗，定位到当前 workspace 所在设备的插件分类。
@@ -173,7 +173,7 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
       },
     );
     expect(
-      await readRemoteFile(target, posix.join(workspacePath, ".robinrun", "config.json")),
+      await readRemoteFile(target, posix.join(workspacePath, ".robindone", "config.json")),
     ).toBe(workspaceConfigBefore);
     expect(await readFile(localConfigPath, "utf8")).toBe(localConfigBefore);
     expect(await readFile(localInstalledPath, "utf8")).toBe(localInstalledBefore);
@@ -248,9 +248,9 @@ describe("WPL-011 remote Workspace Plugin explicit sync E2E", () => {
 
 // 本 case 会 rm -rf 远端 workspace，所以只允许重置一个约定路径，不接受任意路径。默认值
 // /root/workspace 是历史上唯一跑过的 root 目标；Linux e2e 服务器用 dev 用户，通过
-// ROBINRUN_E2E_WPL011_WORKSPACE 指定该机的专用目录（不能指向共享 workspace 根）。
+// ROBINDONE_E2E_WPL011_WORKSPACE 指定该机的专用目录（不能指向共享 workspace 根）。
 const ALLOWED_REMOTE_WORKSPACE =
-  process.env.ROBINRUN_E2E_WPL011_WORKSPACE?.trim() || "/root/workspace";
+  process.env.ROBINDONE_E2E_WPL011_WORKSPACE?.trim() || "/root/workspace";
 
 async function seedRemoteWorkspace(
   target: SSHConnectionConfig,
@@ -269,10 +269,10 @@ async function seedRemoteWorkspace(
   const command = [
     "set -eu",
     // 远端用户不一定是 root（服务器上是 dev），配置目录一律走 $HOME 展开。
-    `rm -rf -- "$HOME/.robinrun" ${quoteShell(workspacePath)}`,
-    `mkdir -p -- ${quoteShell(posix.join(workspacePath, ".robinrun"))}`,
+    `rm -rf -- "$HOME/.robindone" ${quoteShell(workspacePath)}`,
+    `mkdir -p -- ${quoteShell(posix.join(workspacePath, ".robindone"))}`,
     writeBase64Command(
-      posix.join(workspacePath, ".robinrun", "config.json"),
+      posix.join(workspacePath, ".robindone", "config.json"),
       `${JSON.stringify(config, null, 2)}\n`,
     ),
   ].join(" && ");
@@ -298,11 +298,11 @@ async function readRemotePluginStorageState(target: SSHConnectionConfig): Promis
 }> {
   const command = [
     "installed=false",
-    `if test -f "$HOME/.robinrun/cli/plugins/installed_plugins.json" && grep -Fq -- ${quoteShell(PLUGIN_LIFECYCLE_ID)} "$HOME/.robinrun/cli/plugins/installed_plugins.json"; then installed=true; fi`,
+    `if test -f "$HOME/.robindone/cli/plugins/installed_plugins.json" && grep -Fq -- ${quoteShell(PLUGIN_LIFECYCLE_ID)} "$HOME/.robindone/cli/plugins/installed_plugins.json"; then installed=true; fi`,
     "cached=false",
-    `if test -d "$HOME/.robinrun/cli/plugins/cache" && find "$HOME/.robinrun/cli/plugins/cache" -path ${quoteShell(`*${PLUGIN_LIFECYCLE_NAME}*`)} -print -quit | grep -q .; then cached=true; fi`,
+    `if test -d "$HOME/.robindone/cli/plugins/cache" && find "$HOME/.robindone/cli/plugins/cache" -path ${quoteShell(`*${PLUGIN_LIFECYCLE_NAME}*`)} -print -quit | grep -q .; then cached=true; fi`,
     "marketplace=false",
-    `if test -f "$HOME/.robinrun/cli/plugins/known_marketplaces.json" && grep -Fq -- ${quoteShell(PLUGIN_LIFECYCLE_MARKETPLACE_ID)} "$HOME/.robinrun/cli/plugins/known_marketplaces.json"; then marketplace=true; fi`,
+    `if test -f "$HOME/.robindone/cli/plugins/known_marketplaces.json" && grep -Fq -- ${quoteShell(PLUGIN_LIFECYCLE_MARKETPLACE_ID)} "$HOME/.robindone/cli/plugins/known_marketplaces.json"; then marketplace=true; fi`,
     "printf '%s\\n' \"$installed $cached $marketplace\"",
   ].join("; ");
   const result = await runSSHCommand(target, command);

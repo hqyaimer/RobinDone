@@ -1,4 +1,4 @@
-import type { IGitService } from "@robinrun/services";
+import type { IGitService } from "@robindone/services";
 import {
   buildWorkspaceFileGitStatusByPath,
   isWorkspaceFileTreeGitStatusAvailable,

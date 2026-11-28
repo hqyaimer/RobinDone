@@ -1,9 +1,9 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import type { IServiceAccessor } from "@robinrun/services";
-import { basenameOf, upsertRobinrunProjectEntry } from "@/robinrun/projectRegistry.js";
+import type { IServiceAccessor } from "@robindone/services";
+import { basenameOf, upsertRobindoneProjectEntry } from "@/robindone/projectRegistry.js";
 import { updateSettingsAndRefreshSnapshot } from "@/hooks/useSettingService.js";
 import { useOptionalServices } from "@/hooks/useServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useConfirmDialogStore } from "@/store/confirmDialogStore.js";
 
 export function useConfirmDialog() {
@@ -22,7 +22,7 @@ async function isProjectFullAccessConfirmed(
   workspacePath: string,
 ): Promise<boolean> {
   const settings = await services.settingService.get();
-  return (settings.robinrunProjects ?? []).some(
+  return (settings.robindoneProjects ?? []).some(
     (entry) => entry.path === workspacePath && entry.fullAccessConfirmedAt !== undefined,
   );
 }
@@ -38,8 +38,8 @@ async function markProjectFullAccessConfirmed(
 ): Promise<void> {
   const now = Date.now();
   const settings = await services.settingService.get();
-  const nextProjects = upsertRobinrunProjectEntry(
-    settings.robinrunProjects ?? [],
+  const nextProjects = upsertRobindoneProjectEntry(
+    settings.robindoneProjects ?? [],
     project.workspacePath,
     basenameOf(project.workspacePath),
   ).map((entry) =>
@@ -47,15 +47,17 @@ async function markProjectFullAccessConfirmed(
   );
   await updateSettingsAndRefreshSnapshot({
     settingService: services.settingService,
-    patch: { robinrunProjects: nextProjects },
+    patch: { robindoneProjects: nextProjects },
   });
   try {
-    const activeTaskIds = await services.robinrunTaskService.listActiveTaskIds({
+    const activeTaskIds = await services.robindoneTaskService.listActiveTaskIds({
       workspacePath: project.workspacePath,
       ...(project.workspaceIdentity ? { workspaceIdentity: project.workspaceIdentity } : {}),
     });
     await Promise.allSettled(
-      activeTaskIds.map((taskId) => services.robinrunTaskService.setMode({ taskId, mode: "yolo" })),
+      activeTaskIds.map((taskId) =>
+        services.robindoneTaskService.setMode({ taskId, mode: "yolo" }),
+      ),
     );
   } catch {
     // 运行中会话枚举失败只影响实时同步面，不回滚确认标记。
@@ -68,7 +70,7 @@ export function useYoloModeConfirmation(
   currentMode: string | undefined,
   project?: YoloConfirmationProjectContext | null,
 ) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const requestConfirmation = useConfirmDialog();
   const services = useOptionalServices();
   const pending = useRef<AbortController | null>(null);

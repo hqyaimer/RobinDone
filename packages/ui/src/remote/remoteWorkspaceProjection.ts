@@ -5,7 +5,7 @@ import {
   type SourceServerRecord,
   type SourceServerWorkspaceHistoryEntry,
   type WorkspacePurpose,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   buildAggregatedSourceStatusMap,
   type AggregatedSourceStatus,

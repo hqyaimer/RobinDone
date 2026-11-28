@@ -3,7 +3,7 @@ import { setCurrentElectronRendererContentSize } from "#e2e/helpers/desktop-app"
 import { setV4ElectronWindowSize } from "#e2e/helpers/v4-conversation";
 
 vi.mock("./e2e/helpers/desktop-app.js", () => ({
-  DEFAULT_WORKSPACE: "/Users/dev/e2e/RobinRunProject",
+  DEFAULT_WORKSPACE: "/Users/dev/e2e/RobinDoneProject",
   setCurrentElectronRendererContentSize: vi.fn(),
 }));
 

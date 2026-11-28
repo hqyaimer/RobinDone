@@ -1,9 +1,9 @@
-import { DesktopCommandIds } from "@robinrun/shared";
-import type { UpdateStatePayload } from "@robinrun/shared";
+import { DesktopCommandIds } from "@robindone/shared";
+import type { UpdateStatePayload } from "@robindone/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useFeedbackStore } from "@/feedback/feedbackStore.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { createHelpMenuActionHandlers } from "@/lib/helpMenuActions.js";
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { logger } from "@/logger.js";
@@ -55,7 +55,7 @@ export function WindowsCaptionMenuButton({
   useWindowsCaptionSpacing?: boolean;
 }) {
   const platform = usePlatform();
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const newTaskShortcutLabel = useShortcutCommandLabel("newTask");
   const openWorkspaceShortcutLabel = useShortcutCommandLabel("openWorkspace");
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
@@ -87,13 +87,13 @@ export function WindowsCaptionMenuButton({
   }, [platform]);
 
   const syncStdioTapDevState = useCallback(async () => {
-    if (!platform.getRobinRunStdioTapDevState) {
+    if (!platform.getRobinDoneStdioTapDevState) {
       setStdioTapDevState({ enabled: false, visible: false });
       return;
     }
 
     try {
-      const state = await platform.getRobinRunStdioTapDevState();
+      const state = await platform.getRobinDoneStdioTapDevState();
       setStdioTapDevState({ enabled: state.enabled, visible: state.visible });
     } catch (error) {
       logger.warn("[WindowsCaptionMenuButton] 同步 stdio tap 状态失败", { error });
@@ -159,7 +159,7 @@ export function WindowsCaptionMenuButton({
 
   const handleToggleStdioTapDevProxy = () => {
     void (async () => {
-      await platform.executeDesktopCommand(DesktopCommandIds.ToggleRobinRunStdioTapDevProxy);
+      await platform.executeDesktopCommand(DesktopCommandIds.ToggleRobinDoneStdioTapDevProxy);
       await syncStdioTapDevState();
     })();
   };
@@ -288,7 +288,7 @@ export function WindowsCaptionMenuButton({
               checked={stdioTapDevState.enabled}
               onCheckedChange={handleToggleStdioTapDevProxy}
             >
-              {intl.formatMessage({ id: "titleBar.menu.help.toggleRobinRunStdioTap" })}
+              {intl.formatMessage({ id: "titleBar.menu.help.toggleRobinDoneStdioTap" })}
             </DropdownMenuCheckboxItem>
             <DropdownMenuItem
               onSelect={() => handleExecuteDesktopCommand(DesktopCommandIds.ToggleDevTools)}

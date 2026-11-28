@@ -1,13 +1,13 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import {
   TID_SETTINGS_BACK_BUTTON,
   TID_SETTINGS_PAGE,
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData, clickTestIdByDom, getE2EAppDataPaths } from "#e2e/helpers/desktop-app";
 import {
   connectSSHWorkspace,
@@ -20,7 +20,7 @@ import { prepareV4ConversationE2E } from "#e2e/helpers/v4-conversation";
 const MARKER = "E2E_SSH_RESOURCE_SETTINGS";
 const resource = process.env.R3_RESOURCE_SETTINGS_CASE ?? "command";
 const artifactDir = resolve(
-  process.env.ROBINRUN_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-resource-settings",
+  process.env.ROBINDONE_E2E_ARTIFACT_DIR ?? ".e2e-artifacts/ssh-resource-settings",
 );
 const name = `ssh-guide-${resource}`;
 
@@ -81,12 +81,12 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
           `---\nname: ${name}\ndescription: GUIDE_SKILL_${actor}\n---\n\nReturn GUIDE_SKILL_${actor}.\n`,
         );
         expect(
-          (await runSSHCommand(target, `mkdir -p "$HOME/.robinrun/skills/${name}"`)).code,
+          (await runSSHCommand(target, `mkdir -p "$HOME/.robindone/skills/${name}"`)).code,
         ).toBe(0);
         await uploadSSHFixtureFile(
           target,
           file,
-          `/home/${target.username}/.robinrun/skills/${name}/SKILL.md`,
+          `/home/${target.username}/.robindone/skills/${name}/SKILL.md`,
         );
       }
     }
@@ -149,11 +149,11 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
       );
       await browser.waitUntil(
         async () =>
-          (await runSSHCommand(a, `test ! -e "$HOME/.robinrun/skills/${name}/SKILL.md"`)).code ===
+          (await runSSHCommand(a, `test ! -e "$HOME/.robindone/skills/${name}/SKILL.md"`)).code ===
           0,
       );
       expect(
-        (await runSSHCommand(b, `cat "$HOME/.robinrun/skills/${name}/SKILL.md"`)).stdout,
+        (await runSSHCommand(b, `cat "$HOME/.robindone/skills/${name}/SKILL.md"`)).stdout,
       ).toContain("GUIDE_SKILL_B");
       facts.deletedOnlyTargetSkill = true;
     } else {
@@ -166,18 +166,18 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
           file,
           'import { createInterface } from "node:readline";\ncreateInterface({ input: process.stdin }).on("line", line => { const r = JSON.parse(line); if (r.id == null) return; const result = r.method === "initialize" ? { protocolVersion: r.params.protocolVersion, serverInfo: {name:"guide",version:"1"}, capabilities:{tools:{}} } : r.method === "tools/list" ? {tools:[]} : {}; process.stdout.write(JSON.stringify({jsonrpc:"2.0",id:r.id,result})+"\\n"); });\n',
         );
-        const remoteFile = `${config.workspacePath}/.robinrun-e2e/resource-settings/mcp-server.mjs`;
+        const remoteFile = `${config.workspacePath}/.robindone-e2e/resource-settings/mcp-server.mjs`;
         expect(
           (
             await runSSHCommand(
               a,
-              `mkdir -p '${config.workspacePath}/.robinrun-e2e/resource-settings'`,
+              `mkdir -p '${config.workspacePath}/.robindone-e2e/resource-settings'`,
             )
           ).code,
         ).toBe(0);
         await uploadSSHFixtureFile(a, file, remoteFile);
         const installed = JSON.parse(
-          (await runSSHCommand(a, 'cat "$HOME/.robinrun/server/current.json"')).stdout,
+          (await runSSHCommand(a, 'cat "$HOME/.robindone/server/current.json"')).stdout,
         );
         await $('input[placeholder="my-mcp-server"]').setValue(name);
         await $('input[placeholder="npx"]').setValue(`${installed.releaseDir}/runtime/node`);
@@ -190,7 +190,7 @@ describe(`${MARKER}: 同名同路径设备上的设置隔离`, () => {
       }
       await clickLabel("保存");
       let paths = "";
-      const lookup = `find "$HOME/.robinrun" '${config.workspacePath}/.robinrun' -type f \\( -name '*.json' -o -name '*.md' \\) -exec grep -lF '${name}' {} \\; 2>/dev/null || true`;
+      const lookup = `find "$HOME/.robindone" '${config.workspacePath}/.robindone' -type f \\( -name '*.json' -o -name '*.md' \\) -exec grep -lF '${name}' {} \\; 2>/dev/null || true`;
       await browser.waitUntil(
         async () => {
           paths = (await runSSHCommand(a, lookup)).stdout.trim();

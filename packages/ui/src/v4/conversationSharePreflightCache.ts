@@ -2,9 +2,9 @@ import type {
   ConversationShareFailureIssue,
   ConversationSharePreflightResult,
   ConversationShareTurnPreflightResult,
-} from "@robinrun/services";
-import { extractConversationPreviewFileReferences } from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/services";
+import { extractConversationPreviewFileReferences } from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
 
 function hashString(value: string): string {
   let hash = 2166136261;

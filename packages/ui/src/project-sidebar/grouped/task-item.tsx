@@ -1,4 +1,4 @@
-import type { ProjectTask as RobinRunTaskMeta } from "@/project-sidebar/contract.js";
+import type { ProjectTask as RobinDoneTaskMeta } from "@/project-sidebar/contract.js";
 import { memo } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 
@@ -26,7 +26,7 @@ function GroupedTaskItemComponent({
   dragOverlay,
   tooltipsDisabled,
 }: {
-  task: RobinRunTaskMeta;
+  task: RobinDoneTaskMeta;
   groupId?: string;
   groups: TaskGroupMenuItem[];
   remoteSessionId?: string;
@@ -34,12 +34,12 @@ function GroupedTaskItemComponent({
   isMobileActive: boolean;
   workspaceLabel: string;
   onSelectTask: (workspacePath: string, taskId: string, workspaceIdentity?: string) => void;
-  onCloseTask: (task: RobinRunTaskMeta) => void;
-  onMoveTaskToGroup: (task: RobinRunTaskMeta, groupId: string | null) => void;
-  onMoveTaskToTop: (task: RobinRunTaskMeta) => void;
-  onStartRenameTask: (task: RobinRunTaskMeta) => void;
-  onArchiveTask: (task: RobinRunTaskMeta) => void;
-  onMarkTaskAsUnread: (task: RobinRunTaskMeta) => void;
+  onCloseTask: (task: RobinDoneTaskMeta) => void;
+  onMoveTaskToGroup: (task: RobinDoneTaskMeta, groupId: string | null) => void;
+  onMoveTaskToTop: (task: RobinDoneTaskMeta) => void;
+  onStartRenameTask: (task: RobinDoneTaskMeta) => void;
+  onArchiveTask: (task: RobinDoneTaskMeta) => void;
+  onMarkTaskAsUnread: (task: RobinDoneTaskMeta) => void;
   dragId?: UniqueIdentifier;
   dragging?: boolean;
   dragOverlay?: boolean;

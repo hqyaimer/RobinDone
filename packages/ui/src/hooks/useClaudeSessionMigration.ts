@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import type {
-  RobinRunImportSessionsResult,
-  RobinRunImportableSessionCandidate,
-} from "@robinrun/shared";
+  RobinDoneImportSessionsResult,
+  RobinDoneImportableSessionCandidate,
+} from "@robindone/shared";
 import { logger } from "@/logger.js";
-import { useRobinRunTaskService } from "@/hooks/useRobinRunTaskService.js";
+import { useRobinDoneTaskService } from "@/hooks/useRobinDoneTaskService.js";
 import { useTabStoreApi } from "@/store/TabStoreProvider.js";
 import { invalidateTaskQueryCacheByScopes } from "@/store/taskQueryCacheStore.js";
 
@@ -63,7 +63,7 @@ export function useClaudeSessionMigration(params: {
   workspaceIdentity?: string;
   isDesktop?: boolean;
 }) {
-  const robinrunTaskService = useRobinRunTaskService(
+  const robindoneTaskService = useRobinDoneTaskService(
     params.workspacePath ?? undefined,
     undefined,
     params.workspaceIdentity,
@@ -73,11 +73,11 @@ export function useClaudeSessionMigration(params: {
     useState<ClaudeMigrationWorkspaceFilterMode>("all");
   const [range, setRange] = useState<ClaudeMigrationRange>("30d");
   const [limitInput, setLimitInput] = useState(String(DEFAULT_LIMIT));
-  const [candidates, setCandidates] = useState<RobinRunImportableSessionCandidate[]>([]);
+  const [candidates, setCandidates] = useState<RobinDoneImportableSessionCandidate[]>([]);
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [scanError, setScanError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [lastImportResult, setLastImportResult] = useState<RobinRunImportSessionsResult | null>(
+  const [lastImportResult, setLastImportResult] = useState<RobinDoneImportSessionsResult | null>(
     null,
   );
   const [isScanning, setIsScanning] = useState(false);
@@ -152,7 +152,7 @@ export function useClaudeSessionMigration(params: {
       logger.info(
         `[Migration] 开始扫描 Claude 原生历史 workspaceFilter=${effectiveWorkspacePath ?? "all"} range=${range} limit=${scanLimit ?? "unlimited"}`,
       );
-      const nextCandidates = await robinrunTaskService.scanImportableClaudeSessions({
+      const nextCandidates = await robindoneTaskService.scanImportableClaudeSessions({
         workspacePath: effectiveWorkspacePath,
         ...(effectiveWorkspaceIdentity ? { workspaceIdentity: effectiveWorkspaceIdentity } : {}),
         modifiedSince: resolveModifiedSince(range),
@@ -177,7 +177,7 @@ export function useClaudeSessionMigration(params: {
       setIsScanning(false);
     }
   }, [
-    robinrunTaskService,
+    robindoneTaskService,
     effectiveWorkspaceIdentity,
     effectiveWorkspacePath,
     range,
@@ -198,7 +198,7 @@ export function useClaudeSessionMigration(params: {
         logger.info(
           `[Migration] 开始导入 Claude 原生历史 workspaceFilter=${effectiveWorkspacePath ?? "all"} selected=${sessionIds.length}`,
         );
-        const result = await robinrunTaskService.importClaudeSessions({
+        const result = await robindoneTaskService.importClaudeSessions({
           workspacePath: effectiveWorkspacePath,
           ...(effectiveWorkspaceIdentity ? { workspaceIdentity: effectiveWorkspaceIdentity } : {}),
           sessionIds,
@@ -239,7 +239,7 @@ export function useClaudeSessionMigration(params: {
       }
     },
     [
-      robinrunTaskService,
+      robindoneTaskService,
       effectiveWorkspaceIdentity,
       effectiveWorkspacePath,
       supportState.supported,

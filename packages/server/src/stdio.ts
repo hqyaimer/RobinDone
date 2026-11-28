@@ -6,12 +6,12 @@ import {
   ChannelServer,
   ChannelClient,
   type ISocket,
-} from "@robinrun/rpc";
+} from "@robindone/rpc";
 import {
-  IRobinRunAgentService,
-  createRobinRunAgentConnectionScope,
+  IRobinDoneAgentService,
+  createRobinDoneAgentConnectionScope,
   type ServiceCollection,
-} from "@robinrun/services";
+} from "@robindone/services";
 
 /**
  * Wrap process.stdin/stdout as an ISocket for RPC communication.
@@ -69,9 +69,9 @@ export function createStdioServer(
   const channelServer = new ChannelServer(protocol, "stdio");
   const reverseClient = onReverseClientReady ? new ChannelClient(protocol) : undefined;
   if (reverseClient) onReverseClientReady?.(reverseClient);
-  const agentService = services.getOptional(IRobinRunAgentService);
+  const agentService = services.getOptional(IRobinDoneAgentService);
   const connectionScope = agentService
-    ? createRobinRunAgentConnectionScope(agentService, {
+    ? createRobinDoneAgentConnectionScope(agentService, {
         connectionId: `server-stdio-${randomUUID()}`,
         clientMode: "desktop-continuous",
         role: "trusted-host-relay",
@@ -80,7 +80,7 @@ export function createStdioServer(
   services.exposeOnChannelServer(
     channelServer,
     connectionScope
-      ? new Map([[IRobinRunAgentService.channelName, connectionScope.service]])
+      ? new Map([[IRobinDoneAgentService.channelName, connectionScope.service]])
       : new Map(),
   );
   let stopPromise: Promise<void> | undefined;

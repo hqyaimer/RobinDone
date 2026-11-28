@@ -1,4 +1,4 @@
-import type { WebRemoteControlAppPayload, WebRemoteControlFailure } from "@robinrun/shared";
+import type { WebRemoteControlAppPayload, WebRemoteControlFailure } from "@robindone/shared";
 
 export type WebRemoteControlTerminalTransportState =
   | "idle"

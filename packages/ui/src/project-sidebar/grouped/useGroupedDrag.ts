@@ -18,7 +18,7 @@ import {
 import type { MoveGroupNode, GroupNode } from "@/project-sidebar/contract.js";
 import { groupTaskRef } from "@/project-sidebar/grouped-view.js";
 import { groupedMoveCommand } from "@/project-sidebar/grouped/model.js";
-import type { RobinRunGroupedTaskView } from "@/project-sidebar/grouped/types.js";
+import type { RobinDoneGroupedTaskView } from "@/project-sidebar/grouped/types.js";
 import { findTaskInGroupedView } from "@/project-sidebar/grouped/view.js";
 import {
   getGroupedTaskDragTaskKey,
@@ -50,27 +50,27 @@ export function useGroupedDrag({
   onCollapsedGroupIdsChange,
   onMove,
 }: {
-  authoritativeView: RobinRunGroupedTaskView;
+  authoritativeView: RobinDoneGroupedTaskView;
   collapsedGroupIds: Set<string>;
   onCollapsedGroupIdsChange: Dispatch<SetStateAction<Set<string>>>;
   onMove(command: MoveGroupNode): Promise<void>;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const [preview, setPreview] = useState<RobinRunGroupedTaskView | null>(null);
+  const [preview, setPreview] = useState<RobinDoneGroupedTaskView | null>(null);
   const [activeTaskKey, setActiveTaskKey] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [width, setWidth] = useState<number | null>(null);
-  const origin = useRef<RobinRunGroupedTaskView | null>(null);
-  const latestPreview = useRef<RobinRunGroupedTaskView | null>(null);
+  const origin = useRef<RobinDoneGroupedTaskView | null>(null);
+  const latestPreview = useRef<RobinDoneGroupedTaskView | null>(null);
   const direction = useRef<"before" | "after">("after");
   const deltaY = useRef(0);
   const lastOver = useRef<DragOverEvent | null>(null);
   const collapsedSnapshot = useRef<Set<string> | null>(null);
   const animationFrame = useRef<number | null>(null);
-  const pendingPreview = useRef<RobinRunGroupedTaskView | null>(null);
+  const pendingPreview = useRef<RobinDoneGroupedTaskView | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, pointerOptions));
   const view = preview ?? authoritativeView;
-  const animate = useCallback((next: RobinRunGroupedTaskView) => {
+  const animate = useCallback((next: RobinDoneGroupedTaskView) => {
     const rects = collectGroupedTaskLayoutRects(root.current);
     setPreview(next);
     if (animationFrame.current !== null) cancelAnimationFrame(animationFrame.current);

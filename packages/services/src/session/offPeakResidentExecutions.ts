@@ -3,7 +3,7 @@ import type {
   OffPeakControlResult,
   OffPeakLifecycleNotification,
   OffPeakOutcome,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type RequestAuth = Extract<OffPeakControlParams, { action: "replace_ticket" }>["requestAuth"];
 interface TicketDelivery {

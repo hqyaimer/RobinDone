@@ -7,7 +7,7 @@ import {
   TID_SETTINGS_SECTION_NAV,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_WORKSPACE,
   clearAppData,
@@ -32,7 +32,7 @@ const PERSISTED: Locale = "en-US";
 const SWITCHED: Locale = "zh-CN";
 const HOST_PRELOAD = fileURLToPath(new URL("../helpers/subagent-host-faults.cjs", import.meta.url));
 
-// spec：docs/robinrun-endpoint-client-language-header.md。
+// spec：docs/robindone-endpoint-client-language-header.md。
 // Host 请求经 NodeApiClient，带 x-request-id；Main 请求经 Electron net，不带。以此区分两条链路。
 const isHost = (request: Request) => Boolean(request.headers["x-request-id"]);
 function expectLanguage(requests: Request[], locale: Locale) {
@@ -42,7 +42,7 @@ function expectLanguage(requests: Request[], locale: Locale) {
   );
 }
 
-describe("RobinRun endpoint X-Client-Language 跟随界面语言", () => {
+describe("RobinDone endpoint X-Client-Language 跟随界面语言", () => {
   let external: Awaited<ReturnType<typeof browser.electron.mock>>;
   const servers: HelpServer[] = [];
 
@@ -86,8 +86,10 @@ describe("RobinRun endpoint X-Client-Language 跟随界面语言", () => {
     const before = server.requests.filter((request) => !isHost(request)).length;
     await browser.execute(async () => {
       await (
-        window as unknown as { robinrun: { executeDesktopCommand(command: string): Promise<void> } }
-      ).robinrun.executeDesktopCommand("openCommunity");
+        window as unknown as {
+          robindone: { executeDesktopCommand(command: string): Promise<void> };
+        }
+      ).robindone.executeDesktopCommand("openCommunity");
     });
     await browser.waitUntil(
       async () => server.requests.filter((request) => !isHost(request)).length > before,
@@ -128,7 +130,7 @@ describe("RobinRun endpoint X-Client-Language 跟随界面语言", () => {
     await seedSettings({
       locale: PERSISTED,
       localePreference: PERSISTED,
-      robinrunEndpointOrigin: server.origin,
+      robindoneEndpointOrigin: server.origin,
       lastWorkspaceSession: [
         { kind: "local", workspacePath: DEFAULT_WORKSPACE, workspacePurpose: "project" },
       ],
@@ -163,7 +165,7 @@ describe("RobinRun endpoint X-Client-Language 跟随界面语言", () => {
     const firstHandle = await browser.getWindowHandle();
     // 只让第二个窗口的 Host 写 setting.json 失败；语言由该窗口的设置页切换，持久化必然失败。
     const second = await openFaultInjectedHostWindow(HOST_PRELOAD, {
-      ROBINRUN_E2E_FS_FAULTS: JSON.stringify([
+      ROBINDONE_E2E_FS_FAULTS: JSON.stringify([
         {
           id: "client-language-settings-write",
           code: "EACCES",
@@ -182,7 +184,7 @@ describe("RobinRun endpoint X-Client-Language 跟随界面语言", () => {
 
       // 公共配置按 endpoint 缓存 1 小时；换新 endpoint 才会发出新请求。
       const server = await startServer();
-      await seedSettings({ robinrunEndpointOrigin: server.origin });
+      await seedSettings({ robindoneEndpointOrigin: server.origin });
 
       expectLanguage(await openHelpMenuForHostRequests(server), SWITCHED);
       await browser.switchToWindow(firstHandle);

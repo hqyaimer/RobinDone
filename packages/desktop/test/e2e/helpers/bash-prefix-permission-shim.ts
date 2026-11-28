@@ -31,8 +31,8 @@ export async function installBashPrefixPermissionPnpmShim(params: {
 
   const shimDirectory = join(
     params.homeDir,
-    "RobinRunProject",
-    ".robinrun-e2e",
+    "RobinDoneProject",
+    ".robindone-e2e",
     CASE_RUNTIME_DIR,
     "bin",
   );

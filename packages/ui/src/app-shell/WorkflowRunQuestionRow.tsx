@@ -1,7 +1,7 @@
 import { MessageCircleQuestionIcon } from "lucide-react";
-import type { WorkflowRunPendingQuestion } from "@robinrun/shared/robinrun-protocol-v4";
+import type { WorkflowRunPendingQuestion } from "@robindone/shared/robindone-protocol-v4";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { workflowRunQuestionWaitedLabel } from "@/app-shell/workflowRunQuestions.js";
 
 /**
@@ -25,7 +25,7 @@ export function WorkflowRunQuestionRow({
   /** 匹配不上提问者的问题（挂在阶段末尾）要自己报名字；挂在行下的不必重复。 */
   showAsker?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const waited = workflowRunQuestionWaitedLabel(question.askedAt, now, (descriptor, values) =>
     intl.formatMessage(descriptor, values),
   );

@@ -5,7 +5,7 @@ import {
   TID_SIDE_PANE_TOGGLE,
   TID_WORKSPACE_HEADER,
   TID_WORKSPACE_TITLE,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clearAppData } from "../helpers/desktop-app.js";
 import { listSystemProcesses } from "../helpers/e2e-process-cleanup.js";
 import { prepareV4ConversationE2E } from "../helpers/v4-conversation.js";
@@ -456,7 +456,7 @@ describe("Side Pane Tab responsive interactions", () => {
       expect(terminalTabStyle.gap).toBe("4px");
       await browser.saveScreenshot(
         join(
-          process.env.ROBINRUN_E2E_ARTIFACT_DIR || process.cwd(),
+          process.env.ROBINDONE_E2E_ARTIFACT_DIR || process.cwd(),
           `independent-panels-${theme}.png`,
         ),
       );
@@ -992,7 +992,7 @@ describe("Side Pane Tab responsive interactions", () => {
     expect(
       await browser.execute(() =>
         window.dispatchEvent(
-          new Event("robinrun:close-active-context-request", { cancelable: true }),
+          new Event("robindone:close-active-context-request", { cancelable: true }),
         ),
       ),
     ).toBe(true);

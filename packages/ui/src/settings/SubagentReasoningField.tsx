@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleHelp, Loader2 } from "lucide-react";
-import { ROBINRUN_AGENT_PROVIDER, type RobinRunConfigOption } from "@robinrun/shared";
+import { ROBINDONE_AGENT_PROVIDER, type RobinDoneConfigOption } from "@robindone/shared";
 import { ThoughtLevelCycleControl } from "@/chat-input-toolbar/ThoughtLevelCycleControl.js";
-import type { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import type { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export type SubagentReasoningFieldState =
   | { kind: "not-applicable" }
   | { kind: "unknown"; status: "loading" | "unavailable" }
   | { kind: "unsupported" }
-  | { kind: "supported"; option: RobinRunConfigOption };
+  | { kind: "supported"; option: RobinDoneConfigOption };
 
 export function SubagentReasoningField({
   disabled,
@@ -18,7 +18,7 @@ export function SubagentReasoningField({
   state,
 }: {
   disabled: boolean;
-  intl: ReturnType<typeof useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof useRobinDoneIntl>["intl"];
   labelVisibilityClassName: string;
   onValueCommit: (value: string) => void;
   state: SubagentReasoningFieldState;
@@ -66,7 +66,7 @@ export function SubagentReasoningField({
     <ThoughtLevelCycleControl
       intl={intl}
       option={state.option}
-      provider={ROBINRUN_AGENT_PROVIDER}
+      provider={ROBINDONE_AGENT_PROVIDER}
       onCurrentValueCommit={onValueCommit}
       showInvalidCurrentValue
       disabled={!interactive}

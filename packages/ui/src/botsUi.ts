@@ -1,5 +1,5 @@
-import type { BotConfig, BotProvider, BotReplyGranularity } from "@robinrun/shared";
-import { getSupportedBotReplyGranularities } from "@robinrun/shared";
+import type { BotConfig, BotProvider, BotReplyGranularity } from "@robindone/shared";
+import { getSupportedBotReplyGranularities } from "@robindone/shared";
 
 export type BotProviderEntryId = BotProvider | "dingding";
 

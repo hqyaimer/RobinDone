@@ -1,4 +1,4 @@
-const FEEDBACK_CONTACT_STORAGE_KEY = "robinrun.feedback.contact";
+const FEEDBACK_CONTACT_STORAGE_KEY = "robindone.feedback.contact";
 
 function getStorage(): Storage | null {
   try {

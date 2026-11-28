@@ -1,4 +1,4 @@
-import { BUILTIN_MODEL_PROVIDER_IDS } from "@robinrun/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS } from "@robindone/shared";
 import { logger } from "@/logger.js";
 
 export type SidebarUsageCodingPlanProviderId =
@@ -9,7 +9,7 @@ export type SidebarUsageCodingPlanProviderId =
 export type SidebarUsageCodingPlanSourceId = SidebarUsageCodingPlanProviderId | `team:${string}`;
 
 const SIDEBAR_USAGE_CODING_PLAN_PROVIDER_STORAGE_KEY =
-  "robinrun:sidebar-usage-coding-plan-provider";
+  "robindone:sidebar-usage-coding-plan-provider";
 
 const SIDEBAR_USAGE_CODING_PLAN_PROVIDER_IDS: SidebarUsageCodingPlanProviderId[] = [
   BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan,

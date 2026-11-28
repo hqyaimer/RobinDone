@@ -1,4 +1,4 @@
-import type { FileEntry } from "@robinrun/shared";
+import type { FileEntry } from "@robindone/shared";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import type { Stats } from "node:fs";
@@ -96,14 +96,14 @@ async function projectPrimaryRootStatuses(projects: VirtualProject[]): Promise<V
   );
 }
 
-// 编制目录预创建（2026-11-21）：`.robinrun/agents` 原本只在主智能体首次经 ManageWorkers 写入
+// 编制目录预创建（2026-11-21）：`.robindone/agents` 原本只在主智能体首次经 ManageWorkers 写入
 // 注册表时才落盘。未初始化编制的项目进入项目页后，侧栏 worker 名册投影（useWorkers）监听
-// `<root>/.robinrun/agents` 会因目录缺失每 3 秒失败重试，host 日志持续刷 ENOENT warn。
+// `<root>/.robindone/agents` 会因目录缺失每 3 秒失败重试，host 日志持续刷 ENOENT warn。
 // 改为项目保存/恢复时预创建空目录：「目录存在而 workers.json 缺失 = 空编制」本就是一等合法态
 // （docs/worker-roster.md），ManageWorkers 的注册表写入所有权不变。尽力而为：任何失败只记
 // 日志、不阻断项目打开；root 缺失/不可达时静默跳过，绝不复活被移除的根目录——复检复用带
 // 超时与 in-flight 去重的 readPrimaryRootStatus（不新增裸 stat，规避 ZCT-2113660144497782784
-// 的挂起问题），落盘用两段非递归 mkdir，只允许新建 .robinrun 一层。
+// 的挂起问题），落盘用两段非递归 mkdir，只允许新建 .robindone 一层。
 async function ensureWorkerRosterDirectories(roots: VirtualProject["roots"]): Promise<void> {
   const logger = createServiceLogger("project");
   await Promise.all(
@@ -111,12 +111,12 @@ async function ensureWorkerRosterDirectories(roots: VirtualProject["roots"]): Pr
       try {
         if ((await readPrimaryRootStatus(root.rootPath)) !== "available") return;
         try {
-          await mkdir(join(root.rootPath, ".robinrun"), { recursive: false });
+          await mkdir(join(root.rootPath, ".robindone"), { recursive: false });
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
         }
         try {
-          await mkdir(join(root.rootPath, ".robinrun", "agents"), { recursive: false });
+          await mkdir(join(root.rootPath, ".robindone", "agents"), { recursive: false });
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
         }

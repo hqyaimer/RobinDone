@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { isValidCronExpr, type IClientScenesService } from "@robinrun/services";
+import { isValidCronExpr, type IClientScenesService } from "@robindone/services";
 import {
   isClientScenesBusinessError,
   useClientScenesResource,

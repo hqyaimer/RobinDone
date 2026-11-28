@@ -1,6 +1,6 @@
 import { Bot, Webhook } from "lucide-react";
-import type { BotConfig, BotServiceStatus, BotWorkspaceRef } from "@robinrun/shared";
-import { ALL_BOT_WORKSPACES, BOT_BIND_CODE_TTL_MS } from "@robinrun/shared";
+import type { BotConfig, BotServiceStatus, BotWorkspaceRef } from "@robindone/shared";
+import { ALL_BOT_WORKSPACES, BOT_BIND_CODE_TTL_MS } from "@robindone/shared";
 import {
   DingDingChannelIcon,
   DiscordChannelIcon,

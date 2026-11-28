@@ -3,7 +3,7 @@ import {
   TID_V4_EDIT_SUBMIT,
   TID_V4_SESSION_PANE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clickTestIdByDom, setInputValueByTestIdDom } from "#e2e/helpers/desktop-app";
 
 type MessageAction = "edit" | "fork";

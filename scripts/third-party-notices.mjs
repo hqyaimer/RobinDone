@@ -155,7 +155,7 @@ export async function stageNativeSearchNotices(
 export function thirdPartyNoticesVitePlugin(root = repositoryRoot) {
   let base = "/";
   return {
-    name: "robinrun-third-party-notices",
+    name: "robindone-third-party-notices",
     apply: "build",
     configResolved(config) {
       base = config.base;

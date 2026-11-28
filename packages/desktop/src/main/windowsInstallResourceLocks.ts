@@ -172,7 +172,7 @@ export function probeWindowsPackagedResourceWritable(
     }
     const sentinelPath = join(
       path,
-      `.robinrun_resource_probe_${process.pid}_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      `.robindone_resource_probe_${process.pid}_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     );
     const renamedSentinelPath = `${sentinelPath}.renamed`;
     try {

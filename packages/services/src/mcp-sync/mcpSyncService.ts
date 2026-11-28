@@ -11,7 +11,7 @@ import type {
   SaveCliMcpToUserDirectoryRequest,
   SettingsDirectoryLocation,
   SettingsDirectorySource,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { IMcpSyncService } from "./mcpSync.js";
 import { createMcpDataSyncMethods } from "../data-sync/node.js";
 import { createServiceLogger } from "../logger/serviceLogger.js";
@@ -37,11 +37,11 @@ export interface UserMcpRecord {
   path: string;
 }
 
-const ROBINRUN_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
-  source: "robinrun",
-  directorySource: "robinrun",
-  userConfigDirSegments: [".robinrun", "cli"],
-  workspaceConfigDirSegments: [".robinrun"],
+const ROBINDONE_MCP_DESCRIPTOR: DirectoryMcpDescriptor = {
+  source: "robindone",
+  directorySource: "robindone",
+  userConfigDirSegments: [".robindone", "cli"],
+  workspaceConfigDirSegments: [".robindone"],
   fileName: "config.json",
   configKeyName: "mcp.servers",
 };
@@ -62,7 +62,7 @@ const ENABLED_KEY = "enabled";
 const LEGACY_ENABLE_KEY = "enable";
 const SECRET_CONFIG_FILE_MODE = 0o600;
 const DIRECTORY_MCP_DESCRIPTORS: readonly DirectoryMcpDescriptor[] = [
-  ROBINRUN_MCP_DESCRIPTOR,
+  ROBINDONE_MCP_DESCRIPTOR,
   AGENTS_MCP_DESCRIPTOR,
 ];
 
@@ -124,8 +124,8 @@ function buildUserConfigPath(descriptor: DirectoryMcpDescriptor): string {
   return buildDirectoryConfigPath(descriptor, "user");
 }
 
-export function getUserRobinrunMcpConfigPath(): string {
-  return buildUserConfigPath(ROBINRUN_MCP_DESCRIPTOR);
+export function getUserRobindoneMcpConfigPath(): string {
+  return buildUserConfigPath(ROBINDONE_MCP_DESCRIPTOR);
 }
 
 function buildDirectoryMcpLocation(
@@ -153,9 +153,9 @@ function findDescriptorByLocation(location: SettingsDirectoryLocation): Director
 }
 
 export async function collectEffectiveUserMcpRecords(): Promise<UserMcpRecord[]> {
-  const robinrunRecords = await readUserMcpRecordsFromFile(ROBINRUN_MCP_DESCRIPTOR);
-  if (robinrunRecords.length > 0) {
-    return sortMcpRecords(robinrunRecords);
+  const robindoneRecords = await readUserMcpRecordsFromFile(ROBINDONE_MCP_DESCRIPTOR);
+  if (robindoneRecords.length > 0) {
+    return sortMcpRecords(robindoneRecords);
   }
   return sortMcpRecords(await readUserMcpRecordsFromFile(AGENTS_MCP_DESCRIPTOR));
 }
@@ -181,7 +181,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
     const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
     const location =
       payload.location ??
-      buildDirectoryMcpLocation(ROBINRUN_MCP_DESCRIPTOR, scope, payload.projectPath);
+      buildDirectoryMcpLocation(ROBINDONE_MCP_DESCRIPTOR, scope, payload.projectPath);
     await writeServerEnabledToFile(
       findDescriptorByLocation(location),
       location,
@@ -194,7 +194,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
 
   const scope: Exclude<McpScope, "common"> = payload.projectPath ? "workspace" : "user";
   const existingServers = await readDirectoryServersFromFile(
-    ROBINRUN_MCP_DESCRIPTOR,
+    ROBINDONE_MCP_DESCRIPTOR,
     scope,
     payload.projectPath,
   );
@@ -211,7 +211,7 @@ async function saveMcpToUserDirectory(payload: SaveCliMcpToUserDirectoryRequest)
     delete nextServers[payload.name];
   }
 
-  await writeRobinRunServersToFile(scope, nextServers, payload.projectPath);
+  await writeRobinDoneServersToFile(scope, nextServers, payload.projectPath);
 }
 
 function sortMcpRecords(records: UserMcpRecord[]): UserMcpRecord[] {
@@ -222,13 +222,13 @@ async function readDirectoryServersFromPreferredSources(
   scope: Exclude<McpScope, "common">,
   workspacePath?: string,
 ): Promise<NativeMcpServerRecord[]> {
-  const robinrunServers = await readDirectoryServersFromFile(
-    ROBINRUN_MCP_DESCRIPTOR,
+  const robindoneServers = await readDirectoryServersFromFile(
+    ROBINDONE_MCP_DESCRIPTOR,
     scope,
     workspacePath,
   );
-  if (robinrunServers.length > 0) {
-    return robinrunServers;
+  if (robindoneServers.length > 0) {
+    return robindoneServers;
   }
   return readDirectoryServersFromFile(AGENTS_MCP_DESCRIPTOR, scope, workspacePath);
 }
@@ -250,7 +250,7 @@ async function readDirectoryServersFromFile(
   );
   const location = buildDirectoryMcpLocation(descriptor, scope, workspacePath);
   return Object.entries(serverMap).map(([name, config]) => ({
-    source: "robinrunagentmcp",
+    source: "robindoneagentmcp",
     scope,
     name,
     config: config as McpServerConfig,
@@ -264,23 +264,23 @@ async function readDirectoryServersFromFile(
   }));
 }
 
-async function writeRobinRunServersToFile(
+async function writeRobinDoneServersToFile(
   scope: Exclude<McpScope, "common">,
   servers: Record<string, Record<string, unknown>>,
   workspacePath?: string,
 ): Promise<void> {
-  const filePath = buildDirectoryConfigPath(ROBINRUN_MCP_DESCRIPTOR, scope, workspacePath);
+  const filePath = buildDirectoryConfigPath(ROBINDONE_MCP_DESCRIPTOR, scope, workspacePath);
   const current = (await readJsonObject(filePath)) ?? {};
-  const next = writeServerMapToJson(current, ROBINRUN_MCP_DESCRIPTOR.configKeyName, servers);
+  const next = writeServerMapToJson(current, ROBINDONE_MCP_DESCRIPTOR.configKeyName, servers);
   await writeTextAtomic(filePath, `${JSON.stringify(next, null, 2)}\n`);
 }
 
 async function readUserCliConfig(): Promise<Record<string, unknown>> {
-  return (await readJsonObject(getUserRobinrunMcpConfigPath())) ?? {};
+  return (await readJsonObject(getUserRobindoneMcpConfigPath())) ?? {};
 }
 
 async function writeUserCliConfig(config: Record<string, unknown>): Promise<void> {
-  await writeTextAtomic(getUserRobinrunMcpConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
+  await writeTextAtomic(getUserRobindoneMcpConfigPath(), `${JSON.stringify(config, null, 2)}\n`);
 }
 
 function removeLegacyMcpEnabledOverride(
@@ -487,19 +487,19 @@ function writeServerMapToJson(
 }
 
 /** 读取 `config.json` 的 `mcp.servers`（已折叠历史 enable 字段），供数据同步在写前重读后使用。 */
-export function readRobinrunServerMap(
+export function readRobindoneServerMap(
   config: Record<string, unknown>,
 ): Record<string, Record<string, unknown>> {
   return migrateLegacyEnableFlag(
-    readServerMapFromJson(config, ROBINRUN_MCP_DESCRIPTOR.configKeyName),
+    readServerMapFromJson(config, ROBINDONE_MCP_DESCRIPTOR.configKeyName),
   ).servers;
 }
 
-export function writeRobinrunServerMap(
+export function writeRobindoneServerMap(
   config: Record<string, unknown>,
   servers: Record<string, Record<string, unknown>>,
 ): Record<string, unknown> {
-  return writeServerMapToJson(config, ROBINRUN_MCP_DESCRIPTOR.configKeyName, servers);
+  return writeServerMapToJson(config, ROBINDONE_MCP_DESCRIPTOR.configKeyName, servers);
 }
 
 export interface McpPathRewrite {

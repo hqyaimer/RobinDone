@@ -3,8 +3,8 @@ import {
   type CancellationToken,
   type IChannelServer,
   type IServerChannel,
-} from "@robinrun/rpc";
-import { ServiceChannels } from "@robinrun/shared";
+} from "@robindone/rpc";
+import { ServiceChannels } from "@robindone/shared";
 import {
   conversationTopicFrameSchema,
   encodeTopicWireFrames,
@@ -19,7 +19,7 @@ import {
   type TopicWireFrameCandidate,
   workspaceConfigTopic,
   workspaceConfigTopicFrameSchema,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 
 const log = createServiceLogger("source-server-workspace-identity");

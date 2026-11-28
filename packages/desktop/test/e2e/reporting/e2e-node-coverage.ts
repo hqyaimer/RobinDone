@@ -86,21 +86,21 @@ interface V8CoveragePayload {
       url?: string | null;
     }
   >;
-  "robinrun-e2e-normalized-source-map-root"?: string;
+  "robindone-e2e-normalized-source-map-root"?: string;
 }
 
 const COVERAGE_ENABLED_VALUE = "1";
 const DOMAINS: E2ENodeCoverageDomain[] = ["main", "host", "cli"];
 const SOURCE_EXTENSIONS = [".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"];
-const SOURCE_MAP_CACHE_INDEX_MARKER = ".robinrun-source-map-cache-index-v2.marker";
-const COMPACTED_FILE_INDEX_MARKER = ".robinrun-compacted-coverage-files-v1.marker";
+const SOURCE_MAP_CACHE_INDEX_MARKER = ".robindone-source-map-cache-index-v2.marker";
+const COMPACTED_FILE_INDEX_MARKER = ".robindone-compacted-coverage-files-v1.marker";
 
 export function createE2ENodeCoverageCollector(options: E2ENodeCoverageCollectorOptions) {
-  const enabled = process.env.ROBINRUN_E2E_COVERAGE === COVERAGE_ENABLED_VALUE;
+  const enabled = process.env.ROBINDONE_E2E_COVERAGE === COVERAGE_ENABLED_VALUE;
   const coverageDir = resolve(options.artifactDir, "coverage");
   const rawRoot = resolve(coverageDir, "raw");
   const sourceMapRoots: Record<E2ENodeCoverageDomain, string> = {
-    cli: resolve(options.repoRoot, "apps/robinrun-cli/packages/cli/dist"),
+    cli: resolve(options.repoRoot, "apps/robindone-cli/packages/cli/dist"),
     host: resolve(options.desktopDir, "out/host"),
     main: resolve(options.desktopDir, "out/main"),
   };
@@ -186,7 +186,7 @@ export function compactV8CoverageDirectory(params: { rawDir: string; sourceMapRo
     } catch {
       continue;
     }
-    if (payload["robinrun-e2e-normalized-source-map-root"] === normalizedSourceMapRoot) {
+    if (payload["robindone-e2e-normalized-source-map-root"] === normalizedSourceMapRoot) {
       compactedFileNames.add(rawFileName);
       compactedFileIndexChanged = true;
       continue;
@@ -195,7 +195,7 @@ export function compactV8CoverageDirectory(params: { rawDir: string; sourceMapRo
     normalizeV8CoveragePayload(payload, params.sourceMapRoot, {
       excludeSourceMapUrls: retainedSourceMapUrls,
     });
-    payload["robinrun-e2e-normalized-source-map-root"] = normalizedSourceMapRoot;
+    payload["robindone-e2e-normalized-source-map-root"] = normalizedSourceMapRoot;
     const retainedByThisFile = Object.keys(payload["source-map-cache"] ?? {});
     // Bug 根因：V8 会为每个短生命周期 Electron/Host/CLI 进程重复落整份 bundle
     // source map，全量（含 manual-review）在 finalize 前即可超过百 GB。进程退出后立即
@@ -352,7 +352,7 @@ function collectExpectedProcessPids(artifactDir: string, domain: E2ENodeCoverage
   for (const logPath of listFiles(runtimeLogsDir, (path) => path.endsWith(".log"))) {
     const content = readFileSync(logPath, "utf-8");
     for (const line of content.split("\n")) {
-      if (!line.includes("RobinRun agent process exited")) continue;
+      if (!line.includes("RobinDone agent process exited")) continue;
       const match = /"pid":(\d+),"runtimeIdentity"/u.exec(line);
       if (match?.[1]) pids.add(Number(match[1]));
     }
@@ -417,7 +417,7 @@ function writeNodeIstanbulReports(params: {
     if (loadedPaths.has(normalizePath(resolve(sourceFile)))) continue;
     try {
       const instrumenter = createInstrumenter({
-        coverageVariable: "__robinrun_e2e_node_baseline__",
+        coverageVariable: "__robindone_e2e_node_baseline__",
         parserPlugins: ["typescript", "jsx"],
         produceSourceMap: false,
       });

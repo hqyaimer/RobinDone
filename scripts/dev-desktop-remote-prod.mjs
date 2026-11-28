@@ -18,18 +18,18 @@ export function resolveProductionRemoteAssetCacheDir(
       homeDir,
       "Library",
       "Application Support",
-      "RobinRun",
+      "RobinDone",
       "remote-assets-cache",
     );
   }
 
   if (platform === "win32") {
     const appDataDir = env.APPDATA?.trim() || pathApi.join(homeDir, "AppData", "Roaming");
-    return pathApi.join(appDataDir, "RobinRun", "remote-assets-cache");
+    return pathApi.join(appDataDir, "RobinDone", "remote-assets-cache");
   }
 
   const configDir = env.XDG_CONFIG_HOME?.trim() || pathApi.join(homeDir, ".config");
-  return pathApi.join(configDir, "RobinRun", "remote-assets-cache");
+  return pathApi.join(configDir, "RobinDone", "remote-assets-cache");
 }
 
 export function buildDesktopRemoteProdEnv(
@@ -38,16 +38,16 @@ export function buildDesktopRemoteProdEnv(
   homeDir = homedir(),
 ) {
   const cacheDir =
-    baseEnv.ROBINRUN_REMOTE_ASSET_CACHE_DIR?.trim() ||
+    baseEnv.ROBINDONE_REMOTE_ASSET_CACHE_DIR?.trim() ||
     resolveProductionRemoteAssetCacheDir(baseEnv, platform, homeDir);
 
   return {
     ...baseEnv,
-    // remote CDN 基址现在跟随 ROBINRUN_ENV 分流；该脚本用于复现生产态下载链路，
+    // remote CDN 基址现在跟随 ROBINDONE_ENV 分流；该脚本用于复现生产态下载链路，
     // 因此需要同时强制 production 和 CDN 开关，避免默认 test 环境落到测试资源 CDN。
-    ROBINRUN_ENV: "production",
-    ROBINRUN_DEV_REMOTE_ASSET_USE_CDN: "1",
-    ROBINRUN_REMOTE_ASSET_CACHE_DIR: cacheDir,
+    ROBINDONE_ENV: "production",
+    ROBINDONE_DEV_REMOTE_ASSET_USE_CDN: "1",
+    ROBINDONE_REMOTE_ASSET_CACHE_DIR: cacheDir,
   };
 }
 
@@ -57,7 +57,7 @@ export function resolvePnpmCommand(platform = process.platform) {
 
 export function runDesktopRemoteProdDev() {
   const repoRoot = resolve(import.meta.dirname, "..");
-  const child = spawn(resolvePnpmCommand(), ["--filter", "@robinrun/desktop", "dev"], {
+  const child = spawn(resolvePnpmCommand(), ["--filter", "@robindone/desktop", "dev"], {
     cwd: repoRoot,
     stdio: "inherit",
     env: buildDesktopRemoteProdEnv(),

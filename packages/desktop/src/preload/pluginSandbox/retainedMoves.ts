@@ -15,7 +15,7 @@ export function enableSandboxRetainedMoves(): boolean {
         const connect = prototype.connectedCallback,
           disconnect = prototype.disconnectedCallback;
         prototype.connectedMoveCallback = function () {
-          if (this.hasAttribute("data-robinrun-retained-sandbox")) return;
+          if (this.hasAttribute("data-robindone-retained-sandbox")) return;
           disconnect.call(this);
           connect.call(this);
         };

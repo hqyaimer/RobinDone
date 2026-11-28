@@ -9,7 +9,7 @@ import { TASK_GROUP_ADMISSIONS_SQL } from "#src/task-groups/migration-v6.js";
 import { TASK_GROUP_PROJECT_BINDING_SQL } from "#src/task-groups/migration-v7.js";
 import { TASK_INDEX_SCHEMA } from "#src/session/tasksDatabase/schema-v1.js";
 import { TaskGroupRepository } from "#src/task-groups/repository.js";
-import { mainAgentGroupId } from "@robinrun/shared";
+import { mainAgentGroupId } from "@robindone/shared";
 
 const WORKSPACE = "E:\\ws\\proj";
 const PROJECT_ID = "11111111-1111-1111-1111-111111111111";
@@ -26,7 +26,7 @@ function newDb(): DatabaseSync {
     "INSERT INTO task_groups(group_id,title,color,project_id,created_at,updated_at) VALUES(?,?,?,?,?,?)",
   );
   insertGroup.run(OWNER_GROUP, "main-agent", "blue", PROJECT_ID, 1, 1);
-  insertGroup.run("robinrun-default-group-cron", "cron", "blue", null, 1, 1);
+  insertGroup.run("robindone-default-group-cron", "cron", "blue", null, 1, 1);
   return db;
 }
 
@@ -59,7 +59,7 @@ describe("task group admission of trigger sessions", () => {
 
   it("真 cron automation 仍归定时任务组", () => {
     repo.admit([fact({ taskId: "sess-cron", cronAutomationId: `automation-abc` }) as never]);
-    expect(parentOf("sess-cron")).toBe("robinrun-default-group-cron");
+    expect(parentOf("sess-cron")).toBe("robindone-default-group-cron");
   });
 
   it("触发器会话归订阅智能体组而非定时任务组", () => {
@@ -78,10 +78,10 @@ describe("task group admission of trigger sessions", () => {
     ).run(WORKSPACE, "sess-legacy", "cron");
     db.prepare(
       "INSERT INTO task_group_members(group_id,workspace_key,workspace_path,task_id,sort_order,added_at,created_at,updated_at) VALUES(?,?,?,?,0,1,1,1)",
-    ).run("robinrun-default-group-cron", WORKSPACE, WORKSPACE, "sess-legacy");
+    ).run("robindone-default-group-cron", WORKSPACE, WORKSPACE, "sess-legacy");
     db.prepare(
       "INSERT INTO task_group_view_node_orders(node_type,node_key,sort_order,created_at,updated_at) VALUES('group',?,1,1,1)",
-    ).run("robinrun-default-group-cron");
+    ).run("robindone-default-group-cron");
 
     repo.admit([
       fact({
@@ -103,10 +103,10 @@ describe("task group admission of trigger sessions", () => {
     ).run(WORKSPACE, "sess-user", "cron");
     db.prepare(
       "INSERT INTO task_group_members(group_id,workspace_key,workspace_path,task_id,sort_order,added_at,created_at,updated_at) VALUES(?,?,?,?,0,1,1,1)",
-    ).run("robinrun-default-group-cron", WORKSPACE, WORKSPACE, "sess-user");
+    ).run("robindone-default-group-cron", WORKSPACE, WORKSPACE, "sess-user");
 
     repo.admit([fact({ taskId: "sess-user", cronAutomationId: "trg-ccc" }) as never]);
-    expect(parentOf("sess-user")).toBe("robinrun-default-group-cron");
+    expect(parentOf("sess-user")).toBe("robindone-default-group-cron");
   });
 });
 

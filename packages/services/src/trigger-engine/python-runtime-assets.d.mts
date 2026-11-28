@@ -20,9 +20,7 @@ export declare const PYTHON_RELEASE_TAG: "20261110";
 export declare const PYTHON_VERSION: "3.12.16";
 export declare const PYTHON_RUNTIME_ID: `cpython-${string}+${string}`;
 export declare const PYTHON_RELEASE_BASE_URL: string;
-export declare const PYTHON_RUNTIME_ASSETS: Readonly<
-  Record<PythonHostTriple, PythonHostAsset>
->;
+export declare const PYTHON_RUNTIME_ASSETS: Readonly<Record<PythonHostTriple, PythonHostAsset>>;
 export declare function resolvePythonHostTriple(
   platform: NodeJS.Platform,
   arch: string,

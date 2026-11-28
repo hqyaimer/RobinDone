@@ -18,8 +18,8 @@ describe("all E2E coverage runner", () => {
     expect(plan.command).toBe(process.platform === "win32" ? "pnpm.cmd" : "pnpm");
     expect(plan.env).toMatchObject({
       KEEP_ME: "1",
-      ROBINRUN_E2E_COVERAGE: "1",
-      ROBINRUN_E2E_MANUAL_REVIEW: "1",
+      ROBINDONE_E2E_COVERAGE: "1",
+      ROBINDONE_E2E_MANUAL_REVIEW: "1",
     });
     expect(plan.args).toEqual([
       "test:e2e",
@@ -73,7 +73,7 @@ describe("all E2E coverage runner", () => {
       "node scripts/run-all-e2e-coverage.mjs",
     );
     expect(rootPackage.scripts["test:e2e:all:coverage"]).toBe(
-      "pnpm --filter @robinrun/desktop test:e2e:all:coverage",
+      "pnpm --filter @robindone/desktop test:e2e:all:coverage",
     );
   });
 

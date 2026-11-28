@@ -5,8 +5,8 @@ import type {
   SessionWorkflowActivity,
   SessionWorkflowPhaseSummary,
   SessionWorkflowRunSummary,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import { isSessionWorkflowRunLive } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
+import { isSessionWorkflowRunLive } from "@robindone/shared/robindone-protocol-v4";
 import { bandOf, foldPhaseBands, trackOf } from "../components/workflow-timeline/timeline-bands.js";
 
 /** 一个会话最多画的运行行数；其余折成「+n」。 */

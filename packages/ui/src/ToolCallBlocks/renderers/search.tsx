@@ -1,6 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import { useMemo } from "react";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ToolSnapshotFieldNotice } from "@/ToolCallBlocks/ToolSnapshotFieldNotice.js";
 import { ToolLayout } from "../ToolLayout.js";
 import type { ToolCallBlockRenderContext } from "../shared.js";
@@ -87,7 +87,7 @@ export function getSearchPrimaryText(intl: IntlLike, input: unknown): string {
 }
 
 export function SearchToolCallBlock(context: ToolCallBlockRenderContext) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <SearchToolCallLayout
       {...context}
@@ -97,7 +97,7 @@ export function SearchToolCallBlock(context: ToolCallBlockRenderContext) {
 }
 
 export function ToolSearchToolCallBlock(context: ToolCallBlockRenderContext) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { input } = context.toolCallNode.toolCall;
   const query = isPlainRecord(input) && typeof input.query === "string" ? input.query.trim() : "";
   const selection = /^select:(.+)$/i.exec(query);
@@ -129,7 +129,7 @@ function SearchToolCallLayout(
     hideSnapshotNotice?: boolean;
   },
 ) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { toolCallNode, isRunning, statusLabel, errorText } = context;
   const { toolCall } = toolCallNode;
   const { searchPrimaryText } = context;

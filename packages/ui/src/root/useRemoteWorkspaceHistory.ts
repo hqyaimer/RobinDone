@@ -23,14 +23,14 @@ import type {
   SourceServerConnectionState,
   SourceServerManagementSnapshot,
   RemoteWorkspaceSessionEntry,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   buildSshRemoteHostKey,
   createUuid,
   parseRemoteWorkspaceIdentity,
   stripRemoteTargetSecrets,
-} from "@robinrun/shared";
-import type { IServiceAccessor } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IServiceAccessor } from "@robindone/services";
 import {
   bindRemoteWorkspaceIdentity,
   bindRemoteWorkspacePath,
@@ -75,7 +75,7 @@ import { useRemoteConnectionEntryVisibility } from "@/hooks/useRemoteConnectionE
 import { createRemoteWorkspaceController } from "@/remote/remoteWorkspaceController.js";
 import type { RemoteWorkspaceController } from "@/remote/remoteWorkspaceController.js";
 import { buildRemoteTargetFromProfile } from "@/lib/remoteConnectionWizard.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import { loadConnectionProfileCredentials } from "@/root/reconnectRemoteWorkspaceHistoryEntry.js";
 import type { WorkspacePersistenceGate } from "@/hooks/useTabPersistence.js";
 
@@ -1062,7 +1062,7 @@ export function useRemoteWorkspaceHistory({
   onOpenRemoteConnection,
   manuallyOpeningWorkspaceTabId,
 }: {
-  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinDoneIntl>["intl"];
   services: IServiceAccessor;
   platform: IPlatformService;
   supportsSettings: boolean;
@@ -1261,7 +1261,7 @@ export function useRemoteWorkspaceHistory({
 
       // 远程连接成功只代表 main/host 已经建好 session，
       // renderer 侧的 MessagePort 仍然可能在下一拍才注册进 zustand store。
-      // 如果此时立刻 addTab，会短暂走到本地 services，导致首屏读目录/预热 RobinRun Agent 命中错误服务。
+      // 如果此时立刻 addTab，会短暂走到本地 services，导致首屏读目录/预热 RobinDone Agent 命中错误服务。
       // 这里等 session 真正挂进 store 再继续。
       await waitForRemoteWorkspaceSessionReady(result.sessionId);
       if (!context) {
@@ -1817,7 +1817,7 @@ export function useRemoteWorkspaceHistory({
             (draftProjectId === undefined
               ? undefined
               : ({ workspacePath, workspaceIdentity }) => {
-                  useRobinRunSessionStore
+                  useRobinDoneSessionStore
                     .getState()
                     .startDraft(workspacePath, undefined, workspaceIdentity, {
                       projectId: draftProjectId,

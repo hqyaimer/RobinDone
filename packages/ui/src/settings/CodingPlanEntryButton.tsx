@@ -1,11 +1,11 @@
 import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useOptionalCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 
 export function useCodingPlanEntryGate() {
   const dialog = useOptionalCodingPlanUpgradeDialog();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const status = dialog?.inventory?.status ?? "ready";
   const label =
     status === "ready"

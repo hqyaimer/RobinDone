@@ -23,8 +23,8 @@ before(async () => {
         name: "render-boundaries-fixture",
         enforce: "pre",
         load(id) {
-          if (id.endsWith("/hooks/useRobinRunSessionService.ts"))
-            return "export const useRobinRunSessionService=()=>null;";
+          if (id.endsWith("/hooks/useRobinDoneSessionService.ts"))
+            return "export const useRobinDoneSessionService=()=>null;";
           if (id.endsWith("/hooks/useSettingService.ts"))
             return "export const useSettings=()=>({settings:null});";
         },
@@ -125,8 +125,8 @@ for (const theme of ["light", "dark"]) {
                 await page.evaluate(
                   (name) => CSS.highlights.get(name)?.size ?? 0,
                   entry === "find"
-                    ? "robinrun-v4-conversation-find-active"
-                    : "robinrun-v4-conversation-search-result",
+                    ? "robindone-v4-conversation-find-active"
+                    : "robindone-v4-conversation-search-result",
                 ),
                 0,
               );
@@ -202,8 +202,8 @@ for (const theme of ["light", "dark"]) {
             await page.getByRole("button", { name: "Mount target" }).click();
             const highlight =
               entry === "find"
-                ? "robinrun-v4-conversation-find-active"
-                : "robinrun-v4-conversation-search-result";
+                ? "robindone-v4-conversation-find-active"
+                : "robindone-v4-conversation-search-result";
             await page.waitForFunction((name) => CSS.highlights.get(name)?.size === 1, highlight);
             assert.equal(
               await page.evaluate(
@@ -264,7 +264,7 @@ for (const theme of ["light", "dark"]) {
           });
           await search("alpha", 301);
           await page.waitForFunction(
-            () => CSS.highlights.get("robinrun-v4-conversation-find")?.size === 301,
+            () => CSS.highlights.get("robindone-v4-conversation-find")?.size === 301,
           );
           const walks = await page.evaluate(() => window.__findTextWalks);
           await writeFile(

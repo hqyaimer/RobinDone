@@ -6,15 +6,15 @@ import type {
   AccountProviderConnectionResult,
   ProviderConfigSnapshot,
   ProviderSource,
-} from "@robinrun/provider";
-import { AccountProviderService, createAccountProviderConfigResolver } from "@robinrun/provider";
+} from "@robindone/provider";
+import { AccountProviderService, createAccountProviderConfigResolver } from "@robindone/provider";
 import {
   type ApiClient,
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
-  type RobinRunAccountAccess,
-  type RobinRunProviderAccountAccess,
-} from "@robinrun/shared";
+  type RobinDoneAccountAccess,
+  type RobinDoneProviderAccountAccess,
+} from "@robindone/shared";
 import type {
   CodingPlanAvailabilityProvider,
   CodingPlanAvailabilityResult,
@@ -322,10 +322,10 @@ export function createCodingPlanFamilyAvailabilityResolver(
  * 每次请求重新读取当前选择；只有 family 与 mode 兼容时才返回动态访问事实。
  */
 export async function resolveCurrentAccountAccess(input: {
-  readonly access: RobinRunProviderAccountAccess;
+  readonly access: RobinDoneProviderAccountAccess;
   readonly readSettings: () => Promise<AccountProviderConnectionSettings>;
   readonly loadAccountIdentity: (family: ProviderFamilyDomain) => Promise<string | null>;
-}): Promise<RobinRunAccountAccess | null> {
+}): Promise<RobinDoneAccountAccess | null> {
   const settings = await input.readSettings();
   const { accountType, mode } = input.access;
   if (settings.providerFamilyDomain !== accountType) return null;

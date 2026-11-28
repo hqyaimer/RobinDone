@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SessionDebugSnapshot } from "@robinrun/shared";
+import type { SessionDebugSnapshot } from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 
 const REFRESH_INTERVAL_MS = 1000;
@@ -16,11 +16,11 @@ export function useSessionDebug({
   taskId: string | null;
   enabled?: boolean;
 }) {
-  const { robinrunAgentService } = useServices();
+  const { robindoneAgentService } = useServices();
   const scopeKey = JSON.stringify([workspaceIdentity?.trim() || workspacePath, taskId]);
   const [result, setResult] = useState<{
     key: string;
-    service: typeof robinrunAgentService;
+    service: typeof robindoneAgentService;
     data: SessionDebugSnapshot | null;
     error: boolean;
   } | null>(null);
@@ -30,20 +30,20 @@ export function useSessionDebug({
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = async () => {
       try {
-        const data = await robinrunAgentService.readSessionDebug({
+        const data = await robindoneAgentService.readSessionDebug({
           workspacePath,
           workspaceIdentity,
           sessionId: taskId,
         });
         if (!disposed)
-          setResult({ key: scopeKey, service: robinrunAgentService, data, error: false });
+          setResult({ key: scopeKey, service: robindoneAgentService, data, error: false });
       } catch {
         if (!disposed)
           setResult((previous) => ({
             key: scopeKey,
-            service: robinrunAgentService,
+            service: robindoneAgentService,
             data:
-              previous?.key === scopeKey && previous.service === robinrunAgentService
+              previous?.key === scopeKey && previous.service === robindoneAgentService
                 ? previous.data
                 : null,
             error: true,
@@ -58,8 +58,8 @@ export function useSessionDebug({
       disposed = true;
       clearTimeout(timer);
     };
-  }, [enabled, scopeKey, taskId, workspaceIdentity, workspacePath, robinrunAgentService]);
+  }, [enabled, scopeKey, taskId, workspaceIdentity, workspacePath, robindoneAgentService]);
   const current =
-    result?.key === scopeKey && result.service === robinrunAgentService ? result : null;
+    result?.key === scopeKey && result.service === robindoneAgentService ? result : null;
   return { ...(current?.data ?? EMPTY_DEBUG), error: current?.error ?? false };
 }

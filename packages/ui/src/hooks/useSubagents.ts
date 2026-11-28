@@ -1,4 +1,4 @@
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { useCallback, useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useServices } from "./useServices.js";
@@ -11,7 +11,7 @@ import { useSubagentsStore } from "@/store/subagentsStore.js";
 
 export function useSubagents(
   workspacePath: string | null,
-  provider: RobinRunProvider,
+  provider: RobinDoneProvider,
   explicitWorkspaceIdentity?: string,
 ) {
   const { subagentsService } = useServices();

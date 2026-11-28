@@ -16,7 +16,7 @@ import type {
   CommandAck,
   CommandType,
   SessionConfigState,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 
 type DispatchCommand = (

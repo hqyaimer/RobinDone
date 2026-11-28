@@ -2,10 +2,10 @@ import type { FileManagerTarget } from "@/lib/workspaceSidePane.js";
 import type { ComposerDraftHandoff } from "@/v4/composer/composerDraftWorkspaceTransfer.js";
 import type { RefObject } from "react";
 import type {
-  RobinRunProvider,
+  RobinDoneProvider,
   SessionCreateSource,
-  RobinRunTaskRuntimeStatus,
-  RobinRunTaskMeta,
+  RobinDoneTaskRuntimeStatus,
+  RobinDoneTaskMeta,
   GitChangeSourceId,
   DesktopWindowChromeState,
   IPlatformService,
@@ -14,8 +14,8 @@ import type {
   RemoteWorkspaceSessionEntry,
   UpdateStatePayload,
   UserInfo,
-} from "@robinrun/shared";
-import type { IFeedbackService, IServiceAccessor } from "@robinrun/services";
+} from "@robindone/shared";
+import type { IFeedbackService, IServiceAccessor } from "@robindone/services";
 import type { SavedWorkflowsOpenTarget } from "@/settings/saved-workflows/SavedWorkflowsSection.js";
 import type { SavedWorkflowHubTarget } from "@/v4/savedWorkflowHubContext.js";
 import type { WebRemoteControlWorkspaceSwitcherApi } from "@/root/types.js";
@@ -35,7 +35,7 @@ import type {
   OpenScopedWorkflowWorkspaceSideTabRequest,
   WorkspaceSidePaneState,
 } from "@/lib/workspaceSidePane.js";
-import type { WorkspaceRobinRunUIState } from "@/store/robinrunSessionStore.js";
+import type { WorkspaceRobinDoneUIState } from "@/store/robindoneSessionStore.js";
 import type { RemoteConnectionLogEntry } from "@/hooks/useRemoteConnectionLogs.js";
 import type { Theme } from "@/useTheme.js";
 import type {
@@ -43,20 +43,20 @@ import type {
   ChatViewSummaryPanelVariant,
   ConversationFindMatchState,
 } from "@/v4/legacyChatViewTypes.js";
-import type { ComposerMentionPrefill } from "@/store/robinrunSessionStoreTypes.js";
+import type { ComposerMentionPrefill } from "@/store/robindoneSessionStoreTypes.js";
 import type { TaskFindDialogProps } from "@/quickpick/TaskFindDialog.js";
 import type { AutomationsNavigationTab, OpenAutomationsMain } from "@/lib/taskNavigationHistory.js";
 import type { SidePaneFullViewController } from "@/side-pane-full-view/contract.js";
 
-export interface WorkspaceShellRobinRunState {
-  activeTaskId: WorkspaceRobinRunUIState["activeTaskId"];
-  draftFocusVersion: WorkspaceRobinRunUIState["draftFocusVersion"];
-  modelSwitchPending: WorkspaceRobinRunUIState["modelSwitchPending"];
-  modelSwitchStage: WorkspaceRobinRunUIState["modelSwitchStage"];
-  selectedProvider: WorkspaceRobinRunUIState["selectedProvider"];
-  optimisticTaskListByTaskId: WorkspaceRobinRunUIState["optimisticTaskListByTaskId"];
-  workspaceInit: WorkspaceRobinRunUIState["workspaceInit"];
-  taskStatus: RobinRunTaskRuntimeStatus;
+export interface WorkspaceShellRobinDoneState {
+  activeTaskId: WorkspaceRobinDoneUIState["activeTaskId"];
+  draftFocusVersion: WorkspaceRobinDoneUIState["draftFocusVersion"];
+  modelSwitchPending: WorkspaceRobinDoneUIState["modelSwitchPending"];
+  modelSwitchStage: WorkspaceRobinDoneUIState["modelSwitchStage"];
+  selectedProvider: WorkspaceRobinDoneUIState["selectedProvider"];
+  optimisticTaskListByTaskId: WorkspaceRobinDoneUIState["optimisticTaskListByTaskId"];
+  workspaceInit: WorkspaceRobinDoneUIState["workspaceInit"];
+  taskStatus: RobinDoneTaskRuntimeStatus;
   taskError: string | null;
 }
 
@@ -69,7 +69,7 @@ export interface CreateTaskOptions {
   onError?: (error: unknown) => void;
   /** 异步预填只能提交到解析 Skill 时的同一新任务目标。 */
   expectedWorkspaceKey?: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   projectId?: string | null;
   /** 未归类任务目录准备的幂等身份，不作为 session 身份。 */
   draftId?: string;
@@ -92,7 +92,7 @@ export interface CreateTaskOptions {
   };
 }
 
-export type CreateTaskRequest = RobinRunProvider | CreateTaskOptions;
+export type CreateTaskRequest = RobinDoneProvider | CreateTaskOptions;
 
 export interface RemoteWorkspaceRecoveryStatus {
   mode: "automatic" | "manual";
@@ -182,7 +182,7 @@ export interface AppProps {
     workspaceIdentity?: string;
   }>;
   onOpenWorkspace: () => void;
-  /** RobinRun 项目列表导航：侧栏点击项目行 → 打开（或激活）该项目工作区（Root 的 handleSelectProject）。 */
+  /** RobinDone 项目列表导航：侧栏点击项目行 → 打开（或激活）该项目工作区（Root 的 handleSelectProject）。 */
   onOpenProject?: (workspacePath: string) => void;
   onOpenFolderFromWorkspaceMenu: () => void;
   onOpenRemoteWorkspace?: (preference?: RemoteConnectionOpenPreference) => void | boolean;
@@ -191,7 +191,7 @@ export interface AppProps {
   allowOpenWorkspace?: boolean;
   webRemoteControlWorkspaceSwitcher?: WebRemoteControlWorkspaceSwitcherApi;
   initialSidebarFileTreeOpen?: boolean;
-  initialWebRemoteControlMobileNavigationIntent?: import("@robinrun/shared").WebRemoteControlMobileNavigationIntent;
+  initialWebRemoteControlMobileNavigationIntent?: import("@robindone/shared").WebRemoteControlMobileNavigationIntent;
   webRemoteControlTerminalTransportState?: WebRemoteControlTerminalTransportState;
   allowRemoteWorkspace?: boolean;
   remoteWorkspaceSessions?: RemoteWorkspaceSessionEntry[];
@@ -232,7 +232,7 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
   handleOpenPluginStore: () => void;
   /** 需求/审批/反馈面板主视图（2026-11-24 MVP）；缺席（测试 double/旧装配）不注入入口。 */
   handleOpenOpsPanel?: () => void;
-  workspaceShellRobinRunState: WorkspaceShellRobinRunState;
+  workspaceShellRobinDoneState: WorkspaceShellRobinDoneState;
   theme: Theme;
   isMacFullscreen: boolean;
   desktopWindowChromeState: DesktopWindowChromeState | null;
@@ -270,9 +270,9 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
     workspacePath: string;
     label: string;
     remoteSessionId?: string;
-    remoteTarget?: import("@robinrun/shared").RemoteTarget;
+    remoteTarget?: import("@robindone/shared").RemoteTarget;
     workspaceIdentity?: string;
-    workspacePurpose?: import("@robinrun/shared").WorkspacePurpose;
+    workspacePurpose?: import("@robindone/shared").WorkspacePurpose;
     localWorkspacePath?: string;
     availability?: import("@/store/tabStore.js").WorkspaceAvailability;
   }>;
@@ -281,8 +281,8 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
   sidePaneOwnerId: string | null;
   activeTraceId: string | null;
   activeSessionId: string | null;
-  activeTaskProvider: RobinRunProvider | null;
-  resolvedActiveTaskMeta?: RobinRunTaskMeta | null;
+  activeTaskProvider: RobinDoneProvider | null;
+  resolvedActiveTaskMeta?: RobinDoneTaskMeta | null;
   activeTaskTitle: string;
   activeTaskChangeSummary: ReturnType<
     typeof import("@/lib/taskChangeSummary.js").getTaskChangeSummary
@@ -318,7 +318,7 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
   reloadSessionPending: boolean;
   handleReloadSession: (options?: {
     resumeTaskId?: string | null;
-    provider?: RobinRunProvider | null;
+    provider?: RobinDoneProvider | null;
   }) => Promise<void>;
   handleSelectTask: (
     targetWorkspacePath: string,
@@ -331,7 +331,7 @@ export interface WorkspaceShellLayoutProps extends Omit<AppProps, "baseFeedbackS
   handleStartDraftInWorkspace: (
     targetWorkspacePath: string,
     targetWorkspaceIdentity?: string,
-    targetWorkspacePurpose?: import("@robinrun/shared").WorkspacePurpose,
+    targetWorkspacePurpose?: import("@robindone/shared").WorkspacePurpose,
     createSource?: SessionCreateSource,
   ) => void;
   handleOpenCommandCenter: () => void;

@@ -5,7 +5,7 @@ import type {
   OAuthProviderMeta,
   OAuthTokenSet,
   OAuthUserProfile,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /** Provider 执行上下文 */
 export interface OAuthProviderContext {

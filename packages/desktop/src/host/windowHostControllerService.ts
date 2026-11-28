@@ -1,27 +1,27 @@
 /* eslint-disable max-lines -- Controller source 聚合、路由、订阅与生命周期属于同一个 Host 边界。 */
-import { Emitter, Event } from "@robinrun/rpc";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import { Emitter, Event } from "@robindone/rpc";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 import type {
   ControllerSubscribeParams,
   WindowHostControllerTaskRow,
   WindowHostTaskAddress,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import {
   CONTROLLER_TASKS_INDEX_TOPIC,
   matchesTaskListMembershipKind,
   windowHostTaskAddressSchema,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import type {
   IWindowControllerService,
-  IRobinRunAgentService,
-  IRobinRunTaskService,
+  IRobinDoneAgentService,
+  IRobinDoneTaskService,
   WindowHostControllerFrame,
   WindowHostControllerTaskListItem,
   WindowHostControllerTaskListResult,
   WindowHostTaskUnreadSignal,
-  RobinRunTaskListQuery,
-  RobinRunTaskListWorkspaceScope,
-} from "@robinrun/services";
+  RobinDoneTaskListQuery,
+  RobinDoneTaskListWorkspaceScope,
+} from "@robindone/services";
 import {
   createWindowHostControllerProjection,
   type WindowHostControllerMutation,
@@ -36,8 +36,8 @@ import {
 
 export interface ResolvedWindowHostControllerSource {
   scope: WindowHostControllerSourceScope;
-  taskService?: IRobinRunTaskService;
-  agentService?: IRobinRunAgentService;
+  taskService?: IRobinDoneTaskService;
+  agentService?: IRobinDoneAgentService;
   sourceAvailability: "online" | "offline";
 }
 
@@ -45,14 +45,14 @@ function sourceKey(scope: WindowHostControllerSourceScope): string {
   return `${scope.kind}\0${scope.kind === "remote" ? (scope.sourceServerId ?? scope.remoteSessionId) : "local"}\0${scope.workspaceIdentity?.trim() || scope.workspacePath}`;
 }
 
-function taskKey(task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">) {
+function taskKey(task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">) {
   return `${task.workspaceIdentity?.trim() || task.workspacePath}\0${task.taskId}`;
 }
 
 function normalizeTaskMeta(
-  meta: RobinRunTaskMeta,
+  meta: RobinDoneTaskMeta,
   scope: WindowHostControllerSourceScope,
-): RobinRunTaskMeta {
+): RobinDoneTaskMeta {
   return {
     ...meta,
     workspacePath: scope.workspacePath,
@@ -65,7 +65,7 @@ function normalizeTaskMeta(
 function compareItems(
   left: WindowHostControllerTaskListItem,
   right: WindowHostControllerTaskListItem,
-  sortBy: RobinRunTaskListQuery["sortBy"],
+  sortBy: RobinDoneTaskListQuery["sortBy"],
 ): number {
   const leftAt = sortBy === "created" ? left.createdAt : left.updatedAt;
   const rightAt = sortBy === "created" ? right.createdAt : right.updatedAt;
@@ -81,7 +81,7 @@ function mutationParams(address: WindowHostTaskAddress) {
 }
 
 function sessionOverlay(
-  summary: import("@robinrun/shared/robinrun-protocol-v4").SessionSummary,
+  summary: import("@robindone/shared/robindone-protocol-v4").SessionSummary,
 ): WindowHostControllerSessionOverlay {
   const liveStatus: WindowHostControllerSessionOverlay["liveStatus"] =
     summary.pendingInteraction ||
@@ -129,7 +129,7 @@ function sessionOverlay(
   };
 }
 
-function liveStatusFromMeta(meta: RobinRunTaskMeta): WindowHostControllerTaskRow["liveStatus"] {
+function liveStatusFromMeta(meta: RobinDoneTaskMeta): WindowHostControllerTaskRow["liveStatus"] {
   if (meta.status === "completed") return "completed";
   if (meta.status === "error") return "error";
   return "idle";
@@ -140,12 +140,12 @@ function liveStatusFromMeta(meta: RobinRunTaskMeta): WindowHostControllerTaskRow
  * 对应 source 的 tasks-index 重建投影，断连时只冻结最后一次成功的内存快照。
  */
 export function createWindowHostControllerRuntime(options: {
-  onRunStarted?: (run: import("@robinrun/shared/web-remote-relay").MobilePushRun) => void;
-  onNotification?: (event: import("@robinrun/shared/web-remote-relay").MobilePushEvent) => void;
+  onRunStarted?: (run: import("@robindone/shared/web-remote-relay").MobilePushRun) => void;
+  onNotification?: (event: import("@robindone/shared/web-remote-relay").MobilePushEvent) => void;
   createId: () => string;
-  readHostTaskList: IRobinRunTaskService["listTaskList"];
+  readHostTaskList: IRobinDoneTaskService["listTaskList"];
   resolveSource: (
-    scope: RobinRunTaskListWorkspaceScope,
+    scope: RobinDoneTaskListWorkspaceScope,
   ) => ResolvedWindowHostControllerSource | null;
   onSourceError?: (
     scope: WindowHostControllerSourceScope,
@@ -157,18 +157,18 @@ export function createWindowHostControllerRuntime(options: {
   const unreadSignals = new Emitter<WindowHostTaskUnreadSignal>();
   const registeredScopes = new Map<string, WindowHostControllerSourceScope>();
   const sourceAvailability = new Map<string, "online" | "offline">();
-  const sourceTaskServices = new Map<string, IRobinRunTaskService>();
-  const sourceSnapshotTaskServices = new Map<string, IRobinRunTaskService>();
+  const sourceTaskServices = new Map<string, IRobinDoneTaskService>();
+  const sourceSnapshotTaskServices = new Map<string, IRobinDoneTaskService>();
   const sourceEventSubscriptions = new Map<string, { dispose(): void }>();
   const sourceRefreshFlights = new Map<
     string,
-    { taskService: IRobinRunTaskService; promise: Promise<void> }
+    { taskService: IRobinDoneTaskService; promise: Promise<void> }
   >();
   const sourceRefreshGenerations = new Map<string, number>();
   const sourceLiveOverlays = new Map<string, WindowHostControllerSessionOverlay[]>();
   const sourceSessionObservers = new Map<
     string,
-    { agentService: IRobinRunAgentService; observer: WindowHostSessionsIndexObserver }
+    { agentService: IRobinDoneAgentService; observer: WindowHostSessionsIndexObserver }
   >();
   const pendingReplacementByNextSourceKey = new Map<string, WindowHostControllerSourceScope>();
 
@@ -441,7 +441,7 @@ export function createWindowHostControllerRuntime(options: {
     const membershipByTaskKey = new Map<
       string,
       {
-        meta: RobinRunTaskMeta;
+        meta: RobinDoneTaskMeta;
         membership: { pinned: boolean; archived: boolean; active: boolean };
       }
     >();
@@ -561,7 +561,7 @@ export function createWindowHostControllerRuntime(options: {
   }
 
   function resolveQuerySources(
-    scopes: RobinRunTaskListWorkspaceScope[],
+    scopes: RobinDoneTaskListWorkspaceScope[],
   ): ResolvedWindowHostControllerSource[] {
     const resolved = new Map<string, ResolvedWindowHostControllerSource>();
     for (const scope of scopes) {
@@ -575,7 +575,7 @@ export function createWindowHostControllerRuntime(options: {
   }
 
   async function listTaskList(
-    query: RobinRunTaskListQuery,
+    query: RobinDoneTaskListQuery,
   ): Promise<WindowHostControllerTaskListResult> {
     if (query.workspaceScopes === "host") {
       // 已注册 source 也只覆盖打开过的工作区；全局历史必须直接交给持久化 owner。
@@ -953,7 +953,7 @@ export function createWindowHostControllerRuntime(options: {
       taskId: string;
       workspacePath: string;
       workspaceIdentity?: string;
-      attachmentScope?: import("@robinrun/shared").WindowHostAttachmentScope;
+      attachmentScope?: import("@robindone/shared").WindowHostAttachmentScope;
       allowMissingTask?: boolean;
     }): Promise<WindowHostTaskAddress> {
       const remoteAttachmentScope =

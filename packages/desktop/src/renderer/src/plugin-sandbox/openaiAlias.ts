@@ -1,9 +1,9 @@
-import type { OpenAiCompatApi, RobinrunAliasApi } from "./aliasApi.js";
+import type { OpenAiCompatApi, RobindoneAliasApi } from "./aliasApi.js";
 
 export const OPENAI_SET_GLOBALS_EVENT = "openai:set_globals";
 
-/** 全部转调同一 `window.robinrun` 实例；globals 变化时由 alias.ts 派发 `openai:set_globals`（detail.globals 与本对象同源）。 */
-export function createOpenAiCompatApi(api: RobinrunAliasApi): OpenAiCompatApi {
+/** 全部转调同一 `window.robindone` 实例；globals 变化时由 alias.ts 派发 `openai:set_globals`（detail.globals 与本对象同源）。 */
+export function createOpenAiCompatApi(api: RobindoneAliasApi): OpenAiCompatApi {
   return {
     get toolInput() {
       return api.toolInput;

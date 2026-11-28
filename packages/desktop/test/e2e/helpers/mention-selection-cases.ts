@@ -1,6 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { TID_V4_COMPOSER_INPUT } from "@robinrun/shared/test-ids";
+import { TID_V4_COMPOSER_INPUT } from "@robindone/shared/test-ids";
 import { waitForDefaultWorkspaceReady } from "./desktop-app.js";
 
 const LABEL = "selection-demo.ts";
@@ -87,12 +87,12 @@ async function seedMentionSelection(position: string) {
       const input = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
       const bridge = (
         input as HTMLElement & {
-          __robinrunLexicalInputE2E?: {
+          __robindoneLexicalInputE2E?: {
             setEditorStateJson: (s: string) => void;
             focus: () => void;
           };
         }
-      )?.__robinrunLexicalInputE2E;
+      )?.__robindoneLexicalInputE2E;
       if (!input || !bridge) throw new Error("Lexical bridge unavailable");
       const text = (value: string) => ({
         type: "text",
@@ -164,8 +164,8 @@ async function readMentionSelection() {
   return browser.execute((testId) => {
     const input = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
     const bridge = (
-      input as HTMLElement & { __robinrunLexicalInputE2E?: { getText: () => string } }
-    )?.__robinrunLexicalInputE2E;
+      input as HTMLElement & { __robindoneLexicalInputE2E?: { getText: () => string } }
+    )?.__robindoneLexicalInputE2E;
     return {
       selected: window.getSelection()?.toString(),
       collapsed: window.getSelection()?.isCollapsed,

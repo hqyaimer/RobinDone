@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PluginUiToolCallView } from "@/plugin-ui/components/PluginUiToolCallBlock.js";
-import { RobinRunIntlProvider, useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider, useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import "@/styles.css";
 
 const params = new URLSearchParams(location.search);
 document.documentElement.className = `${params.get("theme")} theme-zai-${params.get("theme")}`;
 function Fixture() {
   const [opened, setOpened] = useState(false);
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const label = (id: string) => intl.formatMessage({ id });
   return (
     <main className="min-h-screen bg-background p-4 text-foreground">
@@ -19,7 +19,7 @@ function Fixture() {
           preferredDisplayMode="fullscreen"
           sidePaneActive={opened}
           inlineAllowed={false}
-          pluginId="pdf@robinrun-plugins-official"
+          pluginId="pdf@robindone-plugins-official"
           pluginName={
             params.get("long")
               ? "PDF — Research document with a very long descriptive title"
@@ -51,7 +51,7 @@ function Fixture() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+  <RobinDoneIntlProvider initialLocale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
     <Fixture />
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

@@ -1,16 +1,16 @@
-import type { RobinRunInteractionRequestOrigin } from "@robinrun/shared";
+import type { RobinDoneInteractionRequestOrigin } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
 import { Badge } from "@/components/ui/badge.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function InteractionRequestOriginBadge({
   className,
   origin,
 }: {
   className?: string;
-  origin?: RobinRunInteractionRequestOrigin;
+  origin?: RobinDoneInteractionRequestOrigin;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   if (origin?.kind !== "subagent") {
     return null;
   }

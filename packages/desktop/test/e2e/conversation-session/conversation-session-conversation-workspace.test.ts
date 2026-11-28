@@ -8,7 +8,7 @@ import {
   TID_V4_COMPOSER_INPUT,
   TID_VIRTUAL_PROJECT_ADD,
   TID_VIRTUAL_PROJECT_NEW_TASK,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DEFAULT_CONVERSATION_WORKSPACE,
   DEFAULT_WORKSPACE,
@@ -105,7 +105,7 @@ describe("非项目对话工作区 E2E", () => {
     await expectPurposeSectionOrder(TID_CONVERSATION_SECTION, TID_PROJECT_SECTION);
 
     const persistedOrder = await browser.execute(() => {
-      const rawValue = window.localStorage.getItem("robinrun-sidebar-purpose-section-preferences");
+      const rawValue = window.localStorage.getItem("robindone-sidebar-purpose-section-preferences");
       if (!rawValue) {
         return null;
       }

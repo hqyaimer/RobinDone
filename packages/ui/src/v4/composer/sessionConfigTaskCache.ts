@@ -1,9 +1,9 @@
-import type { RobinRunConfigOption } from "@robinrun/shared";
-import type { SessionConfigState } from "@robinrun/shared/robinrun-protocol-v4";
-import { parseModelPickerValue } from "@/lib/robinrunSessionProjection.js";
+import type { RobinDoneConfigOption } from "@robindone/shared";
+import type { SessionConfigState } from "@robindone/shared/robindone-protocol-v4";
+import { parseModelPickerValue } from "@/lib/robindoneSessionProjection.js";
 
 function resolveModelDisplayValue(
-  options: readonly RobinRunConfigOption[],
+  options: readonly RobinDoneConfigOption[],
   config: Pick<SessionConfigState, "provider" | "model">,
 ): string {
   const provider = config.provider.trim();
@@ -31,9 +31,9 @@ function resolveModelDisplayValue(
  * 目录项和候选列表保持原引用语义，仅替换 model/mode/thought 的 currentValue。
  */
 export function projectSessionConfigToTaskConfigOptions(
-  options: readonly RobinRunConfigOption[],
+  options: readonly RobinDoneConfigOption[],
   config: Pick<SessionConfigState, "provider" | "model" | "mode" | "thought">,
-): RobinRunConfigOption[] {
+): RobinDoneConfigOption[] {
   const modelValue = resolveModelDisplayValue(options, config);
   return options.map((option) => {
     if (option.type !== "select") {

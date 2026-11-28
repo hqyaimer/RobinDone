@@ -1,5 +1,5 @@
-import { IGenUiService } from "@robinrun/services";
-import { ProxyChannel, type IChannelClient } from "@robinrun/rpc";
+import { IGenUiService } from "@robindone/services";
+import { ProxyChannel, type IChannelClient } from "@robindone/rpc";
 import {
   IFileService,
   IMediaPreviewService,
@@ -11,9 +11,9 @@ import {
   IOnboardingRecordService,
   ICredentialService,
   IBroadcastService,
-  IRobinRunTaskService,
-  IRobinRunAgentService,
-  IRobinRunSessionService,
+  IRobinDoneTaskService,
+  IRobinDoneAgentService,
+  IRobinDoneSessionService,
   IProjectService,
   ITaskGroupService,
   ITriggerEngineService,
@@ -63,7 +63,7 @@ import {
   IWindowProjectChangesService,
   type WindowProjectDirectoryServices,
   type IServiceAccessor,
-} from "@robinrun/services";
+} from "@robindone/services";
 
 /**
  * RemoteServiceAccess — 通过 ChannelClient 自动创建类型安全的服务代理
@@ -82,10 +82,10 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly onboardingRecordService: IOnboardingRecordService;
   readonly credentialService: ICredentialService;
   readonly broadcastService: IBroadcastService;
-  readonly robinrunTaskService: IRobinRunTaskService;
+  readonly robindoneTaskService: IRobinDoneTaskService;
   readonly windowControllerService: IWindowControllerService;
-  readonly robinrunAgentService: IRobinRunAgentService;
-  readonly robinrunSessionService: IRobinRunSessionService;
+  readonly robindoneAgentService: IRobinDoneAgentService;
+  readonly robindoneSessionService: IRobinDoneSessionService;
   readonly taskGroupService: ITaskGroupService;
   /** 触发器引擎（desktop host 注册；远端 scope 未注册时经可选能力消费）。 */
   readonly triggerEngineService?: ITriggerEngineService;
@@ -192,14 +192,14 @@ export class RemoteServiceAccess implements IServiceAccessor {
     this.broadcastService = ProxyChannel.toService<IBroadcastService>(
       channelClient.getChannel(IBroadcastService.channelName),
     );
-    this.robinrunTaskService = ProxyChannel.toService<IRobinRunTaskService>(
-      channelClient.getChannel(IRobinRunTaskService.channelName),
+    this.robindoneTaskService = ProxyChannel.toService<IRobinDoneTaskService>(
+      channelClient.getChannel(IRobinDoneTaskService.channelName),
     );
     this.windowControllerService = ProxyChannel.toService<IWindowControllerService>(
       channelClient.getChannel(IWindowControllerService.channelName),
     );
-    this.robinrunAgentService = ProxyChannel.toService<IRobinRunAgentService>(
-      channelClient.getChannel(IRobinRunAgentService.channelName),
+    this.robindoneAgentService = ProxyChannel.toService<IRobinDoneAgentService>(
+      channelClient.getChannel(IRobinDoneAgentService.channelName),
     );
     this.remoteProjectService = ProxyChannel.toService<IRemoteProjectService>(
       channelClient.getChannel(IRemoteProjectService.channelName),
@@ -220,8 +220,8 @@ export class RemoteServiceAccess implements IServiceAccessor {
     this.projectService = ProxyChannel.toService<IProjectService>(
       channelClient.getChannel(IProjectService.channelName),
     );
-    this.robinrunSessionService = ProxyChannel.toService<IRobinRunSessionService>(
-      channelClient.getChannel(IRobinRunSessionService.channelName),
+    this.robindoneSessionService = ProxyChannel.toService<IRobinDoneSessionService>(
+      channelClient.getChannel(IRobinDoneSessionService.channelName),
     );
     this.cuaPermissionService = ProxyChannel.toService<ICuaPermissionService>(
       channelClient.getChannel(ICuaPermissionService.channelName),

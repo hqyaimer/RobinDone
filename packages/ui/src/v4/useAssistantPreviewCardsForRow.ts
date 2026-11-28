@@ -3,7 +3,7 @@ import type {
   AssistantTextRow,
   ConversationRowTarget,
   V4ConversationFileChangesResult,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import {
   buildAssistantPreviewCardsFromReferences,
   extractAssistantFileReferences,

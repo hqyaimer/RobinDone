@@ -1,7 +1,7 @@
 import {
   EmbeddedBrowserWebviewChannels,
   type EmbeddedBrowserWheelBoundaryPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 const DELTA_EPSILON = 0.01;
 const SCROLL_BOUNDARY_EPSILON = 1;

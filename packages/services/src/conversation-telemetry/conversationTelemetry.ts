@@ -1,6 +1,6 @@
-import type { Event } from "@robinrun/rpc";
-import type { ConversationTelemetryFact } from "@robinrun/shared/robinrun-protocol-v4";
-import type { IRobinRunAgentService } from "#src/robinrun-agent/robinrunAgent.js";
+import type { Event } from "@robindone/rpc";
+import type { ConversationTelemetryFact } from "@robindone/shared/robindone-protocol-v4";
+import type { IRobinDoneAgentService } from "#src/robindone-agent/robindoneAgent.js";
 
 export interface ConversationTelemetryWorkspaceTarget {
   workspacePath: string;
@@ -16,12 +16,12 @@ export interface IConversationTelemetryService {
 }
 
 export function createConversationTelemetryService(
-  robinrunAgentService: Pick<IRobinRunAgentService, "onDynamicConversationTelemetryFact">,
+  robindoneAgentService: Pick<IRobinDoneAgentService, "onDynamicConversationTelemetryFact">,
 ): IConversationTelemetryService {
   return {
     onFact: (target) =>
       // 带 workspace 参数的 RPC Event 必须使用 onDynamic* 命名，
       // 否则 ProxyChannel 会把它当普通 Event，并把 target 误当 listener。
-      robinrunAgentService.onDynamicConversationTelemetryFact(target),
+      robindoneAgentService.onDynamicConversationTelemetryFact(target),
   };
 }

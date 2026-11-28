@@ -10,10 +10,10 @@ import type {
   McpUiHostCapabilities,
   McpUiHostContext,
 } from "@modelcontextprotocol/ext-apps";
-import type { McpAppsDownloadFileItem } from "@robinrun/shared/mcp-apps";
+import type { McpAppsDownloadFileItem } from "@robindone/shared/mcp-apps";
 
-/** `window.robinrun` / `window.openai` 的公开形状；实现在 aliasRuntime / openaiAlias，两边只依赖这里。 */
-export interface RobinrunAliasApi {
+/** `window.robindone` / `window.openai` 的公开形状；实现在 aliasRuntime / openaiAlias，两边只依赖这里。 */
+export interface RobindoneAliasApi {
   readonly toolInput: Record<string, unknown> | null;
   readonly toolOutput: unknown;
   readonly toolResponseMetadata: Record<string, unknown> | null;
@@ -35,7 +35,7 @@ export interface RobinrunAliasApi {
   listResources(input?: { cursor?: string }): Promise<ListResourcesResult>;
   listResourceTemplates(input?: { cursor?: string }): Promise<ListResourceTemplatesResult>;
   /**
-   * 订阅资源变更（RobinRun 扩展，宿主宣告 `experimental["robinrun/resourceSubscribe"]`；server 须声明 resources.subscribe）。
+   * 订阅资源变更（RobinDone 扩展，宿主宣告 `experimental["robindone/resourceSubscribe"]`；server 须声明 resources.subscribe）。
    * 变更只带 uri，页面自行 readResource；沙箱销毁时宿主自动退订。
    */
   subscribeResource(uri: string): Promise<void>;
@@ -50,7 +50,7 @@ export interface RobinrunAliasApi {
   /** 界面状态：初值随握手经 hostContext 扩展键下发；setWidgetState 后本地立即可读。 */
   readonly widgetState: unknown;
   /**
-   * RobinRun 扩展 `ui/set-widget-state`（宿主宣告 `experimental["robinrun/widgetState"]`）：宿主内存保存、会话内有效，
+   * RobinDone 扩展 `ui/set-widget-state`（宿主宣告 `experimental["robindone/widgetState"]`）：宿主内存保存、会话内有效，
    * 不承诺跨进程恢复；宿主不可用时 reject -32601。要给模型信息走 updateModelContext。
    */
   setWidgetState(widgetState: unknown): Promise<void>;

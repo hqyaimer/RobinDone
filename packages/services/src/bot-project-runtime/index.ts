@@ -1,11 +1,11 @@
-import { parseRemoteWorkspaceIdentity, remoteHostIdFromWorkspaceIdentity } from "@robinrun/shared";
+import { parseRemoteWorkspaceIdentity, remoteHostIdFromWorkspaceIdentity } from "@robindone/shared";
 import type {
   BotProjectConnection,
   BotProjectRuntimePort,
   BotRemoteRuntimeService,
   BotRemoteTarget,
   BotRuntimeSubscription,
-  IRobinRunTaskService,
+  IRobinDoneTaskService,
 } from "#src/bot-project-runtime/contract.js";
 export type {
   BotRemoteRuntimeService,
@@ -57,8 +57,8 @@ export function createBotProjectRuntime(port: BotProjectRuntimePort): BotRemoteR
   function subscribe(
     target: BotRemoteTarget,
     initial: Lease,
-    params: Parameters<IRobinRunTaskService["onDynamicTaskEvent"]>[0],
-    receive: Parameters<ReturnType<IRobinRunTaskService["onDynamicTaskEvent"]>>[0],
+    params: Parameters<IRobinDoneTaskService["onDynamicTaskEvent"]>[0],
+    receive: Parameters<ReturnType<IRobinDoneTaskService["onDynamicTaskEvent"]>>[0],
   ): BotRuntimeSubscription {
     if (
       params.workspacePath !== target.workspacePath ||
@@ -130,7 +130,7 @@ export function createBotProjectRuntime(port: BotProjectRuntimePort): BotRemoteR
         return { ok: false, message: error instanceof Error ? error.message : String(error) };
       }
     },
-    async getRobinRunTaskService(target) {
+    async getRobinDoneTaskService(target) {
       const lease = await admit(target);
       await lease.connection.agentService.syncAppRuntimePreferences(
         await port.readRuntimePreferences(),
@@ -139,8 +139,8 @@ export function createBotProjectRuntime(port: BotProjectRuntimePort): BotRemoteR
       return new Proxy(lease.connection.taskService, {
         get(base, property, receiver) {
           if (property === "onDynamicTaskEvent")
-            return (params: Parameters<IRobinRunTaskService["onDynamicTaskEvent"]>[0]) =>
-              (receive: Parameters<ReturnType<IRobinRunTaskService["onDynamicTaskEvent"]>>[0]) =>
+            return (params: Parameters<IRobinDoneTaskService["onDynamicTaskEvent"]>[0]) =>
+              (receive: Parameters<ReturnType<IRobinDoneTaskService["onDynamicTaskEvent"]>>[0]) =>
                 subscribe(target, lease, params, receive);
           const value: unknown = Reflect.get(base, property, receiver);
           if (typeof value !== "function") return value;

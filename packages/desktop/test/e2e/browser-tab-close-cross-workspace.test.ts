@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
-import { PlatformChannels } from "@robinrun/shared";
-import type { BrowserViewCloseTabNotification } from "@robinrun/shared";
+import { PlatformChannels } from "@robindone/shared";
+import type { BrowserViewCloseTabNotification } from "@robindone/shared";
 import { DEFAULT_WORKSPACE, clearAppData, waitForWorkspaceApp } from "./helpers/desktop-app.js";
 import {
   SMALL_AGENT_WARMUP_SCENARIO,

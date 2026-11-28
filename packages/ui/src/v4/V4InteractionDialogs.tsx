@@ -1,25 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
-  RobinRunElicitationRequest,
-  RobinRunPermissionOption,
-  RobinRunProvider,
-} from "@robinrun/shared";
-import type { ConversationSnapshot } from "@robinrun/shared/robinrun-protocol-v4";
+  RobinDoneElicitationRequest,
+  RobinDonePermissionOption,
+  RobinDoneProvider,
+} from "@robindone/shared";
+import type { ConversationSnapshot } from "@robindone/shared/robindone-protocol-v4";
 import { ElicitationDialog } from "@/ElicitationDialog.js";
 import { PermissionDialog } from "@/PermissionDialog.js";
 import { workflowSessionModelOf } from "@/components/workflow-timeline/workflowRunSettings.js";
 import { useOptionalPlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { usePendingInteractionTaskNotifications } from "@/hooks/useTaskNotifications.js";
 import { logger } from "@/logger.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 import { useWorkspaceHookReviewStore } from "@/store/workspaceHookReviewStore.js";
 import {
   getTaskUiState,
   getWorkspaceState,
-  useRobinRunSessionStore,
-} from "@/store/robinrunSessionStore.js";
-import type { ElicitationFormDraft } from "@/store/robinrunSessionStoreTypes.js";
+  useRobinDoneSessionStore,
+} from "@/store/robindoneSessionStore.js";
+import type { ElicitationFormDraft } from "@/store/robindoneSessionStoreTypes.js";
 import { createCommandEnvelope } from "@/v4/commandFactory.js";
 import { pendingCommandRegistry } from "@/v4/pendingCommandRegistry.js";
 import { sendInteractionAutoResolutionSnooze } from "@/v4/interactionAutoResolutionCommand.js";
@@ -37,7 +37,7 @@ export interface V4InteractionDialogsProps {
   workspaceIdentity?: string;
   remoteSessionId?: string;
   isWebRemoteControl?: boolean;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   snapshot: ConversationSnapshot | null;
   onCommandSettled?: (commandId: string) => void;
   onPlanInteractionAccepted?: (interactionId: string) => void;
@@ -51,9 +51,9 @@ export function getCurrentSessionInteractionSnapshot(
 }
 
 export function resolveV4ElicitationRequest(
-  projected: RobinRunElicitationRequest | null,
-  botProgress: RobinRunElicitationRequest | null,
-): RobinRunElicitationRequest | null {
+  projected: RobinDoneElicitationRequest | null,
+  botProgress: RobinDoneElicitationRequest | null,
+): RobinDoneElicitationRequest | null {
   // Bugfix：V4 snapshot 只保留原始阻塞请求，Bot 代答后的逐题进度必须覆盖同一 request 的投影。
   if (projected && botProgress?.requestId === projected.requestId) {
     return botProgress;
@@ -61,7 +61,7 @@ export function resolveV4ElicitationRequest(
   return projected;
 }
 
-export function buildV4ElicitationProgressKey(request: RobinRunElicitationRequest): string {
+export function buildV4ElicitationProgressKey(request: RobinDoneElicitationRequest): string {
   return `${request.requestId}:${request.currentQuestionIndex ?? 0}:${JSON.stringify(request.answerDrafts ?? {})}`;
 }
 
@@ -112,7 +112,7 @@ export function V4InteractionDialogs({
   const upsertWorkspaceHookReview = useWorkspaceHookReviewStore((state) => state.upsert);
   const clearWorkspaceHookReview = useWorkspaceHookReviewStore((state) => state.clear);
   const platform = useOptionalPlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   // task 切换时 sessionId 会先更新，旧 task snapshot 可能再保留一帧。
   // 若直接使用旧 snapshot，会把当前 task 的 renderer-local 问答草稿误判为过期并清理。
   const currentSnapshot = getCurrentSessionInteractionSnapshot(sessionId, snapshot);
@@ -132,16 +132,16 @@ export function V4InteractionDialogs({
   const workspaceHookReview = currentSnapshot?.pendingInteractions.find(
     (interaction) => interaction.payload.kind === "workspaceHookReview",
   );
-  const notificationEnabled = useRobinRunStoreWithDefault(
+  const notificationEnabled = useRobinDoneStoreWithDefault(
     (state) => state.notificationEnabled,
     true,
   );
-  const botElicitationProgress = useRobinRunSessionStore(
+  const botElicitationProgress = useRobinDoneSessionStore(
     (state) =>
       getTaskUiState(getWorkspaceState(state, workspacePath, workspaceIdentity), sessionId)
         .elicitationRequest,
   );
-  const localElicitationDraft = useRobinRunSessionStore((state) => {
+  const localElicitationDraft = useRobinDoneSessionStore((state) => {
     if (!pending || pending.payload.kind !== "userInput") return undefined;
     return getTaskUiState(getWorkspaceState(state, workspacePath, workspaceIdentity), sessionId)
       .elicitationFormDraftsByRequestId[pending.interactionId];
@@ -258,7 +258,7 @@ export function V4InteractionDialogs({
 
   const persistElicitationDraft = useCallback(
     (requestId: string, draft: ElicitationFormDraft) => {
-      useRobinRunSessionStore
+      useRobinDoneSessionStore
         .getState()
         .setTaskElicitationFormDraft(workspacePath, sessionId, requestId, draft, workspaceIdentity);
     },
@@ -267,7 +267,7 @@ export function V4InteractionDialogs({
 
   const removeElicitationDraft = useCallback(
     (requestId: string) => {
-      useRobinRunSessionStore
+      useRobinDoneSessionStore
         .getState()
         .removeTaskElicitationFormDraft(workspacePath, sessionId, requestId, workspaceIdentity);
     },
@@ -282,7 +282,7 @@ export function V4InteractionDialogs({
         .map((interaction) => interaction.interactionId),
     );
     const taskUiState = getTaskUiState(
-      getWorkspaceState(useRobinRunSessionStore.getState(), workspacePath, workspaceIdentity),
+      getWorkspaceState(useRobinDoneSessionStore.getState(), workspacePath, workspaceIdentity),
       sessionId,
     );
     for (const requestId of Object.keys(taskUiState.elicitationFormDraftsByRequestId)) {
@@ -356,7 +356,7 @@ export function V4InteractionDialogs({
             ? intl.formatMessage({ id: "chat.permission.responseFailed" })
             : undefined
         }
-        onRespond={(_requestId, option: RobinRunPermissionOption, feedback, content) => {
+        onRespond={(_requestId, option: RobinDonePermissionOption, feedback, content) => {
           if (permissionResponseFlight.current === pending.interactionId) return;
           const interactionId = pending.interactionId;
           permissionResponseFlight.current = interactionId;

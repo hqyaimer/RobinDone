@@ -5,11 +5,11 @@ import {
   isWebRemoteControlBridgeableWorkspaceTarget,
   resolveWebRemoteControlWorkspaceKey,
   type WebRemoteControlWorkspaceTarget,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { getErrorMessage } from "@/lib/errorMessage.js";
 import {
   formatRemoteConnectionError,
@@ -27,7 +27,7 @@ export function HomeOnlyWorkspaceRows({
 }: {
   switcher: WebRemoteControlWorkspaceSwitcherApi;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { workspaces, error, reload } = useHomeOnlyWorkspaces(switcher);
   // 同一时间只允许一个打开/重连请求，避免两个 bridge 切换互相覆盖 Root。
   const [pendingKey, setPendingKey] = useState<string | null>(null);

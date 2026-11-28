@@ -5,7 +5,7 @@ import type {
   FeedbackListQuery,
   FeedbackTicketStatus,
   FeedbackTicketSummary,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { getFeedbackRootDir } from "#src/paths.js";
 
 interface StoredFeedbackTicket extends FeedbackTicketSummary {

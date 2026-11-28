@@ -1,6 +1,6 @@
 // HO01：home-only 首页工作区列表与重连入口；真实 Web 入口，受控 relay/桌面响应。
 // 不替代真机、OAuth 与线上部署验收。
-// 启动：pnpm --filter @robinrun/web exec vite --host 127.0.0.1 --port 5178 --strictPort
+// 启动：pnpm --filter @robindone/web exec vite --host 127.0.0.1 --port 5178 --strictPort
 // 运行：pnpm exec tsx packages/web/test/e2e/manual-review/pending/remote-home-only-workspaces.mjs
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -60,15 +60,15 @@ try {
               socket.send(JSON.stringify({ type: "pair_status_ack", pair_status: "matched" }));
             const payload = message.payload;
             if (
-              payload?.robinrun_type === "rpc-frame" ||
-              payload?.robinrun_type === "rpc-frame-ack"
+              payload?.robindone_type === "rpc-frame" ||
+              payload?.robindone_type === "rpc-frame-ack"
             ) {
               bridge?.acceptPayload(payload);
               return;
             }
-            if (payload?.robinrun_type === "bootstrap-request")
+            if (payload?.robindone_type === "bootstrap-request")
               send(socket, {
-                robinrun_type: "bootstrap-response",
+                robindone_type: "bootstrap-response",
                 requestId: payload.requestId,
                 success: true,
                 result: {
@@ -77,23 +77,23 @@ try {
                   workspaces,
                 },
               });
-            if (payload?.robinrun_type === "workspace-list-request") {
+            if (payload?.robindone_type === "workspace-list-request") {
               traffic.lists++;
               send(socket, {
-                robinrun_type: "workspace-list-response",
+                robindone_type: "workspace-list-response",
                 requestId: payload.requestId,
                 success: true,
                 result: { workspaces },
               });
             }
-            if (payload?.robinrun_type === "workspace-reconnect-request") {
+            if (payload?.robindone_type === "workspace-reconnect-request") {
               traffic.reconnects.push(payload.workspaceKey);
               const target = workspaces.find(
                 (item) => item.workspaceIdentity === payload.workspaceKey,
               );
               if (target.label === "E2E_BETA") {
                 send(socket, {
-                  robinrun_type: "workspace-reconnect-response",
+                  robindone_type: "workspace-reconnect-response",
                   requestId: payload.requestId,
                   workspaceKey: payload.workspaceKey,
                   success: false,
@@ -105,15 +105,15 @@ try {
                 connectionState: "connected",
                 remoteSessionId: "remote-alpha",
               });
-              send(socket, { robinrun_type: "workspace-list-updated", result: { workspaces } });
+              send(socket, { robindone_type: "workspace-list-updated", result: { workspaces } });
               send(socket, {
-                robinrun_type: "workspace-reconnect-response",
+                robindone_type: "workspace-reconnect-response",
                 requestId: payload.requestId,
                 workspaceKey: payload.workspaceKey,
                 success: true,
               });
             }
-            if (payload?.robinrun_type === "workspace-bridge-open") {
+            if (payload?.robindone_type === "workspace-bridge-open") {
               traffic.bridgeOpens.push(payload.workspaceKey);
               const target = workspaces.find(
                 (item) => item.workspaceIdentity === payload.workspaceKey,
@@ -125,7 +125,7 @@ try {
                 bridgeGeneration: payload.bridgeGeneration,
               };
               send(socket, {
-                robinrun_type: "workspace-bridge-ready",
+                robindone_type: "workspace-bridge-ready",
                 requestId: payload.requestId,
                 bridgeSessionId: payload.bridgeSessionId,
                 bridgeGeneration: payload.bridgeGeneration,
@@ -146,7 +146,7 @@ try {
           await onboarding.waitFor();
           await onboarding.getByRole("button", { name: /退出引导|Exit onboarding/ }).click();
           const welcome = page.getByRole("dialog", {
-            name: /欢迎使用 RobinRun|Welcome to RobinRun/,
+            name: /欢迎使用 RobinDone|Welcome to RobinDone/,
           });
           await welcome.waitFor();
           await welcome.getByRole("button", { name: /^(Close|关闭)$/ }).click();

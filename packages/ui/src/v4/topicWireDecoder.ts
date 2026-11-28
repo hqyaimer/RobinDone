@@ -4,7 +4,7 @@ import {
   type TopicWireAssemblyFault,
   type TopicFrameDeliveryKind,
   type TopicWireFrameCandidate,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { logger } from "@/logger.js";
 
 export interface TopicWireDecoder {

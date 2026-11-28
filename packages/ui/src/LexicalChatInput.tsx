@@ -62,7 +62,7 @@ import { recordInputLag } from "./lib/uiPerfArmsTelemetry.js";
 import { navigatePromptHistory } from "./lib/promptHistory.js";
 import { resolveMobileInputTextSizeClassName } from "@/lib/mobileTextInput.js";
 import type { MentionItemData } from "@/mentions/mentionTypes.js";
-import type { ComposerMentionPrefill } from "@/store/robinrunSessionStoreTypes.js";
+import type { ComposerMentionPrefill } from "@/store/robindoneSessionStoreTypes.js";
 
 /** 旧 useChatComposer 已删；粘贴事件收口为最小结构类型（ClipboardEvent 结构兼容）。 */
 export interface ChatComposerPasteEvent {
@@ -1047,10 +1047,10 @@ function E2ELexicalInputBridgePlugin({ inputTestId }: { inputTestId?: string }) 
     const detachBridge = (input: HTMLElement | null) => {
       if (
         input &&
-        (input as { __robinrunLexicalInputE2E?: typeof bridge }).__robinrunLexicalInputE2E ===
+        (input as { __robindoneLexicalInputE2E?: typeof bridge }).__robindoneLexicalInputE2E ===
           bridge
       ) {
-        delete (input as { __robinrunLexicalInputE2E?: typeof bridge }).__robinrunLexicalInputE2E;
+        delete (input as { __robindoneLexicalInputE2E?: typeof bridge }).__robindoneLexicalInputE2E;
       }
       input?.removeAttribute("data-e2e-lexical-bridge");
     };
@@ -1065,7 +1065,7 @@ function E2ELexicalInputBridgePlugin({ inputTestId }: { inputTestId?: string }) 
 
       // E2E 需要驱动真实 Lexical state；只改 DOM contenteditable 会绕过 editor update，
       // 容易把文本误打到主输入框，导致测试结论和产品行为脱节。
-      Object.defineProperty(input, "__robinrunLexicalInputE2E", {
+      Object.defineProperty(input, "__robindoneLexicalInputE2E", {
         configurable: true,
         value: bridge,
       });

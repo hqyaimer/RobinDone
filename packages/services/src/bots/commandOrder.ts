@@ -1,4 +1,4 @@
-import type { BotCommandPolicy } from "@robinrun/shared";
+import type { BotCommandPolicy } from "@robindone/shared";
 const BOT_POLICY_COMMAND_ORDER = [
   "status",
   "new",

@@ -7,37 +7,37 @@ import tailwindcss from "@tailwindcss/vite";
 import { pdfJsCMapsPlugin } from "../ui/vite/pdfJsCMapsPlugin.js";
 import { thirdPartyNoticesVitePlugin } from "../../scripts/third-party-notices.mjs";
 import { resolveRemoteFrontendVersion } from "./vite/remoteFrontendVersion.mjs";
-// Bugfix: Vite 配置在 Node 加载期执行，不能导入 @robinrun/shared 根入口。
+// Bugfix: Vite 配置在 Node 加载期执行，不能导入 @robindone/shared 根入口。
 // 根入口包含 NodeNext 风格的源码 re-export，Node 会按真实文件查找 .js 并在 bootstrap 阶段失败。
 import {
   resolveBigModelApiOrigin,
-  resolveRuntimeRobinRunEndpointOrigin,
+  resolveRuntimeRobinDoneEndpointOrigin,
   resolveZaiOAuthClientId,
   resolveZaiOAuthOrigin,
-} from "@robinrun/shared/robinrunEndpoint";
+} from "@robindone/shared/robindoneEndpoint";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const REPO_ROOT = resolve(HERE, "../..");
-const { version, robinrunCompatibility } = JSON.parse(
+const { version, robindoneCompatibility } = JSON.parse(
   readFileSync(resolve(REPO_ROOT, "package.json"), "utf-8"),
-) as { version: string; robinrunCompatibility?: { minCompatibleVersion?: string } };
-const minCompatibleVersion = robinrunCompatibility?.minCompatibleVersion ?? version;
+) as { version: string; robindoneCompatibility?: { minCompatibleVersion?: string } };
+const minCompatibleVersion = robindoneCompatibility?.minCompatibleVersion ?? version;
 
-function resolveRobinRunEnv(value: string | undefined): "test" | "production" {
+function resolveRobinDoneEnv(value: string | undefined): "test" | "production" {
   return value?.trim().toLowerCase() === "production" ? "production" : "test";
 }
 
 export default defineConfig(({ mode }) => {
-  // `.env*` 只提供链接常量；当前产品环境由启动脚本或 CI 注入 ROBINRUN_ENV。
+  // `.env*` 只提供链接常量；当前产品环境由启动脚本或 CI 注入 ROBINDONE_ENV。
   // 启动脚本通过 process.env 显式选择 test/production；它必须优先于 .env 文件，
   // 否则 share:test 可能被 mode 的旧配置误解析到错误 endpoint。
   const env = { ...loadEnv(mode, REPO_ROOT, ""), ...process.env };
-  const robinrunEnv = resolveRobinRunEnv(env.ROBINRUN_ENV);
+  const robindoneEnv = resolveRobinDoneEnv(env.ROBINDONE_ENV);
   const endpointEnv = {
     ...env,
-    ROBINRUN_ENV: robinrunEnv,
+    ROBINDONE_ENV: robindoneEnv,
   };
-  const robinrunEndpointOrigin = resolveRuntimeRobinRunEndpointOrigin(endpointEnv);
+  const robindoneEndpointOrigin = resolveRuntimeRobinDoneEndpointOrigin(endpointEnv);
   const zaiOAuthOrigin = resolveZaiOAuthOrigin(endpointEnv);
   // 远控与桌面/分享页一致，BigModel 授权域名必须跟随产品环境。
   const bigmodelOAuthOrigin = resolveBigModelApiOrigin(endpointEnv);
@@ -65,12 +65,12 @@ export default defineConfig(({ mode }) => {
         // Web 登录本地调试时，OAuth token 交换必须先命中线上同源接口。
         // 该专用代理放在 `/api` 通配代理之前，避免被转发到本地 server 导致 404。
         "/api/v1/oauth/token": {
-          target: robinrunEndpointOrigin,
+          target: robindoneEndpointOrigin,
           changeOrigin: true,
           secure: true,
         },
         "/api/v1/remote": {
-          target: robinrunEndpointOrigin,
+          target: robindoneEndpointOrigin,
           changeOrigin: true,
           secure: true,
           ws: true,
@@ -94,15 +94,15 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      __ROBINRUN_VERSION__: JSON.stringify(
+      __ROBINDONE_VERSION__: JSON.stringify(
         resolveRemoteFrontendVersion(version, process.env.WEB_REMOTE_FRONTEND_VERSION),
       ),
-      __ROBINRUN_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
-      __ROBINRUN_COMMIT__: JSON.stringify(env.ROBINRUN_COMMIT || "unknown"),
-      __ROBINRUN_ENV__: JSON.stringify(robinrunEnv),
-      "import.meta.env.VITE_ROBINRUN_BASE_URL": JSON.stringify(robinrunEndpointOrigin),
-      // 兼容旧 Web runtime 读取名；新代码统一读 VITE_ROBINRUN_BASE_URL。
-      "import.meta.env.VITE_ROBINRUN_ENDPOINT_ORIGIN": JSON.stringify(robinrunEndpointOrigin),
+      __ROBINDONE_MIN_COMPATIBLE_VERSION__: JSON.stringify(minCompatibleVersion),
+      __ROBINDONE_COMMIT__: JSON.stringify(env.ROBINDONE_COMMIT || "unknown"),
+      __ROBINDONE_ENV__: JSON.stringify(robindoneEnv),
+      "import.meta.env.VITE_ROBINDONE_BASE_URL": JSON.stringify(robindoneEndpointOrigin),
+      // 兼容旧 Web runtime 读取名；新代码统一读 VITE_ROBINDONE_BASE_URL。
+      "import.meta.env.VITE_ROBINDONE_ENDPOINT_ORIGIN": JSON.stringify(robindoneEndpointOrigin),
       // 明确注入 OAuth 公开配置，避免 Web 端在不同 mode 下隐式依赖源码 fallback。
       "import.meta.env.VITE_ZAI_OAUTH_CLIENT_ID": JSON.stringify(zaiOAuthClientId),
       "import.meta.env.VITE_ZAI_OAUTH_ORIGIN": JSON.stringify(zaiOAuthOrigin),

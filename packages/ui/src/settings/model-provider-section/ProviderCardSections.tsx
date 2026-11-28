@@ -10,8 +10,8 @@ import type {
   ProviderSettingsFormProvider,
   ProviderSettingsFormModel,
 } from "@/lib/providerSettingsFormTypes.js";
-import type { ModelConnectivityResult } from "@robinrun/shared";
-import type { ProviderApiType } from "@robinrun/provider";
+import type { ModelConnectivityResult } from "@robindone/shared";
+import type { ProviderApiType } from "@robindone/provider";
 import {
   TID_MODEL_PROVIDER_ADD_MODEL_BUTTON,
   TID_MODEL_PROVIDER_BASE_URL_INPUT,
@@ -20,7 +20,7 @@ import {
   TID_MODEL_PROVIDER_NAME_EDIT_BUTTON,
   TID_MODEL_PROVIDER_NAME_INPUT,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { InfoIcon, LockKeyholeIcon, Plus, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
 import { Input } from "@/components/ui/input.js";
@@ -31,7 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
 import { TECHNICAL_INPUT_ATTRIBUTES } from "@/lib/technicalInputAttributes.js";
 import { ApiKeyInput } from "./ApiKeyInput.js";
@@ -47,7 +47,7 @@ import {
 import { SortableProviderModelList } from "@/settings/model-provider-section/SortableProviderModelList.js";
 import { useProviderModelDraft } from "@/settings/model-provider-section/useProviderModelDraft.js";
 import { ProviderLogo } from "@/settings/model-provider-section/ProviderLogo.js";
-import type { ProviderConfigObject } from "@robinrun/provider";
+import type { ProviderConfigObject } from "@robindone/provider";
 
 export {
   resolveProviderConnectionApiFormatDisplayLabel,
@@ -98,7 +98,7 @@ export function ProviderCardHeader({
   actionsVisible?: boolean;
   providerToggle?: ReactNode;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const renameRequestedRef = useRef(false);
   const secondaryActionsVisible = actionsVisible && (nameEditable || Boolean(onDelete));
 
@@ -204,7 +204,7 @@ export function ProviderConnectionSection({
   onBaseUrlCompositionStart?: () => void;
   onBaseUrlCompositionEnd?: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const showApiFormat = shouldShowProviderApiFormat(provider);
   const readOnlyBaseUrl = provider.config.api?.baseUrl ?? "";
   const resolvedApiFormat = provider.config.api?.type ?? "anthropic-messages";
@@ -304,7 +304,7 @@ export function ProviderApiKeySection({
   onApiKeyCompositionEnd?: () => void;
   onToggleApiKeyVisibility: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div>
@@ -378,7 +378,7 @@ export function ProviderModelsSection({
   onReorderModelIds?: (modelIds: string[]) => void;
   settingsRevision?: number;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { providerSettingsService } = useServices();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);

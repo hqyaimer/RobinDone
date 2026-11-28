@@ -11,16 +11,16 @@ import { Plus } from "lucide-react";
 import type {
   Hook,
   HookConfig,
-  RobinRunInstalledPluginSummary,
-  RobinRunPluginInfo,
-} from "@robinrun/shared";
-import type { IHooksService } from "@robinrun/services";
+  RobinDoneInstalledPluginSummary,
+  RobinDonePluginInfo,
+} from "@robindone/shared";
+import type { IHooksService } from "@robindone/services";
 import { Button } from "@/components/ui/button.js";
 import { toast } from "@/components/ui/toast.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { useConfigWorkspaceServicesResolution as useWorkspaceServicesResolution } from "@/workspace-config-catalog/index.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import { invalidateDeferredDraftSessionForRuntimeChange } from "@/lib/robinrunDraftSkillInvalidation.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import { invalidateDeferredDraftSessionForRuntimeChange } from "@/lib/robindoneDraftSkillInvalidation.js";
 import { useHooksStore } from "@/store/hooksStore.js";
 import { usePluginManagementStore } from "@/store/pluginManagementStore.js";
 import { HookForm } from "./HookForm.js";
@@ -50,19 +50,19 @@ interface HooksSectionProps {
 function isEditableHook(hook: Hook): boolean {
   // workspace-hook-trust：运行时 discovery 会下发 editable 标志（工作区 Hook 在
   // runtime 侧不可直接改配置），优先尊重；本地 Settings 发现路径无该标志时回退旧规则。
-  return hook.editable ?? (!hook.location || hook.location.source === "robinrun");
+  return hook.editable ?? (!hook.location || hook.location.source === "robindone");
 }
 
-// workspace-hook-trust：editable=false 且 source=robinrun 的行是「上游/祖先 robinrun.json
+// workspace-hook-trust：editable=false 且 source=robindone 的行是「上游/祖先 robindone.json
 // 里的只读工作区 Hook」。它们不是外部格式兼容导入源，塞进 Legacy 会让 Import 按钮
-// 必然失败（importHook 拒绝 source=robinrun），也违反「只读但可逐条 Trust」的约定。
+// 必然失败（importHook 拒绝 source=robindone），也违反「只读但可逐条 Trust」的约定。
 // 这类行应留在 Installed 分组，由信任状态门控 Switch，走行内 Trust 流程。
-export function isReadOnlyRobinRunHook(hook: Hook): boolean {
-  return hook.editable === false && (hook.location?.source ?? "robinrun") === "robinrun";
+export function isReadOnlyRobinDoneHook(hook: Hook): boolean {
+  return hook.editable === false && (hook.location?.source ?? "robindone") === "robindone";
 }
 
 function isInCompatibilitySection(hook: Hook): boolean {
-  return !isEditableHook(hook) && !isReadOnlyRobinRunHook(hook);
+  return !isEditableHook(hook) && !isReadOnlyRobinDoneHook(hook);
 }
 
 /**
@@ -131,8 +131,8 @@ export function resolveHookScopeTarget(
 }
 
 export function buildPluginHookRows(
-  plugins: readonly Pick<RobinRunPluginInfo, "enabled" | "hookDetails" | "id" | "name">[],
-  installedPlugins: readonly Pick<RobinRunInstalledPluginSummary, "id" | "scope">[],
+  plugins: readonly Pick<RobinDonePluginInfo, "enabled" | "hookDetails" | "id" | "name">[],
+  installedPlugins: readonly Pick<RobinDoneInstalledPluginSummary, "id" | "scope">[],
   scopeMetadataKnown: boolean,
 ): PluginHookRow[] {
   const scopeByPluginId = new Map(
@@ -162,7 +162,7 @@ export function filterPluginHooksByScope(
 }
 
 export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const confirmDialog = useConfirmDialog();
   const hooksState = useHooksStore();
   const plugins = usePluginManagementStore((state) => state.plugins);
@@ -226,7 +226,7 @@ export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionP
   const hooksService = useMemo<IHooksService>(() => {
     if (activeScope !== "user") return targetHooksService;
     // Bug 原因：User scope 需要一个路径作 RPC 锚点（本机项目或设备 home），但该路径不是 project。
-    // 强制 user-only 合同，避免把锚点误当 workspace 并覆盖其 .robinrun/config.json。
+    // 强制 user-only 合同，避免把锚点误当 workspace 并覆盖其 .robindone/config.json。
     return {
       loadHooks: (params) => targetHooksService.loadHooks({ ...params, scope: "user" }),
       saveHooks: (params) => targetHooksService.saveHooks({ ...params, scope: "user" }),
@@ -255,7 +255,7 @@ export function HooksSection({ workspacePath, workspaceIdentity }: HooksSectionP
     () =>
       hooksState.hooks.filter(
         (hook) =>
-          (isEditableHook(hook) || isReadOnlyRobinRunHook(hook)) &&
+          (isEditableHook(hook) || isReadOnlyRobinDoneHook(hook)) &&
           (hook.location?.scope ?? "user") === activeScope,
       ),
     [activeScope, hooksState.hooks],

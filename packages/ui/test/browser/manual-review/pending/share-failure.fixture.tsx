@@ -1,7 +1,7 @@
-import { classifyConversationShareError } from "@robinrun/shared";
+import { classifyConversationShareError } from "@robindone/shared";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RobinRunIntlProvider } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "@/i18n/IntlProvider.js";
 import { ConversationShareConfirmationDock } from "@/v4/ConversationShareConfirmationDock.js";
 import { ConversationShareSelectionDock } from "@/v4/ConversationShareSelectionDock.js";
 import {
@@ -97,7 +97,7 @@ function Fixture() {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  <RobinRunIntlProvider initialLocale={params.get("locale") === "en-US" ? "en-US" : "zh-CN"}>
+  <RobinDoneIntlProvider initialLocale={params.get("locale") === "en-US" ? "en-US" : "zh-CN"}>
     <Fixture />
-  </RobinRunIntlProvider>,
+  </RobinDoneIntlProvider>,
 );

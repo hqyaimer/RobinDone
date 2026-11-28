@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { shallow } from "zustand/shallow";
 import { Plug } from "lucide-react";
-import { mainAgentGroupId } from "@robinrun/shared";
+import { mainAgentGroupId } from "@robindone/shared";
 import type {
   IProjectService,
   IRemoteProjectService,
@@ -19,11 +19,11 @@ import type { ProjectNodeProps } from "@/project-sidebar/ProjectNodeContent.js";
 import { projectSourceServerId } from "@/project-sidebar/view.js";
 import { useTabStoreApi } from "@/store/TabStoreProvider.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { setPendingSettingsSectionIntent } from "@/lib/settingsNavigation.js";
 import { toast } from "@/components/ui/toast.js";
 import { logger } from "@/logger.js";
-import { useRobinRunStoreWithDefault } from "@/store/StoreProvider.js";
+import { useRobinDoneStoreWithDefault } from "@/store/StoreProvider.js";
 
 export function runProjectAction(body: () => Promise<void>) {
   void body().catch((cause) => {
@@ -97,7 +97,7 @@ function useProjectRowWiring({
   refresh,
   availability,
 }: ProjectRowWiringProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const confirm = useConfirmDialog();
   const tabStore = useTabStoreApi();
   const msg = (id: string) => intl.formatMessage({ id: `project.${id}` });
@@ -251,7 +251,7 @@ export const ProjectSidebarNode = memo(
 
 function useHideDeviceName(isDesktop?: boolean) {
   // 本机偏好只控制桌面行内标签，手机与完整身份详情仍保留设备名。
-  return useRobinRunStoreWithDefault(
+  return useRobinDoneStoreWithDefault(
     (state) => Boolean(isDesktop) && state.hideProjectDeviceNames,
     false,
   );

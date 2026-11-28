@@ -1,4 +1,4 @@
-import type { ClientSceneConfig, ClientSceneItem } from "@robinrun/services";
+import type { ClientSceneConfig, ClientSceneItem } from "@robindone/services";
 
 export interface DraftSuggestedPromptLocalizedText {
   cn?: string;

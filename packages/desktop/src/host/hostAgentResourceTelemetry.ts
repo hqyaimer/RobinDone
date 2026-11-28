@@ -1,10 +1,10 @@
-import type { IDisposable } from "@robinrun/rpc";
-import type { IRobinRunAgentService } from "@robinrun/services";
-import type { ProcessResourceRuntimeSurface } from "@robinrun/shared";
-import { HostResponseTypes } from "@robinrun/shared";
+import type { IDisposable } from "@robindone/rpc";
+import type { IRobinDoneAgentService } from "@robindone/services";
+import type { ProcessResourceRuntimeSurface } from "@robindone/shared";
+import { HostResponseTypes } from "@robindone/shared";
 
 interface RegisterHostAgentResourceTelemetryOptions {
-  agentService: Pick<IRobinRunAgentService, "onDynamicProcessResourceSample">;
+  agentService: Pick<IRobinDoneAgentService, "onDynamicProcessResourceSample">;
   postMessage(message: unknown): void;
   runtimeSurface: ProcessResourceRuntimeSurface;
   environmentKey?: string;

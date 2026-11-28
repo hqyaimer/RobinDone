@@ -1,8 +1,8 @@
 import { findTrajectoryTextMatches, type TrajectorySearchMatch } from "@/ModelTrajectorySearch.js";
 
-const HIGHLIGHT_NAME = "robinrun-model-trajectory-find";
-const ACTIVE_HIGHLIGHT_NAME = "robinrun-model-trajectory-find-active";
-const STYLE_ID = "robinrun-model-trajectory-find-highlight-style";
+const HIGHLIGHT_NAME = "robindone-model-trajectory-find";
+const ACTIVE_HIGHLIGHT_NAME = "robindone-model-trajectory-find-active";
+const STYLE_ID = "robindone-model-trajectory-find-highlight-style";
 const HIGHLIGHT_STYLE = `
 ::highlight(${HIGHLIGHT_NAME}) {
   background-color: var(--color-find-highlight, #fde68a);

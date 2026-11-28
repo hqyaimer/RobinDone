@@ -3,7 +3,7 @@ import {
   rendererActionTraceConfigSchema,
   rendererActionTraceGroupSchema,
   type RendererActionTraceConfigV1,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   createSingleFeatureRollout,
   type SingleFeatureRollout,

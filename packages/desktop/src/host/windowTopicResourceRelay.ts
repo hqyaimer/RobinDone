@@ -1,23 +1,23 @@
 import {
-  IRobinRunAgentService,
+  IRobinDoneAgentService,
   type IBotsService,
   type ServiceCollection,
-} from "@robinrun/services";
-import { createTopicResourceRelayChannel } from "@robinrun/services/node";
+} from "@robindone/services";
+import { createTopicResourceRelayChannel } from "@robindone/services/node";
 import type {
   WindowHostAttachmentScope,
-  RobinRunTopicResourceRelayRequest,
-} from "@robinrun/shared";
+  RobinDoneTopicResourceRelayRequest,
+} from "@robindone/shared";
 
 /** 反向请求必须属于发起它的物理连接，并仍绑定当前 logical session，不能只比较文件路径。 */
 export function createWindowTopicResourceRelay(deps: {
-  getPeerAgentService(): IRobinRunAgentService | undefined;
+  getPeerAgentService(): IRobinDoneAgentService | undefined;
   resolveServices(scope: WindowHostAttachmentScope): ServiceCollection;
   getBots(): IBotsService | undefined;
 }) {
   const resolve = (
     request: Pick<
-      RobinRunTopicResourceRelayRequest,
+      RobinDoneTopicResourceRelayRequest,
       "remoteSessionId" | "workspaceIdentity" | "workspacePath"
     >,
   ) => {
@@ -31,7 +31,7 @@ export function createWindowTopicResourceRelay(deps: {
           workspaceIdentity: request.workspaceIdentity,
           workspacePath: request.workspacePath,
         })
-        .get(IRobinRunAgentService) !== peer
+        .get(IRobinDoneAgentService) !== peer
     )
       throw new Error("Topic resource source connection mismatch");
     const bots = deps.getBots();

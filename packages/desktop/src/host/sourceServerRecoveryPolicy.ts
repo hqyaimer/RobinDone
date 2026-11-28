@@ -1,4 +1,4 @@
-import type { SourceServerConnectionStateSnapshot } from "@robinrun/shared";
+import type { SourceServerConnectionStateSnapshot } from "@robindone/shared";
 import type { WindowRemoteConnectionCloseEvent } from "./windowRemoteConnectionRegistry.js";
 
 export function isSourceServerAutomaticRecoveryTerminalState(

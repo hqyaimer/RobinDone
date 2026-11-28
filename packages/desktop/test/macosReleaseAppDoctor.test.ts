@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   HELPER_APP_NAME,
   HELPER_DISPLAY_NAME,
-} from "@robinrun/robinrun-cua/broker/helperConstants";
+} from "@robindone/robindone-cua/broker/helperConstants";
 import { afterEach, describe, expect, it } from "vitest";
 
 const isWindows = process.platform === "win32";
@@ -42,11 +42,11 @@ for arg in "$@"; do
   printf '\\t%s' "$arg" >> "${logPath}"
 done
 printf '\\n' >> "${logPath}"
-if [[ "${toolName}" == "codesign" && "\${ROBINRUN_FAKE_CODESIGN_FAIL_HELPER:-0}" == "1" && "$*" == *"${HELPER_APP_NAME}"* ]]; then
+if [[ "${toolName}" == "codesign" && "\${ROBINDONE_FAKE_CODESIGN_FAIL_HELPER:-0}" == "1" && "$*" == *"${HELPER_APP_NAME}"* ]]; then
   echo "fake helper codesign rejection" >&2
   exit 7
 fi
-if [[ "${toolName}" == "xcrun" && "\${ROBINRUN_FAKE_STAPLER_FAIL_HELPER:-0}" == "1" && "$*" == *"${HELPER_APP_NAME}"* ]]; then
+if [[ "${toolName}" == "xcrun" && "\${ROBINDONE_FAKE_STAPLER_FAIL_HELPER:-0}" == "1" && "$*" == *"${HELPER_APP_NAME}"* ]]; then
   echo "fake helper stapler rejection" >&2
   exit 8
 fi
@@ -54,7 +54,7 @@ fi
   );
 }
 
-function createReleaseApp(rootDir: string, productName = "RobinRun") {
+function createReleaseApp(rootDir: string, productName = "RobinDone") {
   const appPath = join(rootDir, `${productName}.app`);
 
   writeExecutable(join(appPath, "Contents", "MacOS", productName), "#!/bin/bash\n");
@@ -62,9 +62,9 @@ function createReleaseApp(rootDir: string, productName = "RobinRun") {
   return { appPath };
 }
 
-function createRobinrunHomeHelper(robinrunHome: string, variant?: string) {
+function createRobindoneHomeHelper(robindoneHome: string, variant?: string) {
   const helperAppPath = join(
-    robinrunHome,
+    robindoneHome,
     "computer-use",
     ...(variant ? [variant] : []),
     HELPER_APP_NAME,
@@ -78,9 +78,9 @@ function runDoctor(appPath: string, binDir: string, extraEnv: NodeJS.ProcessEnv 
     cwd: REPO_ROOT,
     env: {
       ...process.env,
-      ROBINRUN_ENV: "production",
+      ROBINDONE_ENV: "production",
       // Test selection must not inherit a developer's active dev/preview helper variant.
-      ROBINRUN_CUA_HELPER_INSTALL_VARIANT: "",
+      ROBINDONE_CUA_HELPER_INSTALL_VARIANT: "",
       ...extraEnv,
       PATH: `${binDir}:${process.env.PATH ?? ""}`,
     },
@@ -97,12 +97,12 @@ afterEach(() => {
 
 describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
   it("Preview 自动按 bundle 名推导主可执行，并验收 preview Helper 目录", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-preview-doctor-");
+    const workspaceDir = makeTempDir("robindone-macos-preview-doctor-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
-    const { appPath } = createReleaseApp(workspaceDir, "RobinRun Preview");
-    const robinrunHome = join(workspaceDir, ".robinrun");
-    const helperAppPath = createRobinrunHomeHelper(robinrunHome, "preview");
+    const { appPath } = createReleaseApp(workspaceDir, "RobinDone Preview");
+    const robindoneHome = join(workspaceDir, ".robindone");
+    const helperAppPath = createRobindoneHomeHelper(robindoneHome, "preview");
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
@@ -110,29 +110,29 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
     writeFakeTool(binDir, "xcrun", toolLog);
 
     const output = runDoctor(appPath, binDir, {
-      ROBINRUN_ENV: "test",
-      ROBINRUN_CUA_REQUIRE_HELPER: "1",
-      ROBINRUN_HOME: robinrunHome,
+      ROBINDONE_ENV: "test",
+      ROBINDONE_CUA_REQUIRE_HELPER: "1",
+      ROBINDONE_HOME: robindoneHome,
     });
 
-    expect(output).toContain(`validating RobinRun Preview.app: ${appPath}`);
+    expect(output).toContain(`validating RobinDone Preview.app: ${appPath}`);
     const log = readFileSync(toolLog, "utf-8");
     expect(log).toContain(`codesign\t--verify\t--deep\t--strict\t${appPath}`);
     expect(log).toContain(`codesign\t--verify\t--deep\t--strict\t${helperAppPath}`);
   });
 
-  it("默认只验收安装后的 RobinRun.app，不强绑 Computer Use Helper 发布", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-");
+  it("默认只验收安装后的 RobinDone.app，不强绑 Computer Use Helper 发布", () => {
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
+    const robindoneHome = join(workspaceDir, ".robindone");
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
     writeFakeTool(binDir, "spctl", toolLog);
 
-    const output = runDoctor(appPath, binDir, { ROBINRUN_HOME: robinrunHome });
+    const output = runDoctor(appPath, binDir, { ROBINDONE_HOME: robindoneHome });
 
     expect(output).toContain("[macos-release-doctor] done");
     const log = readFileSync(toolLog, "utf-8");
@@ -142,13 +142,13 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
     expect(output).toContain("standalone Computer Use Helper.app not required");
   });
 
-  it("CUA release gate 验收外置 RobinRun Computer Use.app", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-helper-");
+  it("CUA release gate 验收外置 RobinDone Computer Use.app", () => {
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-helper-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
-    const helperAppPath = createRobinrunHomeHelper(robinrunHome);
+    const robindoneHome = join(workspaceDir, ".robindone");
+    const helperAppPath = createRobindoneHomeHelper(robindoneHome);
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
@@ -156,8 +156,8 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
     writeFakeTool(binDir, "xcrun", toolLog);
 
     const output = runDoctor(appPath, binDir, {
-      ROBINRUN_CUA_REQUIRE_HELPER: "1",
-      ROBINRUN_HOME: robinrunHome,
+      ROBINDONE_CUA_REQUIRE_HELPER: "1",
+      ROBINDONE_HOME: robindoneHome,
     });
 
     expect(output).toContain("[macos-release-doctor] done");
@@ -170,12 +170,12 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
   });
 
   it("CUA release gate 在 Helper staple 无效时应 fail-closed", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-stapler-fail-");
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-stapler-fail-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
-    const helperAppPath = createRobinrunHomeHelper(robinrunHome);
+    const robindoneHome = join(workspaceDir, ".robindone");
+    const helperAppPath = createRobindoneHomeHelper(robindoneHome);
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
@@ -184,19 +184,19 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
 
     expect(() =>
       runDoctor(appPath, binDir, {
-        ROBINRUN_CUA_REQUIRE_HELPER: "1",
-        ROBINRUN_CUA_HELPER_APP_PATH: helperAppPath,
-        ROBINRUN_FAKE_STAPLER_FAIL_HELPER: "1",
+        ROBINDONE_CUA_REQUIRE_HELPER: "1",
+        ROBINDONE_CUA_HELPER_APP_PATH: helperAppPath,
+        ROBINDONE_FAKE_STAPLER_FAIL_HELPER: "1",
       }),
     ).toThrow(/fake helper stapler rejection/);
   });
 
   it("CUA release gate 缺少外置 Helper.app 时应 fail-closed", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-missing-helper-");
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-missing-helper-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
+    const robindoneHome = join(workspaceDir, ".robindone");
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
@@ -204,14 +204,14 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
 
     expect(() =>
       runDoctor(appPath, binDir, {
-        ROBINRUN_CUA_REQUIRE_HELPER: "1",
-        ROBINRUN_HOME: robinrunHome,
+        ROBINDONE_CUA_REQUIRE_HELPER: "1",
+        ROBINDONE_HOME: robindoneHome,
       }),
     ).toThrow(/Computer Use Helper\.app missing/);
   });
 
-  it("CUA release gate 在没有 ROBINRUN_HOME/HOME 时应 fail-closed", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-no-home-");
+  it("CUA release gate 在没有 ROBINDONE_HOME/HOME 时应 fail-closed", () => {
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-no-home-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
@@ -222,20 +222,20 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
 
     expect(() =>
       runDoctor(appPath, binDir, {
-        ROBINRUN_CUA_REQUIRE_HELPER: "1",
-        ROBINRUN_HOME: "",
+        ROBINDONE_CUA_REQUIRE_HELPER: "1",
+        ROBINDONE_HOME: "",
         HOME: "",
       }),
     ).toThrow(/no product helper path/);
   });
 
   it("helper codesign 失败时不应继续判定 release app 验收成功", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-fail-helper-");
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-fail-helper-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
-    const helperAppPath = createRobinrunHomeHelper(robinrunHome);
+    const robindoneHome = join(workspaceDir, ".robindone");
+    const helperAppPath = createRobindoneHomeHelper(robindoneHome);
 
     mkdirSync(binDir, { recursive: true });
     writeFakeTool(binDir, "codesign", toolLog);
@@ -243,9 +243,9 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
 
     expect(() =>
       runDoctor(appPath, binDir, {
-        ROBINRUN_CUA_REQUIRE_HELPER: "1",
-        ROBINRUN_HOME: robinrunHome,
-        ROBINRUN_FAKE_CODESIGN_FAIL_HELPER: "1",
+        ROBINDONE_CUA_REQUIRE_HELPER: "1",
+        ROBINDONE_HOME: robindoneHome,
+        ROBINDONE_FAKE_CODESIGN_FAIL_HELPER: "1",
       }),
     ).toThrow(/fake helper codesign rejection/);
 
@@ -255,12 +255,12 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
   });
 
   it("helper 主可执行仍是 shell wrapper 时应 fail-closed", () => {
-    const workspaceDir = makeTempDir("robinrun-macos-release-doctor-helper-wrapper-");
+    const workspaceDir = makeTempDir("robindone-macos-release-doctor-helper-wrapper-");
     const binDir = join(workspaceDir, "bin");
     const toolLog = join(workspaceDir, "tool.log");
     const { appPath } = createReleaseApp(workspaceDir);
-    const robinrunHome = join(workspaceDir, ".robinrun");
-    const helperAppPath = createRobinrunHomeHelper(robinrunHome);
+    const robindoneHome = join(workspaceDir, ".robindone");
+    const helperAppPath = createRobindoneHomeHelper(robindoneHome);
     writeExecutable(join(helperAppPath, "Contents", "MacOS", HELPER_DISPLAY_NAME), "#!/bin/bash\n");
 
     mkdirSync(binDir, { recursive: true });
@@ -269,8 +269,8 @@ describe.skipIf(isWindows)("doctor-macos-release-app.sh", () => {
 
     expect(() =>
       runDoctor(appPath, binDir, {
-        ROBINRUN_CUA_REQUIRE_HELPER: "1",
-        ROBINRUN_HOME: robinrunHome,
+        ROBINDONE_CUA_REQUIRE_HELPER: "1",
+        ROBINDONE_HOME: robindoneHome,
       }),
     ).toThrow(/not a Mach-O executable/);
     const log = existsSync(toolLog) ? readFileSync(toolLog, "utf-8") : "";

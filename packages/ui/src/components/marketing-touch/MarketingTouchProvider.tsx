@@ -20,11 +20,11 @@ import {
   marketingSettingsSections,
   waitForMarketingCapability,
 } from "@/lib/marketingNavigation.js";
-import { BUILTIN_MODEL_PROVIDER_IDS, ROBINRUN_ENV } from "@robinrun/shared";
+import { BUILTIN_MODEL_PROVIDER_IDS, ROBINDONE_ENV } from "@robindone/shared";
 import { useServices } from "@/hooks/useServices.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunStore } from "@/store/StoreProvider.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneStore } from "@/store/StoreProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useCloudHeroEnvironment } from "@/components/cloud-content-dialog/useCloudHeroEnvironment.js";
 import { MarketingDialogs } from "@/components/marketing-touch/MarketingDialogs.js";
 import { toast } from "@/components/ui/toast.js";
@@ -73,13 +73,13 @@ export function MarketingTouchProvider({
   });
   const upgradeTargetRef = useRef(upgradeTargetProviderId);
   upgradeTargetRef.current = upgradeTargetProviderId;
-  const user = useRobinRunStore((state) => state.user);
-  const restoring = useRobinRunStore((state) => state.isRestoringOAuthSession);
-  const requestLogin = useRobinRunStore((state) => state.requestLoginEntry);
+  const user = useRobinDoneStore((state) => state.user);
+  const restoring = useRobinDoneStore((state) => state.isRestoringOAuthSession);
+  const requestLogin = useRobinDoneStore((state) => state.requestLoginEntry);
   const openRewards = useOpenRewards();
   const openRewardsRef = useRef(openRewards);
   openRewardsRef.current = openRewards;
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const startEntitlement = useStartPlanEntitlement(
     BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
     services.usageStatsService,
@@ -295,7 +295,7 @@ export function MarketingTouchProvider({
       },
     });
     poller = createMarketingTouchPoller({
-      intervalMs: resolveMarketingTouchPollIntervalMs(import.meta.env.PROD, ROBINRUN_ENV),
+      intervalMs: resolveMarketingTouchPollIntervalMs(import.meta.env.PROD, ROBINDONE_ENV),
       query: async () => {
         await controller.refresh();
         await controller.showPending();
@@ -360,14 +360,14 @@ export function MarketingBanner() {
 function ConnectedBanner({ controller }: { controller: MarketingTouchController }) {
   const state = useStore(controller.store);
   const { dark } = useCloudHeroEnvironment();
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const banner = state.banner;
   useRequestVerificationPrewarm(
     Boolean(
       banner?.delivery.resource_position === "banner" &&
       (banner.image || banner.bannerHero) &&
       banner.delivery.banner.buttons.find((button) => button.action.type !== "close")?.action
-        .type === "claim_robinrun_plan",
+        .type === "claim_robindone_plan",
     ),
   );
   // 与仲裁层（SidebarBottomActivity）共用同一可见性谓词，避免两处判断漂移。

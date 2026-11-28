@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileApplicationInfo, FileApplicationTarget } from "@robinrun/shared";
+import type { FileApplicationInfo, FileApplicationTarget } from "@robindone/shared";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
 import { logger } from "@/logger.js";
 
 export function useFileApplications(target: FileApplicationTarget | null, isRemote = false) {
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const key = target ? `${target.path}\u0000${target.workspaceIdentity ?? ""}` : "";
   const targetRef = useRef(target);
   targetRef.current = target;

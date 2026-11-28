@@ -16,8 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox.js";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-import type { ConversationShareAccessMode } from "@robinrun/shared";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+import type { ConversationShareAccessMode } from "@robindone/shared";
 import { ConversationSharePermissionPicker } from "@/ConversationSharePermissionPicker.js";
 import {
   DEFAULT_CONVERSATION_SHARE_ACCESS_MODE,
@@ -105,7 +105,7 @@ function ConversationShareConfirmationDockImpl({
   onDismissWarnings,
   onCopyRequestId,
 }: ConversationShareConfirmationDockProps) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const errorDetailsLabel = intl.formatMessage({
     id: "conversationShare.issue.details",
   });

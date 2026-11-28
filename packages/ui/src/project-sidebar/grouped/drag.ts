@@ -5,7 +5,7 @@ import {
   type DragOverEvent,
   type DropAnimation,
 } from "@dnd-kit/core";
-import type { RobinRunGroupedTaskView } from "@/project-sidebar/grouped/types.js";
+import type { RobinDoneGroupedTaskView } from "@/project-sidebar/grouped/types.js";
 import { taskKey } from "@/project-sidebar/grouped/ids.js";
 import {
   moveGroupAroundTopLevelNode,
@@ -127,10 +127,10 @@ export const groupedTaskCollisionDetection: CollisionDetection = (args) => {
 };
 
 export function getGroupedTaskOverTaskPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overTaskKey = getGroupedTaskDragTaskKey(event.over?.data.current);
   if (!activeTaskKey || !overTaskKey || activeTaskKey === overTaskKey) {
@@ -144,10 +144,10 @@ export function getGroupedTaskOverTaskPreviewView(
 }
 
 export function getGroupedTaskOverCollapsedGroupPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   _position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskCollapsedOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
@@ -161,10 +161,10 @@ export function getGroupedTaskOverCollapsedGroupPreviewView(
 }
 
 export function getGroupedTaskOverGroupHeaderPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   _position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskHeaderOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
@@ -178,10 +178,10 @@ export function getGroupedTaskOverGroupHeaderPreviewView(
 }
 
 export function getGroupedTaskOverGroupFooterPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   _position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskFooterOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
@@ -195,9 +195,9 @@ export function getGroupedTaskOverGroupFooterPreviewView(
 }
 
 export function getGroupedTaskOverEmptyDropZonePreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeTaskKey = getGroupedTaskDragTaskKey(event.active.data.current);
   const overGroupId = getGroupedTaskEmptyOverGroupId(event.over?.data.current);
   if (!activeTaskKey || !overGroupId) {
@@ -210,10 +210,10 @@ export function getGroupedTaskOverEmptyDropZonePreviewView(
 }
 
 export function getGroupedGroupOverGroupPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeGroupId = getGroupedTaskDragGroupId(event.active.data.current);
   const overGroupId = getGroupedGroupOverGroupId(event.over?.data.current);
   if (!activeGroupId || !overGroupId || activeGroupId === overGroupId) {
@@ -227,10 +227,10 @@ export function getGroupedGroupOverGroupPreviewView(
 }
 
 export function getGroupedGroupOverTaskPreviewView(
-  view: RobinRunGroupedTaskView,
+  view: RobinDoneGroupedTaskView,
   event: DragOverEvent,
   position: GroupedTaskDragDirectionPosition,
-): RobinRunGroupedTaskView {
+): RobinDoneGroupedTaskView {
   const activeGroupId = getGroupedTaskDragGroupId(event.active.data.current);
   const overTaskKey = getGroupedTaskDragTaskKey(event.over?.data.current);
   if (!activeGroupId || !overTaskKey) {
@@ -243,7 +243,7 @@ export function getGroupedGroupOverTaskPreviewView(
   });
 }
 
-export function getGroupedTaskViewSignature(view: RobinRunGroupedTaskView): string {
+export function getGroupedTaskViewSignature(view: RobinDoneGroupedTaskView): string {
   return view.nodes
     .map((node) =>
       node.type === "task"

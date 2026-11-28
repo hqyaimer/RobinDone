@@ -6,7 +6,7 @@ import type {
   DataSyncImportItem,
   DataSyncImportResultItem,
   DataSyncListItem,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { CommandFileParser } from "#src/commands/commandFileParser.js";
 import {
   readCommandEnabledOverridesFromUserConfig,
@@ -20,7 +20,7 @@ import { errorMessage } from "./syncUtils.js";
 
 const COMMAND_EXTENSION = /\.md$/iu;
 
-type CommandRootSource = "robinrun" | "agents";
+type CommandRootSource = "robindone" | "agents";
 
 interface ResolvedUserCommand {
   key: string;
@@ -35,7 +35,7 @@ interface ResolvedUserCommand {
 }
 
 function commandsRoot(source: CommandRootSource): string {
-  return join(resolveUserHomeDir(), source === "robinrun" ? ".robinrun" : ".agents", "commands");
+  return join(resolveUserHomeDir(), source === "robindone" ? ".robindone" : ".agents", "commands");
 }
 
 function hashContent(content: Uint8Array): string {
@@ -77,12 +77,12 @@ async function collectCommandFiles(
 }
 
 /**
- * 本端用户命令：`~/.robinrun/commands` 与 `~/.agents/commands` 合并，与 CLI 运行时一致，
- * 同 key 时 `.robinrun` 优先（先扫描者胜出）。
+ * 本端用户命令：`~/.robindone/commands` 与 `~/.agents/commands` 合并，与 CLI 运行时一致，
+ * 同 key 时 `.robindone` 优先（先扫描者胜出）。
  */
 async function resolveUserCommands(): Promise<Map<string, ResolvedUserCommand>> {
   const commands = new Map<string, ResolvedUserCommand>();
-  for (const source of ["robinrun", "agents"] as const) {
+  for (const source of ["robindone", "agents"] as const) {
     const root = commandsRoot(source);
     for (const file of await collectCommandFiles(root)) {
       const relativePath = relative(root, file.path)
@@ -140,7 +140,7 @@ async function importOne(
     if (item.mode === "createOnly") {
       // 列表加载后目标端出现同 key 命令（任一目录）：不写入，提示刷新后重试。
       if (existing) return { key: item.key, status: "conflict" };
-      const targetPath = join(commandsRoot("robinrun"), ...segments);
+      const targetPath = join(commandsRoot("robindone"), ...segments);
       if (await pathExists(targetPath)) return failed(`target path already exists: ${targetPath}`);
       await mkdir(dirname(targetPath), { recursive: true });
       await writeFileAtomically(targetPath, content);
@@ -228,8 +228,8 @@ export function createCommandDataSyncMethods(): IDataSyncCategoryService<Command
 
     async checkSyncWriteAccess() {
       return await checkRemoteSyncDirectoriesWriteAccess([
-        commandsRoot("robinrun"),
-        join(resolveUserHomeDir(), ".robinrun", "cli"),
+        commandsRoot("robindone"),
+        join(resolveUserHomeDir(), ".robindone", "cli"),
       ]);
     },
 

@@ -6,10 +6,10 @@ import type {
   ConversationSharePreview,
   ConversationShareRecord,
   Locale,
-} from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
-import { Event as RpcEvent, type Event } from "@robinrun/rpc";
+} from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
+import { Event as RpcEvent, type Event } from "@robindone/rpc";
 
 import { createServiceDescriptor } from "../descriptors.js";
 import type { ConversationShareClientErrorKind } from "./conversationShareHttpClient.js";

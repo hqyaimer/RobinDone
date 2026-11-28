@@ -14,7 +14,7 @@ import {
   TID_AUTOMATIONS_OPEN,
   TID_TASK_ITEM,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -145,7 +145,7 @@ interface AutomationRecord {
 }
 
 function automationDatabasePath(): string {
-  return join(homedir(), ".robinrun", "v2", "tasks-index.sqlite");
+  return join(homedir(), ".robindone", "v2", "tasks-index.sqlite");
 }
 
 function readAutomationRecordByTitle(title: string): AutomationRecord | null {

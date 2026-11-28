@@ -6,7 +6,7 @@ import type {
   BotOutboundMessage,
   BotProviderCallbackResult,
   Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export interface BotTypingTarget {
   providerUserId: string;
@@ -60,8 +60,8 @@ export interface BotProviderAdapter {
   ): Promise<{ threadId: string; rootMessageId: string; topicTitle: string; topicUrl?: string }>;
   readTopicHistory?(
     bot: BotConfig,
-    request: import("@robinrun/shared").BotTopicHistoryRequest,
-  ): Promise<import("@robinrun/shared").BotTopicHistoryBatch>;
+    request: import("@robindone/shared").BotTopicHistoryRequest,
+  ): Promise<import("@robindone/shared").BotTopicHistoryBatch>;
   getGroupMemberNames?(bot: BotConfig, chatId: string): Promise<Record<string, string>>;
   getGroupInfo?(
     bot: BotConfig,

@@ -5,12 +5,12 @@ import { GenUiMessageResponse } from "../../../ui/src/gen-ui/components/GenUiMes
 import { ServiceProvider } from "../../../ui/src/hooks/useServices.js";
 import { PlatformProvider } from "../../../ui/src/hooks/usePlatform.js";
 import { TabStoreProvider } from "../../../ui/src/store/TabStoreProvider.js";
-import { RobinRunIntlProvider } from "../../../ui/src/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider } from "../../../ui/src/i18n/IntlProvider.js";
 import { useRemoteWorkspaceSessionStore } from "../../../ui/src/store/remoteWorkspaceSessionStore.js";
 import { registerPluginUiSessionActions } from "../../../ui/src/plugin-ui/hostPrimitives.js";
-import type { IServiceAccessor } from "@robinrun/services";
-import type { GenUiStateChange } from "@robinrun/shared/gen-ui";
-import type { PluginSandboxPortsEvent } from "@robinrun/shared/mcp-apps";
+import type { IServiceAccessor } from "@robindone/services";
+import type { GenUiStateChange } from "@robindone/shared/gen-ui";
+import type { PluginSandboxPortsEvent } from "@robindone/shared/mcp-apps";
 import { buildRemoteWorkspaceSessionServicesForRegistration } from "@desktop/renderer/src/remoteWorkspaceSessionServices.js";
 const harness = (window as any).harness;
 const ports = new Set<(event: PluginSandboxPortsEvent) => void>();
@@ -33,7 +33,7 @@ window.setTimeout = ((run: () => void, ms?: number, ...args: unknown[]) => {
   return nativeSetTimeout(run, ms, ...args);
 }) as typeof window.setTimeout;
 window.addEventListener("message", (event) => {
-  if (event.data?.type === "robinrun:plugin-sandbox-ports")
+  if (event.data?.type === "robindone:plugin-sandbox-ports")
     for (const handler of ports) handler({ ...event.data, port: event.ports[0] });
   if (event.data?.type === "fixture-notification")
     for (const handler of states) handler(event.data.payload);
@@ -66,7 +66,7 @@ void (async () => {
   );
   const base = {
     genUiService: service,
-    robinrunTaskService: {
+    robindoneTaskService: {
       onDynamicWorkspaceEvent: () => (listener: (event: unknown) => void) => {
         taskListeners.add(listener);
         return { dispose: () => taskListeners.delete(listener) };
@@ -111,12 +111,12 @@ void (async () => {
       opened.push(url);
     },
     pluginSandbox: {
-      supportsRetainedMove: window.robinrunPluginSandbox?.supportsRetainedMove,
-      copyImage: (request) => window.robinrunPluginSandbox!.copyImage!(request),
+      supportsRetainedMove: window.robindonePluginSandbox?.supportsRetainedMove,
+      copyImage: (request) => window.robindonePluginSandbox!.copyImage!(request),
       getOwnerWebContentsId: () => harness.owner(),
       disposeSandbox: (id: string, init: number) => harness.dispose(id, init),
       async consumeUserGesture(sandboxId: string) {
-        const allowed = await window.robinrunPluginSandbox!.consumeUserGesture(sandboxId);
+        const allowed = await window.robindonePluginSandbox!.consumeUserGesture(sandboxId);
         gesturePending = true;
         await gestureGate?.promise;
         gesturePending = false;
@@ -139,7 +139,7 @@ void (async () => {
   let compact = false;
   const renderReply = (phase: "streaming" | "complete" | "hidden") =>
     reactRoot.render(
-      <RobinRunIntlProvider initialLocale="en-US">
+      <RobinDoneIntlProvider initialLocale="en-US">
         <TabStoreProvider>
           <ServiceProvider services={remote}>
             <PlatformProvider platform={(mobile ? mobilePlatform : platform) as never}>
@@ -173,7 +173,7 @@ void (async () => {
             </PlatformProvider>
           </ServiceProvider>
         </TabStoreProvider>
-      </RobinRunIntlProvider>,
+      </RobinDoneIntlProvider>,
     );
   flushSync(() => renderReply("streaming"));
   Object.assign(window, {

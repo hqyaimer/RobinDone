@@ -1,7 +1,11 @@
 import { join, resolve } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
-import { modelSelectionSchema, OFF_PEAK_PROVIDER_IDS, type ModelSelection } from "@robinrun/shared";
+import {
+  modelSelectionSchema,
+  OFF_PEAK_PROVIDER_IDS,
+  type ModelSelection,
+} from "@robindone/shared";
 import {
   TID_OFFPEAK_CARD,
   TID_OFFPEAK_CREATE_CARD,
@@ -10,7 +14,7 @@ import {
   TID_OFFPEAK_EDIT_VIEW,
   TID_OFFPEAK_FORM_TITLE,
   TID_OFFPEAK_TAB,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -328,7 +332,7 @@ async function readTestIdValue(currentTestId: string): Promise<string> {
 
 function resolveArtifactPath(fileName: string) {
   return resolve(
-    process.env.ROBINRUN_E2E_ARTIFACT_DIR?.trim() ||
+    process.env.ROBINDONE_E2E_ARTIFACT_DIR?.trim() ||
       process.env.CODEX_E2E_ARTIFACT_DIR?.trim() ||
       join(process.cwd(), ".e2e-artifacts", CASE_NAME),
     fileName,

@@ -1,5 +1,5 @@
-import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robinrun/shared";
-import type { OAuthTokenSet, UserInfo } from "@robinrun/shared";
+import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robindone/shared";
+import type { OAuthTokenSet, UserInfo } from "@robindone/shared";
 import type { WebOAuthProviderId } from "./browserOAuthCredentialRepo.js";
 
 export interface WebZaiOAuthProviderConfig {
@@ -118,8 +118,8 @@ function normalizeTokenResponse(
     throw new Error(payload.msg?.trim() || "OAuth token exchange failed");
   }
 
-  const robinrunJwtToken = payload.data?.token?.trim();
-  if (!robinrunJwtToken) {
+  const robindoneJwtToken = payload.data?.token?.trim();
+  if (!robindoneJwtToken) {
     throw new Error("Token exchange response missing data.token");
   }
 
@@ -151,7 +151,7 @@ function normalizeTokenResponse(
   return {
     tokenSet: {
       accessToken,
-      robinrunJwtToken,
+      robindoneJwtToken,
       ...(expiresAt ? { expiresAt } : {}),
     },
     userInfo,

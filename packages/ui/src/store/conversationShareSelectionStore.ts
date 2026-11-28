@@ -1,7 +1,7 @@
 import { createConversationSharePopoverActions } from "@/conversation-share-interaction/conversationSharePopoverActions.js";
 import { create } from "zustand";
-import type { ConversationShareAccessMode, ConversationShareRejection } from "@robinrun/shared";
-import type { ConversationShareFailureIssue } from "@robinrun/services";
+import type { ConversationShareAccessMode, ConversationShareRejection } from "@robindone/shared";
+import type { ConversationShareFailureIssue } from "@robindone/services";
 
 export const DEFAULT_CONVERSATION_SHARE_ACCESS_MODE: ConversationShareAccessMode =
   "public_importable";

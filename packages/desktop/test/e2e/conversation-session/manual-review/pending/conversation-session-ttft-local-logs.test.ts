@@ -28,9 +28,9 @@ describe("TTFT03 生产本地日志", () => {
     await waitForV4AssistantMessageContaining("ttft-local-warmup-ready");
     await waitForV4ConversationState((state) => state.state === "idle", "准备轮未结束");
     const appLogDir = await browser.electron.execute(
-      () => process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR!,
+      () => process.env.ROBINDONE_E2E_RUNTIME_LOG_DIR!,
     );
-    const cliLogDir = process.env.ROBINRUN_LOG_DIR!;
+    const cliLogDir = process.env.ROBINDONE_LOG_DIR!;
     expect(appLogDir).toBeTruthy();
     expect(cliLogDir).toBeTruthy();
     await browser.electron.execute((electron) => {

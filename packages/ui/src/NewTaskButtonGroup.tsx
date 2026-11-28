@@ -1,7 +1,7 @@
 import { MessageCirclePlus } from "lucide-react";
-import { TID_TASK_NEW_BUTTON } from "@robinrun/shared/test-ids";
+import { TID_TASK_NEW_BUTTON } from "@robindone/shared/test-ids";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { runUserAction } from "@/lib/userActionTelemetry.js";
 
@@ -12,7 +12,7 @@ export function NewTaskButtonGroup({
   onCreateTask: () => void;
   disabled?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const newTaskShortcutLabel = useShortcutCommandLabel("newTask");
   return (
     <div

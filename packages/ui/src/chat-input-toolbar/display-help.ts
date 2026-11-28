@@ -1,6 +1,6 @@
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 
-export const ROBINRUN_MODE_OPTION_LABEL_IDS: Record<RobinRunProvider, Record<string, string>> = {
+export const ROBINDONE_MODE_OPTION_LABEL_IDS: Record<RobinDoneProvider, Record<string, string>> = {
   glm: {
     default: "mode.label.glm.default",
     build: "mode.label.glm.build",
@@ -11,8 +11,8 @@ export const ROBINRUN_MODE_OPTION_LABEL_IDS: Record<RobinRunProvider, Record<str
   },
 };
 
-export const ROBINRUN_MODE_OPTION_DESCRIPTION_IDS: Record<
-  RobinRunProvider,
+export const ROBINDONE_MODE_OPTION_DESCRIPTION_IDS: Record<
+  RobinDoneProvider,
   Record<string, string>
 > = {
   glm: {

@@ -4,25 +4,25 @@ import type {
   IServiceAccessor,
   IModelSelectionService,
   ModelSelectionView,
-} from "@robinrun/services";
-import type { IPlatformService } from "@robinrun/shared";
-import { resolveEffectiveModelSelection, type ProviderRegistryView } from "@robinrun/provider";
+} from "@robindone/services";
+import type { IPlatformService } from "@robindone/shared";
+import { resolveEffectiveModelSelection, type ProviderRegistryView } from "@robindone/provider";
 import { ServiceProvider } from "@/hooks/useServices.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
 import { TabStoreProvider } from "@/store/TabStoreProvider.js";
-import { RobinRunIntlProvider, useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { RobinDoneIntlProvider, useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { TooltipProvider } from "@/components/ui/tooltip.js";
 import { V4ComposerModeSwitch } from "@/v4/composer/V4ComposerModeControls.js";
 import { ThoughtLevelCycleControl } from "@/chat-input-toolbar/ThoughtLevelCycleControl.js";
 import { ModelConfigSelect } from "@/ModelConfigSelect.js";
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
-import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 import { captureComposerRecentSubmission } from "@/lib/composerRecent.js";
 import { useDraftConfigControl } from "@/v4/composer/useDraftConfigControl.js";
 import { persistV4ComposerDraft, readV4ComposerDraft } from "@/v4/composer/composerDraftStore.js";
 import { resolveImportedComposerConfig } from "@/v4/composer/newTaskDraft.js";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
-import type { SessionConfigState } from "@robinrun/shared/robinrun-protocol-v4";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
+import type { SessionConfigState } from "@robindone/shared/robindone-protocol-v4";
 import { createComposerSubmissionConfig } from "@/v4/composer/composerSubmissionConfig.js";
 import type { V4ComposerConfigPicker } from "@/v4/composer/configPickerState.js";
 import "@/styles.css";
@@ -67,7 +67,7 @@ const modelSelectionService: IModelSelectionService = {
   onDidChange: () => ({ dispose() {} }),
 };
 const services = {
-  robinrunSessionService: {},
+  robindoneSessionService: {},
   settingService: { get: async () => ({}) },
 } as unknown as IServiceAccessor;
 const platform = {} as IPlatformService;
@@ -93,7 +93,7 @@ document.documentElement.className =
   params.get("theme") === "light" ? "light theme-zai-light" : "dark theme-zai-dark";
 
 function Fixture() {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [sessionId, setSessionId] = useState<string | null>(
     source.startsWith("session") ? "session" : "unrelated-history",
   );
@@ -105,7 +105,7 @@ function Fixture() {
     planTransition: { toolCallId: "historical-plan", planEnabled: true },
   });
   const navigate = (id: string | null, imported = false) => {
-    const store = useRobinRunSessionStore.getState();
+    const store = useRobinDoneSessionStore.getState();
     if (id === null) store.startDraft(workspacePath);
     else
       store.setActiveTaskId(
@@ -246,11 +246,11 @@ createRoot(document.getElementById("root")!).render(
   <ServiceProvider services={services}>
     <PlatformProvider platform={platform}>
       <TabStoreProvider>
-        <RobinRunIntlProvider locale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
+        <RobinDoneIntlProvider locale={params.get("locale") === "zh-CN" ? "zh-CN" : "en-US"}>
           <TooltipProvider>
             <Fixture />
           </TooltipProvider>
-        </RobinRunIntlProvider>
+        </RobinDoneIntlProvider>
       </TabStoreProvider>
     </PlatformProvider>
   </ServiceProvider>,

@@ -1,7 +1,7 @@
 import { AppBridge, type McpUiHostContext } from "@modelcontextprotocol/ext-apps/app-bridge";
 import { z } from "zod";
-import type { IGenUiService } from "@robinrun/services";
-import type { PluginSandboxPlatformPort, PluginSandboxHandle } from "@robinrun/shared/mcp-apps";
+import type { IGenUiService } from "@robindone/services";
+import type { PluginSandboxPlatformPort, PluginSandboxHandle } from "@robindone/shared/mcp-apps";
 import {
   GEN_UI_STATE_METHOD,
   GEN_UI_FOLLOW_UP_METHOD,
@@ -15,7 +15,7 @@ import {
   genUiTweakMessageSchema,
   genUiTweakResultSchema,
   type GenUiTweakValues,
-} from "@robinrun/shared/gen-ui";
+} from "@robindone/shared/gen-ui";
 import {
   createPluginUiPagePlane,
   createPluginUiMessagePortTransport,
@@ -114,8 +114,8 @@ export function createGenUiPage(input: GenUiPageInput): GenUiPage {
     // SDK 持有上一份上下文用于差异比较，不能与可写投影共享同一对象。
     const active = new AppBridge(
       null,
-      { name: "robinrun-gen-ui", version: "1" },
-      { openLinks: {}, experimental: { "robinrun/gen-ui": {} } },
+      { name: "robindone-gen-ui", version: "1" },
+      { openLinks: {}, experimental: { "robindone/gen-ui": {} } },
       { hostContext: { ...context } },
     );
     bridge = active;

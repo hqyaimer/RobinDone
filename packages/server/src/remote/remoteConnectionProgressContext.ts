@@ -1,4 +1,4 @@
-import { sanitizeRemoteConnectionLog } from "@robinrun/shared";
+import { sanitizeRemoteConnectionLog } from "@robindone/shared";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 export type RemoteConnectionProgressLevel = "info" | "warn" | "error";

@@ -35,7 +35,7 @@ function findPackageDir(packageName, startDirs) {
   throw new Error(`Unable to find package directory for ${packageName}`);
 }
 
-const desktopDir = findPackageDir("@robinrun/desktop", [
+const desktopDir = findPackageDir("@robindone/desktop", [
   moduleDir,
   resolve(moduleDir, ".."),
   process.cwd(),
@@ -75,7 +75,7 @@ function resolveCommitId() {
       .toString()
       .trim();
   } catch {
-    return process.env.ROBINRUN_COMMIT ?? "unknown";
+    return process.env.ROBINDONE_COMMIT ?? "unknown";
   }
 }
 
@@ -86,7 +86,7 @@ export function collectBuildMetadata() {
   return {
     appVersion: normalizeVersion(rootPackageJson.version),
     minCompatibleVersion: normalizeVersion(
-      rootPackageJson.robinrunCompatibility?.minCompatibleVersion ?? rootPackageJson.version,
+      rootPackageJson.robindoneCompatibility?.minCompatibleVersion ?? rootPackageJson.version,
     ),
     buildCommitId: resolveCommitId(),
     buildTime: new Date().toISOString(),

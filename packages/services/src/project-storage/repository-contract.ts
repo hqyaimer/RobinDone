@@ -26,7 +26,7 @@ export interface ProjectTaskRef {
   workspaceIdentity?: string;
   taskId: string;
 }
-export type ProjectTask = import("@robinrun/shared").RobinRunTaskMeta & {
+export type ProjectTask = import("@robindone/shared").RobinDoneTaskMeta & {
   projectId: string | null;
   hostId: string;
   pinned: boolean;

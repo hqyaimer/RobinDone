@@ -1,1 +1,1 @@
-export { prepareWorkspaceWithRobinRunSessionService } from "@/hooks/workspacePrepareRpc.js";
+export { prepareWorkspaceWithRobinDoneSessionService } from "@/hooks/workspacePrepareRpc.js";

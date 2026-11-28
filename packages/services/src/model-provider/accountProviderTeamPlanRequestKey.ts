@@ -5,15 +5,15 @@ import {
   type ProjectAccessTokenMaterial,
   resolveBigModelApiOrigin,
   resolveZaiBusinessBaseUrl,
-  type RobinRunAccountAccess,
+  type RobinDoneAccountAccess,
   ZAI_PROVIDER_ID,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type { ICredentialService } from "#src/credential/credential.js";
 import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import { readApiJson } from "#src/providers/api/apiJson.js";
 
 const log = createServiceLogger("account-provider-team-plan-request-key");
-const ROBINRUN_JWT_TOKEN_KEY = "robinrunjwttoken";
+const ROBINDONE_JWT_TOKEN_KEY = "robindonejwttoken";
 const TEAM_PLAN_RUNTIME_KEY_REQUEST_TIMEOUT_MS = 15_000;
 
 interface TeamPlanRequestKeyDependencies {
@@ -22,7 +22,7 @@ interface TeamPlanRequestKeyDependencies {
   readonly accountIdentity?: string;
   readonly rejectedProjectTokenFingerprint?: string;
   readonly credentialService?: Pick<ICredentialService, "load">;
-  readonly access: Extract<RobinRunAccountAccess, { planKind: "team-coding-plan" }>;
+  readonly access: Extract<RobinDoneAccountAccess, { planKind: "team-coding-plan" }>;
 }
 
 export async function resolveAccountTeamPlanRuntimeApiKey(
@@ -45,11 +45,11 @@ export async function resolveAccountTeamPlanRuntimeMaterial(
     });
     return null;
   }
-  const robinrunJwtToken =
-    (await params.credentialService?.load(ROBINRUN_JWT_TOKEN_KEY))?.trim() ?? "";
-  if (family === "bigmodel" && robinrunJwtToken && token === robinrunJwtToken) {
-    // BigModel /api/biz 只接受登录 access token，不能使用旧版本误存的 RobinRun JWT。
-    log.warn(undefined, "Team Plan runtime key projection skipped: stale robinrun JWT token", {
+  const robindoneJwtToken =
+    (await params.credentialService?.load(ROBINDONE_JWT_TOKEN_KEY))?.trim() ?? "";
+  if (family === "bigmodel" && robindoneJwtToken && token === robindoneJwtToken) {
+    // BigModel /api/biz 只接受登录 access token，不能使用旧版本误存的 RobinDone JWT。
+    log.warn(undefined, "Team Plan runtime key projection skipped: stale robindone JWT token", {
       family,
       projectId,
     });

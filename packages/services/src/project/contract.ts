@@ -5,8 +5,8 @@ import type {
   SaveProjectInput,
   VirtualProject,
 } from "#src/project-storage/contract.js";
-import { ServiceChannels } from "@robinrun/shared";
-import type { FileEntry } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
+import type { FileEntry } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 import type { ProjectDataDeleteResult, ProjectDataMeasure } from "#src/project/data/contract.js";
 export type {

@@ -5,7 +5,7 @@ import {
   TID_CHAT_MESSAGE_EDIT_SUBMIT,
   TID_CHAT_USER_MESSAGE,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { clickTestIdByDom } from "./desktop-app.js";
 
 export interface EditButtonSnapshot {
@@ -24,7 +24,7 @@ type LexicalInputE2EBridge = {
 };
 
 type LexicalInputE2EElement = HTMLElement & {
-  __robinrunLexicalInputE2E?: LexicalInputE2EBridge;
+  __robindoneLexicalInputE2E?: LexicalInputE2EBridge;
 };
 
 export async function waitForEditButtonForUserContaining(
@@ -194,7 +194,7 @@ function getEditInputDiagnostics(testIdValue: string) {
     }));
     return {
       bridgeAttr: input?.getAttribute("data-e2e-lexical-bridge") ?? null,
-      bridgeProperty: Boolean((input as LexicalInputE2EElement | null)?.__robinrunLexicalInputE2E),
+      bridgeProperty: Boolean((input as LexicalInputE2EElement | null)?.__robindoneLexicalInputE2E),
       contentEditable: input?.getAttribute("contenteditable") ?? null,
       exists: Boolean(input),
       nearby,
@@ -207,7 +207,7 @@ function getEditInputDiagnostics(testIdValue: string) {
 async function waitForEditInputInitializers(testIdValue: string) {
   await browser.executeAsync((inputTestId, done) => {
     const input = document.querySelector<LexicalInputE2EElement>(`[data-testid="${inputTestId}"]`);
-    input?.__robinrunLexicalInputE2E?.focus();
+    input?.__robindoneLexicalInputE2E?.focus();
     // 修复原因：UserMessage 和 ChatPromptEditor 都会在 RAF 回填 initialValue。
     // 等两帧后再模拟用户输入，避免刚写入的新文本被初始化回填覆盖。
     requestAnimationFrame(() => {
@@ -233,13 +233,13 @@ async function replaceContentEditableTextByDom(testIdValue: string, text: string
         const latestInput = document.querySelector<LexicalInputE2EElement>(
           `[data-testid="${inputTestId}"]`,
         );
-        const latestBridge = latestInput?.__robinrunLexicalInputE2E;
+        const latestBridge = latestInput?.__robindoneLexicalInputE2E;
         return (latestBridge?.getText() ?? latestInput?.innerText ?? latestInput?.textContent ?? "")
           .replace(/\u00a0/g, " ")
           .trim();
       };
 
-      const bridge = input.__robinrunLexicalInputE2E;
+      const bridge = input.__robindoneLexicalInputE2E;
       if (bridge) {
         bridge.focus();
         bridge.setText("");
@@ -250,7 +250,7 @@ async function replaceContentEditableTextByDom(testIdValue: string, text: string
           const latestInput = document.querySelector<LexicalInputE2EElement>(
             `[data-testid="${inputTestId}"]`,
           );
-          const latestBridge = latestInput?.__robinrunLexicalInputE2E;
+          const latestBridge = latestInput?.__robindoneLexicalInputE2E;
           if (!latestBridge) {
             done({
               actual: "",

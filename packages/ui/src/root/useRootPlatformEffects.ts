@@ -1,14 +1,14 @@
 /* oxlint-disable eslint(max-lines) -- 平台事件和分享导入共用同一生命周期。 */
 import { getConversationShareErrorDetails } from "@/lib/conversationShareError.js";
 import { useEffect, useRef, useState } from "react";
-import { useRobinRunSessionStore } from "@/store/robinrunSessionStore.js";
+import { useRobinDoneSessionStore } from "@/store/robindoneSessionStore.js";
 import type { CreateTaskOptions } from "@/app-shell/types.js";
 import type {
   IPlatformService,
-  RobinRunProjectEntry,
-  RobinRunTaskClientMode,
-} from "@robinrun/shared";
-import { sortRobinrunProjectsByRecency } from "@/robinrun/projectRegistry.js";
+  RobinDoneProjectEntry,
+  RobinDoneTaskClientMode,
+} from "@robindone/shared";
+import { sortRobindoneProjectsByRecency } from "@/robindone/projectRegistry.js";
 import { readV4ComposerDraft, V4_DRAFT_SCOPE_ROOT } from "@/v4/composer/composerDraftStore.js";
 import { readComposerWorkspaceScope } from "@/v4/composer/composerDraftStore.js";
 import { useComposerClientNamespace } from "@/hooks/useServices.js";
@@ -61,20 +61,20 @@ export function useRootPlatformEffects({
   hasCompletedFullTabRestore = true,
   intl,
   isRestoringOAuthSession,
-  robinrunProjects = null,
+  robindoneProjects = null,
 }: {
   initialWorkspaceAbsPath?: string;
   initialWorkspaceIdentity?: string;
-  initialWorkspacePurpose?: import("@robinrun/shared").WorkspacePurpose;
+  initialWorkspacePurpose?: import("@robindone/shared").WorkspacePurpose;
   initialTaskId?: string;
   initialTaskDraft?: CreateTaskOptions;
-  clientMode?: RobinRunTaskClientMode;
+  clientMode?: RobinDoneTaskClientMode;
   canBootstrapInitialWorkspace?: boolean;
   addTab: (
     workspacePath: string,
     options?: {
       workspaceIdentity?: string;
-      workspacePurpose?: import("@robinrun/shared").WorkspacePurpose;
+      workspacePurpose?: import("@robindone/shared").WorkspacePurpose;
     },
   ) => void;
   setIsBootstrappingInitialWorkspace: (value: boolean) => void;
@@ -91,7 +91,7 @@ export function useRootPlatformEffects({
   setWorkspaceActionError: (message: string | null) => void;
   allowOpenWorkspace?: boolean;
   isDesktop?: boolean;
-  locale: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinRunIntl>["locale"];
+  locale: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinDoneIntl>["locale"];
   tabs: WindowTabState[];
   activeWorkspacePath?: string | null;
   activeWorkspaceIdentity?: string | null;
@@ -99,10 +99,10 @@ export function useRootPlatformEffects({
   remoteWorkspaceErrorByWorkspaceKey?: Record<string, string>;
   webRemoteControlFeatureEnabled?: boolean;
   hasCompletedFullTabRestore?: boolean;
-  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinRunIntl>["intl"];
+  intl: ReturnType<typeof import("@/i18n/IntlProvider.js").useRobinDoneIntl>["intl"];
   isRestoringOAuthSession: boolean;
   /** 项目注册表；null 表示 settings 尚未读出（保持启动屏障等待）。 */
-  robinrunProjects?: RobinRunProjectEntry[] | null;
+  robindoneProjects?: RobinDoneProjectEntry[] | null;
 }) {
   const didBootstrapInitialWorkspaceRef = useRef(false);
   const baseServices = useOptionalBaseWorkspaceServices();
@@ -173,7 +173,7 @@ export function useRootPlatformEffects({
           : undefined,
       );
       if (initialTaskId) {
-        useRobinRunSessionStore
+        useRobinDoneSessionStore
           .getState()
           .setActiveTaskId(initialWorkspaceAbsPath, initialTaskId, initialWorkspaceIdentity);
       } else if (draftIntent || !isRendererReloadNavigation()) {
@@ -187,7 +187,7 @@ export function useRootPlatformEffects({
     // 如果这里仍然等首屏先按默认空 tab 渲染一次，窗口会先闪出打开工作区中间页，
     // 再异步补上目标 workspace，视觉上像是“打开错页再跳转”。
     // 这里把初始工作区注入也纳入启动保护期，等首个 tab 准备好后再渲染正式内容。
-    // RobinRun（2026-11-15 去启动台裁决）：桌面主链路（desktop-continuous）无注入路径时
+    // RobinDone（2026-11-15 去启动台裁决）：桌面主链路（desktop-continuous）无注入路径时
     // 不再在这里放行启动屏障，改由下方“自动打开最近项目”effect 收尾，避免加载屏和
     // 首建页之间的闪烁；非桌面入口与手机远控根（web-remote-replayable）保持立即放行。
     if (!isDesktop || clientMode !== "desktop-continuous") {
@@ -209,24 +209,24 @@ export function useRootPlatformEffects({
     startDraftInWorkspace,
   ]);
 
-  // RobinRun 去启动台裁决（2026-11-15）：冷启动不再停靠项目启动台。无 deep link/argv
+  // RobinDone 去启动台裁决（2026-11-15）：冷启动不再停靠项目启动台。无 deep link/argv
   // 注入且注册表有项目时，自动打开最近使用的项目——中间聊天区必须绑定 workspace 才能
   // 渲染，这是“什么都不开”需要更深层壳层改造前的最小落法。注册表为空或目录全部失效时
   // 放行启动屏障，回落到 Root 的首建启动台分支（仅零项目时可见）。
-  const didAutoOpenRobinrunProjectRef = useRef(false);
+  const didAutoOpenRobindoneProjectRef = useRef(false);
   useEffect(() => {
     if (clientMode !== "desktop-continuous" || !isDesktop || initialWorkspaceAbsPath) {
       return;
     }
-    if (didAutoOpenRobinrunProjectRef.current || !canBootstrapInitialWorkspace) {
+    if (didAutoOpenRobindoneProjectRef.current || !canBootstrapInitialWorkspace) {
       return;
     }
-    if (robinrunProjects === null) {
+    if (robindoneProjects === null) {
       // settings 尚未读出：Root 的启动屏障初始即 true，这里保持等待。
       return;
     }
-    didAutoOpenRobinrunProjectRef.current = true;
-    const candidates = sortRobinrunProjectsByRecency(robinrunProjects);
+    didAutoOpenRobindoneProjectRef.current = true;
+    const candidates = sortRobindoneProjectsByRecency(robindoneProjects);
     if (candidates.length === 0) {
       setIsBootstrappingInitialWorkspace(false);
       return;
@@ -271,7 +271,7 @@ export function useRootPlatformEffects({
     initialWorkspaceAbsPath,
     isDesktop,
     openWorkspacePath,
-    robinrunProjects,
+    robindoneProjects,
     setIsBootstrappingInitialWorkspace,
   ]);
 
@@ -344,7 +344,7 @@ export function useRootPlatformEffects({
     const disposeNotificationClick = platform.onTaskNotificationClick((taskId: string) => {
       logger.info("[Root] onTaskNotificationClick:", taskId);
       // 遍历所有 workspace 找到 taskId 所属的 workspace，然后激活对应 tab 并切换任务
-      const workspaces = useRobinRunSessionStore.getState().workspaces;
+      const workspaces = useRobinDoneSessionStore.getState().workspaces;
       for (const [workspacePath, workspaceState] of Object.entries(workspaces)) {
         const taskMeta = workspaceState.taskListCache?.find((task) => task.taskId === taskId);
         const hasTask = workspaceState.activeTaskId === taskId || Boolean(taskMeta);
@@ -357,7 +357,7 @@ export function useRootPlatformEffects({
             targetWorkspacePath,
             targetWorkspaceIdentity ? { workspaceIdentity: targetWorkspaceIdentity } : undefined,
           );
-          useRobinRunSessionStore
+          useRobinDoneSessionStore
             .getState()
             .setActiveTaskId(targetWorkspacePath, taskId, targetWorkspaceIdentity);
           return;
@@ -523,7 +523,7 @@ export function useRootPlatformEffects({
             workspacePurpose: "conversation",
           });
         }
-        const sessionStore = useRobinRunSessionStore.getState();
+        const sessionStore = useRobinDoneSessionStore.getState();
         sessionStore.setActiveTaskId(
           result.workspacePath,
           result.sessionId,
@@ -738,7 +738,7 @@ export function useRootPlatformEffects({
     const workspaceIdentity = activeTab?.workspaceIdentity;
     const syncActiveSession = (): void => {
       const nextSessionId = workspacePath
-        ? (useRobinRunSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
+        ? (useRobinDoneSessionStore.getState().getWorkspaceState(workspacePath, workspaceIdentity)
             .activeTaskId ?? null)
         : null;
       if (nextSessionId === lastSyncedSessionIdRef.current) return;
@@ -746,6 +746,6 @@ export function useRootPlatformEffects({
       platform.syncActiveTaskSession(nextSessionId);
     };
     syncActiveSession();
-    return useRobinRunSessionStore.subscribe(syncActiveSession);
+    return useRobinDoneSessionStore.subscribe(syncActiveSession);
   }, [activeTab, activeTabId, isDesktop, platform]);
 }

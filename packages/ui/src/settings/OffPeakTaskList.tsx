@@ -12,7 +12,7 @@ import {
   type SVGProps,
 } from "react";
 import { CircleCheck, Loader2, TriangleAlert } from "lucide-react";
-import { type RobinRunOffPeakTask } from "@robinrun/shared";
+import { type RobinDoneOffPeakTask } from "@robindone/shared";
 import {
   TID_OFFPEAK_ACTION_CONTINUE,
   TID_OFFPEAK_ACTION_DELETE,
@@ -20,7 +20,7 @@ import {
   TID_OFFPEAK_CARD,
   TID_OFFPEAK_CARD_SESSION,
   TID_OFFPEAK_CARD_MENU,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import {
   AutomationCancelActionIcon,
@@ -50,21 +50,21 @@ import {
 } from "@/settings/offPeakUiPresentation.js";
 
 interface OffPeakTaskListProps {
-  tasks: readonly RobinRunOffPeakTask[];
+  tasks: readonly RobinDoneOffPeakTask[];
   busyOperationId: string | null;
-  onOpen: (task: RobinRunOffPeakTask) => void;
-  onPause: (task: RobinRunOffPeakTask) => void;
-  onContinue: (task: RobinRunOffPeakTask) => void;
-  onCancel: (task: RobinRunOffPeakTask) => void;
-  onDelete: (task: RobinRunOffPeakTask) => void;
-  onOpenSession: (task: RobinRunOffPeakTask) => void;
+  onOpen: (task: RobinDoneOffPeakTask) => void;
+  onPause: (task: RobinDoneOffPeakTask) => void;
+  onContinue: (task: RobinDoneOffPeakTask) => void;
+  onCancel: (task: RobinDoneOffPeakTask) => void;
+  onDelete: (task: RobinDoneOffPeakTask) => void;
+  onOpenSession: (task: RobinDoneOffPeakTask) => void;
 }
 
 // 按状态分组会让任务在运行和终态切换时跳位，破坏用户对已有卡片位置的预期；
 // 列表只按不可变的创建时间倒序，状态变化不再影响顺序。
 export function sortOffPeakTasksByCreatedAt(
-  tasks: readonly RobinRunOffPeakTask[],
-): RobinRunOffPeakTask[] {
+  tasks: readonly RobinDoneOffPeakTask[],
+): RobinDoneOffPeakTask[] {
   return [...tasks].sort((a, b) => b.createdAt - a.createdAt);
 }
 
@@ -155,7 +155,7 @@ export function OffPeakTaskList({
   onDelete,
   onOpenSession,
 }: OffPeakTaskListProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const sorted = sortOffPeakTasksByCreatedAt(tasks);
 
   if (sorted.length === 0) {

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { logger } from "@/logger.js";
-import { useRobinRunTaskService } from "@/hooks/useRobinRunTaskService.js";
+import { useRobinDoneTaskService } from "@/hooks/useRobinDoneTaskService.js";
 
 /**
  * useWorkspaceActiveTaskState 的导出返回类型间接引用此接口，声明生成要求它可导出。
  * @lintignore
  */
 export interface TaskNativeSessionLogFileState {
-  provider: RobinRunProvider | null;
+  provider: RobinDoneProvider | null;
   path: string | null;
   exists: boolean;
   loading: boolean;
@@ -39,7 +39,7 @@ const INITIAL_STATE: TaskNativeSessionLogFileState = {
 };
 
 export function supportsTaskNativeSessionLogFile(
-  _provider: RobinRunProvider | null | undefined,
+  _provider: RobinDoneProvider | null | undefined,
 ): boolean {
   // 仅剩 glm provider，始终支持读取原生会话日志。
   return true;
@@ -48,16 +48,16 @@ export function supportsTaskNativeSessionLogFile(
 /**
  * 读取当前 task 对应的原生会话日志路径。
  *
- * 路径规则统一通过 robinrunTaskService 解析，避免 UI 层猜 provider 自己的目录结构。
+ * 路径规则统一通过 robindoneTaskService 解析，避免 UI 层猜 provider 自己的目录结构。
  */
 export function useTaskNativeSessionLogFile(
   workspacePath: string,
   taskId: string | null,
-  providerHint?: RobinRunProvider | null,
+  providerHint?: RobinDoneProvider | null,
   workspaceIdentity?: string,
   options: { enabled?: boolean } = {},
 ) {
-  const robinrunTaskService = useRobinRunTaskService(workspacePath, undefined, workspaceIdentity);
+  const robindoneTaskService = useRobinDoneTaskService(workspacePath, undefined, workspaceIdentity);
   const [state, setState] = useState<TaskNativeSessionLogFileState>(INITIAL_STATE);
   const requestVersionRef = useRef(0);
   const enabled = options.enabled ?? true;
@@ -99,7 +99,7 @@ export function useTaskNativeSessionLogFile(
       error: null,
     });
 
-    void robinrunTaskService
+    void robindoneTaskService
       .getTaskNativeSessionLogFile({
         taskId,
         workspacePath,
@@ -143,7 +143,7 @@ export function useTaskNativeSessionLogFile(
     return () => {
       disposed = true;
     };
-  }, [enabled, robinrunTaskService, providerHint, taskId, workspaceIdentity, workspacePath]);
+  }, [enabled, robindoneTaskService, providerHint, taskId, workspaceIdentity, workspacePath]);
 
   return state;
 }

@@ -1,4 +1,4 @@
-import type { RobinRunProvider } from "@robinrun/shared";
+import type { RobinDoneProvider } from "@robindone/shared";
 import { useCallback } from "react";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useTaskNativeSessionLogFile } from "@/hooks/useTaskNativeSessionLogFile.js";
@@ -66,7 +66,7 @@ export function useTaskListItemContextActions({
   remoteSessionId?: string;
   workspaceIdentity?: string;
   taskId: string;
-  provider?: RobinRunProvider;
+  provider?: RobinDoneProvider;
   intl: {
     formatMessage: (desc: { id: string }, values?: Record<string, string>) => string;
   };
@@ -98,7 +98,7 @@ export function useTaskListItemContextActions({
     workspaceIdentity,
     {
       // Bugfix: 远程 workspace 里“前往配置”用于打开本机可编辑的 provider 配置入口。
-      // 之前这里跟随 remote robinrunTaskService 取路径，会返回远端机器上的绝对路径（例如 /root/...），
+      // 之前这里跟随 remote robindoneTaskService 取路径，会返回远端机器上的绝对路径（例如 /root/...），
       // 再交给本机平台层打开时就会定位到错误位置或直接失败。
       // 这里远程场景强制改走 base service，保证 UI 拿到的是本机可打开的配置路径。
       serviceScope: remoteSessionId ? "base" : "workspace",

@@ -1,5 +1,5 @@
-import type { OutputStyle, OutputStyleConfig } from "@robinrun/shared";
-import { ServiceChannels } from "@robinrun/shared";
+import type { OutputStyle, OutputStyleConfig } from "@robindone/shared";
+import { ServiceChannels } from "@robindone/shared";
 import { createServiceDescriptor } from "../descriptors.js";
 
 export interface IOutputStyleService {

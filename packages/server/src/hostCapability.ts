@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { ServerRemoteHostCapability } from "@robinrun/shared";
+import type { ServerRemoteHostCapability } from "@robindone/shared";
 
 export const DEFAULT_HOST_CAPABILITY_TTL_MS = 30_000;
 

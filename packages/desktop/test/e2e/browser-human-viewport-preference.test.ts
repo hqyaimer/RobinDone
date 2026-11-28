@@ -9,7 +9,7 @@ import {
   TID_BROWSER_RESPONSIVE_WIDTH_INPUT,
   TID_BROWSER_RESPONSIVE_ZOOM_OPTION,
   TID_BROWSER_RESPONSIVE_ZOOM_SELECT,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByWebDriver,
@@ -43,7 +43,7 @@ describe("BCP-231：human Browser 显示偏好跨重启恢复", () => {
     const credentials = JSON.parse(await readFile(getE2EAppDataPaths().credentialsFile, "utf8"));
     expect(
       Object.keys(credentials).filter(
-        (key) => key.startsWith("oauth:") || key === "auth_token" || key === "robinrunjwttoken",
+        (key) => key.startsWith("oauth:") || key === "auth_token" || key === "robindonejwttoken",
       ),
     ).toEqual([]);
     await prepareConversationE2E({ skipProvider: true });

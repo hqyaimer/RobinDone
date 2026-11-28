@@ -1,12 +1,12 @@
 // MRO02：真实 Web 页面、RPC、Host 项目服务和隔离 SQLite；不发送模型请求。
-// 启动：pnpm --filter @robinrun/web exec vite --host 127.0.0.1 --port 5178 --strictPort
+// 启动：pnpm --filter @robindone/web exec vite --host 127.0.0.1 --port 5178 --strictPort
 // 运行：pnpm exec tsx packages/web/test/e2e/manual-review/pending/remote-project-directory.mjs
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium } from "playwright-core";
-import { ServiceChannels } from "@robinrun/shared";
-import { V4_WIRE_PROTOCOL_VERSION } from "@robinrun/shared/robinrun-protocol-v4";
+import { ServiceChannels } from "@robindone/shared";
+import { V4_WIRE_PROTOCOL_VERSION } from "@robindone/shared/robindone-protocol-v4";
 import { BufferReader, deserialize, Emitter, VSBuffer } from "../../../../../rpc/src/index.ts";
 import { taskSnapshotFrame } from "./remote-task-open.fixture.mjs";
 import { createProjectDirectoryFixture } from "./remote-project-directory.fixture.mjs";
@@ -71,9 +71,9 @@ try {
           socket.send(JSON.stringify({ type: "pair_status_ack", pair_status: "matched" }));
         const payload = message.payload;
         if (!payload) return;
-        if (payload.robinrun_type === "rpc-frame" || payload.robinrun_type === "rpc-frame-ack") {
+        if (payload.robindone_type === "rpc-frame" || payload.robindone_type === "rpc-frame-ack") {
           if (
-            payload.robinrun_type === "rpc-frame" &&
+            payload.robindone_type === "rpc-frame" &&
             payload.bridgeSessionId === directoryReadinessRecovery.bridgeSessionId &&
             payload.fragmentCount === 1
           ) {
@@ -102,29 +102,29 @@ try {
           workspaces: fixture.workspaces,
           initialViewState: view,
         };
-        if (payload.robinrun_type === "bootstrap-request")
+        if (payload.robindone_type === "bootstrap-request")
           send(socket, {
-            robinrun_type: "bootstrap-response",
+            robindone_type: "bootstrap-response",
             requestId: payload.requestId,
             success: true,
             result,
           });
-        if (payload.robinrun_type === "workspace-list-request")
+        if (payload.robindone_type === "workspace-list-request")
           send(socket, {
-            robinrun_type: "workspace-list-response",
+            robindone_type: "workspace-list-response",
             requestId: payload.requestId,
             success: true,
             result,
           });
-        if (payload.robinrun_type === "mobile-view-state-update") {
+        if (payload.robindone_type === "mobile-view-state-update") {
           fixture.traffic.views.push(payload);
           view = payload.viewState;
           send(socket, {
-            robinrun_type: "mobile-view-state-updated",
+            robindone_type: "mobile-view-state-updated",
             requestId: payload.requestId,
           });
         }
-        if (payload.robinrun_type !== "workspace-bridge-open") return;
+        if (payload.robindone_type !== "workspace-bridge-open") return;
         fixture.traffic.opens.push(payload);
         const target = fixture.workspaces.find(
           (item) => (item.workspaceIdentity || item.workspacePath) === payload.workspaceKey,
@@ -145,7 +145,7 @@ try {
         const channels = fixture.channels(remoteBridge);
         // relay RPC 首帧只能在客户端收到 ready、登记桥接代际后发送，顺序沿用共享夹具。
         send(socket, {
-          robinrun_type: "workspace-bridge-ready",
+          robindone_type: "workspace-bridge-ready",
           requestId: payload.requestId,
           bridgeSessionId: payload.bridgeSessionId,
           bridgeGeneration: payload.bridgeGeneration,
@@ -156,7 +156,7 @@ try {
           theme,
           events: {
             ...channels.events,
-            [`${ServiceChannels.RobinRunAgent}:onDynamicConversationFrame`]: frames.event,
+            [`${ServiceChannels.RobinDoneAgent}:onDynamicConversationFrame`]: frames.event,
           },
           responses: {
             ...channels.responses,
@@ -166,7 +166,7 @@ try {
               return channels.responses["window-project-changes:getCapabilities"](...args);
             },
             [`${ServiceChannels.SettingsSync}:getFirstRunPromptState`]: { handled: true },
-            [`${ServiceChannels.RobinRunAgent}:helloConversationV4`]: {
+            [`${ServiceChannels.RobinDoneAgent}:helloConversationV4`]: {
               kind: "hello",
               protocolVersion: V4_WIRE_PROTOCOL_VERSION,
               connectionId: bridge.bridgeSessionId,
@@ -181,17 +181,17 @@ try {
                 compression: "none",
               },
             },
-            [`${ServiceChannels.RobinRunAgent}:initializeConversationV4`]: null,
-            [`${ServiceChannels.RobinRunAgent}:subscribeConversationV4`]: (input) => {
+            [`${ServiceChannels.RobinDoneAgent}:initializeConversationV4`]: null,
+            [`${ServiceChannels.RobinDoneAgent}:subscribeConversationV4`]: (input) => {
               const subscriptionId = `sub-${bridge.bridgeSessionId}-${input.sessionId}`;
               snapshots.set(input.sessionId, () =>
                 frames.fire(taskSnapshotFrame(input.sessionId, subscriptionId)),
               );
               return { ack: { subscriptionId, mode: "snapshot", logEpoch: "e2e" } };
             },
-            [`${ServiceChannels.RobinRunAgent}:unsubscribeConversationV4`]: null,
-            [`${ServiceChannels.RobinRunAgent}:conversationWorkflowRunsV4`]: { runs: [] },
-            [`${ServiceChannels.RobinRunAgent}:conversationPlansV4`]: { plans: [] },
+            [`${ServiceChannels.RobinDoneAgent}:unsubscribeConversationV4`]: null,
+            [`${ServiceChannels.RobinDoneAgent}:conversationWorkflowRunsV4`]: { runs: [] },
+            [`${ServiceChannels.RobinDoneAgent}:conversationPlansV4`]: { plans: [] },
           },
         });
         bridges.set(bridge.bridgeSessionId, desktopBridge);
@@ -233,7 +233,7 @@ try {
         new URL("/remote/v4?app_version=3.15.1&sid=e2e-device&mid=e2e-mid", origin).href,
       );
       const onboarding = page.getByTestId("onboarding-page");
-      const welcome = page.getByRole("dialog", { name: /欢迎使用 RobinRun|Welcome to RobinRun/ });
+      const welcome = page.getByRole("dialog", { name: /欢迎使用 RobinDone|Welcome to RobinDone/ });
       await local().or(onboarding).or(welcome).first().waitFor();
       if (await onboarding.isVisible())
         await onboarding.getByRole("button", { name: /退出引导|Exit onboarding/ }).click();

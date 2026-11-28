@@ -1,16 +1,16 @@
 import {
-  buildRobinRunEndpointUrls,
-  buildRobinRunSourceHeadersFromContext,
-  ROBINRUN_ENV,
-  ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
-} from "@robinrun/shared";
+  buildRobinDoneEndpointUrls,
+  buildRobinDoneSourceHeadersFromContext,
+  ROBINDONE_ENV,
+  ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+} from "@robindone/shared";
 import {
   createSingleFeatureRollout,
   type SingleFeatureRollout,
   type SingleFeatureRolloutLogger,
 } from "./singleFeatureRollout.js";
 
-export { ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV };
+export { ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV };
 
 export type DesktopContextPromptRolloutLogger = SingleFeatureRolloutLogger;
 export const DESKTOP_CONTEXT_PROMPT_REQUEST_TIMEOUT_MS = 3_000;
@@ -91,7 +91,7 @@ export function createElectronDesktopContextPromptConfigFetcher(options: {
     const { net } = await import("electron");
     const endpointOrigin = await options.resolveEndpointOrigin();
     const url = new URL(
-      `${buildRobinRunEndpointUrls(endpointOrigin).origin}/api/v1/client/configs`,
+      `${buildRobinDoneEndpointUrls(endpointOrigin).origin}/api/v1/client/configs`,
     );
     url.searchParams.set("app_version", options.appVersion);
     url.searchParams.set("platform", `${process.platform}-${process.arch}`);
@@ -117,14 +117,14 @@ export function createElectronDesktopContextPromptConfigFetcher(options: {
       };
       signal.addEventListener("abort", onAbort, { once: true });
 
-      const sourceHeaders = buildRobinRunSourceHeadersFromContext({
+      const sourceHeaders = buildRobinDoneSourceHeadersFromContext({
         appVersion: options.appVersion,
         arch: process.arch,
         clientLanguage: options.getClientLanguage(),
         deviceMid: options.deviceMid,
         endpointOrigin,
         platform: process.platform,
-        releaseChannel: ROBINRUN_ENV,
+        releaseChannel: ROBINDONE_ENV,
         sourceTitle: "electron",
       });
       for (const [name, value] of Object.entries(sourceHeaders)) {

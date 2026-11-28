@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import type { RobinRunAgentWorkspaceTarget } from "@robinrun/services";
+import type { RobinDoneAgentWorkspaceTarget } from "@robindone/services";
 import type { AutomationWorkspaceOption } from "@/settings/automationWorkspaceOptions.js";
 import type { SavedWorkflowProjectTarget } from "@/settings/saved-workflows/savedWorkflowContract.js";
 import type { SavedWorkflowLaunchTarget } from "@/settings/saved-workflows/useSavedWorkflowLauncher.js";
 
 interface SavedWorkflowProjectTargets {
   /** RPC target（含 remoteSessionId），供 store / 服务方法调用。 */
-  target: RobinRunAgentWorkspaceTarget;
+  target: RobinDoneAgentWorkspaceTarget;
   /** 发往对话 / 打开实例的项目坐标：只有 workspacePath + identity（不带 remoteSessionId）。 */
   projectTarget: SavedWorkflowProjectTarget;
   /** 直接启动的连接坐标：额外带 remoteSessionId，决定 conversation 连接 endpoint 与导航目标。 */
@@ -24,7 +24,7 @@ export function useSavedWorkflowProjectTargets(
   >,
   remoteSessionId: string | null,
 ): SavedWorkflowProjectTargets {
-  const target = useMemo<RobinRunAgentWorkspaceTarget>(
+  const target = useMemo<RobinDoneAgentWorkspaceTarget>(
     () => ({
       projectId: project.projectId,
       hostId: project.hostId,

@@ -4,7 +4,7 @@ import {
   OFF_PEAK_DEFAULT_GROUP_ID,
   TRIGGER_ID_PREFIX,
   isMainAgentGroupId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import type {
   GroupTaskRef,
   ProjectTask,

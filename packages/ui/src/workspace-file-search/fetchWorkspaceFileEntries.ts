@@ -1,5 +1,5 @@
-import type { IFileService } from "@robinrun/services";
-import { WORKSPACE_FILE_ENTRIES_CHUNK_SIZE } from "@robinrun/shared/workspaceFileEntriesCodec";
+import type { IFileService } from "@robindone/services";
+import { WORKSPACE_FILE_ENTRIES_CHUNK_SIZE } from "@robindone/shared/workspaceFileEntriesCodec";
 
 /**
  * 分块拉取 workspace 文件索引的列式 packed 字符串。

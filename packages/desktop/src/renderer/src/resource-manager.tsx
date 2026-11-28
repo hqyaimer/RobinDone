@@ -3,15 +3,15 @@ import type {
   NetworkCaptureBridge,
   ResourceUsageSnapshot,
   StorageManagementBridge,
-} from "@robinrun/shared";
-import "@robinrun/ui/styles.css";
+} from "@robindone/shared";
+import "@robindone/ui/styles.css";
 import {
   ResourceManagerApp,
-  RobinRunIntlProvider,
+  RobinDoneIntlProvider,
   applyUiFontSizePx,
   loadUiFontSizePx,
   subscribeToUiFontSizeStorageChanges,
-} from "@robinrun/ui";
+} from "@robindone/ui";
 
 declare global {
   interface Window {
@@ -34,7 +34,7 @@ function resolveTheme(theme: Theme): "light" | "dark" {
 }
 
 function applyResourceManagerTheme(): void {
-  const savedTheme = (localStorage.getItem("robinrun-theme") as Theme | null) ?? "zai-dark";
+  const savedTheme = (localStorage.getItem("robindone-theme") as Theme | null) ?? "zai-dark";
   const resolvedTheme = resolveTheme(savedTheme);
   const appliedTheme =
     savedTheme === "system"
@@ -61,7 +61,7 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     // 语言沿用主窗口写入 localStorage 的偏好；不接 settingService，避免独立窗口再起一份 RPC。
-    <RobinRunIntlProvider>
+    <RobinDoneIntlProvider>
       <ResourceManagerApp
         setSamplingActive={window.resourceManager?.setSamplingActive}
         getSnapshot={
@@ -70,6 +70,6 @@ if (root) {
         storage={window.resourceManager?.storage}
         network={window.resourceManager?.network}
       />
-    </RobinRunIntlProvider>,
+    </RobinDoneIntlProvider>,
   );
 }

@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { ScopedErrorBoundary } from "@/ErrorBoundary.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { UsageEmptyState } from "@/settings/usage-stats/usageStatsUiParts.js";
 
 export function UsageChartLoadBoundary({
@@ -14,7 +14,7 @@ export function UsageChartLoadBoundary({
   resetKeys: readonly unknown[];
   scope: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <ScopedErrorBoundary scope={scope} resetKeys={resetKeys} variant="inline">

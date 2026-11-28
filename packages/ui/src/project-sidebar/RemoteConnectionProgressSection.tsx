@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, LoaderCircle } from "lucide-react";
-import { buildRemoteHostWorkspaceIdentity, parseRemoteWorkspaceIdentity } from "@robinrun/shared";
+import { buildRemoteHostWorkspaceIdentity, parseRemoteWorkspaceIdentity } from "@robindone/shared";
 import type { RemoteProjectHost } from "@/project-sidebar/contract.js";
 import { cn } from "@/components/lib/utils.js";
 import { toast } from "@/components/ui/toast.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { useBaseWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useRemoteDevicePresentationInput } from "@/hooks/useSourceServerStatuses.js";
@@ -48,7 +48,7 @@ export function RemoteConnectionProgressSection({
   status: RemoteConnectionStatus;
   error?: string;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const management = useBaseWorkspaceServices().sourceServerManagementService;
   const sourceServerId = sourceServerIdForHost(host);
   const device = useRemoteDevicePresentationInput(sourceServerId);

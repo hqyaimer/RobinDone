@@ -1,4 +1,4 @@
-import type { RemoteTarget } from "@robinrun/shared";
+import type { RemoteTarget } from "@robindone/shared";
 import type { SourceServerDirectory } from "./sourceServerDirectory.js";
 import {
   type ConnectSourceServerOptions,

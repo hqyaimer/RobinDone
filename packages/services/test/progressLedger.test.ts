@@ -32,7 +32,8 @@ interface Harness {
 
 async function buildHarness(dbPath?: string): Promise<Harness> {
   const resolvedDbPath =
-    dbPath ?? join(await mkdtemp(join(tmpdir(), "robinrun-progress-ledger-")), "tasks-index.sqlite");
+    dbPath ??
+    join(await mkdtemp(join(tmpdir(), "robindone-progress-ledger-")), "tasks-index.sqlite");
   const repo = new OpsPanelRepo(resolvedDbPath);
   const notify = vi.fn();
   const service = new OpsPanelService({
@@ -170,7 +171,11 @@ describe("progress ledger service", () => {
     expect(cleared.body).toBeUndefined();
     expect(cleared.links).toBeUndefined();
     // 软删：列表消失（UI 无痕）；重复删与改已删目标都拒绝。
-    await h.service.deleteProgress({ workspacePath: WORKSPACE, entryId: "PRG-0002", actor: MASTER });
+    await h.service.deleteProgress({
+      workspacePath: WORKSPACE,
+      entryId: "PRG-0002",
+      actor: MASTER,
+    });
     const view = await h.service.getProgressView({ workspacePath: WORKSPACE, actor: MASTER });
     expect(view.entries.map((entry) => entry.id)).toEqual(["PRG-0001"]);
     await expect(
@@ -185,7 +190,11 @@ describe("progress ledger service", () => {
       }),
     ).rejects.toThrow(/not found/);
     // 编号不复用（spec §2）：软删不释放编号，追加跳到 PRG-0003。
-    const next = await h.service.appendProgress({ workspacePath: WORKSPACE, title: "新条目", actor: MASTER });
+    const next = await h.service.appendProgress({
+      workspacePath: WORKSPACE,
+      title: "新条目",
+      actor: MASTER,
+    });
     expect(next.id).toBe("PRG-0003");
     // 锚可编辑（spec §3，用户确认的不对称设计：可改不可删——delete 拒绝已在本用例前段验证）。
     const anchorEdit = await h.service.updateProgress({
@@ -198,12 +207,27 @@ describe("progress ledger service", () => {
   });
 
   it("重启持久化（验收 #7）：重开库后现存条目不丢、软删不复活、锚不重播种", async () => {
-    const dbPath = join(await mkdtemp(join(tmpdir(), "robinrun-progress-ledger-")), "tasks-index.sqlite");
+    const dbPath = join(
+      await mkdtemp(join(tmpdir(), "robindone-progress-ledger-")),
+      "tasks-index.sqlite",
+    );
     cleanup.push(rm(dbPath, { recursive: true, force: true }).catch(() => {}));
     const first = await buildHarness(dbPath);
-    await first.service.appendProgress({ workspacePath: WORKSPACE, title: "保留条目", actor: MASTER });
-    await first.service.appendProgress({ workspacePath: WORKSPACE, title: "删掉条目", actor: MASTER });
-    await first.service.deleteProgress({ workspacePath: WORKSPACE, entryId: "PRG-0003", actor: MASTER });
+    await first.service.appendProgress({
+      workspacePath: WORKSPACE,
+      title: "保留条目",
+      actor: MASTER,
+    });
+    await first.service.appendProgress({
+      workspacePath: WORKSPACE,
+      title: "删掉条目",
+      actor: MASTER,
+    });
+    await first.service.deleteProgress({
+      workspacePath: WORKSPACE,
+      entryId: "PRG-0003",
+      actor: MASTER,
+    });
     await first.repo.close();
 
     // 新服务实例（模拟进程重启）：现存条目保持、软删行不可见、system 锚不重复播种。

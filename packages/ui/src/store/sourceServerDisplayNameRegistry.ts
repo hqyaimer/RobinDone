@@ -1,4 +1,4 @@
-import type { ISourceServerManagementService } from "@robinrun/services";
+import type { ISourceServerManagementService } from "@robindone/services";
 import { logger } from "@/logger.js";
 
 export interface SourceServerDisplayNameRegistry {

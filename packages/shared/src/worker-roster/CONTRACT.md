@@ -1,8 +1,8 @@
 # worker-roster
 
-RobinRun worker 编制（常驻智能体名册）的协议与加载边界。`.robinrun/agents/workers.json`
+RobinDone worker 编制（常驻智能体名册）的协议与加载边界。`.robindone/agents/workers.json`
 是编制唯一事实源，由 ManageWorkers 工具（程序侧）原子写入；worker 规则文件为
-`.robinrun/agents/<id>/agents.md`（纯 prompt 正文 + 固定脚手架，含概览与索引目录，
+`.robindone/agents/<id>/agents.md`（纯 prompt 正文 + 固定脚手架，含概览与索引目录，
 `plan/`、`knowledge/`、`tmp/` 三个子目录约定）。id（`wkr-<8hex>`）是路径锚点，name 仅作
 派发显示名（项目内唯一、大小写不敏感）。`status: deactivated` 为软停用：文件保留，仅退出名册。
 

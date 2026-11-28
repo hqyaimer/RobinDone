@@ -11,7 +11,7 @@ import {
   TID_SIDEBAR_CODING_PLAN_USAGE_BUTTON,
   TID_TASK_SETTINGS_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import AppPage from "./pages/app.page.js";
 import {
   DEFAULT_WORKSPACE,

@@ -1,4 +1,4 @@
-import type { CommandConfig } from "@robinrun/shared";
+import type { CommandConfig } from "@robindone/shared";
 
 export type CommandFileFormat = "markdown";
 

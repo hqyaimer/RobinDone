@@ -1,11 +1,11 @@
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 
 interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
 }
 
-const TASK_ORDER_STORAGE_KEY_PREFIX = "robinrun-task-order:";
+const TASK_ORDER_STORAGE_KEY_PREFIX = "robindone-task-order:";
 
 function getBrowserStorage(): StorageLike | null {
   if (typeof window === "undefined") {
@@ -70,16 +70,16 @@ export function persistTaskOrder(
 
 export function pruneTaskOrder(
   taskOrder: readonly string[],
-  tasks: readonly RobinRunTaskMeta[],
+  tasks: readonly RobinDoneTaskMeta[],
 ): string[] {
   const taskIds = new Set(tasks.map((task) => task.taskId));
   return normalizeTaskOrder(taskOrder).filter((taskId) => taskIds.has(taskId));
 }
 
 export function sortTasksByOrder(
-  tasks: readonly RobinRunTaskMeta[],
+  tasks: readonly RobinDoneTaskMeta[],
   taskOrder: readonly string[],
-): RobinRunTaskMeta[] {
+): RobinDoneTaskMeta[] {
   const normalizedTaskOrder = normalizeTaskOrder(taskOrder);
   const orderedIndexByTaskId = new Map(
     normalizedTaskOrder.map((taskId, index) => [taskId, index] as const),

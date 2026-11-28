@@ -1,4 +1,4 @@
-import { ServiceChannels, type CloudContentBundle, type MarketingAsset } from "@robinrun/shared";
+import { ServiceChannels, type CloudContentBundle, type MarketingAsset } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 
 export interface ICloudContentService {

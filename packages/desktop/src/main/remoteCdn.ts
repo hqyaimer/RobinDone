@@ -1,6 +1,6 @@
-import { ROBINRUN_VERSION, type RobinRunEnv } from "@robinrun/shared";
+import { ROBINDONE_VERSION, type RobinDoneEnv } from "@robindone/shared";
 
-declare const __ROBINRUN_REMOTE_CDN_RELEASE_ROOTS__: readonly string[] | undefined;
+declare const __ROBINDONE_REMOTE_CDN_RELEASE_ROOTS__: readonly string[] | undefined;
 
 const REMOTE_CDN_RELEASE_ROOTS = {
   domestic: "https://cdn.codegeex.cn/zcode/electron/releases",
@@ -10,7 +10,7 @@ const REMOTE_CDN_RELEASE_ROOTS = {
 const TEST_REMOTE_CDN_RELEASE_ROOT = "http://intranet.example.invalid:12345/ssh-remote-assets";
 
 export interface ResolveRemoteCdnOptions {
-  env?: RobinRunEnv;
+  env?: RobinDoneEnv;
   locale?: string;
   timeZone?: string;
   overrideBaseUrl?: string;
@@ -52,16 +52,16 @@ export function resolveRemoteCdnBaseUrls(options: ResolveRemoteCdnOptions = {}):
   const orderedReleaseRoots = shouldPreferDomesticRemoteCdn(options)
     ? [REMOTE_CDN_RELEASE_ROOTS.domestic, REMOTE_CDN_RELEASE_ROOTS.overseas]
     : [REMOTE_CDN_RELEASE_ROOTS.overseas, REMOTE_CDN_RELEASE_ROOTS.domestic];
-  const version = options.version ?? ROBINRUN_VERSION;
+  const version = options.version ?? ROBINDONE_VERSION;
 
   if (options.env === "test") {
     return [`${TEST_REMOTE_CDN_RELEASE_ROOT}/${version}`];
   }
 
   const configuredReleaseRoots =
-    typeof __ROBINRUN_REMOTE_CDN_RELEASE_ROOTS__ === "undefined"
+    typeof __ROBINDONE_REMOTE_CDN_RELEASE_ROOTS__ === "undefined"
       ? []
-      : __ROBINRUN_REMOTE_CDN_RELEASE_ROOTS__;
+      : __ROBINDONE_REMOTE_CDN_RELEASE_ROOTS__;
   if (configuredReleaseRoots.length > 0) {
     // Bugfix：remote runtime 的 manifest/components 下载根不能继续写死旧 CDN。
     // 构建期按 CI 的 CDN_DOMAIN/OSS_PATH_PREFIX 注入有序列表，切换时只改 CI 变量。

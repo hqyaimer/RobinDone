@@ -6149,4 +6149,3 @@ CONTRACT.md）：ProjectEditor 单选替换，移除添加/设为主要入口。
 VP22 重写为单根创建+更换文件夹替换；VP13 只登记 cwd；NDP 重写单选流并新增名称自动填充用例。
 存储/协议多根能力未裁剪，涉及「多根落库/会话 additionalDirectories」的既有行不受影响；
 本轮改动未新增实跑证据，相关行维持 pending 原状态。
-

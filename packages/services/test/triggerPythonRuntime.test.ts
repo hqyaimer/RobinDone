@@ -18,7 +18,7 @@ import { defaultCommandRunner, venvInterpreterPath } from "../src/trigger-engine
  * python 主运行时供给与按项目 venv（2026-11-22 改造，docs/trigger-python-runtime.md）。
  *
  * 全链真实化策略（同 triggerScriptSupervisor 的真实子进程风格）：
- * - 下载：本地 http server 当镜像（ROBINRUN_PYTHON_RUNTIME_MIRROR 指过去，走生产代码
+ * - 下载：本地 http server 当镜像（ROBINDONE_PYTHON_RUNTIME_MIRROR 指过去，走生产代码
  *   的镜像模板解析路径），archive 由系统 tar 现场打包（python/ 顶层目录 + 平台解释器
  *   占位文件），sha256 由 fixture 现算——钉死资产表不可变，测试经 assetOverride 注入。
  * - venv/pip：CommandRunner 注入 fake（-m veng 建解释器占位、-m pip 返回成功），
@@ -29,14 +29,14 @@ let tmpRoot: string;
 let mirrorServer: ReturnType<typeof createFixtureServer> | undefined;
 
 beforeEach(async () => {
-  tmpRoot = await mkdtemp(join(tmpdir(), "robinrun-py-runtime-"));
+  tmpRoot = await mkdtemp(join(tmpdir(), "robindone-py-runtime-"));
 });
 
 afterEach(async () => {
   mirrorServer?.close();
   mirrorServer = undefined;
-  delete process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR;
-  delete process.env.ROBINRUN_PYTHON_FALLBACK_SYSTEM;
+  delete process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR;
+  delete process.env.ROBINDONE_PYTHON_FALLBACK_SYSTEM;
   await rm(tmpRoot, { recursive: true, force: true });
 });
 
@@ -142,7 +142,7 @@ describe("ensureManagedPythonRuntime", () => {
     const { readFile: read } = await import("node:fs/promises");
     const bytes = await read(join(fixtureDir, asset.archive));
     const mirror = await startMirrorWith(asset, bytes);
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = mirror;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = mirror;
     const cacheRoot = join(tmpRoot, "cache");
     const logs: string[] = [];
 
@@ -175,7 +175,7 @@ describe("ensureManagedPythonRuntime", () => {
     mirrorServer = createFixtureServer();
     mirrorServer.setPayload(Buffer.concat([bytes, Buffer.from("tampered")]));
     const port = await mirrorServer.listen();
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
 
     await expect(
       ensureManagedPythonRuntime({
@@ -192,7 +192,7 @@ describe("ensureManagedPythonRuntime", () => {
     const asset = await assetOverrideFor(fixtureDir);
     const bytes = await readFile(join(fixtureDir, asset.archive));
     const mirror = await startMirrorWith(asset, bytes);
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = mirror;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = mirror;
 
     // bundled staging：解压布局 + 完成标记（prepare:python-runtime 的产出形态）。
     const bundledDir = join(tmpRoot, "bundled", PYTHON_RUNTIME_ID);
@@ -202,7 +202,7 @@ describe("ensureManagedPythonRuntime", () => {
     await mkdir(join(interpreterPath, ".."), { recursive: true });
     await writeFile(interpreterPath, "#!/bin/sh\nexit 0\n", "utf8");
     if (process.platform !== "win32") await chmod(interpreterPath, 0o755);
-    await writeFile(join(bundledDir, ".robinrun-complete"), `${PYTHON_RUNTIME_ID}\n`, "utf8");
+    await writeFile(join(bundledDir, ".robindone-complete"), `${PYTHON_RUNTIME_ID}\n`, "utf8");
 
     const logs: string[] = [];
     const bundled = await ensureManagedPythonRuntime({
@@ -221,7 +221,11 @@ describe("ensureManagedPythonRuntime", () => {
     // bundled 缺解释器（只有标记）→ 不可用，回退缓存/下载路径正常供给。
     const brokenBundledDir = join(tmpRoot, "bundled-broken", PYTHON_RUNTIME_ID);
     await mkdir(brokenBundledDir, { recursive: true });
-    await writeFile(join(brokenBundledDir, ".robinrun-complete"), `${PYTHON_RUNTIME_ID}\n`, "utf8");
+    await writeFile(
+      join(brokenBundledDir, ".robindone-complete"),
+      `${PYTHON_RUNTIME_ID}\n`,
+      "utf8",
+    );
     const fallback = await ensureManagedPythonRuntime({
       cacheRoot: join(tmpRoot, "cache-bundled-fallback"),
       log: () => undefined,
@@ -243,7 +247,7 @@ describe("ensureManagedPythonRuntime", () => {
     mirrorServer.setFailNextOnce(new Error("connection reset"));
     mirrorServer.setPayload(bytes);
     const port = await mirrorServer.listen();
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
 
     const progress: { downloadedBytes: number; totalBytes: number | null }[] = [];
     const logs: string[] = [];
@@ -289,10 +293,10 @@ describe("trigger python runtime port", () => {
     const { readFile: read } = await import("node:fs/promises");
     const bytes = await read(join(fixtureDir, asset.archive));
     mirrorServer = createFixtureServer();
-    // 内容加盐 → sha256 校验失败 → 走 unavailable（ROBINRUN_PYTHON_FALLBACK_SYSTEM 未设）。
+    // 内容加盐 → sha256 校验失败 → 走 unavailable（ROBINDONE_PYTHON_FALLBACK_SYSTEM 未设）。
     mirrorServer.setPayload(Buffer.concat([bytes, Buffer.from("x")]));
     const port = await mirrorServer.listen();
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = `http://127.0.0.1:${port}/mirror/{asset}`;
 
     const runtime = createTriggerPythonRuntimePort(
       portOptions(join(tmpRoot, "cache-unavailable"), asset),
@@ -301,7 +305,7 @@ describe("trigger python runtime port", () => {
     expect(resolution.ok).toBe(false);
     expect(resolution.error).toMatch(/sha256 mismatch/);
 
-    const stateFile = join(workspace, ".robinrun", "triggers", "state", "python-runtime.json");
+    const stateFile = join(workspace, ".robindone", "triggers", "state", "python-runtime.json");
     const state = JSON.parse(await readFile(stateFile, "utf8")) as {
       state: string;
       error?: string;
@@ -325,7 +329,7 @@ describe("trigger python runtime port", () => {
     const { readFile: read } = await import("node:fs/promises");
     const bytes = await read(join(fixtureDir, asset.archive));
     const mirror = await startMirrorWith(asset, bytes);
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = mirror;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = mirror;
 
     const runtime = createTriggerPythonRuntimePort(portOptions(join(tmpRoot, "cache-ok"), asset));
     const venv = await runtime.ensureVenv(workspace);
@@ -337,7 +341,7 @@ describe("trigger python runtime port", () => {
     // 安装：pip fake 返回成功 → 台账落盘（venv 目录外，重建可重放）。
     const install = await runtime.installPackages(workspace, ["requests"]);
     expect(install.ok).toBe(true);
-    const ledgerPath = join(workspace, ".robinrun", "triggers", "state", "python-packages.json");
+    const ledgerPath = join(workspace, ".robindone", "triggers", "state", "python-packages.json");
     const ledger = JSON.parse(await readFile(ledgerPath, "utf8")) as {
       packages: { spec: string }[];
     };
@@ -356,7 +360,7 @@ describe("trigger python runtime port", () => {
     const { readFile: read } = await import("node:fs/promises");
     const bytes = await read(join(fixtureDir, asset.archive));
     const mirror = await startMirrorWith(asset, bytes);
-    process.env.ROBINRUN_PYTHON_RUNTIME_MIRROR = mirror;
+    process.env.ROBINDONE_PYTHON_RUNTIME_MIRROR = mirror;
 
     // 慢速 pip fake：第一个安装挂在途，第二个请求必须被拒。
     let releaseFirst: (() => void) | undefined;

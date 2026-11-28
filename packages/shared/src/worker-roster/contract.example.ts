@@ -20,5 +20,5 @@ export const exampleWorkerProfile = buildWorkerProfile({
   entry: exampleWorkerRegistry.workers[0]!,
   defineMd: "# Duty definition — dev\nrules body",
   agentsMd: "# dev — self-maintained notes\nworker's own findings and index",
-  defineMdPath: "/workspace/.robinrun/agents/wkr-example01/define.md",
+  defineMdPath: "/workspace/.robindone/agents/wkr-example01/define.md",
 });

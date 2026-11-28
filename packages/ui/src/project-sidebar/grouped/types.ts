@@ -1,13 +1,13 @@
 import type {
   TaskGroup,
-  TaskGroupColor as RobinRunTaskGroupColor,
+  TaskGroupColor as RobinDoneTaskGroupColor,
   ProjectTask,
 } from "@/project-sidebar/contract.js";
 
 interface TaskGroupMenuItem {
   id: string;
   title: string;
-  color: RobinRunTaskGroupColor;
+  color: RobinDoneTaskGroupColor;
 }
 const TASK_GROUP_COLORS = [
   "gray",
@@ -17,8 +17,8 @@ const TASK_GROUP_COLORS = [
   "green",
   "blue",
   "purple",
-] satisfies RobinRunTaskGroupColor[];
-const TASK_GROUP_COLOR_CLASS: Record<RobinRunTaskGroupColor, string> = {
+] satisfies RobinDoneTaskGroupColor[];
+const TASK_GROUP_COLOR_CLASS: Record<RobinDoneTaskGroupColor, string> = {
   gray: "bg-zinc-300 text-zinc-800 dark:bg-zinc-400/32 dark:text-zinc-100",
   red: "bg-rose-300 text-rose-900 dark:bg-rose-400/32 dark:text-rose-50",
   orange: "bg-orange-300 text-orange-900 dark:bg-orange-400/32 dark:text-orange-50",
@@ -27,7 +27,7 @@ const TASK_GROUP_COLOR_CLASS: Record<RobinRunTaskGroupColor, string> = {
   blue: "bg-sky-300 text-sky-900 dark:bg-sky-400/32 dark:text-sky-50",
   purple: "bg-violet-300 text-violet-900 dark:bg-violet-400/32 dark:text-violet-50",
 };
-// RobinRun 智能体列表（2026-11-15 裁决）：组间不留纵向间距，行高节奏由 header/行自身决定；
+// RobinDone 智能体列表（2026-11-15 裁决）：组间不留纵向间距，行高节奏由 header/行自身决定；
 // 悬停背景已足够区分相邻智能体（2026-11-20 起内容区不再画左边线，状态改由会话行前置槽表达）。
 const TASK_GROUP_CONTAINER_CLASS =
   "relative pb-0 transition-[width,max-width] duration-200 ease-out";
@@ -62,12 +62,12 @@ export {
 export type { TaskGroupMenuItem };
 
 // 删除前分组组件的展示契约；行集合只从当前目录投影，不恢复旧事实缓存。
-export type { RobinRunTaskGroupColor };
-export type RobinRunTaskGroup = TaskGroup;
-export type RobinRunGroupedTaskViewNode =
+export type { RobinDoneTaskGroupColor };
+export type RobinDoneTaskGroup = TaskGroup;
+export type RobinDoneGroupedTaskViewNode =
   | { type: "group"; group: TaskGroup; tasks: ProjectTask[] }
   | { type: "task"; task: ProjectTask };
-export interface RobinRunGroupedTaskView {
-  nodes: RobinRunGroupedTaskViewNode[];
+export interface RobinDoneGroupedTaskView {
+  nodes: RobinDoneGroupedTaskViewNode[];
 }
 export type GroupedDraftTaskPlacement = { type: "top" } | { type: "group"; groupId: string };

@@ -8,14 +8,14 @@ import {
   type PluginOptionSyncValue,
   type IPlatformService,
   type RemoteTarget,
-  type RobinRunPluginsInstallResult,
-} from "@robinrun/shared";
+  type RobinDonePluginsInstallResult,
+} from "@robindone/shared";
 import {
   withPluginTelemetry,
   type IDataSyncCategoryService,
   type IPluginManagementService,
   type IServiceAccessor,
-} from "@robinrun/services";
+} from "@robindone/services";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { logger } from "@/logger.js";
 import {
@@ -137,7 +137,10 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function formatInstallError(result: RobinRunPluginsInstallResult, pluginId: string): string | null {
+function formatInstallError(
+  result: RobinDonePluginsInstallResult,
+  pluginId: string,
+): string | null {
   const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity !== "warning");
   if (errors.length === 0) return null;
   return errors
@@ -261,7 +264,7 @@ export function createMarketplacePluginDataSyncService(
       return { hashes: {} };
     },
 
-    // marketplace 镜像写入 ~/.robinrun/plugins，安装与配置写入 ~/.robinrun/cli，与 inline 插件的预检目录相同。
+    // marketplace 镜像写入 ~/.robindone/plugins，安装与配置写入 ~/.robindone/cli，与 inline 插件的预检目录相同。
     checkSyncWriteAccess: () => services.pluginSyncService.checkSyncWriteAccess(),
 
     async exportSyncItems({ keys }) {

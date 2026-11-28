@@ -1,44 +1,44 @@
 import {
-  collectVisibleRobinRunBackgroundTaskControlItems,
-  getRobinRunBackgroundTaskControlItemElapsedMs,
-  isActiveRobinRunBackgroundTaskControlItem,
-  parseRobinRunBackgroundTaskControlItems,
-  type RobinRunBackgroundTaskControlItem,
-  type RobinRunBackgroundTaskControlStatus,
+  collectVisibleRobinDoneBackgroundTaskControlItems,
+  getRobinDoneBackgroundTaskControlItemElapsedMs,
+  isActiveRobinDoneBackgroundTaskControlItem,
+  parseRobinDoneBackgroundTaskControlItems,
+  type RobinDoneBackgroundTaskControlItem,
+  type RobinDoneBackgroundTaskControlStatus,
 } from "./background-task-controls.js";
 
-export type RobinRunBackgroundBashJobStatus = RobinRunBackgroundTaskControlStatus;
-export type RobinRunBackgroundBashJob = RobinRunBackgroundTaskControlItem & {
+export type RobinDoneBackgroundBashJobStatus = RobinDoneBackgroundTaskControlStatus;
+export type RobinDoneBackgroundBashJob = RobinDoneBackgroundTaskControlItem & {
   taskKind: "bash";
 };
 
-export function parseRobinRunBackgroundBashJobs(value: unknown): RobinRunBackgroundBashJob[] {
-  return parseRobinRunBackgroundTaskControlItems(value).filter(isBackgroundBashJob);
+export function parseRobinDoneBackgroundBashJobs(value: unknown): RobinDoneBackgroundBashJob[] {
+  return parseRobinDoneBackgroundTaskControlItems(value).filter(isBackgroundBashJob);
 }
 
-export function isActiveRobinRunBackgroundBashJob(job: RobinRunBackgroundBashJob): boolean {
-  return isActiveRobinRunBackgroundTaskControlItem(job);
+export function isActiveRobinDoneBackgroundBashJob(job: RobinDoneBackgroundBashJob): boolean {
+  return isActiveRobinDoneBackgroundTaskControlItem(job);
 }
 
-export function getRobinRunBackgroundBashJobElapsedMs(
-  job: RobinRunBackgroundBashJob,
+export function getRobinDoneBackgroundBashJobElapsedMs(
+  job: RobinDoneBackgroundBashJob,
   now = Date.now(),
 ): number {
-  return getRobinRunBackgroundTaskControlItemElapsedMs(job, now);
+  return getRobinDoneBackgroundTaskControlItemElapsedMs(job, now);
 }
 
-export function collectVisibleRobinRunBackgroundBashJobs(
-  jobs: readonly RobinRunBackgroundBashJob[],
+export function collectVisibleRobinDoneBackgroundBashJobs(
+  jobs: readonly RobinDoneBackgroundBashJob[],
   now = Date.now(),
   thresholdMs = 30_000,
-): Array<RobinRunBackgroundBashJob & { elapsedMs: number }> {
-  return collectVisibleRobinRunBackgroundTaskControlItems(jobs, now, thresholdMs) as Array<
-    RobinRunBackgroundBashJob & { elapsedMs: number }
+): Array<RobinDoneBackgroundBashJob & { elapsedMs: number }> {
+  return collectVisibleRobinDoneBackgroundTaskControlItems(jobs, now, thresholdMs) as Array<
+    RobinDoneBackgroundBashJob & { elapsedMs: number }
   >;
 }
 
 function isBackgroundBashJob(
-  job: RobinRunBackgroundTaskControlItem,
-): job is RobinRunBackgroundBashJob {
+  job: RobinDoneBackgroundTaskControlItem,
+): job is RobinDoneBackgroundBashJob {
   return job.taskKind === "bash";
 }

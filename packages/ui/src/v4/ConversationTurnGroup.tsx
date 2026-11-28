@@ -13,13 +13,13 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-// RobinRun(2026-11-23): [hide-upstream-account] EyeIcon 只服务被隐藏的 Highspeed 分享按钮，恢复时一并还原。
+// RobinDone(2026-11-23): [hide-upstream-account] EyeIcon 只服务被隐藏的 Highspeed 分享按钮，恢复时一并还原。
 import { ChevronRightIcon } from "lucide-react";
 import {
-  robinrunProviderRuntimeHeadersErrorCode,
+  robindoneProviderRuntimeHeadersErrorCode,
   type HighspeedMessageMeta,
-  type RobinRunApiRetryStatus,
-} from "@robinrun/shared";
+  type RobinDoneApiRetryStatus,
+} from "@robindone/shared";
 import {
   TID_CHAT_ASSISTANT_HISTORY_CONTENT,
   TID_CHAT_ASSISTANT_HISTORY_TRIGGER,
@@ -27,13 +27,13 @@ import {
   TID_CHAT_LOADING,
   TID_V4_ROW,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import type {
   ApiRetryState,
   AttachmentRef,
   CommandAck,
   ConversationRowTarget,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { ChatLoading } from "@/components/ai-elements/chat-loading.js";
 import { ChatApiRetryStatus } from "@/chat-input-toolbar/display.js";
 import { cn } from "@/components/lib/utils.js";
@@ -57,9 +57,9 @@ import {
   readOffPeakCreateTaskSummary,
   type OffPeakCreateTaskSummary,
 } from "@/ToolCallBlocks/renderers/offpeak-create.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
-// RobinRun(2026-11-23): [hide-upstream-account] 隐藏 Highspeed 加速分享入口（上游品牌营销卡：ZCODE 字标 + Z.AI logo，
-// 分享仅为本地剪贴板复制、无 RobinRun 发布场景）。恢复时取消本文件全部同标记注释。
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
+// RobinDone(2026-11-23): [hide-upstream-account] 隐藏 Highspeed 加速分享入口（上游品牌营销卡：ZCODE 字标 + Z.AI logo，
+// 分享仅为本地剪贴板复制、无 RobinDone 发布场景）。恢复时取消本文件全部同标记注释。
 // import { HighspeedShareDialog } from "@/highspeed/HighspeedShareNoticeCard.js";
 // import { isHighspeedShareEligible } from "@/highspeed/highspeedShare.js";
 import {
@@ -67,7 +67,7 @@ import {
   getHighspeedTurnByCommandId,
   getHighspeedTurnDependencies,
   subscribeHighspeedTurns,
-  // RobinRun(2026-11-23): [hide-upstream-account] type HighspeedShareMetrics, —— 仅被隐藏的分享目标 memo 使用
+  // RobinDone(2026-11-23): [hide-upstream-account] type HighspeedShareMetrics, —— 仅被隐藏的分享目标 memo 使用
 } from "@/highspeed/highspeedTurnStore.js";
 import type { AssistantPreviewCard } from "@/lib/assistantPreviewCards.js";
 import { useAssistantCodeCommentFeatureEnabled } from "@/AssistantCodeCommentFeatureProvider.js";
@@ -165,7 +165,7 @@ const MIN_VISIBLE_API_RETRY_ATTEMPT = 3;
 
 interface HighspeedOutputFooterProps {
   generatedLabel: string;
-  // RobinRun(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
+  // RobinDone(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
   // shareLabel: string;
   // shareAriaLabel: string;
   // shareEnabled: boolean;
@@ -175,7 +175,7 @@ interface HighspeedOutputFooterProps {
 
 function HighspeedOutputFooter({
   generatedLabel,
-  // RobinRun(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
+  // RobinDone(2026-11-23): [hide-upstream-account] 以下分享属性随分享入口一并隐藏
   // shareLabel,
   // shareAriaLabel,
   // shareEnabled,
@@ -190,7 +190,7 @@ function HighspeedOutputFooter({
       <div aria-hidden="true" className="absolute inset-x-0 top-1/2 border-t border-border" />
       <div className="relative flex items-center gap-2 bg-background px-3">
         <span className="text-ui-base text-foreground-subtle">{generatedLabel}</span>
-        {/* RobinRun(2026-11-23): [hide-upstream-account] 分享按钮（打开 ZCODE/Z.AI 品牌的分享统计对话框）随入口一并隐藏
+        {/* RobinDone(2026-11-23): [hide-upstream-account] 分享按钮（打开 ZCODE/Z.AI 品牌的分享统计对话框）随入口一并隐藏
         {shareEnabled ? (
           <Button
             type="button"
@@ -217,7 +217,7 @@ function HighspeedOutputFooter({
   );
 }
 
-function toRetryStatus(apiRetry: ApiRetryState): RobinRunApiRetryStatus {
+function toRetryStatus(apiRetry: ApiRetryState): RobinDoneApiRetryStatus {
   const attempt = Math.max(1, Math.floor(apiRetry.attempt));
   // v4 maxAttempts 包含首次请求，而展示口径是重试次数；直接展示会把
   // 默认 10 次重试写成 1/11。
@@ -241,7 +241,7 @@ function TurnChatLoadingSlot({
   eligible: boolean;
   initialElapsedMs: number;
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const retryStatus = useMemo(() => (apiRetry ? toRetryStatus(apiRetry) : null), [apiRetry]);
   // 配置读取尚未发出模型请求，首次恢复就显示进度，避免用户误以为消息已发送。
   // 其余前两次短暂恢复对用户等价于普通加载；保留 apiRetry 运行态，但只在
@@ -249,13 +249,13 @@ function TurnChatLoadingSlot({
   // 而不是回退到 ChatLoading。
   const visibleRetryStatus =
     retryStatus &&
-    (apiRetry?.reasonCode === robinrunProviderRuntimeHeadersErrorCode.configNetwork ||
+    (apiRetry?.reasonCode === robindoneProviderRuntimeHeadersErrorCode.configNetwork ||
       retryStatus.attempt >= MIN_VISIBLE_API_RETRY_ATTEMPT)
       ? retryStatus
       : null;
   if (!visibleRetryStatus && !eligible) return null;
   return (
-    <div data-robinrun-chat-loading-slot="true" className="min-h-5">
+    <div data-robindone-chat-loading-slot="true" className="min-h-5">
       {visibleRetryStatus ? (
         <ChatApiRetryStatus apiRetry={visibleRetryStatus} intl={intl} locale={locale} />
       ) : (
@@ -675,7 +675,7 @@ function AssistantHistoryStatus({
   highspeedMeta?: HighspeedMessageMeta;
   sourceCommandIds: readonly string[];
 }) {
-  const { intl, locale } = useRobinRunIntl();
+  const { intl, locale } = useRobinDoneIntl();
   const topicInterrupted = useBotTopicInterruption(sourceCommandIds);
   const durationLabel = formatConversationWorkDuration(
     segment.workStatus?.durationMs,
@@ -1074,7 +1074,7 @@ function ConversationTurnFlow({
   // 即使恢复了 guide 的 row 全序，也不能让所有 history chunk 共享同一个
   // Collapsible。accepted guide 现在由 CLI workSegments 定界，每段组件自行维护折叠状态。
   return (
-    <div className="flex flex-col gap-5 [&>[data-robinrun-chat-loading-slot]:not(:first-child)]:-mt-2">
+    <div className="flex flex-col gap-5 [&>[data-robindone-chat-loading-slot]:not(:first-child)]:-mt-2">
       {workSegments.map((segment) => (
         <ConversationWorkSegmentFlow
           key={segment.key}
@@ -1281,7 +1281,7 @@ function ConversationBackgroundResultWork({
     <Collapsible
       open={open}
       onOpenChange={setHistoryOpen}
-      className="flex flex-col gap-5 [&>[data-robinrun-chat-loading-slot]:not(:first-child)]:-mt-2"
+      className="flex flex-col gap-5 [&>[data-robindone-chat-loading-slot]:not(:first-child)]:-mt-2"
     >
       {!unit.isRunning && unit.workStatus ? (
         <AssistantHistoryStatus
@@ -1386,7 +1386,7 @@ function ConversationTurnGroupImpl({
   topClearedByTimeline = false,
 }: ConversationTurnGroupProps) {
   const isOfficeMode = useIsOfficeMode();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const visibleUserRows = useMemo(() => unit.visibleUserInputs, [unit.visibleUserInputs]);
   const sourceCommandId = unit.header?.sourceCommandId ?? visibleUserRows[0]?.sourceCommandId;
   const selectHighspeed = useShallow(getHighspeedTurnDependencies);
@@ -1410,7 +1410,7 @@ function ConversationTurnGroupImpl({
   const highspeedMeta = unit.isRunning
     ? undefined
     : visibleUserRows.find((row) => row.highspeed)?.highspeed;
-  // RobinRun(2026-11-23): [hide-upstream-account] 分享目标 memo（聚合高速轮统计供分享按钮/对话框使用）随入口一并隐藏
+  // RobinDone(2026-11-23): [hide-upstream-account] 分享目标 memo（聚合高速轮统计供分享按钮/对话框使用）随入口一并隐藏
   // const highspeedShareTarget = useMemo(() => {
   //   let target: { cardId: string; metrics: HighspeedShareMetrics } | null = null;
   //   if (
@@ -1496,7 +1496,7 @@ function ConversationTurnGroupImpl({
     () =>
       codeCommentCardsEnabled &&
       assistantRawCopyText !== undefined &&
-      // 卡片与 robinrun-file-citation 的预览卡片保持一致：流式期间只投影正文，
+      // 卡片与 robindone-file-citation 的预览卡片保持一致：流式期间只投影正文，
       // 只有终态 row 才生成卡片，避免运行中卡片先出现又因模型续写而回滚。
       (latestAssistantTextRow?.state === "complete" ||
         latestAssistantTextRow?.state === "interrupted")
@@ -1759,12 +1759,12 @@ function ConversationTurnGroupImpl({
             </MessageActions>
           ) : null}
           {showHighspeedOutputFooter ? (
-            // RobinRun(2026-11-23): [hide-upstream-account] 分享按钮属性（shareLabel/shareAriaLabel/shareEnabled/sharePending/onShare）随分享入口一并隐藏
+            // RobinDone(2026-11-23): [hide-upstream-account] 分享按钮属性（shareLabel/shareAriaLabel/shareEnabled/sharePending/onShare）随分享入口一并隐藏
             <HighspeedOutputFooter
               generatedLabel={intl.formatMessage({ id: "chat.highspeed.generatedBy" })}
             />
           ) : null}
-          {/* RobinRun(2026-11-23): [hide-upstream-account] 分享统计对话框（ZCODE/Z.AI 品牌）随入口一并隐藏
+          {/* RobinDone(2026-11-23): [hide-upstream-account] 分享统计对话框（ZCODE/Z.AI 品牌）随入口一并隐藏
           {highspeedShareTarget ? (
             <HighspeedShareDialog
               metrics={highspeedShareTarget.metrics}

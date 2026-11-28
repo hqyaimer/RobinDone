@@ -1,7 +1,7 @@
 import { memo } from "react";
-import { TID_V4_GOAL_BANNER } from "@robinrun/shared/test-ids";
-import type { GoalState } from "@robinrun/shared/robinrun-protocol-v4";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { TID_V4_GOAL_BANNER } from "@robindone/shared/test-ids";
+import type { GoalState } from "@robindone/shared/robindone-protocol-v4";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export interface ConversationGoalBannerProps {
   goal: GoalState;
@@ -12,7 +12,7 @@ export interface ConversationGoalBannerProps {
  * memo：goal 不变时不随 SessionPane 其他状态重渲染。
  */
 function ConversationGoalBannerImpl({ goal }: ConversationGoalBannerProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   return (
     <div
       data-testid={TID_V4_GOAL_BANNER}

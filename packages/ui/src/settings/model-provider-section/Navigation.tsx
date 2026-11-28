@@ -23,8 +23,8 @@ import { ProviderStatusIndicator } from "./ProviderStatusIndicator.js";
 import {
   resolveModelProviderFamilySpecByProviderId,
   isStartPlanModelProviderId,
-} from "@robinrun/shared";
-import { TID_MODEL_PROVIDER_NAV_ITEM, testId } from "@robinrun/shared/test-ids";
+} from "@robindone/shared";
+import { TID_MODEL_PROVIDER_NAV_ITEM, testId } from "@robindone/shared/test-ids";
 import { useCallback, useMemo, type KeyboardEvent } from "react";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import type { ModelProviderNavGroup, ModelProviderNavItem } from "./constants.js";

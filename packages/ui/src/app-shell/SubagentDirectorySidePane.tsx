@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import type { RobinRunSessionEndedSubagent } from "@robinrun/shared";
-import type { RunningSubagentSummary } from "@robinrun/shared/robinrun-protocol-v4";
+import type { RobinDoneSessionEndedSubagent } from "@robindone/shared";
+import type { RunningSubagentSummary } from "@robindone/shared/robindone-protocol-v4";
 import {
   BanIcon,
   CheckCircle2Icon,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button.js";
 import { useSessionSubagents } from "@/hooks/useSessionSubagents.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type {
   OpenScopedSubagentSideTabRequest,
   SubagentDirectorySidePaneTab,
@@ -22,7 +22,7 @@ import type { SessionLease } from "@/v4/sessionDataLayer.js";
 import { V4PaneConversationProvider, useV4Conversation } from "@/v4/V4ConversationContext.js";
 import { useConversationProjection } from "@/v4/useConversationProjection.js";
 
-type DirectoryItem = RunningSubagentSummary | RobinRunSessionEndedSubagent;
+type DirectoryItem = RunningSubagentSummary | RobinDoneSessionEndedSubagent;
 
 const EMPTY_RUNNING: readonly RunningSubagentSummary[] = [];
 
@@ -68,7 +68,7 @@ const DirectoryRow = memo(function DirectoryRow({
   item: DirectoryItem;
   onOpen: (item: DirectoryItem) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const timestamp = "endedAt" in item ? item.endedAt : item.startedAt;
   return (
     <button
@@ -130,7 +130,7 @@ const SubagentDirectoryContents = memo(function SubagentDirectoryContents({
   tab: SubagentDirectorySidePaneTab;
   onOpenSubagentSession: (request: OpenScopedSubagentSideTabRequest) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const { layer } = useV4Conversation();
   const [lease, setLease] = useState<SessionLease | null>(null);
   const projection = useConversationProjection(lease);

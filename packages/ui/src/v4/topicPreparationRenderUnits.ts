@@ -1,5 +1,5 @@
-import type { BotTopicPreparation as Preparation } from "@robinrun/shared";
-import type { ConversationRow } from "@robinrun/shared/robinrun-protocol-v4";
+import type { BotTopicPreparation as Preparation } from "@robindone/shared";
+import type { ConversationRow } from "@robindone/shared/robindone-protocol-v4";
 import type { ConversationTurnRenderUnit } from "@/v4/conversationTurnRenderUnits.js";
 
 export function pendingTopicPreparations(

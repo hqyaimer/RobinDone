@@ -7,11 +7,11 @@ import {
   type CommandEnvelope,
   type CommandPayloadMap,
   type CommandType,
-} from "@robinrun/shared/robinrun-protocol-v4";
-import { uuidv7 } from "@robinrun/shared";
-export { uuidv7 } from "@robinrun/shared";
+} from "@robindone/shared/robindone-protocol-v4";
+import { uuidv7 } from "@robindone/shared";
+export { uuidv7 } from "@robindone/shared";
 
-const CLIENT_ID_STORAGE_KEY = "robinrun-v4-client-id:v1";
+const CLIENT_ID_STORAGE_KEY = "robindone-v4-client-id:v1";
 let cachedClientId: string | null = null;
 
 /**

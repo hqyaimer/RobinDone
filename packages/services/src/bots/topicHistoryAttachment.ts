@@ -1,13 +1,13 @@
 import { createHash } from "node:crypto";
-import { PROTOCOL_V4_LIMITS } from "@robinrun/shared/robinrun-protocol-v4";
-import type { BotTopicHistoryBatch, RobinRunPromptFileAttachment } from "@robinrun/shared";
+import { PROTOCOL_V4_LIMITS } from "@robindone/shared/robindone-protocol-v4";
+import type { BotTopicHistoryBatch, RobinDonePromptFileAttachment } from "@robindone/shared";
 
 /** 历史正文只写一份附件；服务端归档用于权限和检查点，不再生成模型隐藏消息。 */
 export function createTopicHistoryAttachment(
   batch: BotTopicHistoryBatch,
   inputId: string,
   title: string,
-): RobinRunPromptFileAttachment | undefined {
+): RobinDonePromptFileAttachment | undefined {
   if (!batch.messages.length && !batch.hasGap) return undefined;
   const identity = createHash("sha256").update(inputId).digest("hex").slice(0, 16);
   const date = (time: number) => new Date(time).toISOString();

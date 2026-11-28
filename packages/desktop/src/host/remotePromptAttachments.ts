@@ -1,21 +1,21 @@
-import type { IRemoteBackend, RemoteUploadOptions } from "@robinrun/server/remote";
-import { quotePosixPathArg } from "@robinrun/server/remote/posixShell.js";
-import type { TraceId, RobinRunPromptAttachment } from "@robinrun/shared";
+import type { IRemoteBackend, RemoteUploadOptions } from "@robindone/server/remote";
+import { quotePosixPathArg } from "@robindone/server/remote/posixShell.js";
+import type { TraceId, RobinDonePromptAttachment } from "@robindone/shared";
 import { randomUUID } from "node:crypto";
 
-export const REMOTE_PROMPT_ATTACHMENT_ROOT = "~/.robinrun/tmp/prompt-attachments";
-const REMOTE_PROMPT_ATTACHMENT_RELATIVE_ROOT = ".robinrun/tmp/prompt-attachments";
+export const REMOTE_PROMPT_ATTACHMENT_ROOT = "~/.robindone/tmp/prompt-attachments";
+const REMOTE_PROMPT_ATTACHMENT_RELATIVE_ROOT = ".robindone/tmp/prompt-attachments";
 
 export interface RemotePromptAttachmentMaterializeInput {
   taskId?: string;
   content: string;
   traceId: TraceId | string;
-  attachments?: RobinRunPromptAttachment[];
+  attachments?: RobinDonePromptAttachment[];
 }
 
 export interface RemotePromptAttachmentMaterializeResult {
   content: string;
-  attachments?: RobinRunPromptAttachment[];
+  attachments?: RobinDonePromptAttachment[];
   uploadedCount: number;
 }
 
@@ -32,7 +32,7 @@ export async function materializeRemotePromptAttachments(
   }
 
   const replacements = new Map<string, string>();
-  const nextAttachments: RobinRunPromptAttachment[] = [];
+  const nextAttachments: RobinDonePromptAttachment[] = [];
   let remoteRootPromise: Promise<string> | undefined;
   let uploadedCount = 0;
   let changed = false;
@@ -88,7 +88,7 @@ export async function materializeRemotePromptAttachments(
     nextAttachments.push({
       ...attachment,
       localPath: remotePath,
-    } as RobinRunPromptAttachment);
+    } as RobinDonePromptAttachment);
     replacements.set(localPath, remotePath);
     uploadedCount += 1;
     changed = true;
@@ -222,7 +222,7 @@ async function waitForRemoteCommand(
   });
 }
 
-function getAttachmentLocalPath(attachment: RobinRunPromptAttachment): string | undefined {
+function getAttachmentLocalPath(attachment: RobinDonePromptAttachment): string | undefined {
   const localPath = attachment.localPath?.trim();
   return localPath ? attachment.localPath : undefined;
 }

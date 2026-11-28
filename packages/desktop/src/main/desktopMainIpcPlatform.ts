@@ -1,7 +1,7 @@
 import { decorateRequestSecurityLogArgs } from "./request-security-edition/index.js";
 /* eslint-disable max-lines -- 桌面平台 IPC 集中装配，拆散会让权限边界更难审计；行数随平台能力增长。 */
 import { BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
-import { readRobinRunStdioTapDevState } from "@robinrun/services/node";
+import { readRobinDoneStdioTapDevState } from "@robindone/services/node";
 import {
   DesktopCommandIds,
   appSettingsPatchSchema,
@@ -24,10 +24,10 @@ import {
   type UpdateStatePayload,
   type WebRemoteControlWorkspaceTarget,
   type WindowControlsOverlayReadyPayload,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { getAppIconDataUrl, getInstalledEditors } from "./editors.js";
 import { createFileApplicationService } from "@desktop/main/file-open-apps/index.js";
-import type { FileApplicationTarget } from "@robinrun/shared";
+import type { FileApplicationTarget } from "@robindone/shared";
 import { getApplicationIcon } from "./applicationIcons.js";
 import { exportLogs } from "./exportLogs.js";
 import { resolveCommunityUrl } from "./desktopCommandHandlers.js";
@@ -103,7 +103,7 @@ export function registerPlatformIpcHandlers(options: {
   syncAppSettings: (patch: ReturnType<typeof appSettingsPatchSchema.parse>) => void;
   /** 关闭驻留托盘能力查询（spec：docs/desktop/linux-close-to-tray.md）；传入 monitor 的 refresh */
   refreshCloseToTrayCapability: () => Promise<
-    import("@robinrun/shared").DesktopCloseToTrayCapability
+    import("@robindone/shared").DesktopCloseToTrayCapability
   >;
   /** 快捷键设置页录制态开关：true 时 main 重建菜单摘除可配置 accelerator（见 shortcut-settings-spec §7） */
   setShortcutRecordingActive?: (active: boolean, ownerWebContentsId?: number | null) => void;
@@ -215,8 +215,8 @@ export function registerPlatformIpcHandlers(options: {
   });
   registerResourceManagerStorageIpc();
   registerResourceManagerNetworkIpc();
-  ipcMain.handle(PlatformChannels.GetRobinRunStdioTapDevState, () =>
-    readRobinRunStdioTapDevState(),
+  ipcMain.handle(PlatformChannels.GetRobinDoneStdioTapDevState, () =>
+    readRobinDoneStdioTapDevState(),
   );
   ipcMain.on(PlatformChannels.OpenResourceManager, () => {
     openResourceManager();

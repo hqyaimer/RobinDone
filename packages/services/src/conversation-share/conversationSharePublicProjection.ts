@@ -4,13 +4,13 @@ import {
   conversationShareContentBlockSchema,
   type ConversationShareContentBlock,
   type ConversationShareArtifactDescriptor,
-} from "@robinrun/shared";
-import { toolCallDisplaySchema } from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared";
+import { toolCallDisplaySchema } from "@robindone/shared/robindone-protocol-v4";
 import type {
   ArtifactRow,
   ConversationRow,
   ToolCallRow,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 
 import { ConversationShareServiceError } from "./conversationShare.js";
 
@@ -69,7 +69,7 @@ function visitStrings(value: unknown, visitor: (value: string) => void): void {
 }
 
 function assertSafeString(value: string): void {
-  if (/^robinrun-artifact:\/\//iu.test(value)) {
+  if (/^robindone-artifact:\/\//iu.test(value)) {
     throwProjectionError(
       "artifact_protocol_not_ready",
       "Artifact references must be represented by formal conversation artifact rows",
@@ -97,7 +97,7 @@ function projectToolDisplay(row: ToolCallRow) {
 }
 
 function isPublicArtifactRef(value: string): boolean {
-  return /^robinrun-artifact:\/\/share\/[A-Za-z0-9._~-]+$/u.test(value);
+  return /^robindone-artifact:\/\/share\/[A-Za-z0-9._~-]+$/u.test(value);
 }
 
 function assertTerminalAndSafe(rows: ConversationRow[]): void {
@@ -408,7 +408,7 @@ function projectRow(row: ConversationRow, index: number, ids: PublicIdMaps): Con
         mimeType: row.mimeType,
         sizeBytes: row.sizeBytes,
         sha256: row.sha256,
-        ref: `robinrun-artifact://share/${artifactVersionId}`,
+        ref: `robindone-artifact://share/${artifactVersionId}`,
         state: row.state,
       };
     }
@@ -568,7 +568,7 @@ export function assertConversationSharePublicProjection(input: {
     } else if (row.kind === "artifact") {
       if (
         !PUBLIC_ARTIFACT_ID.test(row.artifactVersionId) ||
-        row.ref !== `robinrun-artifact://share/${row.artifactVersionId}`
+        row.ref !== `robindone-artifact://share/${row.artifactVersionId}`
       ) {
         throwProjectionError(
           "invalid_conversation",

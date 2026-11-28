@@ -6,17 +6,17 @@ const DEFAULT_WEB_REMOTE_CONTROL_URL = "http://localhost:5173/remote/v4";
 
 const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const webRemoteControlUrl =
-  process.env.ROBINRUN_WEB_REMOTE_CONTROL_URL?.trim() || DEFAULT_WEB_REMOTE_CONTROL_URL;
+  process.env.ROBINDONE_WEB_REMOTE_CONTROL_URL?.trim() || DEFAULT_WEB_REMOTE_CONTROL_URL;
 
 console.log(
-  `[dev:web-remote-control] desktop ROBINRUN_WEB_REMOTE_CONTROL_URL=${webRemoteControlUrl}`,
+  `[dev:web-remote-control] desktop ROBINDONE_WEB_REMOTE_CONTROL_URL=${webRemoteControlUrl}`,
 );
 
-const child = spawn(pnpmCommand, ["--filter", "@robinrun/desktop", "dev:local-cli"], {
+const child = spawn(pnpmCommand, ["--filter", "@robindone/desktop", "dev:local-cli"], {
   stdio: "inherit",
   env: {
     ...process.env,
-    ROBINRUN_WEB_REMOTE_CONTROL_URL: webRemoteControlUrl,
+    ROBINDONE_WEB_REMOTE_CONTROL_URL: webRemoteControlUrl,
   },
 });
 

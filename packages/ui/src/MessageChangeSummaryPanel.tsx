@@ -1,17 +1,17 @@
 import { useMemo, useState, type CSSProperties } from "react";
 import type {
-  RobinRunPersistedFileChange,
-  RobinRunTaskChangeSummary,
-  RobinRunTurnFileState,
-} from "@robinrun/shared";
-import { TID_CHAT_CHANGE_SUMMARY_TOGGLE_FILES_BUTTON, testId } from "@robinrun/shared/test-ids";
+  RobinDonePersistedFileChange,
+  RobinDoneTaskChangeSummary,
+  RobinDoneTurnFileState,
+} from "@robindone/shared";
+import { TID_CHAT_CHANGE_SUMMARY_TOGGLE_FILES_BUTTON, testId } from "@robindone/shared/test-ids";
 import { ChevronRightIcon, Undo2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import { FileDisplayInline } from "@/lib/fileDisplay.js";
 import { buildTurnChangeSummary, toWorkspaceRelativePath } from "@/lib/taskChangeSummary.js";
@@ -30,13 +30,13 @@ export {
 } from "@/messageChangeSummaryPreview.js";
 
 interface MessageChangeSummaryPanelProps {
-  summary: RobinRunTaskChangeSummary;
+  summary: RobinDoneTaskChangeSummary;
   workspacePath: string;
   workspaceIdentity?: string;
   workspaceRemoteSessionId?: string;
-  changeDetails?: RobinRunPersistedFileChange | null;
+  changeDetails?: RobinDonePersistedFileChange | null;
   readonlyDiffPatchesByPath?: ReadonlyMap<string, string>;
-  fileState?: RobinRunTurnFileState;
+  fileState?: RobinDoneTurnFileState;
   messageId?: string;
   compactForRemoteControl?: boolean;
   animationDelayMs?: number;
@@ -61,7 +61,7 @@ export function MessageChangeSummaryPanel({
   onToggleFiles,
   onOpenCodeViewer,
 }: MessageChangeSummaryPanelProps) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [isFileListOpen, setIsFileListOpen] = useState(false);
 
   const turnSummary = useMemo(() => {
@@ -103,11 +103,11 @@ export function MessageChangeSummaryPanel({
         onOpenChange={setIsFileListOpen}
         // Bugfix: 历史消息里的文件卡会等二次校验后再出现；
         // summary 如果没有同样的渐入，会在文件卡稳定前后显得像突兀跳出。
-        data-robinrun-stream-animate="true"
+        data-robindone-stream-animate="true"
         className="overflow-hidden rounded-xl border border-border bg-card shadow-none"
         style={
           {
-            "--robinrun-stream-animation-delay": `${animationDelayMs}ms`,
+            "--robindone-stream-animation-delay": `${animationDelayMs}ms`,
           } as CSSProperties
         }
       >

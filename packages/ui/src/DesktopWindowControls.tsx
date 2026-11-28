@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { DesktopCommandIds } from "@robinrun/shared";
+import { DesktopCommandIds } from "@robindone/shared";
 import { MinusIcon, XIcon } from "lucide-react";
 import { WindowMaximizeIcon, WindowRestoreIcon } from "@/components/icons/windowIcons.js";
 import { Button } from "@/components/ui/button.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 
 export function DesktopWindowControls() {
   const platform = usePlatform();
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [maximized, setMaximized] = useState(false);
   useEffect(() => {
     let disposed = false;

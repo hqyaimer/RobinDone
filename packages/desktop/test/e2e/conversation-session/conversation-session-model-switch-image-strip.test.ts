@@ -4,7 +4,7 @@ import type { ElectronMock } from "@wdio/electron-types";
 import {
   TID_CHAT_ATTACHMENT_BUTTON,
   TID_CHAT_ATTACHMENT_MENU_ITEM,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import { DEFAULT_WORKSPACE, clearAppData, waitForWorkspaceApp } from "../helpers/desktop-app.js";
 import {
   assertUpstreamRequestCapture,

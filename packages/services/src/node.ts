@@ -19,9 +19,9 @@ import {
 } from "#src/project/index.js";
 export { createLegacySingleRootProjectService } from "#src/project/index.js";
 export { createRemoteProjectService } from "#src/remote-projects/index.js";
-import { getRobinRunDataRootDir as projectDataRoot } from "#src/paths.js";
+import { getRobinDoneDataRootDir as projectDataRoot } from "#src/paths.js";
 import { createTaskGroupService, ITaskGroupService, groupTaskKey } from "#src/task-groups/index.js";
-// RobinRun 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：desktop host 常驻
+// RobinDone 触发器引擎（2026-11-19 设计定稿，docs/trigger-system.md）：desktop host 常驻
 // 服务，调度 cron/interval、执行脚本、收本地 webhook，事件经 dispatchTriggerEvent 端口
 // 投递给订阅智能体的会话（host 装配 dispatchCronRun 同款链）。
 import {
@@ -47,7 +47,7 @@ import {
 } from "#src/ops-panel/index.js";
 import { IGenUiService } from "./gen-ui/contract.js";
 import { createGenUiService } from "./gen-ui/node.js";
-// import { channelReplyHostRequestSchema, channelReplyResultSchema } from "@robinrun/shared";
+// import { channelReplyHostRequestSchema, channelReplyResultSchema } from "@robindone/shared";
 /* eslint-disable max-lines -- host process 服务注册和启动装配需要集中维护，拆散后会更难追踪依赖注入顺序 */
 // Node.js service implementations — NOT safe to import in browser code
 import { randomBytes } from "node:crypto";
@@ -58,7 +58,7 @@ import {
   createNodeProviderRuntimePathEnv,
   NodeModelSelectionConfigRepository,
   PERSONAL_PROVIDER_CONFIG_FILE_NAME,
-} from "@robinrun/provider-node";
+} from "@robindone/provider-node";
 import { getAppConfigDir as resolveAppConfigDir } from "./paths.js";
 import {
   createHasExistingLocalTask,
@@ -69,13 +69,13 @@ import {
   buildLocalMediaPreviewUrl,
   type DynamicWorkflowMode,
   type ProviderProvisioningSourceTrigger,
-  robinrunProtocolMethods,
-} from "@robinrun/shared";
+  robindoneProtocolMethods,
+} from "@robindone/shared";
 
 export {
-  materializeRobinRunBuiltinProviderConfig,
-  ROBINRUN_BUILTIN_PROVIDER_CONFIG_FILE_ENV,
-} from "@robinrun/provider-node";
+  materializeRobinDoneBuiltinProviderConfig,
+  ROBINDONE_BUILTIN_PROVIDER_CONFIG_FILE_ENV,
+} from "@robindone/provider-node";
 import { randomUUID } from "node:crypto";
 import { getAppConfigDir as getContentAppConfigDir } from "#src/paths.js";
 import { ICloudContentService } from "#src/cloud-content/cloudContent.js";
@@ -83,16 +83,16 @@ import { createCloudContentService } from "#src/cloud-content/cloudContentServic
 import { IMarketingTouchService } from "#src/marketing-touch/marketingTouch.js";
 import { createMarketingTouchService } from "#src/marketing-touch/marketingTouchService.js";
 import { createMarketingAssetRegistry } from "#src/marketing-touch/marketingAssetRegistry.js";
-import type { IChannel } from "@robinrun/rpc";
+import type { IChannel } from "@robindone/rpc";
 import {
   readTopicResourceFromRelay,
   validateTopicResourceFromRelay,
-} from "./robinrun-agent/topicResourceRelayClient.js";
+} from "./robindone-agent/topicResourceRelayClient.js";
 export {
   createTopicResourcePeers,
   type TopicResourcePeers,
-} from "./robinrun-agent/topicResourcePeers.js";
-export { createTopicResourceRelayChannel } from "./robinrun-agent/topicResourceRelayChannel.js";
+} from "./robindone-agent/topicResourcePeers.js";
+export { createTopicResourceRelayChannel } from "./robindone-agent/topicResourceRelayChannel.js";
 
 export { createFileService } from "./file/fileService.js";
 export {
@@ -120,8 +120,8 @@ export {
   parseFsFaultRulesFromEnvValue,
   resetProcessFsFaultInjectorForTests,
   setFsFaultInjectorForTests,
-  ROBINRUN_E2E_FS_FAULTS_ALLOW_ENV,
-  ROBINRUN_E2E_FS_FAULTS_ENV,
+  ROBINDONE_E2E_FS_FAULTS_ALLOW_ENV,
+  ROBINDONE_E2E_FS_FAULTS_ENV,
 } from "./fs/fsFaultInjection.js";
 export type {
   FsFaultCheckInput,
@@ -140,7 +140,7 @@ export {
 export {
   setDataBaseDir,
   getDataBaseDir,
-  getRobinRunDataRootDir,
+  getRobinDoneDataRootDir,
   getConversationWorkspaceDir,
   getAppConfigDir,
   getExportLogStageDir,
@@ -151,7 +151,7 @@ export {
   getGitCheckpointIndexRootDir,
   copyDataDirectory,
   validateDataBaseDirTarget,
-  ROBINRUN_WINDOWS_APP_INSTALL_DIR_ENV,
+  ROBINDONE_WINDOWS_APP_INSTALL_DIR_ENV,
 } from "./paths.js";
 export { createGitService } from "./git/gitService.js";
 export { GitCommitMessageGenerator } from "./git/gitCommitMessageGenerator.js";
@@ -165,28 +165,28 @@ export {
 } from "./setting/settingService.js";
 export { createCredentialService } from "./credential/credentialService.js";
 export { createBroadcastService } from "./broadcast/broadcastService.js";
-export { createRobinRunAgentService } from "./robinrun-agent/robinrunAgentService.js";
-export { createRobinRunTaskServiceAdapter } from "./robinrun-agent/robinrunTaskServiceAdapter.js";
-export { createRobinRunSessionService } from "./robinrun-session/robinrunSessionService.js";
+export { createRobinDoneAgentService } from "./robindone-agent/robindoneAgentService.js";
+export { createRobinDoneTaskServiceAdapter } from "./robindone-agent/robindoneTaskServiceAdapter.js";
+export { createRobinDoneSessionService } from "./robindone-session/robindoneSessionService.js";
 export {
-  resolveDefaultRobinRunAgentCommand,
-  RobinRunAgentProcessManager,
-} from "./robinrun-agent/robinrunAgentProcessManager.js";
+  resolveDefaultRobinDoneAgentCommand,
+  RobinDoneAgentProcessManager,
+} from "./robindone-agent/robindoneAgentProcessManager.js";
 export type {
-  RobinRunAgentCommand,
-  RobinRunAgentCommandResolver,
-  RobinRunAgentCommandResolverContext,
-  RobinRunAgentProcessManagerOptions,
-} from "./robinrun-agent/robinrunAgentProcessManager.js";
-export { RobinRunProtocolClient } from "./robinrun-agent/robinrunProtocolClient.js";
-export type { RobinRunProtocolTransport } from "./robinrun-agent/robinrunProtocolTransport.js";
-export { RobinRunStdioTransport } from "./robinrun-agent/robinrunStdioTransport.js";
+  RobinDoneAgentCommand,
+  RobinDoneAgentCommandResolver,
+  RobinDoneAgentCommandResolverContext,
+  RobinDoneAgentProcessManagerOptions,
+} from "./robindone-agent/robindoneAgentProcessManager.js";
+export { RobinDoneProtocolClient } from "./robindone-agent/robindoneProtocolClient.js";
+export type { RobinDoneProtocolTransport } from "./robindone-agent/robindoneProtocolTransport.js";
+export { RobinDoneStdioTransport } from "./robindone-agent/robindoneStdioTransport.js";
 export {
-  getRobinRunStdioTapDevLogDir,
-  readRobinRunStdioTapDevState,
-  setRobinRunStdioTapDevEnabled,
-} from "./robinrun-agent/robinrunStdioTapDevConfig.js";
-export type { RobinRunStdioTapDevState } from "@robinrun/shared";
+  getRobinDoneStdioTapDevLogDir,
+  readRobinDoneStdioTapDevState,
+  setRobinDoneStdioTapDevEnabled,
+} from "./robindone-agent/robindoneStdioTapDevConfig.js";
+export type { RobinDoneStdioTapDevState } from "@robindone/shared";
 export {
   createCuaHelperInstaller,
   requestHelperAccessibilityPermissionViaLaunchServices,
@@ -392,7 +392,7 @@ import {
   remoteHostIdFromWorkspaceIdentity,
   DEFAULT_TRIGGER_SCRIPT_RESIDENT_GLOBAL_MAX,
   DEFAULT_TRIGGER_SCRIPT_RESIDENT_PER_WORKSPACE,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { SourceServerWorkspaceAliasRepo } from "./session/sourceServerWorkspaceAliasRepo.js";
 import { SourceServerWorkspaceIdentityMapper } from "./source-server-workspace/sourceServerWorkspaceIdentityChannelServer.js";
 import { ServiceCollection } from "./collection.js";
@@ -406,10 +406,10 @@ import { ISettingService } from "./setting/setting.js";
 import { IOnboardingRecordService } from "./onboarding/onboardingRecord.js";
 import { ICredentialService } from "./credential/credential.js";
 import { IBroadcastService } from "./broadcast/broadcast.js";
-import { IRobinRunTaskService } from "./session/robinrunTaskService.js";
-import { IRobinRunAgentService } from "./robinrun-agent/robinrunAgent.js";
-import type { CuaOperationStateReporter } from "./robinrun-agent/cuaOperationTurnTracker.js";
-import { IRobinRunSessionService } from "./robinrun-session/robinrunSession.js";
+import { IRobinDoneTaskService } from "./session/robindoneTaskService.js";
+import { IRobinDoneAgentService } from "./robindone-agent/robindoneAgent.js";
+import type { CuaOperationStateReporter } from "./robindone-agent/cuaOperationTurnTracker.js";
+import { IRobinDoneSessionService } from "./robindone-session/robindoneSession.js";
 import {
   createUnsupportedConversationShareService,
   IConversationShareService,
@@ -462,17 +462,17 @@ import { createLegacyTeamOrganizationResolver } from "./model-provider/legacyTea
 import { createObservableSettingService } from "./setting/observableSettingService.js";
 import { createCredentialService } from "./credential/credentialService.js";
 import { createBroadcastService } from "./broadcast/broadcastService.js";
-import { createRobinRunAgentService } from "./robinrun-agent/robinrunAgentService.js";
-import type { RobinRunAgentCommandResolver } from "./robinrun-agent/robinrunAgentProcessManager.js";
-import { buildAgentTelemetrySpawnEnv } from "./robinrun-agent/agentTelemetryEnv.js";
-import { resolveRobinRunAgentPresentationSurface } from "./robinrun-agent/robinrunAgentPresentationSurface.js";
-import { createRobinRunTaskServiceAdapter } from "./robinrun-agent/robinrunTaskServiceAdapter.js";
-import { dispatchAgentContactToTaskService } from "./robinrun-agent/agentContactDispatch.js";
-import { createRobinRunSessionService } from "./robinrun-session/robinrunSessionService.js";
-import { createRobinRunTaskIndexSyncer } from "./robinrun-agent/robinrunTaskIndexSyncer.js";
+import { createRobinDoneAgentService } from "./robindone-agent/robindoneAgentService.js";
+import type { RobinDoneAgentCommandResolver } from "./robindone-agent/robindoneAgentProcessManager.js";
+import { buildAgentTelemetrySpawnEnv } from "./robindone-agent/agentTelemetryEnv.js";
+import { resolveRobinDoneAgentPresentationSurface } from "./robindone-agent/robindoneAgentPresentationSurface.js";
+import { createRobinDoneTaskServiceAdapter } from "./robindone-agent/robindoneTaskServiceAdapter.js";
+import { dispatchAgentContactToTaskService } from "./robindone-agent/agentContactDispatch.js";
+import { createRobinDoneSessionService } from "./robindone-session/robindoneSessionService.js";
+import { createRobinDoneTaskIndexSyncer } from "./robindone-agent/robindoneTaskIndexSyncer.js";
 import { TaskIndexRepo } from "./session/taskIndexRepo.js";
 import { AutomationRepo } from "#src/session/automationRepo.js";
-import type { AppSettings } from "@robinrun/shared";
+import type { AppSettings } from "@robindone/shared";
 import { createBotsService } from "./bots/botsService.js";
 import { BotsRepo } from "#src/bots/repo.js";
 import {
@@ -490,7 +490,7 @@ import {
 } from "#src/oauth/oauthUnauthorizedRequest.js";
 import { createOAuthProviderLogoutHandler } from "./oauth/oauthProviderLogout.js";
 import { OAuthCredentialRepo } from "./oauth/repo/oauthCredentialRepo.js";
-import { readLegacyRobinRunConfigProviders } from "./model-provider/legacyRobinRunConfigProviderReader.js";
+import { readLegacyRobinDoneConfigProviders } from "./model-provider/legacyRobinDoneConfigProviderReader.js";
 import { resolveAccountTeamPlanRuntimeMaterial } from "./model-provider/accountProviderTeamPlanRequestKey.js";
 import { createAccountProviderCredentialStore } from "./model-provider/accountProviderCredentialStore.js";
 import { createAccountProviderCredentialService } from "./model-provider/accountProviderCredentialService.js";
@@ -505,7 +505,7 @@ import { AccountProviderApiClient } from "./model-provider/accountProviderApiCli
 import { createAccountProjectTokenClient } from "./model-provider/accountProjectTokenClient.js";
 import { AccountProviderApiKeyResolver } from "./model-provider/accountProviderApiKeyResolver.js";
 import { createProviderConfigRuntime } from "./model-provider/providerConfigRuntime.js";
-import { fetchRobinRunBuiltinRemoteRelease } from "./model-provider/robinrunBuiltinRemoteConfig.js";
+import { fetchRobinDoneBuiltinRemoteRelease } from "./model-provider/robindoneBuiltinRemoteConfig.js";
 import {
   createProviderRuntimeFromConfigRuntime,
   type ProviderRuntime,
@@ -547,7 +547,7 @@ import {
   createPluginUiAppToolsService,
   createPluginUiBridgeService,
 } from "./plugin-ui-bridge/index.js";
-import type { PluginSandboxHandle, PluginSandboxRegisterInput } from "@robinrun/shared/mcp-apps";
+import type { PluginSandboxHandle, PluginSandboxRegisterInput } from "@robindone/shared/mcp-apps";
 import { createPluginSyncService } from "./plugin-sync/pluginSyncService.js";
 import { createPluginsService } from "./plugins/pluginsService.js";
 import { createPluginManagementService } from "./plugins/pluginManagementService.js";
@@ -580,11 +580,11 @@ import { ensureAppCaCert } from "./runtime-tools/appCaCert.js";
 import {
   buildHelperOpenArgs,
   isCuaLocalDevelopmentRuntime,
-} from "@robinrun/robinrun-cua/broker/server";
+} from "@robindone/robindone-cua/broker/server";
 import { createServiceLogger, type ServiceLogger } from "#src/logger/serviceLogger.js";
 import { ensureTelemetryDeviceMid } from "#src/telemetry/telemetryCore.js";
 import { IOffPeakTaskService } from "./session/offPeakTask.js";
-import type { HighspeedMockScenario } from "@robinrun/shared";
+import type { HighspeedMockScenario } from "@robindone/shared";
 import { IHighspeedCardService } from "./highspeed/highspeedCard.js";
 import {
   buildHighspeedCodingPlanAuthHeaders,
@@ -609,7 +609,7 @@ import {
 import {
   createOfficialMcpTrustedOriginRegistry,
   OFFICIAL_MCP_DEV_TRUSTED_ORIGINS_ENV,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import {
   BROKER_SOCKET_ENV,
   BROKER_UNAVAILABLE_ENV,
@@ -620,7 +620,7 @@ import {
   ICuaPermissionService,
   ICuaPipSessionService,
   isOfficialCuaPluginEnabledForWorkspace,
-  isPotentialRobinRunCuaAgentMcpServer,
+  isPotentialRobinDoneCuaAgentMcpServer,
   isScreenCaptureProbeSuccess,
   reapOrphanedHelpers,
   resolveStandaloneStatusLaunchAppPath,
@@ -648,11 +648,11 @@ import {
   getStableCuaPipeName,
   resolveStableCuaWinRecipe,
 } from "#src/cua-permission-broker/stableCuaTransport.js";
-import { HELPER_APP_NAME } from "@robinrun/robinrun-cua/broker/helperConstants";
-import { resolveBrokerSocketPath } from "@robinrun/robinrun-cua/broker/socketPath";
+import { HELPER_APP_NAME } from "@robindone/robindone-cua/broker/helperConstants";
+import { resolveBrokerSocketPath } from "@robindone/robindone-cua/broker/socketPath";
 import {
-  DEFAULT_ROBINRUN_MODEL_CONTEXT_BUDGET_STRATEGY,
-  ROBINRUN_JWT_INVALID_BROADCAST_CHANNEL,
+  DEFAULT_ROBINDONE_MODEL_CONTEXT_BUDGET_STRATEGY,
+  ROBINDONE_JWT_INVALID_BROADCAST_CHANNEL,
   formatLogPrefix,
   isCredentialDecryptError,
   isStartPlanModelProviderId,
@@ -660,28 +660,28 @@ import {
   BIGMODEL_PROVIDER_ID,
   type ProviderFamilyDomain,
   type ServiceAuthorityMode,
-  resolveRuntimeRobinRunEndpointOrigin,
+  resolveRuntimeRobinDoneEndpointOrigin,
   resolveSafeTelemetryHostname,
   type BrowserBackendDescriptor,
   type BrowserClientMode,
   type BrowserCommand,
-  isRobinRunCuaMcpCommand,
-  isRobinRunCuaMcpPackageArg,
-  isRobinRunCuaInternalFeatureEnabled,
-  ROBINRUN_CUA_PLUGIN_AUTHORITY_ENV_KEY,
-  type RobinRunAutomation,
-  type RobinRunAutomationRun,
-  getCapturedRobinRunAgentTelemetryEnv,
-  ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+  isRobinDoneCuaMcpCommand,
+  isRobinDoneCuaMcpPackageArg,
+  isRobinDoneCuaInternalFeatureEnabled,
+  ROBINDONE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
+  type RobinDoneAutomation,
+  type RobinDoneAutomationRun,
+  getCapturedRobinDoneAgentTelemetryEnv,
+  ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
   ZAI_PROVIDER_ID,
-  robinrunAccountAccessSchema,
-  robinrunProviderAccountAccessSchema,
-  ROBINRUN_VERSION,
-  ROBINRUN_ENV,
-  buildRuntimeRobinRunApiUrl,
-} from "@robinrun/shared";
+  robindoneAccountAccessSchema,
+  robindoneProviderAccountAccessSchema,
+  ROBINDONE_VERSION,
+  ROBINDONE_ENV,
+  buildRuntimeRobinDoneApiUrl,
+} from "@robindone/shared";
 
-// 这些 conversation-share 实现依赖 Node 文件系统；仅通过 @robinrun/services/node 暴露，
+// 这些 conversation-share 实现依赖 Node 文件系统；仅通过 @robindone/services/node 暴露，
 // 防止 browser-safe 根入口把 node:* 依赖带进 renderer。
 export {
   ConversationShareService,
@@ -801,10 +801,10 @@ export function shouldEnableDefaultCuaProductHelper(
     env?: NodeJS.ProcessEnv;
   } = {},
 ): boolean {
-  // CUA 已随正式版默认开启（isRobinRunCuaInternalFeatureEnabled 默认 ON，仅显式 0/false/off 关闭；2026-08 注释更正——旧注释称默认关闭已过期）。显式开启后 macOS 使用既有产品 Helper，Windows 使用安装包内 runtime；
+  // CUA 已随正式版默认开启（isRobinDoneCuaInternalFeatureEnabled 默认 ON，仅显式 0/false/off 关闭；2026-08 注释更正——旧注释称默认关闭已过期）。显式开启后 macOS 使用既有产品 Helper，Windows 使用安装包内 runtime；
   // 两端都保持按需启动。关闭时不创建 host、不探测资源、不产生子进程或权限提示。
   const env = options.env ?? process.env;
-  if (!isRobinRunCuaInternalFeatureEnabled(env)) return false;
+  if (!isRobinDoneCuaInternalFeatureEnabled(env)) return false;
   const platform = options.platform ?? process.platform;
   return platform === "darwin" || platform === "win32";
 }
@@ -911,14 +911,14 @@ export function createDynamicCuaProductMcpServerResolver(options: {
       // delegate 可能跨过 Helper start/health await；dispose 在等待中置 terminal 时，不能把旧代际
       // 刚注入的 socket/token 交给晚到 Agent。移除 CUA candidate，保持其它 MCP 原样。
       return options.isResolverCurrent?.(resolver, context) === false
-        ? servers?.filter((server) => !isPotentialRobinRunCuaAgentMcpServer(server))
+        ? servers?.filter((server) => !isPotentialRobinDoneCuaAgentMcpServer(server))
         : resolved;
     },
     async restart() {
       // 委托到底层真实 resolver（由 ICuaPermissionService.restartHelper 经此调用）。
       const resolver = await options.getResolver();
       if (!resolver) {
-        throw new Error("RobinRun Computer Use is not enabled (plugin off or not product mode).");
+        throw new Error("RobinDone Computer Use is not enabled (plugin off or not product mode).");
       }
       await resolver.restart();
     },
@@ -926,7 +926,7 @@ export function createDynamicCuaProductMcpServerResolver(options: {
       // 授权完成后的 restart 必须保留 session id，才能复用底层的幂等与时序保障。
       const resolver = await options.getResolver();
       if (!resolver) {
-        throw new Error("RobinRun Computer Use is not enabled (plugin off or not product mode).");
+        throw new Error("RobinDone Computer Use is not enabled (plugin off or not product mode).");
       }
       await resolver.restartAfterPermissionGrant(onboardingSessionId);
     },
@@ -1158,12 +1158,12 @@ export function createDefaultCuaProductHelper(
   };
 }
 
-export const ROBINRUN_CUA_BUNDLED_HELPER_APP_PATH_ENV = "ROBINRUN_CUA_BUNDLED_HELPER_APP_PATH";
+export const ROBINDONE_CUA_BUNDLED_HELPER_APP_PATH_ENV = "ROBINDONE_CUA_BUNDLED_HELPER_APP_PATH";
 
 export function resolveBundledCuaHelperAppPath(
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
-  const injectedPath = env[ROBINRUN_CUA_BUNDLED_HELPER_APP_PATH_ENV]?.trim();
+  const injectedPath = env[ROBINDONE_CUA_BUNDLED_HELPER_APP_PATH_ENV]?.trim();
   if (injectedPath) {
     return injectedPath;
   }
@@ -1175,9 +1175,9 @@ export function resolveBundledCuaHelperAppPath(
 
 export { isOfficialCuaPluginEnabledForWorkspace };
 
-export function hasGlobalCliRobinRunCuaServer(env: NodeJS.ProcessEnv = process.env): boolean {
+export function hasGlobalCliRobinDoneCuaServer(env: NodeJS.ProcessEnv = process.env): boolean {
   const home = env.HOME?.trim() || homedir();
-  const configPath = join(home, ".robinrun", "cli", "config.json");
+  const configPath = join(home, ".robindone", "cli", "config.json");
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(configPath, "utf8"));
@@ -1188,24 +1188,24 @@ export function hasGlobalCliRobinRunCuaServer(env: NodeJS.ProcessEnv = process.e
   if (isRecord(parsed.features) && parsed.features.mcp === false) return false;
   if (!isRecord(parsed.mcp) || !isRecord(parsed.mcp.servers)) return false;
   return Object.entries(parsed.mcp.servers).some(([name, config]) =>
-    isGlobalCliRobinRunCuaServer(name, config),
+    isGlobalCliRobinDoneCuaServer(name, config),
   );
 }
 
-function isGlobalCliRobinRunCuaServer(name: string, config: unknown): boolean {
+function isGlobalCliRobinDoneCuaServer(name: string, config: unknown): boolean {
   if (!isRecord(config)) return false;
   if (config.enabled === false) return false;
   if (typeof config.type === "string" && config.type !== "stdio") return false;
   if (name === "computer-use") return true;
-  // 与 desktop/services resolver 和 CLI bootstrap 共用 @robinrun/shared 的单一事实源，避免第三处
-  // 判定漂移：git/.git/本地路径形态的 robinrun-cua 若这里漏判，全局 CLI env 注入不会带 broker
+  // 与 desktop/services resolver 和 CLI bootstrap 共用 @robindone/shared 的单一事实源，避免第三处
+  // 判定漂移：git/.git/本地路径形态的 robindone-cua 若这里漏判，全局 CLI env 注入不会带 broker
   // socket/token，agent 会回退成 Python/uvx 自己持有 macOS TCC（违反 product broker 边界）。
-  if (typeof config.command === "string" && isRobinRunCuaMcpCommand(config.command)) {
+  if (typeof config.command === "string" && isRobinDoneCuaMcpCommand(config.command)) {
     return true;
   }
   return (
     Array.isArray(config.args) &&
-    config.args.some((arg) => typeof arg === "string" && isRobinRunCuaMcpPackageArg(arg))
+    config.args.some((arg) => typeof arg === "string" && isRobinDoneCuaMcpPackageArg(arg))
   );
 }
 
@@ -1239,7 +1239,7 @@ export function createLocalServices(options: {
   >["prepareLegacyAccountConnections"];
   /** 注入后由 ServiceCollection 接管释放，并供 Host 其它 app-managed 下载复用。 */
   hostApiNetworkTransport?: HostApiNetworkTransport;
-  /** Desktop Host 注入 Main 推送的实时界面语言，供 RobinRun endpoint 的 X-Client-Language；远端 server 不注入。 */
+  /** Desktop Host 注入 Main 推送的实时界面语言，供 RobinDone endpoint 的 X-Client-Language；远端 server 不注入。 */
   resolveClientLanguage?: () => string | undefined;
   /** Desktop Host 请求 Main 登记 Agent 已授权的精确本地视频路径。 */
   authorizeLocalMediaPreviewPath?: (path: string) => Promise<string>;
@@ -1254,7 +1254,7 @@ export function createLocalServices(options: {
     Omit<CreateFeedbackServiceOptions, "apiClient" | "credentialService" | "oauthService">
   >;
   reportPluginTelemetryEvent?: (
-    event: import("@robinrun/shared").RendererTelemetryEventPayload,
+    event: import("@robindone/shared").RendererTelemetryEventPayload,
   ) => void | Promise<void>;
   processLifecycleReporter?: RuntimeProcessLifecycleReporter;
   taskRuntimeReporter?: RuntimeTaskReporter;
@@ -1265,8 +1265,8 @@ export function createLocalServices(options: {
   ) => Promise<void> | void;
   /** desktop local host 在 manual run 落库后直接派发，不经过 scheduler 正常路径。 */
   onAutomationManualRunRequested?: (params: {
-    automation: RobinRunAutomation;
-    run: RobinRunAutomationRun;
+    automation: RobinDoneAutomation;
+    run: RobinDoneAutomationRun;
   }) => Promise<void>;
   /**
    * 触发器引擎的事件投递端口（desktop host 装配：对绑定会话 resumeTask / 否则 createTask，
@@ -1297,18 +1297,18 @@ export function createLocalServices(options: {
   onOffPeakSchedulerWakeRequested?: () => void;
   // 注入点：默认 resolver 已能覆盖 dev/桌面/SSH 远端三类形态；
   // 测试或特殊宿主想强制走自定义 binary/参数时从这里注入。
-  robinrunAgentCommandResolver?: RobinRunAgentCommandResolver;
+  robindoneAgentCommandResolver?: RobinDoneAgentCommandResolver;
   /** Desktop Main 提前异步采集的本机 runtime 环境；Local Host 注入后不再同步启动 login shell。 */
   runtimeProcessEnvPatch?: Record<string, string>;
   /** 本地桌面上次 workspace 缺失时，仅用于 Agent 子进程 spawn.cwd 兜底。 */
-  robinrunAgentSpawnFallbackCwd?: string;
+  robindoneAgentSpawnFallbackCwd?: string;
   /** desktop-attached remote server 从 Desktop Host 收到的一次性 Agent 网络配置。 */
   remoteAgentNetwork?: {
     httpProxy?: string;
     noProxy?: string;
   };
-  /** 所属 Environment 的 RobinRun Built-in Provider Config 物理路径。 */
-  robinrunBuiltinProviderConfigFilePath: string;
+  /** 所属 Environment 的 RobinDone Built-in Provider Config 物理路径。 */
+  robindoneBuiltinProviderConfigFilePath: string;
   /** HTTP Server 只有在调用方明确配置认证时才暴露跨 Environment Provisioning target。 */
   providerProvisioningTargetEnabled?: boolean;
   /** Desktop Host 私有通知；只在 Source 成功持久化后请求 Main 调度远端镜像。 */
@@ -1363,13 +1363,13 @@ export function createLocalServices(options: {
   const isDesktopAttachedRemote = options?.serviceAuthorityMode === "desktop-attached-remote";
   // host / remote server 以前直接沿用当前进程环境启动后续服务。
   // GUI 启动的 desktop、SSH/WSL/Docker 拉起的 remote server 往往拿不到用户 login shell 里的 PATH，
-  // 导致 bun 这类只在 shell profile 里追加的命令在 RobinRun Agent/终端里不可见。
+  // 导致 bun 这类只在 shell profile 里追加的命令在 RobinDone Agent/终端里不可见。
   // 这里在所有本地服务启动前统一修正运行时环境，并顺带把内置 rg 注入 PATH，
-  // 让 RobinRun Agent、终端、认证 runtime 共用同一套命令解析结果。
+  // 让 RobinDone Agent、终端、认证 runtime 共用同一套命令解析结果。
   initializeRuntimeProcessEnv(options?.runtimeProcessEnvPatch);
 
   const desktopContextPromptEnabledRaw =
-    process.env[ROBINRUN_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]?.trim();
+    process.env[ROBINDONE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]?.trim();
   const desktopContextPromptEnabled =
     desktopContextPromptEnabledRaw === "1"
       ? true
@@ -1389,9 +1389,9 @@ export function createLocalServices(options: {
   const settingService = createObservableSettingService(
     options?.settingService ?? localSettings!.service,
   );
-  const resolveCurrentRobinRunEndpointOrigin = async () =>
-    resolveRuntimeRobinRunEndpointOrigin(process.env, {
-      overrideOrigin: (await settingService.get()).robinrunEndpointOrigin,
+  const resolveCurrentRobinDoneEndpointOrigin = async () =>
+    resolveRuntimeRobinDoneEndpointOrigin(process.env, {
+      overrideOrigin: (await settingService.get()).robindoneEndpointOrigin,
     });
   let invalidateProjectTokens = () => {};
   let invalidatePluginUiAccounts: (() => void) | undefined;
@@ -1421,19 +1421,20 @@ export function createLocalServices(options: {
         caCertPath: settings.httpProxyCaCertPath,
       };
     });
-  const robinrunJwtLogoutHandlerRef: {
+  const robindoneJwtLogoutHandlerRef: {
     current: ((input: string | URL, headers: Headers) => void) | null;
   } = { current: null };
   const apiClient = createNodeApiClient({
     fetchImpl: hostApiNetworkTransport.fetch,
-    onRobinrunJwtInvalid: (input, headers) => robinrunJwtLogoutHandlerRef.current?.(input, headers),
-    isRobinrunJwtRequest: (input, headers) =>
+    onRobindoneJwtInvalid: (input, headers) =>
+      robindoneJwtLogoutHandlerRef.current?.(input, headers),
+    isRobindoneJwtRequest: (input, headers) =>
       isCurrentOAuthCredentialRequest({ input, headers, credentialService }),
     isBusinessUnauthorizedRequest: (input, _headers) =>
       isOAuthBusinessRequest({ input, credentialService }),
     resolveBusinessCredentialValidationRequest: (input, headers) =>
       resolveOAuthBusinessCredentialValidationRequest({ input, headers, credentialService }),
-    resolveRobinRunEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+    resolveRobinDoneEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
     resolveClientLanguage: options?.resolveClientLanguage,
   });
   const systemService = createSystemService();
@@ -1573,28 +1574,28 @@ export function createLocalServices(options: {
   const providerConfigLog = createServiceLogger("provider-config");
   const clientConfigPlatform = resolveClientConfigPlatform();
   const providerConfigRuntime = createProviderConfigRuntime({
-    robinrunBuiltinFilePath: options.robinrunBuiltinProviderConfigFilePath,
-    robinrunBuiltinEnvironment: {
+    robindoneBuiltinFilePath: options.robindoneBuiltinProviderConfigFilePath,
+    robindoneBuiltinEnvironment: {
       environmentConfigRoot: resolveAppConfigDir(),
       platform: clientConfigPlatform,
-      appVersion: ROBINRUN_VERSION,
-      resolveEndpointOrigin: resolveCurrentRobinRunEndpointOrigin,
+      appVersion: ROBINDONE_VERSION,
+      resolveEndpointOrigin: resolveCurrentRobinDoneEndpointOrigin,
       onRefreshResult: (event) => {
         if (event.result === "updated")
-          providerConfigLog.info(undefined, "RobinRun Built-in CDN 配置已更新", event);
-        else providerConfigLog.debug(undefined, "RobinRun Built-in 刷新检查", event);
+          providerConfigLog.info(undefined, "RobinDone Built-in CDN 配置已更新", event);
+        else providerConfigLog.debug(undefined, "RobinDone Built-in 刷新检查", event);
       },
       fetchRelease: (endpointOrigin, signal) =>
-        fetchRobinRunBuiltinRemoteRelease({
+        fetchRobinDoneBuiltinRemoteRelease({
           apiClient,
           endpointOrigin,
           signal,
-          appVersion: ROBINRUN_VERSION,
+          appVersion: ROBINDONE_VERSION,
           platform: clientConfigPlatform,
         }),
     },
-    onRobinRunBuiltinRefreshError: (error) => {
-      providerConfigLog.warn(undefined, "RobinRun Built-in Config 远端刷新失败", { error });
+    onRobinDoneBuiltinRefreshError: (error) => {
+      providerConfigLog.warn(undefined, "RobinDone Built-in Config 远端刷新失败", { error });
     },
     onPersonalConfigRecovery: (event) => {
       providerConfigLog.warn(
@@ -1611,9 +1612,9 @@ export function createLocalServices(options: {
         error,
       });
     },
-    // 已发布 config.json 保存的是 RobinRun 用户配置；清理第三方 ACP 不能移除这条升级路径。
+    // 已发布 config.json 保存的是 RobinDone 用户配置；清理第三方 ACP 不能移除这条升级路径。
     // Repository 仅在新 Personal 配置不存在时导入，并保留旧文件以便回滚。
-    readLegacyProviders: () => readLegacyRobinRunConfigProviders(),
+    readLegacyProviders: () => readLegacyRobinDoneConfigProviders(),
   });
   const accountProviderConfigSource = createAccountProviderConfigSource({
     configSource: providerConfigRuntime.configService,
@@ -1673,7 +1674,7 @@ export function createLocalServices(options: {
     },
   );
   let providerConnectivityAgentService:
-    | Pick<IRobinRunAgentService, "testModelConnectivity">
+    | Pick<IRobinDoneAgentService, "testModelConnectivity">
     | undefined;
   const providerRuntime = createProviderRuntimeFromConfigRuntime({
     configRuntime: providerConfigRuntime,
@@ -1713,12 +1714,12 @@ export function createLocalServices(options: {
         modelSelectionService: providerRuntime.modelSelection,
       }),
   };
-  // mcpSync/hooks 里引用 robinrunAgentService 的闭包是惰性调用，声明顺序不影响初始化。
+  // mcpSync/hooks 里引用 robindoneAgentService 的闭包是惰性调用，声明顺序不影响初始化。
   const skillsService = createSkillsService({ isDesktopRuntime: true });
   const mcpSyncService = createMcpSyncService({
     // mcp/list 的 host 消费点收拢到 mcpSync 服务；真实状态检查仍在 agent 进程。
-    listMcpServerStatuses: (params) => robinrunAgentService.listMcpServerStatuses(params),
-    setWorkspaceMcpTrust: (params) => robinrunAgentService.setWorkspaceMcpTrust(params),
+    listMcpServerStatuses: (params) => robindoneAgentService.listMcpServerStatuses(params),
+    setWorkspaceMcpTrust: (params) => robindoneAgentService.setWorkspaceMcpTrust(params),
   });
   const pluginSyncService = createPluginSyncService();
   const pluginUiAccounts = createPluginUiAccountBindings({
@@ -1727,47 +1728,47 @@ export function createLocalServices(options: {
       const profile = provider ? await oauthCredentialRepo.loadUserProfile(provider) : null;
       return [provider, profile?.id ?? null];
     },
-    open: (params) => robinrunAgentService.openMcpUiInstance(params),
-    close: (params) => robinrunAgentService.closeMcpUiInstance(params),
+    open: (params) => robindoneAgentService.openMcpUiInstance(params),
+    close: (params) => robindoneAgentService.closeMcpUiInstance(params),
   });
   invalidatePluginUiAccounts = () => pluginUiAccounts.invalidate();
   const pluginUiBridgeService = createPluginUiBridgeService({
     reportTelemetryEvent: options?.reportPluginTelemetryEvent,
     openInstance: (params) => pluginUiAccounts.open(params),
     closeInstance: (params) => pluginUiAccounts.close(params),
-    validateInstance: (params) => robinrunAgentService.validateMcpUiInstance(params),
-    recycleInstance: (params) => robinrunAgentService.recycleMcpUiInstance(params),
+    validateInstance: (params) => robindoneAgentService.validateMcpUiInstance(params),
+    recycleInstance: (params) => robindoneAgentService.recycleMcpUiInstance(params),
     // 插件 UI：资源读取与 UI 工具调用都发生在 session 所在的 agent 进程；host 只做校验与登记。
-    readMcpResource: (params) => robinrunAgentService.readMcpResource(params),
-    callMcpToolForUi: (params) => robinrunAgentService.callMcpToolForUi(params),
-    cancelMcpToolCallForUi: (params) => robinrunAgentService.cancelMcpToolCallForUi(params),
-    readMcpResourceForUi: (params) => robinrunAgentService.readMcpResourceForUi(params),
-    listMcpResourcesForUi: (params) => robinrunAgentService.listMcpResourcesForUi(params),
+    readMcpResource: (params) => robindoneAgentService.readMcpResource(params),
+    callMcpToolForUi: (params) => robindoneAgentService.callMcpToolForUi(params),
+    cancelMcpToolCallForUi: (params) => robindoneAgentService.cancelMcpToolCallForUi(params),
+    readMcpResourceForUi: (params) => robindoneAgentService.readMcpResourceForUi(params),
+    listMcpResourcesForUi: (params) => robindoneAgentService.listMcpResourcesForUi(params),
     listMcpResourceTemplatesForUi: (params) =>
-      robinrunAgentService.listMcpResourceTemplatesForUi(params),
-    subscribeMcpResourceForUi: (params) => robinrunAgentService.subscribeMcpResourceForUi(params),
+      robindoneAgentService.listMcpResourceTemplatesForUi(params),
+    subscribeMcpResourceForUi: (params) => robindoneAgentService.subscribeMcpResourceForUi(params),
     unsubscribeMcpResourceForUi: (params) =>
-      robinrunAgentService.unsubscribeMcpResourceForUi(params),
-    listPluginUiSurfaces: (params) => robinrunAgentService.listPluginUiSurfaces(params),
+      robindoneAgentService.unsubscribeMcpResourceForUi(params),
+    listPluginUiSurfaces: (params) => robindoneAgentService.listPluginUiSurfaces(params),
     registerSandbox: options?.registerPluginSandbox,
   });
   // App-Provided Tools：页面工具登记与模型调用的认领 / 回传都发生在 session 所在的 agent 进程。
   const pluginUiSamplingService = createPluginUiSamplingService({
-    sample: (params) => robinrunAgentService.sampleMcpApp(params),
-    cancelSampling: (params) => robinrunAgentService.cancelMcpAppSampling(params),
+    sample: (params) => robindoneAgentService.sampleMcpApp(params),
+    cancelSampling: (params) => robindoneAgentService.cancelMcpAppSampling(params),
   });
   const pluginUiAppToolsService = createPluginUiAppToolsService({
-    registerAppToolsForUi: (params) => robinrunAgentService.registerAppToolsForUi(params),
-    unregisterAppToolsForUi: (params) => robinrunAgentService.unregisterAppToolsForUi(params),
-    claimAppToolCallForUi: (params) => robinrunAgentService.claimAppToolCallForUi(params),
-    resolveAppToolCallForUi: (params) => robinrunAgentService.resolveAppToolCallForUi(params),
+    registerAppToolsForUi: (params) => robindoneAgentService.registerAppToolsForUi(params),
+    unregisterAppToolsForUi: (params) => robindoneAgentService.unregisterAppToolsForUi(params),
+    claimAppToolCallForUi: (params) => robindoneAgentService.claimAppToolCallForUi(params),
+    resolveAppToolCallForUi: (params) => robindoneAgentService.resolveAppToolCallForUi(params),
   });
   const subagentsService = createSubagentsService({
     isDesktopRuntime: true,
   });
   const commandsService = createCommandsService({ isDesktopRuntime: true });
   const hooksService = createHooksService({
-    grantWorkspaceHookTrust: (params) => robinrunAgentService.grantWorkspaceHookTrust(params),
+    grantWorkspaceHookTrust: (params) => robindoneAgentService.grantWorkspaceHookTrust(params),
   });
   const memoryService = createMemoryService();
   // 只要当前进程已经装配 Provider Runtime，就由该 Environment 自己的 Selection View
@@ -1778,18 +1779,18 @@ export function createLocalServices(options: {
   // 约束：lifecycle coordinator 懒获取 + 代际 fence（dispose 仅来自显式 workspace 生命周期）；
   // 不创建定时健康探测；Helper restart 尽可能复用 host transport，既有 Agent 的 session、
   // 进程与 MCP stream 保持不变。
-  // P1-a mitigation：createDefaultCuaProductHelper() 在 robinrunAgentService 存在之前就要组装 resolver，
-  // 但"是否有活跃 turn"这个信号只有 robinrunAgentService 建好之后才能查询。用前向引用占位——resolver 真正
+  // P1-a mitigation：createDefaultCuaProductHelper() 在 robindoneAgentService 存在之前就要组装 resolver，
+  // 但"是否有活跃 turn"这个信号只有 robindoneAgentService 建好之后才能查询。用前向引用占位——resolver 真正
   // 调用 hasActiveTurn() 发生在后续某次 resolveMcpServers（异步），那时 hasActiveTurnRef 早已被赋值。
   // 先用前向引用连接 agent service 的 CUA turn tracker，避免在活跃 CUA 请求中途重启 Helper；
   // service 创建完成后再赋值。Helper recovery 始终不能回收 Agent。
   let hasActiveTurnRef: (() => boolean) | undefined;
   const isCuaEnabledForContext = (context?: CuaProductMcpServerResolverContext): boolean =>
-    // 保留 main 原有 gate 行为（避免回归）：dev/internal 特性开启时（ROBINRUN_CUA_DEV_MODE=1 或
-    // ROBINRUN_CUA_PRODUCT_HELPER=1）即视为启用，不依赖 config.json 显式 enable——main 的 bootstrap
-    // 用 isRobinRunCuaInternalFeatureEnabled 门控 bundled plugin，与 feat 的 workspace enablement 不同。
+    // 保留 main 原有 gate 行为（避免回归）：dev/internal 特性开启时（ROBINDONE_CUA_DEV_MODE=1 或
+    // ROBINDONE_CUA_PRODUCT_HELPER=1）即视为启用，不依赖 config.json 显式 enable——main 的 bootstrap
+    // 用 isRobinDoneCuaInternalFeatureEnabled 门控 bundled plugin，与 feat 的 workspace enablement 不同。
     // 生产路径（dev mode off）回落到官方插件 workspace enablement 判定（与 feat 一致）。
-    isRobinRunCuaInternalFeatureEnabled(process.env) ||
+    isRobinDoneCuaInternalFeatureEnabled(process.env) ||
     isOfficialCuaPluginEnabledForWorkspace({
       env: process.env,
       workingDirectory: context?.workspacePath,
@@ -1802,7 +1803,7 @@ export function createLocalServices(options: {
     context?: CuaProductMcpServerResolverContext,
   ): ManagedDefaultCuaProductHelper | undefined => {
     const helper = createDefaultCuaProductHelper({
-      // 转发活跃-turn 查询（前向引用，robinrunAgentService 建好后赋值）。
+      // 转发活跃-turn 查询（前向引用，robindoneAgentService 建好后赋值）。
       hasActiveTurn: () => hasActiveTurnRef?.() ?? false,
     });
     if (!helper) return undefined;
@@ -1880,17 +1881,17 @@ export function createLocalServices(options: {
   // 签名门查询；产品 Helper 不嵌 dev policy，这对 argv 无效（产品签名天然过 Team 门）。
   // 拉起后轮询 ping（5s/100ms），就绪返回 socket 路径，否则 null。
   //
-  // dev 判定直接用上游的 isCuaLocalDevelopmentRuntime（@robinrun/robinrun-cua/broker/server，
+  // dev 判定直接用上游的 isCuaLocalDevelopmentRuntime（@robindone/robindone-cua/broker/server，
   // 即本文件已经用来 import buildHelperOpenArgs 的那个 subpath，可正常导入）。
   //
   // 行为等价性（别误读成安全加固）：上游是 `COMPILED_LOCAL_DEVELOPMENT_RUNTIME &&
-  // ROBINRUN_RUNTIME_ENV!=="production"`，而那个编译期常量只有 scripts/build-cua-helper-app.mjs
+  // ROBINDONE_RUNTIME_ENV!=="production"`，而那个编译期常量只有 scripts/build-cua-helper-app.mjs
   // 会用 define 折叠（Helper bundle）；desktop host bundle 没有该 define，于是回退成
   // `process.env.NODE_ENV !== "production"` —— 正是复制品写的那一项。所以在**当前**打包形态下
-  // 两者逐字等价，关门靠的是 ROBINRUN_RUNTIME_ENV=production（打包态显式注入且不传 NODE_ENV）。
+  // 两者逐字等价，关门靠的是 ROBINDONE_RUNTIME_ENV=production（打包态显式注入且不传 NODE_ENV）。
   //
   // 换成上游的收益是消除漂移面：折叠点、因子个数与 fail-closed 方向都由上游一处决定，
-  // 哪天 host bundle 也补上 __ROBINRUN_LOCAL_DEVELOPMENT_RUNTIME__ define（Helper 侧已经有），
+  // 哪天 host bundle 也补上 __ROBINDONE_LOCAL_DEVELOPMENT_RUNTIME__ define（Helper 侧已经有），
   // 编译期门自动生效，不需要再回来改这里。
 
   const cuaStatusLaunchLog = createServiceLogger("cua-status-launch");
@@ -1970,7 +1971,7 @@ export function createLocalServices(options: {
     enabled: cuaPipSessionEnabled,
     resolveCredentials: async () => {
       const host = defaultCuaProductHelperLifecycle.peek()?.helper.macPermissionHost;
-      // PiP 客户端以 role=presentation 声明，资格由 Helper 按对端（RobinRun 主进程）签名 identifier 裁决。
+      // PiP 客户端以 role=presentation 声明，资格由 Helper 按对端（RobinDone 主进程）签名 identifier 裁决。
       if (host?.running && host.socketPath) {
         return {
           socketPath: host.socketPath,
@@ -2016,7 +2017,7 @@ export function createLocalServices(options: {
       ) {
         return {
           available: false,
-          reason: "RobinRun Computer Use is not enabled (plugin off or not product mode).",
+          reason: "RobinDone Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       // 懒启动：状态查询绝不拉起 Helper。托管 host 在（如刚完成授权流）→ 全量查询；
@@ -2038,13 +2039,13 @@ export function createLocalServices(options: {
           return {
             available: false,
             reason:
-              "RobinRun Computer Use is not running; it will start automatically on first Computer Use use.",
+              "RobinDone Computer Use is not running; it will start automatically on first Computer Use use.",
             idle: true,
           } satisfies { available: false; reason: string; idle: true };
         }
         // standalone Helper 上直接查权限真值（身份模式，无 token）。
         try {
-          const { callBrokerMethod } = await import("@robinrun/robinrun-cua/broker/helperHealth");
+          const { callBrokerMethod } = await import("@robindone/robindone-cua/broker/helperHealth");
           const report = await callBrokerMethod<{
             grant_owner: string;
             owner?: { display_name?: string };
@@ -2067,7 +2068,7 @@ export function createLocalServices(options: {
         } catch {
           return {
             available: false,
-            reason: "RobinRun Computer Use is starting up; retry in a moment.",
+            reason: "RobinDone Computer Use is starting up; retry in a moment.",
             idle: true,
           } satisfies { available: false; reason: string; idle: true };
         }
@@ -2077,7 +2078,7 @@ export function createLocalServices(options: {
         if (!helper || !isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "RobinRun Computer Use lifecycle is disposed.",
+            reason: "RobinDone Computer Use lifecycle is disposed.",
           };
         }
         // Screen Recording 的真值必须来自一个新进程：撤销对已运行的常驻 Helper 不生效，
@@ -2086,7 +2087,7 @@ export function createLocalServices(options: {
         if (!isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "RobinRun Computer Use lifecycle is disposed.",
+            reason: "RobinDone Computer Use lifecycle is disposed.",
           };
         }
         // 真实 screen-capture 探针：TCC screen_recording === "granted" 只说明系统记录了授权，并不保证
@@ -2101,7 +2102,7 @@ export function createLocalServices(options: {
         if (!isDefaultCuaProductHelperCurrent(helper)) {
           return {
             available: false,
-            reason: "RobinRun Computer Use lifecycle is disposed.",
+            reason: "RobinDone Computer Use lifecycle is disposed.",
           };
         }
         const reportedOwnerDisplayName =
@@ -2145,7 +2146,7 @@ export function createLocalServices(options: {
       ) {
         return {
           ok: false,
-          reason: "RobinRun Computer Use is not enabled (plugin off or not product mode).",
+          reason: "RobinDone Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       // 走 resolver.restart()，让 host 尽可能复用 transport；不得通过 disposeWorkspace
@@ -2158,7 +2159,7 @@ export function createLocalServices(options: {
       if (!resolver) {
         return {
           ok: false,
-          reason: "RobinRun Computer Use is not enabled (plugin off or not product mode).",
+          reason: "RobinDone Computer Use is not enabled (plugin off or not product mode).",
         };
       }
       try {
@@ -2170,14 +2171,14 @@ export function createLocalServices(options: {
         if (!helper || !isDefaultCuaProductHelperCurrent(helper)) {
           return {
             ok: false,
-            reason: "RobinRun Computer Use lifecycle is disposed.",
+            reason: "RobinDone Computer Use lifecycle is disposed.",
           };
         }
         return { ok: true };
       } catch (error) {
         return {
           ok: false,
-          reason: `Failed to restart RobinRun Computer Use: ${
+          reason: `Failed to restart RobinDone Computer Use: ${
             error instanceof Error ? error.message : String(error)
           }`,
         };
@@ -2186,7 +2187,7 @@ export function createLocalServices(options: {
   };
   // 动态工作流的用户选择（docs/dynamic-workflow/launch.md「The user's choice」）：本机设置文件是唯一来源，
   // 每次使用时读取。desktop-attached remote Host 读不到桌面的设置，选择由 desktop 推送
-  // （robinrunAgentService.syncDynamicWorkflowUserMode），这里不注入。读取失败按「跟随」处理。
+  // （robindoneAgentService.syncDynamicWorkflowUserMode），这里不注入。读取失败按「跟随」处理。
   const resolveDynamicWorkflowUserMode = isDesktopAttachedRemote
     ? undefined
     : async () => (await settingService.get()).dynamicWorkflowMode;
@@ -2258,19 +2259,20 @@ export function createLocalServices(options: {
     ensureMainAgentGroup: async (projectId) => {
       await taskGroupService.ensureMainAgentGroup({ projectId });
     },
-    // robinrunAgentService 在下方创建；端口只在命令执行时取用它。
+    // robindoneAgentService 在下方创建；端口只在命令执行时取用它。
     data: {
       repository: () => taskIndexRepo.getProjectDataRepository(),
       port: createProjectDataPort({
         agent: {
           measure: (params) => {
-            if (!robinrunAgentService.measureSessionData)
+            if (!robindoneAgentService.measureSessionData)
               throw new Error("project.data-unavailable");
-            return robinrunAgentService.measureSessionData(params);
+            return robindoneAgentService.measureSessionData(params);
           },
           purge: (params) => {
-            if (!robinrunAgentService.purgeSessionData) throw new Error("project.data-unavailable");
-            return robinrunAgentService.purgeSessionData(params);
+            if (!robindoneAgentService.purgeSessionData)
+              throw new Error("project.data-unavailable");
+            return robindoneAgentService.purgeSessionData(params);
           },
         },
         checkpointDirectory: (workspacePath) => getWorkspaceCheckpointDirectory(workspacePath),
@@ -2343,9 +2345,9 @@ export function createLocalServices(options: {
       // ——服务装配顺序上 task service adapter 在引擎之后创建，闭包运行期取值。
       // 订阅者 → 身份重置目标："master" = 清除 worker 身份；wkr-* = 落库该身份。
       clearTask: async (params) => {
-        const taskService = lateBoundRobinRunTaskService;
+        const taskService = lateBoundRobinDoneTaskService;
         if (!taskService) {
-          throw new Error("RobinRun task service is not initialized.");
+          throw new Error("RobinDone task service is not initialized.");
         }
         await taskService.clearTaskMessages({
           taskId: params.taskId,
@@ -2465,7 +2467,7 @@ export function createLocalServices(options: {
     hostId: options?.projectStorageHostId ?? "local",
     workspaceIdentity: undefined,
   });
-  const robinrunAgentService = createRobinRunAgentService({
+  const robindoneAgentService = createRobinDoneAgentService({
     useSharedTaskRuntime: async (target) => {
       if (options?.projectStorageHostId && options.projectStorageHostId !== "local") return false;
       return !(await taskIndexRepo.getProjectRepository()).hasProjectWorkspace(target);
@@ -2505,25 +2507,25 @@ export function createLocalServices(options: {
       codingPlanSubscriptionService.getDynamicWorkflowClientConfig(),
     ...(resolveDynamicWorkflowUserMode ? { resolveDynamicWorkflowUserMode } : {}),
     forwardDynamicWorkflowUserMode: options?.forwardDynamicWorkflowUserMode,
-    commandResolver: options?.robinrunAgentCommandResolver,
-    presentationSurface: resolveRobinRunAgentPresentationSurface({
+    commandResolver: options?.robindoneAgentCommandResolver,
+    presentationSurface: resolveRobinDoneAgentPresentationSurface({
       runtimeSurface: options?.agentTelemetry?.runtimeSurface,
       serviceAuthorityMode: options?.serviceAuthorityMode,
       desktopContextPromptEnabled,
     }),
     onAutomationManualRunRequested: options?.onAutomationManualRunRequested,
     // createLocalServices 虽然暴露了 reporter 注入点，旧装配却没有继续传给
-    // RobinRunAgentProcessManager，导致 host 永远不向 main 上报 Agent spawn/exit，进程监控器
+    // RobinDoneAgentProcessManager，导致 host 永远不向 main 上报 Agent spawn/exit，进程监控器
     // 因而看不到实际运行的 Agent，也无法验证只读到可写升级是否复用同一进程。
     processLifecycleReporter: options?.processLifecycleReporter,
-    spawnFallbackCwd: options?.robinrunAgentSpawnFallbackCwd,
+    spawnFallbackCwd: options?.robindoneAgentSpawnFallbackCwd,
     // browser-use：host→main 执行桥透传给 agent service 的 onRequest browserExecute 路由。
     browserControlExecutor: options?.browserControlExecutor,
     // agent 会话跨会话投递（worker 会话同构化）：ContactAgent master↔worker 投递落到
     // task service（寻址创建/唤醒目标会话 + sendPrompt，机制同触发器投递）。晚绑定引用
-    // task service（创建顺序晚于 agent service，见 robinrunTaskService 声明处）。
+    // task service（创建顺序晚于 agent service，见 robindoneTaskService 声明处）。
     agentContactDispatchExecutor: async (request) =>
-      dispatchAgentContactToTaskService(lateBoundRobinRunTaskService, request, {
+      dispatchAgentContactToTaskService(lateBoundRobinDoneTaskService, request, {
         // ContactAgent 新建会话的项目归属（2026-11-21 实测修复）：host 项目树按工作区
         // root 解析 projectId——与触发器引擎 listWorkspaces 同源；协议/模型零感知，
         // 缺省回退（解析不到 = 未归属）由 dispatch 内部兜住。
@@ -2572,9 +2574,9 @@ export function createLocalServices(options: {
         return request.entryId;
       };
       switch (request.method) {
-        case robinrunProtocolMethods.opsPanelListEntries:
+        case robindoneProtocolMethods.opsPanelListEntries:
           return opsPanelService.getPanelView(panel);
-        case robinrunProtocolMethods.opsPanelGetEntry: {
+        case robindoneProtocolMethods.opsPanelGetEntry: {
           const entryId = requireEntryId();
           const view = await opsPanelService.getPanelView(panel);
           const entry = view.entries.find((candidate) => candidate.id === entryId);
@@ -2585,7 +2587,7 @@ export function createLocalServices(options: {
           }
           return { entry };
         }
-        case robinrunProtocolMethods.opsPanelCreateEntry: {
+        case robindoneProtocolMethods.opsPanelCreateEntry: {
           if (
             request.kind === undefined ||
             request.title === undefined ||
@@ -2606,7 +2608,7 @@ export function createLocalServices(options: {
             }),
           };
         }
-        case robinrunProtocolMethods.opsPanelDecideRequirement: {
+        case robindoneProtocolMethods.opsPanelDecideRequirement: {
           if (request.outcome === undefined) {
             throw new Error("Protocol violation: opsPanel/decideRequirement requires outcome");
           }
@@ -2619,7 +2621,7 @@ export function createLocalServices(options: {
             }),
           };
         }
-        case robinrunProtocolMethods.opsPanelResolveFeedback:
+        case robindoneProtocolMethods.opsPanelResolveFeedback:
           return {
             entry: await opsPanelService.resolveFeedback({
               ...panel,
@@ -2627,7 +2629,7 @@ export function createLocalServices(options: {
               note: request.note,
             }),
           };
-        case robinrunProtocolMethods.opsPanelAcknowledgeApproval:
+        case robindoneProtocolMethods.opsPanelAcknowledgeApproval:
           return {
             entry: await opsPanelService.acknowledgeApproval({
               ...panel,
@@ -2636,9 +2638,9 @@ export function createLocalServices(options: {
             }),
           };
         // ---- 进度账本（2026-11-25，specs/progress-ledger.md）：master 独占维护 ----
-        case robinrunProtocolMethods.opsPanelGetProgressView:
+        case robindoneProtocolMethods.opsPanelGetProgressView:
           return opsPanelService.getProgressView(panel);
-        case robinrunProtocolMethods.opsPanelAppendProgress: {
+        case robindoneProtocolMethods.opsPanelAppendProgress: {
           if (request.title === undefined) {
             throw new Error("Protocol violation: opsPanel/appendProgress requires title");
           }
@@ -2651,7 +2653,7 @@ export function createLocalServices(options: {
             }),
           };
         }
-        case robinrunProtocolMethods.opsPanelUpdateProgress:
+        case robindoneProtocolMethods.opsPanelUpdateProgress:
           return {
             entry: await opsPanelService.updateProgress({
               ...panel,
@@ -2661,7 +2663,7 @@ export function createLocalServices(options: {
               links: request.links,
             }),
           };
-        case robinrunProtocolMethods.opsPanelDeleteProgress:
+        case robindoneProtocolMethods.opsPanelDeleteProgress:
           return opsPanelService.deleteProgress({ ...panel, entryId: requireEntryId() });
       }
     },
@@ -2720,13 +2722,13 @@ export function createLocalServices(options: {
       modelSelectionService: providerRuntime.modelSelection,
     }),
     // host 是身份权威边界：provenance/origin 必须在这里再校验一次，不能只依赖 agent
-    // adapter 的 fetch wrapper。判定实现与 CLI 侧共用 @robinrun/shared 的同一份，避免分叉。
-    // origin 解析复用 resolveCurrentRobinRunEndpointOrigin——与闲时任务同口径（含 settings
+    // adapter 的 fetch wrapper。判定实现与 CLI 侧共用 @robindone/shared 的同一份，避免分叉。
+    // origin 解析复用 resolveCurrentRobinDoneEndpointOrigin——与闲时任务同口径（含 settings
     // 覆盖），否则会出现"闲时任务能连、官方 MCP 连不上"。
     // dev 开关必须同样传入，否则本地自测会被 host 单方面拒绝。
     officialMcpTrustedOrigins: createOfficialMcpTrustedOriginRegistry({
       devTrustedOriginsRaw: process.env[OFFICIAL_MCP_DEV_TRUSTED_ORIGINS_ENV],
-      resolveRobinRunApiOrigin: resolveCurrentRobinRunEndpointOrigin,
+      resolveRobinDoneApiOrigin: resolveCurrentRobinDoneEndpointOrigin,
     }),
     cuaOperationStateReporter: shouldEnableCuaOperationStateReporter({
       serviceAuthorityMode: options?.serviceAuthorityMode,
@@ -2734,7 +2736,7 @@ export function createLocalServices(options: {
     })
       ? options?.cuaOperationStateReporter
       : undefined,
-    // RobinRun 只发布 turn/session 事实；面板 terminal policy 由 producer coordinator 决定。
+    // RobinDone 只发布 turn/session 事实；面板 terminal policy 由 producer coordinator 决定。
     ...(options?.serviceAuthorityMode === "desktop-local"
       ? {
           onCuaPipSessionLifecycle: (_workspace, event) => {
@@ -2760,12 +2762,12 @@ export function createLocalServices(options: {
           process.platform === "win32" ? getStableCuaPipeName() : resolveBrokerSocketPath();
         cuaProductHelperEnv = {
           [BROKER_SOCKET_ENV]: brokerSocket,
-          [ROBINRUN_CUA_PLUGIN_AUTHORITY_ENV_KEY]: randomBytes(16).toString("hex"),
+          [ROBINDONE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: randomBytes(16).toString("hex"),
         };
         if (process.platform === "win32") {
           const recipe = await resolveStableCuaWinRecipe();
           if (recipe) {
-            cuaProductHelperEnv["ROBINRUN_CUA_WIN_HELPER_RECIPE"] = JSON.stringify({
+            cuaProductHelperEnv["ROBINDONE_CUA_WIN_HELPER_RECIPE"] = JSON.stringify({
               ...recipe,
               hostPid: process.pid,
             });
@@ -2777,7 +2779,7 @@ export function createLocalServices(options: {
           }
         }
       }
-      const telemetryEnv = getCapturedRobinRunAgentTelemetryEnv();
+      const telemetryEnv = getCapturedRobinDoneAgentTelemetryEnv();
       const telemetryConfigured = Boolean(
         telemetryEnv.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT,
       );
@@ -2798,9 +2800,9 @@ export function createLocalServices(options: {
         }),
         // 把 host 解析出的权威 origin（含 settings 覆盖）下发给 agent，否则 agent 侧只按
         // env 推导，test env + 自定义端点时两侧信任判定的输入分叉、官方 MCP 整体 fail closed。
-        ...buildAgentEndpointOriginEnv(await resolveCurrentRobinRunEndpointOrigin()),
-        // broker 凭据（socket/token）注入 agent spawn env，让内置 robinrun-cua plugin 的
-        // computer-use MCP server 经 __robinrun-plugin-host 恢复 token 后连上 broker。
+        ...buildAgentEndpointOriginEnv(await resolveCurrentRobinDoneEndpointOrigin()),
+        // broker 凭据（socket/token）注入 agent spawn env，让内置 robindone-cua plugin 的
+        // computer-use MCP server 经 __robindone-plugin-host 恢复 token 后连上 broker。
         ...cuaProductHelperEnv,
         ...buildAgentTelemetrySpawnEnv({
           deviceMid: telemetryDeviceMid,
@@ -2811,8 +2813,8 @@ export function createLocalServices(options: {
         ...createNodeProviderRuntimePathEnv({
           // Built-in Active 路径按当前 Endpoint 隔离，不能通过同步的固定路径
           // getter 读取；Agent spawn 必须等待本轮 Endpoint Source 完成解析和物化。
-          robinrunBuiltinFilePath:
-            await providerConfigRuntime.resolveRobinRunBuiltinActiveFilePath(),
+          robindoneBuiltinFilePath:
+            await providerConfigRuntime.resolveRobinDoneBuiltinActiveFilePath(),
           personalFilePath: join(resolveAppConfigDir(), PERSONAL_PROVIDER_CONFIG_FILE_NAME),
         }),
       };
@@ -2830,7 +2832,7 @@ export function createLocalServices(options: {
           resolveSessionRuntimePreferences: async (scope) => {
             // 预算已统一，不能把可选远端配置作为本地/手机 shared-host 建会话的前置条件。
             const settings = await settingService.get();
-            const modelContextBudgetStrategy = DEFAULT_ROBINRUN_MODEL_CONTEXT_BUDGET_STRATEGY;
+            const modelContextBudgetStrategy = DEFAULT_ROBINDONE_MODEL_CONTEXT_BUDGET_STRATEGY;
             return {
               askUserQuestionAutoResolutionEnabled:
                 settings.askUserQuestionAutoResolutionEnabled !== false,
@@ -2847,16 +2849,16 @@ export function createLocalServices(options: {
           },
         }),
   });
-  providerConnectivityAgentService = robinrunAgentService;
+  providerConnectivityAgentService = robindoneAgentService;
   // Helper health probe 短暂超时不应在 Computer Use turn 中途回收 Agent。resolver 会把 restart
   // 推迟到下一个 request/turn 边界；若 broker 确实已失效，当前 turn 会自然失败并由下一次请求恢复。
-  hasActiveTurnRef = () => robinrunAgentService.hasActiveCuaOperationTurn();
-  // desktop-continuous UI 直接订阅 robinrunSessionService，绕开 RobinRun task adapter 的
+  hasActiveTurnRef = () => robindoneAgentService.hasActiveCuaOperationTurn();
+  // desktop-continuous UI 直接订阅 robindoneSessionService，绕开 RobinDone task adapter 的
   // mapServiceEvent 路径，导致 task_complete 永远不会写回 sqlite，侧边栏 spinner 不停。
   // 在 services 层装配一个共享的 taskIndexRepo + syncer，session 任意入口都会唤醒
   // shadow 订阅，把 runtime 终态收敛进 sqlite。
-  const robinrunTaskIndexSyncer = createRobinRunTaskIndexSyncer({
-    agentService: robinrunAgentService,
+  const robindoneTaskIndexSyncer = createRobinDoneTaskIndexSyncer({
+    agentService: robindoneAgentService,
     taskIndexRepo,
   });
   // 自动归档只由这里的定时扫描触发（启动首轮 + 每小时 + 设置变更补扫）；readTree 与任务点击
@@ -2868,7 +2870,7 @@ export function createLocalServices(options: {
       const days = Math.max(1, Math.floor(settings.taskAutoArchiveOlderThanDays ?? 30));
       return {
         cutoff: Date.now() - days * 86_400_000,
-        activeTasks: robinrunTaskIndexSyncer.activeTaskRefs(),
+        activeTasks: robindoneTaskIndexSyncer.activeTaskRefs(),
       };
     },
     repository: () => taskIndexRepo.getProjectRepository(),
@@ -2891,9 +2893,9 @@ export function createLocalServices(options: {
   });
   const cuaProductMcpServerResolver =
     options?.cuaProductMcpServerResolver ?? defaultCuaProductMcpServerResolver;
-  const robinrunSessionService = createRobinRunSessionService({
-    agentService: robinrunAgentService,
-    taskIndexSyncer: robinrunTaskIndexSyncer,
+  const robindoneSessionService = createRobinDoneSessionService({
+    agentService: robindoneAgentService,
+    taskIndexSyncer: robindoneTaskIndexSyncer,
     cuaProductMcpServerResolver,
   });
   const gitCommitMessageGenerator = new GitCommitMessageGenerator({
@@ -2906,7 +2908,7 @@ export function createLocalServices(options: {
     },
     textGenerator: {
       async generateText(params) {
-        return await robinrunAgentService.generateWorkspaceText({
+        return await robindoneAgentService.generateWorkspaceText({
           workspacePath: params.workspacePath,
           ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
           selection: params.selection,
@@ -2920,18 +2922,18 @@ export function createLocalServices(options: {
   const gitService = createGitService({
     commitMessageGenerator: gitCommitMessageGenerator,
   });
-  // task wrapper 由 RobinRun task service adapter 提供；核心 session 状态由 RobinRun agent server 维护。
+  // task wrapper 由 RobinDone task service adapter 提供；核心 session 状态由 RobinDone agent server 维护。
   // agentContactDispatchExecutor（worker 会话同构化）需要 task service，但其创建晚于 agent
   // service；executor 是请求期回调，这里用晚绑定持有者，注册后指向 adapter。
-  let lateBoundRobinRunTaskService: IRobinRunTaskService | undefined;
-  const robinrunTaskService = createRobinRunTaskServiceAdapter({
-    robinrunAgentService,
+  let lateBoundRobinDoneTaskService: IRobinDoneTaskService | undefined;
+  const robindoneTaskService = createRobinDoneTaskServiceAdapter({
+    robindoneAgentService,
     taskIndexRepo,
-    taskIndexSyncer: robinrunTaskIndexSyncer,
+    taskIndexSyncer: robindoneTaskIndexSyncer,
     settingService,
     cuaProductMcpServerResolver,
   });
-  lateBoundRobinRunTaskService = robinrunTaskService;
+  lateBoundRobinDoneTaskService = robindoneTaskService;
   const botsRepo = new BotsRepo();
   const botLog = createServiceLogger("bots");
   const botRemoteWorkspaceService = options.resolveBotProjectConnection
@@ -2969,8 +2971,8 @@ export function createLocalServices(options: {
     apiClient,
     onProviderLogout: handleOAuthProviderLogout,
   });
-  const robinrunJwtLogoutLogger = createServiceLogger("robinrun-jwt-logout");
-  robinrunJwtLogoutHandlerRef.current = (input, headers) => {
+  const robindoneJwtLogoutLogger = createServiceLogger("robindone-jwt-logout");
+  robindoneJwtLogoutHandlerRef.current = (input, headers) => {
     // 条件退出本身已串行去重；不能丢弃等待旧候选期间到来的新凭据 401。
     void oauthService
       .logoutIfCurrentCredentialRequest(input, headers)
@@ -2978,13 +2980,13 @@ export function createLocalServices(options: {
         // 401 分类后可能已完成新登录；只有队列内真正清理的旧会话才广播过期。
         if (invalidated) {
           void broadcastService.send({
-            channel: ROBINRUN_JWT_INVALID_BROADCAST_CHANNEL,
+            channel: ROBINDONE_JWT_INVALID_BROADCAST_CHANNEL,
             payload: {},
           });
         }
       })
       .catch((error) => {
-        robinrunJwtLogoutLogger.warn("RobinRun JWT logout failed", { error });
+        robindoneJwtLogoutLogger.warn("RobinDone JWT logout failed", { error });
       });
   };
   // Desktop Host 曾从 Settings View 再扫描一次 Account Provider，既绕开
@@ -3006,12 +3008,12 @@ export function createLocalServices(options: {
       if (providers.length !== 1) return null;
       const provider = providers[0]!;
       const config = provider.config;
-      const staticAccess = robinrunProviderAccountAccessSchema.parse(config.access.toJSON());
+      const staticAccess = robindoneProviderAccountAccessSchema.parse(config.access.toJSON());
       const access = await accountRequestAuthService.resolveAccessCurrent(staticAccess);
       if (!access) return null;
       return {
         providerId: provider.providerId,
-        access: robinrunAccountAccessSchema.parse(access),
+        access: robindoneAccountAccessSchema.parse(access),
         ...(config.api?.baseUrl ? { baseURL: config.api.baseUrl } : {}),
       };
     },
@@ -3033,14 +3035,14 @@ export function createLocalServices(options: {
     // 分享运行时始终走真实 API；测试/Mock 场景应在 service 单测或 Web fixture 中显式注入，
     // 不能让开发环境默认生成仅存在于进程内存的 mock-share 链接。
     apiClient,
-    baseUrl: buildRuntimeRobinRunApiUrl(process.env, "/api/v1"),
+    baseUrl: buildRuntimeRobinDoneApiUrl(process.env, "/api/v1"),
     tokenProvider: async (): Promise<string | null> => {
       const activeProvider = await oauthCredentialRepo.getActiveProvider();
       if (!activeProvider) {
         return null;
       }
       const tokenSet = await oauthCredentialRepo.loadTokenSet(activeProvider);
-      return tokenSet?.robinrunJwtToken ?? tokenSet?.accessToken ?? null;
+      return tokenSet?.robindoneJwtToken ?? tokenSet?.accessToken ?? null;
     },
   });
   const conversationShareService: IConversationShareServiceType = isDesktopAttachedRemote
@@ -3048,8 +3050,8 @@ export function createLocalServices(options: {
         message: "Conversation publishing is not available for remote workspaces",
       })
     : new ConversationShareService({
-        robinrunAgentService,
-        robinrunSessionService,
+        robindoneAgentService,
+        robindoneSessionService,
         client: conversationShareClient,
         artifactSource: createLocalConversationShareArtifactSource(),
       });
@@ -3059,17 +3061,17 @@ export function createLocalServices(options: {
   // ops-panel 仓库（需求/审批/反馈面板）：进程退出随集合统一关闭。
   sqliteReposToClose.push(opsPanelRepo);
   const marketingAssets = createMarketingAssetRegistry({
-    allowLoopback: ROBINRUN_ENV === "test" || process.env.NODE_ENV === "development",
+    allowLoopback: ROBINDONE_ENV === "test" || process.env.NODE_ENV === "development",
   });
   const services = new ServiceCollection()
     .register(
       IMarketingTouchService,
       createMarketingTouchService({
         apiClient,
-        getToken: () => credentialService.load("robinrunjwttoken"),
+        getToken: () => credentialService.load("robindonejwttoken"),
         getDeviceMid: () => options?.agentTelemetry?.getDeviceMid?.(),
-        baseUrl: buildRuntimeRobinRunApiUrl(process.env, "/"),
-        appVersion: ROBINRUN_VERSION,
+        baseUrl: buildRuntimeRobinDoneApiUrl(process.env, "/"),
+        appVersion: ROBINDONE_VERSION,
         onSnapshot: (snapshot) => marketingAssets.accept(snapshot),
       }),
     )
@@ -3090,9 +3092,9 @@ export function createLocalServices(options: {
     .register(IOnboardingRecordService, onboardingRecordService)
     .register(ICredentialService, credentialService)
     .register(IBroadcastService, broadcastService)
-    .register(IRobinRunTaskService, robinrunTaskService)
-    .register(IRobinRunAgentService, robinrunAgentService)
-    .register(IRobinRunSessionService, robinrunSessionService)
+    .register(IRobinDoneTaskService, robindoneTaskService)
+    .register(IRobinDoneAgentService, robindoneAgentService)
+    .register(IRobinDoneSessionService, robindoneSessionService)
     .register(IProjectService, projectService)
     .register(ITaskGroupService, taskGroupService)
     .register(ITriggerEngineService, triggerEngineService)
@@ -3109,7 +3111,7 @@ export function createLocalServices(options: {
         remoteProjectService,
         ownerHostId: options?.projectStorageHostId ?? "local",
         credentialService,
-        robinrunTaskService,
+        robindoneTaskService,
         broadcastService,
         settingService,
         modelSelectionService: providerRuntime.modelSelection,
@@ -3130,7 +3132,7 @@ export function createLocalServices(options: {
         apiClient,
         accountRequestAuthService,
         credentialService,
-        robinrunAgentService,
+        robindoneAgentService,
         officialMcpCredentialSource,
       }),
     )
@@ -3140,8 +3142,8 @@ export function createLocalServices(options: {
       createClientConfigService({
         apiClient,
         resolveRequestContext: async () => ({
-          endpointOrigin: await resolveCurrentRobinRunEndpointOrigin(),
-          appVersion: ROBINRUN_VERSION,
+          endpointOrigin: await resolveCurrentRobinDoneEndpointOrigin(),
+          appVersion: ROBINDONE_VERSION,
           platform: `${process.platform}-${process.arch}`,
         }),
       }),
@@ -3213,7 +3215,7 @@ export function createLocalServices(options: {
           logger: offPeakLogger,
           requestSchedulerWake: options?.onOffPeakSchedulerWakeRequested,
           stopRunningTask: async (params) => {
-            await robinrunTaskService.stopGeneration({
+            await robindoneTaskService.stopGeneration({
               taskId: params.conversationId,
               workspacePath: params.workspacePath,
               ...(params.workspaceIdentity ? { workspaceIdentity: params.workspaceIdentity } : {}),
@@ -3224,7 +3226,7 @@ export function createLocalServices(options: {
           },
         });
         offPeakTaskService.startSync();
-        // 回写前向引用，供 robinrunAgentService 的 offPeak/create、offPeak/list 协议 handler 调用。
+        // 回写前向引用，供 robindoneAgentService 的 offPeak/create、offPeak/list 协议 handler 调用。
         offPeakTaskServiceForAgent = offPeakTaskService;
         return offPeakTaskService;
       })(),
@@ -3232,8 +3234,8 @@ export function createLocalServices(options: {
     .register(
       IHighspeedCardService,
       (() => {
-        const origin = resolveRuntimeRobinRunEndpointOrigin(process.env);
-        const rawMockScenario = process.env.ROBINRUN_HIGHSPEED_MOCK_SCENARIO;
+        const origin = resolveRuntimeRobinDoneEndpointOrigin(process.env);
+        const rawMockScenario = process.env.ROBINDONE_HIGHSPEED_MOCK_SCENARIO;
         const mockScenarios = new Set<HighspeedMockScenario>([
           "hit-fast",
           "miss",
@@ -3247,8 +3249,8 @@ export function createLocalServices(options: {
           ? (rawMockScenario as HighspeedMockScenario)
           : null;
         const resolveHighspeedLoginHeaders = async (): Promise<Record<string, string>> => {
-          const jwt = (await credentialService.load("robinrunjwttoken"))?.trim() ?? "";
-          if (!jwt) throw new Error("highspeed request requires robinrun jwt");
+          const jwt = (await credentialService.load("robindonejwttoken"))?.trim() ?? "";
+          if (!jwt) throw new Error("highspeed request requires robindone jwt");
           return { Authorization: /^Bearer\s/i.test(jwt) ? jwt : `Bearer ${jwt}` };
         };
         const transport = mockScenario
@@ -3266,7 +3268,7 @@ export function createLocalServices(options: {
                     await credentialService.load(`oauth:${credentials.providerFamily}:access_token`)
                   )?.trim() ?? "";
                 return buildHighspeedCodingPlanAuthHeaders({
-                  robinrunJwt: credentials.jwt,
+                  robindoneJwt: credentials.jwt,
                   codingPlanAuthorization,
                   targetType:
                     credentials.organizationId && credentials.projectId ? "TEAM" : "PERSONAL",
@@ -3303,7 +3305,7 @@ export function createLocalServices(options: {
                 return provider?.models.some((model) => model.modelId === modelId) ?? false;
               },
           // 加速推理与 draw 走同一 highspeed 网关、同一 Coding Plan 双 JWT 契约：必须携带
-          // robinrun JWT + Coding Plan 业务 JWT + Team 身份头。此前只发 robinrun JWT + 卡 ID，网关
+          // robindone JWT + Coding Plan 业务 JWT + Team 身份头。此前只发 robindone JWT + 卡 ID，网关
           // 无法校验 Coding Plan 权益，返回 401 auth_failed。与 draw 头复用同一次 selected
           // connection 解析，避免把 ZAI 身份的卡打到 BigModel 加速 Provider。
           resolveInferenceAuth: async () => {
@@ -3315,7 +3317,7 @@ export function createLocalServices(options: {
                 await credentialService.load(`oauth:${credentials.providerFamily}:access_token`)
               )?.trim() ?? "";
             return {
-              robinrunJwt: credentials.jwt,
+              robindoneJwt: credentials.jwt,
               family: credentials.providerFamily,
               codingPlanAuthorization,
               targetType: credentials.organizationId && credentials.projectId ? "TEAM" : "PERSONAL",
@@ -3346,7 +3348,7 @@ export function createLocalServices(options: {
     .register(
       IPluginManagementService,
       createPluginManagementService({
-        robinrunAgentService,
+        robindoneAgentService,
         reportTelemetryEvent: options?.reportPluginTelemetryEvent,
       }),
     )
@@ -3355,7 +3357,7 @@ export function createLocalServices(options: {
     .register(
       IHooksService,
       createHooksService({
-        grantWorkspaceHookTrust: (params) => robinrunAgentService.grantWorkspaceHookTrust(params),
+        grantWorkspaceHookTrust: (params) => robindoneAgentService.grantWorkspaceHookTrust(params),
       }),
     )
     .register(IMemoryService, createMemoryService())
@@ -3469,7 +3471,7 @@ export function createTelemetryUserIdLoader(
   };
 }
 
-/** 仅给同一事件账号返回当前 RobinRun JWT；不缓存、不修改登录凭据。 */
+/** 仅给同一事件账号返回当前 RobinDone JWT；不缓存、不修改登录凭据。 */
 export function createTelemetryAuthorizationLoader(
   credentialService: Pick<ICredentialService, "load">,
 ): (userId: string) => Promise<string | null> {
@@ -3481,7 +3483,7 @@ export function createTelemetryAuthorizationLoader(
       const readUserId = async () =>
         readTelemetryOAuthUserId(await credentialService.load(`oauth:${provider}:user_info`));
       if ((await readUserId()) !== userId) return null;
-      const jwt = (await credentialService.load("robinrunjwttoken"))?.trim();
+      const jwt = (await credentialService.load("robindonejwttoken"))?.trim();
       // 退出/切账号可能发生在异步读取期间；禁止将旧身份的 token 附到其他账号事件上。
       if (
         (await credentialService.load("oauth:active_provider"))?.trim() !== provider ||
@@ -3497,7 +3499,7 @@ export function createTelemetryAuthorizationLoader(
 
 export function createTelemetryMarketingParamsLoader(
   credentialService: ICredentialService,
-): () => Promise<import("@robinrun/shared").OAuthLoginAttribution | null> {
+): () => Promise<import("@robindone/shared").OAuthLoginAttribution | null> {
   // 恢复原因：固定返回 null 会丢掉已保存的渠道归因，数仓应读取 OAuth 的同一份事实。
   const repo = new OAuthCredentialRepo(credentialService);
   return () => repo.loadLoginAttribution();
@@ -3532,9 +3534,9 @@ export function disposeServiceResources(services: ServiceCollection): void {
   // 这里集中调用各服务的本地 disposeAll 钩子，把“退出 app = 回收所有托管资源”落成机械动作。
   const disposableServices = [
     services.getOptional(ITerminalService),
-    services.getOptional(IRobinRunTaskService),
-    services.getOptional(IRobinRunAgentService),
-    services.getOptional(IRobinRunSessionService),
+    services.getOptional(IRobinDoneTaskService),
+    services.getOptional(IRobinDoneAgentService),
+    services.getOptional(IRobinDoneSessionService),
     services.getOptional(IBotsService),
     services.getOptional(IFileWatcherService),
     services.getOptional(ISubagentsService),
@@ -3569,13 +3571,13 @@ export async function disposeServiceResourcesAndWait(services: ServiceCollection
     services.getOptional(IGenUiService) as (IGenUiService & { dispose?(): void }) | undefined
   )?.dispose?.();
   // app 关闭时 host 需要等 agent 进程树完成 graceful + force 清理。
-  // 旧的同步 dispose 会在 host 退出时丢掉强杀 timer，导致 robinrun-cli/app-server 变成孤儿进程。
+  // 旧的同步 dispose 会在 host 退出时丢掉强杀 timer，导致 robindone-cli/app-server 变成孤儿进程。
   const disposableServices = [
     services.getOptional(ICloudContentService),
     services.getOptional(ITerminalService),
-    services.getOptional(IRobinRunTaskService),
-    services.getOptional(IRobinRunAgentService),
-    services.getOptional(IRobinRunSessionService),
+    services.getOptional(IRobinDoneTaskService),
+    services.getOptional(IRobinDoneAgentService),
+    services.getOptional(IRobinDoneSessionService),
     services.getOptional(IBotsService),
     services.getOptional(IFileWatcherService),
     services.getOptional(ISubagentsService),
@@ -3653,7 +3655,7 @@ export async function createServerHostServices(options: {
     Parameters<typeof createLocalServices>[0]
   >["topicResourceRelayChannel"];
   sourceServerId: string;
-  robinrunBuiltinProviderConfigFilePath: string;
+  robindoneBuiltinProviderConfigFilePath: string;
   providerProvisioningTargetEnabled?: boolean;
 }) {
   const projectStorageHostId = remoteHostIdFromWorkspaceIdentity(
@@ -3661,13 +3663,13 @@ export async function createServerHostServices(options: {
   );
   if (!projectStorageHostId) throw new Error("Invalid Source Server storage identity");
   // Bug 原因：billing/balance 把 X-Device-Mid 当必填，而独立 Server 主机没有 Desktop main 写设备身份，
-  // buildRobinRunSourceHeaders() 又只读不生成。原修复只放在旧 stdio entry，SSH/WSL/Docker 的 Core 与
+  // buildRobinDoneSourceHeaders() 又只读不生成。原修复只放在旧 stdio entry，SSH/WSL/Docker 的 Core 与
   // Lite HTTP 入口共用本装配却没有确保，首次 Start Plan 权益查询返回 400，Start 模型被判为不可用。
   // 收口到本装配，所有独立 Server 入口在创建 services 前得到本机自己的 deviceMid；失败只告警、不阻断启动、不伪造 ID。
   await ensureTelemetryDeviceMid().catch((error: unknown) => {
     createServiceLogger("server-host").warn(
       undefined,
-      "deviceMid 初始化失败，RobinRun endpoint 请求将不带 X-Device-Mid:",
+      "deviceMid 初始化失败，RobinDone endpoint 请求将不带 X-Device-Mid:",
       error instanceof Error ? error.message : String(error),
     );
   });
@@ -3689,7 +3691,7 @@ export async function createServerHostServices(options: {
   });
   const migrationFailedPathCount = await workspaceAliasRepo.getFailedPathCount();
   const services = createLocalServices({
-    robinrunBuiltinProviderConfigFilePath: options.robinrunBuiltinProviderConfigFilePath,
+    robindoneBuiltinProviderConfigFilePath: options.robindoneBuiltinProviderConfigFilePath,
     providerProvisioningTargetEnabled: options.providerProvisioningTargetEnabled,
     serviceAuthorityMode: "standalone-server",
     topicResourceRelayChannel: options.topicResourceRelayChannel,
@@ -3700,4 +3702,4 @@ export async function createServerHostServices(options: {
 }
 
 export { scopeConversationShareServiceForAttachment } from "./conversation-share/conversationShareConnectionScope.js";
-export { localRuntimeNetworkCapture } from "./robinrun-agent/localRuntimeNetworkCapture.js";
+export { localRuntimeNetworkCapture } from "./robindone-agent/localRuntimeNetworkCapture.js";

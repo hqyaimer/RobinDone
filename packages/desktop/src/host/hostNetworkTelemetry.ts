@@ -1,5 +1,5 @@
-import { HostResponseTypes } from "@robinrun/shared";
-import { setNetworkTelemetrySink, type NetworkObservation } from "@robinrun/rpc";
+import { HostResponseTypes } from "@robindone/shared";
+import { setNetworkTelemetrySink, type NetworkObservation } from "@robindone/rpc";
 
 interface HostNetworkTelemetryParentPort {
   postMessage(message: unknown): void;

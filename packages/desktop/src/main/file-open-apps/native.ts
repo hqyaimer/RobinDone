@@ -97,10 +97,10 @@ export function createNativeApplicationAdapter(
       {
         // 聊天 Markdown 链接在 Windows 上还原成 `C:/...` 正斜杠路径；Node stat 能过，
         // 但 SHCreateItemFromParsingName 会返回 E_INVALIDARG，导致菜单可列出却打不开。
-        ROBINRUN_FILE_APP_PATH: win32.normalize(path),
-        ROBINRUN_FILE_APP_ACTION: action,
-        ROBINRUN_FILE_APP_HANDLER: handler,
-        ROBINRUN_FILE_APP_INCLUDE_ICONS: includeIcons ? "1" : "0",
+        ROBINDONE_FILE_APP_PATH: win32.normalize(path),
+        ROBINDONE_FILE_APP_ACTION: action,
+        ROBINDONE_FILE_APP_HANDLER: handler,
+        ROBINDONE_FILE_APP_INCLUDE_ICONS: includeIcons ? "1" : "0",
       },
     );
   return {

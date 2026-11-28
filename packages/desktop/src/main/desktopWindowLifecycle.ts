@@ -8,7 +8,7 @@ import {
   InternalChannels,
   PlatformChannels,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { scheduleArmsBrowserPerfLoadNudge } from "./armsBrowserPerfLoadNudge.js";
 import { createBrowserWindow } from "./desktopWindowChrome.js";
 import type { HostInitMessage, WindowBootstrapOptions } from "./desktopHostProcess.js";
@@ -41,9 +41,9 @@ export function createWindow(options: {
   spawnHostProcess: (
     win: BrowserWindow,
     label: string,
-    // Main 在包装层统一注入 robinrunBuiltinProviderConfigFilePath（Electron 安装布局只有 Main 知道），
+    // Main 在包装层统一注入 robindoneBuiltinProviderConfigFilePath（Electron 安装布局只有 Main 知道），
     // 窗口生命周期只负责组装其余 InitLocal 字段。
-    initMessage: Omit<HostInitMessage, "robinrunBuiltinProviderConfigFilePath">,
+    initMessage: Omit<HostInitMessage, "robindoneBuiltinProviderConfigFilePath">,
   ) => ElectronUtilityProcess;
   disposeHostProcess: (
     child: ElectronUtilityProcess,

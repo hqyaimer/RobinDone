@@ -1,4 +1,4 @@
-import { ServiceChannels, type RobinRunTaskMeta } from "@robinrun/shared";
+import { ServiceChannels, type RobinDoneTaskMeta } from "@robindone/shared";
 import { createServiceDescriptor } from "#src/descriptors.js";
 
 export type TaskGroupColor = "gray" | "red" | "orange" | "yellow" | "green" | "blue" | "purple";
@@ -9,7 +9,7 @@ export interface TaskGroup {
   createdAt: number;
   updatedAt: number;
   /**
-   * 所属项目（RobinRun 产品模型：项目 → 智能体 → 会话 三级组织）。
+   * 所属项目（RobinDone 产品模型：项目 → 智能体 → 会话 三级组织）。
    * NULL 表示未绑定：系统全局组（cron/闲时）、旧数据回填歧义的组。主智能体组由自举写入，永为绑定态。
    */
   projectId: string | null;
@@ -35,7 +35,7 @@ export interface MoveGroupNode {
 }
 export type GroupTaskFact = GroupTaskRef &
   Pick<
-    RobinRunTaskMeta,
+    RobinDoneTaskMeta,
     "cronAutomationId" | "offPeakTaskId" | "creationOrigin" | "workerId" | "workerName"
   > & {
     /** 所属项目（触发器会话归订阅智能体组用；其他路径可不带）。 */
@@ -61,12 +61,12 @@ export interface ITaskGroupService {
     placement?: { task: GroupTaskRef; groupId: string | null; creationId: string };
   }): Promise<void>;
   /**
-   * 项目标配主智能体：确定性 id（robinrun-main-agent-<projectId>）幂等自举，已存在直接返回。
+   * 项目标配主智能体：确定性 id（robindone-main-agent-<projectId>）幂等自举，已存在直接返回。
    * saveProject（含 reuseExistingRoot 重开）都会调用，旧项目打开时自动补齐。
    */
   ensureMainAgentGroup(input: { projectId: string }): Promise<TaskGroup>;
   /**
-   * worker 会话组织组（2026-11-16 物化裁决）：确定性 id（robinrun-worker-<workerId>）幂等；
+   * worker 会话组织组（2026-11-16 物化裁决）：确定性 id（robindone-worker-<workerId>）幂等；
    * 已存在时仅同步标题（workers.json 注册表赢，不动用户改过的颜色与归属）。由 UI 名册
    * 同步效果按 active worker 调用；workers.json 仍是身份唯一事实源。
    */

@@ -1,4 +1,4 @@
-import type { BrowserPageState } from "@robinrun/shared";
+import type { BrowserPageState } from "@robindone/shared";
 import type { ControlledViewWebContents } from "./browserCommandTypes.js";
 
 /**

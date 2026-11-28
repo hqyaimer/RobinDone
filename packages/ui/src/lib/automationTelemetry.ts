@@ -4,10 +4,10 @@ import {
   sanitizeTelemetryErrorMessage,
   type IPlatformService,
   type ModelSelection,
-  type RobinRunAutomation,
-} from "@robinrun/shared";
-import type { ProviderSettingsView } from "@robinrun/services";
-import { isApiKeyAccess } from "@robinrun/provider";
+  type RobinDoneAutomation,
+} from "@robindone/shared";
+import type { ProviderSettingsView } from "@robindone/services";
+import { isApiKeyAccess } from "@robindone/provider";
 import { reportAppTelemetryEvent } from "@/lib/appTelemetry.js";
 import { legacyTelemetryProviderId } from "@/lib/providerTelemetryIdentity.js";
 
@@ -135,7 +135,7 @@ export function reportAutomationActionClick(
   params: {
     action: "run_now" | "delete";
     source: "list" | "editor";
-    automation: RobinRunAutomation;
+    automation: RobinDoneAutomation;
     providerSettingsView: ProviderSettingsView | null;
   },
 ): Promise<void> {

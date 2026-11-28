@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# RobinRun fork：上游 verify:pre-push 合约依赖上游发布链与本机 mise/pnpm 环境，
+# RobinDone fork：上游 verify:pre-push 合约依赖上游发布链与本机 mise/pnpm 环境，
 # 在本仓库环境不适用（详见 AGENTS.md「Windows 环境坑」）。推送门禁暂由
 # 提交前手动 `pnpm typecheck` + `pnpm lint` 承担；接 GitHub Actions 后在此恢复自动检查。
 exit 0

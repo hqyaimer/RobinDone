@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises";
-import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robinrun/shared";
+import { BIGMODEL_PROVIDER_ID, ZAI_PROVIDER_ID } from "@robindone/shared";
 import {
   TID_LOGIN_TRIGGER,
   TID_OAUTH_ERROR,
   TID_OAUTH_LOGIN_BUTTON,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -21,7 +21,7 @@ const OAUTH_CREDENTIAL_KEYS = [
   `oauth:${BIGMODEL_PROVIDER_ID}:access_token`,
   `oauth:${BIGMODEL_PROVIDER_ID}:refresh_token`,
   `oauth:${BIGMODEL_PROVIDER_ID}:user_info`,
-  "robinrunjwttoken",
+  "robindonejwttoken",
 ] as const;
 
 describe("OAuth 凭据损坏恢复", () => {

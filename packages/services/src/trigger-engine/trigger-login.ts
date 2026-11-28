@@ -1,5 +1,5 @@
 import { appendAudit, type RegistryWritableState } from "./registry-io.js";
-import type { TriggerEntry } from "@robinrun/shared";
+import type { TriggerEntry } from "@robindone/shared";
 import type { TriggerBrowserHost } from "./browser-host.js";
 
 /**

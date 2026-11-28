@@ -1,5 +1,5 @@
 {
-  "name": "@robinrun/client",
+  "name": "@robindone/client",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,9 +11,9 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
-    "@robinrun/rpc": "workspace:*",
-    "@robinrun/services": "workspace:*",
-    "@robinrun/shared": "workspace:*"
+    "@robindone/rpc": "workspace:*",
+    "@robindone/services": "workspace:*",
+    "@robindone/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.2"

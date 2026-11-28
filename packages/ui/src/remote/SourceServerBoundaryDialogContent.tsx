@@ -1,8 +1,8 @@
 import { LaptopIcon, ServerIcon } from "lucide-react";
-import { TID_CONFIRM_DIALOG_CONFIRM } from "@robinrun/shared/test-ids";
+import { TID_CONFIRM_DIALOG_CONFIRM } from "@robindone/shared/test-ids";
 import { Button } from "@/components/ui/button.js";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 export function SourceServerBoundaryDialogContent({
   title,
@@ -15,7 +15,7 @@ export function SourceServerBoundaryDialogContent({
   confirmLabel: string;
   onConfirm: () => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
 
   return (
     <div className="grid sm:grid-cols-5">

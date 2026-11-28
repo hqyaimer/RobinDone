@@ -1,20 +1,20 @@
-import { completeNewModelSelection } from "@robinrun/provider";
+import { completeNewModelSelection } from "@robindone/provider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useBaseWorkspaceServices,
   useWorkspaceServicesResolution,
 } from "@/hooks/useWorkspaceServices.js";
 import { useSettings } from "@/hooks/useSettingService.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { persistProviderFamilyConnection } from "@/lib/providerFamilyConnectionTransition.js";
 import { chooseConnectionModel, type ComposerConnection } from "@/lib/composerPlanGroups.js";
 import { buildRegistryModelSelectGroups } from "@/lib/modelSelectionGroups.js";
-import { decodeCustomModelValue } from "@/lib/robinrunCustomModelValue.js";
+import { decodeCustomModelValue } from "@/lib/robindoneCustomModelValue.js";
 import { logger } from "@/logger.js";
 import {
   resolveModelProviderFamilySpecByProviderId,
-  type RobinRunProvider,
-} from "@robinrun/shared";
+  type RobinDoneProvider,
+} from "@robindone/shared";
 
 export function useComposerConnectionSwitch({
   workspacePath,
@@ -30,7 +30,7 @@ export function useComposerConnectionSwitch({
 }: {
   workspacePath: string;
   workspaceIdentity?: string;
-  agentProvider: RobinRunProvider;
+  agentProvider: RobinDoneProvider;
   normalizedValue: string;
   onSelectModel: (value: string, reasoningLevel?: string) => void;
   waitForPresentation?: boolean;
@@ -46,7 +46,7 @@ export function useComposerConnectionSwitch({
     workspaceIdentity,
   );
   const { update } = useSettings({ services: base });
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const workspaceKey = workspaceIdentity?.trim() || workspacePath;
   const token = useMemo(() => ({}), [target, base, workspaceKey]);
   const owner = useRef({ token, mounted: true });

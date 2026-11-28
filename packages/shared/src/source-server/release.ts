@@ -41,7 +41,7 @@ export const sourceServerReleaseArchiveSchema = z
   })
   .strict()
   .superRefine((archive, context) => {
-    const expectedFileName = `robinrun-server-${archive.target}.tar.gz`;
+    const expectedFileName = `robindone-server-${archive.target}.tar.gz`;
     if (archive.fileName !== expectedFileName) {
       context.addIssue({
         code: "custom",

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { IServiceAccessor, ProviderSettingsView } from "@robinrun/services";
-import type { IPlatformService } from "@robinrun/shared";
+import type { IServiceAccessor, ProviderSettingsView } from "@robindone/services";
+import type { IPlatformService } from "@robindone/shared";
 import { ServiceProvider } from "@/hooks/useServices.js";
 import { PlatformProvider } from "@/hooks/usePlatform.js";
 import { connectProviderSettingsSnapshot } from "@/lib/providerSettingsSnapshot.js";

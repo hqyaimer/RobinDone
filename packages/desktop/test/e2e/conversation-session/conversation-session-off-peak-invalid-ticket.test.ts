@@ -6,7 +6,7 @@ import {
   TID_OFFPEAK_EDIT_SUBMIT,
   TID_OFFPEAK_FORM_INSTRUCTIONS,
   TID_OFFPEAK_FORM_TITLE,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -123,7 +123,7 @@ async function waitForInvalidTicketResponse(): Promise<{
   issuedTicketCount: number;
   requests: unknown[];
 }> {
-  const port = Number(process.env.ROBINRUN_OFFPEAK_MOCK_PORT ?? "45197");
+  const port = Number(process.env.ROBINDONE_OFFPEAK_MOCK_PORT ?? "45197");
   let latest = { invalidTicketRequests: 0, issuedTicketCount: 0, requests: [] as unknown[] };
   await browser.waitUntil(
     async () => {

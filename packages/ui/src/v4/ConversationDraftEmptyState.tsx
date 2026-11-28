@@ -1,5 +1,5 @@
 /**
- * 草稿态空态问候：时间问候语 + RobinRun Logo。
+ * 草稿态空态问候：时间问候语 + RobinDone Logo。
  * 自旧版 ChatView/ChatViewEmptyState.tsx 恢复（该组件随旧 ChatView 删除，
  * i18n key `chat.empty.greeting.*` 一直保留）；边界时刻自动换档逻辑保真。
  * 手机远控复用同一组件，但继续保留 20px 紧凑标题；桌面草稿首页才按标题自身宽度适配。
@@ -7,7 +7,7 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import robinLogoStaticUrl from "@/assets/brand/robin-closeup.svg";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { logger } from "@/logger.js";
 
@@ -89,7 +89,7 @@ export function ConversationDraftEmptyState({
   className?: string;
   compactForRemoteControl?: boolean;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const isOfficeMode = useIsOfficeMode();
   const [greetingDate, setGreetingDate] = useState(() => new Date());
   const [greetingFontSizePx, setGreetingFontSizePx] = useState(GREETING_MAX_FONT_SIZE_PX);
@@ -196,7 +196,7 @@ export function ConversationDraftEmptyState({
           "-translate-x-1/2 -translate-y-1/2 text-foreground-subtlest",
         )}
       >
-        <RobinRunEmptyStateLogo className="h-full w-full" />
+        <RobinDoneEmptyStateLogo className="h-full w-full" />
       </div>
       <p
         ref={greetingContainerRef}
@@ -226,7 +226,7 @@ export function ConversationDraftEmptyState({
   );
 }
 
-function RobinRunEmptyStateLogo({ className }: { className?: string }) {
+function RobinDoneEmptyStateLogo({ className }: { className?: string }) {
   return (
     // 2026-11-26 品牌替换：ZCode Z 字标（浅色 currentColor 线框 + 深色渐变双资源）
     // 换成知更鸟特写（多色位图性质，深浅主题同一资源），保留底部渐隐遮罩。

@@ -1,9 +1,9 @@
-import type { RobinRunTaskRuntimeStatus } from "@robinrun/shared";
-import { getWorkspaceDisplayedTaskState } from "@/store/robinrunSessionStore.js";
+import type { RobinDoneTaskRuntimeStatus } from "@robindone/shared";
+import { getWorkspaceDisplayedTaskState } from "@/store/robindoneSessionStore.js";
 import type {
-  RobinRunSessionStoreState,
-  WorkspaceRobinRunUIState,
-} from "@/store/robinrunSessionStore.js";
+  RobinDoneSessionStoreState,
+  WorkspaceRobinDoneUIState,
+} from "@/store/robindoneSessionStore.js";
 
 interface RemoteWorkspaceRuntimeTab {
   workspacePath: string;
@@ -12,17 +12,17 @@ interface RemoteWorkspaceRuntimeTab {
 
 interface MarkRemoteWorkspaceRunningTasksFailedParams {
   tabs: RemoteWorkspaceRuntimeTab[];
-  getWorkspaceState: RobinRunSessionStoreState["getWorkspaceState"];
-  setTaskRuntimeState: RobinRunSessionStoreState["setTaskRuntimeState"];
+  getWorkspaceState: RobinDoneSessionStoreState["getWorkspaceState"];
+  setTaskRuntimeState: RobinDoneSessionStoreState["setTaskRuntimeState"];
   reason: string;
 }
 
-function isRunningRuntimeStatus(status: RobinRunTaskRuntimeStatus): boolean {
+function isRunningRuntimeStatus(status: RobinDoneTaskRuntimeStatus): boolean {
   return status === "creating" || status === "restoring" || status === "streaming";
 }
 
 function shouldTreatPersistedRunningTaskAsRunning(
-  workspaceState: WorkspaceRobinRunUIState,
+  workspaceState: WorkspaceRobinDoneUIState,
   taskId: string,
 ): boolean {
   const runtimeState = workspaceState.taskRuntimeByTaskId[taskId];
@@ -35,7 +35,7 @@ function shouldTreatPersistedRunningTaskAsRunning(
   return isRunningRuntimeStatus(runtimeState.status);
 }
 
-function collectRemoteWorkspaceRunningTaskIds(workspaceState: WorkspaceRobinRunUIState): string[] {
+function collectRemoteWorkspaceRunningTaskIds(workspaceState: WorkspaceRobinDoneUIState): string[] {
   const taskIds = new Set<string>();
 
   if (

@@ -3,7 +3,7 @@ import type {
   ProviderProvisioningLaneStatus,
   ProviderProvisioningSourceTrigger,
   ProviderProvisioningTrigger,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 type ExecuteSync = (trigger: ProviderProvisioningTrigger) => Promise<void>;
 

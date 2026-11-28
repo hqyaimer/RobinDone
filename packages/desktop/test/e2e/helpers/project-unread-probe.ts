@@ -1,5 +1,5 @@
-import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robinrun/rpc";
-import { ServiceChannels } from "@robinrun/shared";
+import { BufferReader, BufferWriter, deserialize, serialize, VSBuffer } from "@robindone/rpc";
+import { ServiceChannels } from "@robindone/shared";
 
 interface ProjectUnreadProbe {
   held: number[] | null;

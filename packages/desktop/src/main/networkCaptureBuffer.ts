@@ -3,7 +3,7 @@ import {
   sanitizeNetworkCaptureUrl,
   type NetworkCaptureBatch,
   type NetworkCaptureSnapshot,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 /** Main 仅保存有界观测元数据；captureId 隔离关闭后迟到的 IPC。 */
 export class NetworkCaptureBuffer {

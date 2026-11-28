@@ -1,5 +1,5 @@
 import { constants } from "node:os";
-import { Emitter, type Event } from "@robinrun/rpc";
+import { Emitter, type Event } from "@robindone/rpc";
 
 interface CloseEventController {
   event: Event<number>;

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AttachmentRef } from "@robinrun/shared/robinrun-protocol-v4";
+import type { AttachmentRef } from "@robindone/shared/robindone-protocol-v4";
 import { shouldExposeE2EStoreBridge } from "@/lib/e2eStoreBridge.js";
 import type { ChatComposerAttachment } from "@/lib/chatAttachments.js";
 
@@ -49,19 +49,19 @@ export const useComposerAttachmentUploadStore = create<ComposerAttachmentUploadS
 
 declare global {
   interface Window {
-    __robinrunComposerAttachmentUploadStoreE2E?: typeof useComposerAttachmentUploadStore;
-    __robinrunCurrentComposerAttachmentScopeKeyE2E?: string;
+    __robindoneComposerAttachmentUploadStoreE2E?: typeof useComposerAttachmentUploadStore;
+    __robindoneCurrentComposerAttachmentScopeKeyE2E?: string;
   }
 }
 
 if (shouldExposeE2EStoreBridge()) {
   // E2E 只暴露当前唯一附件 owner，供 scope 切换用例准备状态；不再把附件塞回旧 Session Store。
-  window.__robinrunComposerAttachmentUploadStoreE2E = useComposerAttachmentUploadStore;
+  window.__robindoneComposerAttachmentUploadStoreE2E = useComposerAttachmentUploadStore;
 }
 
 export function exposeComposerAttachmentScopeKeyForE2E(scopeKey: string): void {
-  if (window.__robinrunComposerAttachmentUploadStoreE2E) {
-    window.__robinrunCurrentComposerAttachmentScopeKeyE2E = scopeKey;
+  if (window.__robindoneComposerAttachmentUploadStoreE2E) {
+    window.__robindoneCurrentComposerAttachmentScopeKeyE2E = scopeKey;
   }
 }
 

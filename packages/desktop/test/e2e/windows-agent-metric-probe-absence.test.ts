@@ -5,7 +5,7 @@ import {
   TID_LOGIN_USE_API_KEY_BUTTON,
   TID_TASK_ITEM,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   clickTestIdByDom,
@@ -50,7 +50,7 @@ windowsDescribe("Windows Agent 指标采集 main process 门禁", () => {
     await waitForDefaultWorkspaceReady(30000);
     await waitForSeededHistory();
 
-    const runtimeLogDir = process.env.ROBINRUN_E2E_RUNTIME_LOG_DIR?.trim();
+    const runtimeLogDir = process.env.ROBINDONE_E2E_RUNTIME_LOG_DIR?.trim();
     if (!runtimeLogDir) {
       throw new Error("当前 E2E worker 没有配置 desktop runtime log 目录");
     }

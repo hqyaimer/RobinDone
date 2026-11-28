@@ -10,13 +10,13 @@ import { DatabaseSync } from "node:sqlite";
 const require = createRequire(import.meta.url);
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = resolve(desktop, "../..");
-const output = await mkdtemp(join(tmpdir(), "robinrun-mcp-host-e2e-"));
+const output = await mkdtemp(join(tmpdir(), "robindone-mcp-host-e2e-"));
 const fixture = join(desktop, "scripts/mcp-apps-host-fixture");
-const showcaseServer = process.env.ROBINRUN_SHOWCASE_SERVER;
+const showcaseServer = process.env.ROBINDONE_SHOWCASE_SERVER;
 if (process.argv.includes("--showcase-only")) {
   if (!showcaseServer)
     throw new Error(
-      "Set ROBINRUN_SHOWCASE_SERVER to the built Showcase dist/server.mjs from robinrun-plugins",
+      "Set ROBINDONE_SHOWCASE_SERVER to the built Showcase dist/server.mjs from robindone-plugins",
     );
   await access(showcaseServer);
 }
@@ -50,9 +50,9 @@ if (
         "pnpm",
         [
           "--dir",
-          join(root, "apps/robinrun-cli"),
+          join(root, "apps/robindone-cli"),
           "--filter",
-          `@robinrun/${name}`,
+          `@robindone/${name}`,
           name === "cli" ? "build:desktop-agent" : "build",
         ],
         { stdio: "inherit" },
@@ -70,7 +70,7 @@ const alias = {
   "@": join(root, "packages/ui/src"),
   ...Object.fromEntries(
     Object.entries(sharedExports).map(([key, value]) => [
-      key === "." ? "@robinrun/shared" : `@robinrun/shared/${key.slice(2)}`,
+      key === "." ? "@robindone/shared" : `@robindone/shared/${key.slice(2)}`,
       resolve(shared, "..", value),
     ]),
   ),
@@ -206,9 +206,9 @@ for (const mode of modes) {
   await new Promise((accept, reject) => {
     const env = { ...process.env };
     if (process.argv.includes("--photocraft-background-only")) {
-      if (!env.ROBINRUN_PHOTOCRAFT_SERVER)
-        throw new Error("Set ROBINRUN_PHOTOCRAFT_SERVER to the built PhotoCraft dist/server.mjs");
-      env.ROBINRUN_PHOTOCRAFT_ONLY = "1";
+      if (!env.ROBINDONE_PHOTOCRAFT_SERVER)
+        throw new Error("Set ROBINDONE_PHOTOCRAFT_SERVER to the built PhotoCraft dist/server.mjs");
+      env.ROBINDONE_PHOTOCRAFT_ONLY = "1";
     }
     delete env.ELECTRON_RUN_AS_NODE;
     const child = spawn(
@@ -225,7 +225,7 @@ for (const mode of modes) {
             output,
             join(output, `${mode}-profile`),
             process.execPath,
-            join(root, "apps/robinrun-cli/packages/cli/dist/robinrun.cjs"),
+            join(root, "apps/robindone-cli/packages/cli/dist/robindone.cjs"),
             showcaseServer ?? "",
           ]
         : mode === "managed-empty"
@@ -240,7 +240,11 @@ for (const mode of modes) {
         child.kill("SIGKILL");
         reject(new Error(`Electron fixture timed out (${mode})`));
       },
-      mode === "background" ? (process.env.ROBINRUN_PHOTOCRAFT_SERVER ? 300_000 : 180_000) : 90_000,
+      mode === "background"
+        ? process.env.ROBINDONE_PHOTOCRAFT_SERVER
+          ? 300_000
+          : 180_000
+        : 90_000,
     );
     child.on("error", reject);
     child.on("exit", (code) => {

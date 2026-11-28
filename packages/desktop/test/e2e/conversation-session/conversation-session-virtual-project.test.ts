@@ -5,7 +5,7 @@ import {
   removeRemoteProjectEntryForRow,
 } from "#e2e/helpers/remote-project-handoff-probe";
 import { openWorkspaceDraftFromSidebar } from "#e2e/helpers/workspace-agent-warmup";
-import type { VirtualProject } from "@robinrun/services";
+import type { VirtualProject } from "@robindone/services";
 import { selectNativeProjectDirectories } from "../helpers/project-sidebar.js";
 import { openScopeProjectSubmenu } from "../helpers/settings-scope-menu.js";
 import { spawn } from "node:child_process";
@@ -13,7 +13,7 @@ import { once } from "node:events";
 import { join, basename, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { ServiceChannels } from "@robinrun/shared";
+import { ServiceChannels } from "@robindone/shared";
 import {
   TID_TASK_SETTINGS_BUTTON,
   TID_TASK_ITEM,
@@ -32,7 +32,7 @@ import {
   TID_AUTOMATION_FORM_SUBMIT,
   TID_AUTOMATIONS_LIST,
   testId,
-} from "@robinrun/shared/test-ids";
+} from "@robindone/shared/test-ids";
 import {
   clearAppData,
   setInputValueByTestIdDom,
@@ -98,7 +98,7 @@ describe("虚拟项目", () => {
       /可读取和编辑|can read and edit/,
     );
     await browser.saveScreenshot(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "virtual-project-editor.png"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "virtual-project-editor.png"),
     );
     await captureProjectDialogLayouts("editor");
     await browser.keys("Escape");
@@ -131,7 +131,7 @@ describe("虚拟项目", () => {
   });
   it("VP20：项目图标、hover 三入口和右键操作保持一致", async function () {
     this.timeout(90_000);
-    const root = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "project-row-actions");
+    const root = join(DEFAULT_WORKSPACE, ".robindone-e2e", "project-row-actions");
     const paths = [join(root, "one"), join(root, "two")] as const;
     await Promise.all(
       paths.map(async (path, index) => {
@@ -173,7 +173,7 @@ describe("虚拟项目", () => {
     for (const icon of ["ellipsis", "list-tree", "message-circle-plus"])
       expect(await row.$(`svg.lucide-${icon}`).isExisting()).toBe(true);
     await browser.saveScreenshot(
-      join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP20-project-row-hover.png"),
+      join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP20-project-row-hover.png"),
     );
     await row.$('[data-testid="virtual-project-menu"]').click();
     await $('[data-testid="virtual-project-edit"]').click();
@@ -202,22 +202,22 @@ describe("虚拟项目", () => {
     await row.$('[data-testid="virtual-project-create-task"]').click();
     await waitForWorkspaceApp(paths[0], 30_000);
     expect(await toggle.getAttribute("aria-expanded")).toBe("false");
-    const original = $('[data-project-name="RobinRunProject"]');
+    const original = $('[data-project-name="RobinDoneProject"]');
     await original.moveTo();
     await original.$('[data-testid="virtual-project-create-task"]').click();
     await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);
   });
   it("VP22：单根创建、更换文件夹替换与编辑器删除", async function () {
     this.timeout(90_000);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR!;
     if (
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
       throw new Error("隔离 HOME required");
     const paths = ["test-aaa", "test-bbb"].map((name) =>
-      join(DEFAULT_WORKSPACE, ".robinrun-e2e", "project-editor", name),
+      join(DEFAULT_WORKSPACE, ".robindone-e2e", "project-editor", name),
     );
     await Promise.all(
       paths.map(async (path) => {
@@ -242,7 +242,7 @@ describe("虚拟项目", () => {
     const project = $('[data-project-name="E2E_PROJECT_EDITOR"]');
     await project.waitForDisplayed();
     const id = await project.getAttribute("data-project-id");
-    const db = new DatabaseSync(join(testHome, ".robinrun", "v2", "tasks-index.sqlite"), {
+    const db = new DatabaseSync(join(testHome, ".robindone", "v2", "tasks-index.sqlite"), {
       readOnly: true,
     });
     const primary = () =>
@@ -270,9 +270,7 @@ describe("虚拟项目", () => {
       expect(await replaced[0]!.$('[data-testid="virtual-project-root-name"]').getText()).toBe(
         "test-bbb",
       );
-      expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe(
-        "E2E_PROJECT_EDITOR",
-      );
+      expect(await $('[data-testid="virtual-project-name"]').getValue()).toBe("E2E_PROJECT_EDITOR");
       await $('[data-testid="virtual-project-save"]').click();
       await $('[role="dialog"]').waitForExist({ reverse: true });
       await browser.waitUntil(() => primary() === paths[1]);
@@ -323,7 +321,7 @@ describe("虚拟项目", () => {
     } finally {
       db.close();
       await browser.keys("Escape");
-      const original = $('[data-project-name="RobinRunProject"]');
+      const original = $('[data-project-name="RobinDoneProject"]');
       await original.moveTo();
       await original.$('[data-testid="virtual-project-create-task"]').click();
       await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);
@@ -332,10 +330,10 @@ describe("虚拟项目", () => {
   it("VP12：Bot 访问范围选择项目 ID，同 cwd 的项目分别保存", async function () {
     this.timeout(90_000);
     await openWorkspaceDraftFromSidebar(DEFAULT_WORKSPACE);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR!;
     if (
       !testHome ||
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
@@ -362,13 +360,13 @@ describe("虚拟项目", () => {
       browser.execute(() => {
         const store = (
           window as Window & {
-            __robinrunTabStoreE2E?: { getState(): { tabs: Array<{ workspacePath?: string }> } };
+            __robindoneTabStoreE2E?: { getState(): { tabs: Array<{ workspacePath?: string }> } };
           }
-        ).__robinrunTabStoreE2E;
+        ).__robindoneTabStoreE2E;
         return store?.getState().tabs.map((tab) => tab.workspacePath) ?? [];
       });
     const tabsBeforeBotAccess = await readBotTabs();
-    const configPath = join(testHome, ".robinrun/v2/bot-config.v3.json");
+    const configPath = join(testHome, ".robindone/v2/bot-config.v3.json");
     await writeFile(
       configPath,
       JSON.stringify({
@@ -436,17 +434,17 @@ describe("虚拟项目", () => {
   it("VP01：首个窗口可用时 app 与 CLI 两库的版本化迁移已经完成", async function () {
     this.timeout(60_000);
     await openWorkspaceDraftFromSidebar(DEFAULT_WORKSPACE);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR;
     if (
       !testHome ||
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
       throw new Error("isolated temporary E2E HOME required");
     for (const [path, migrationId] of [
-      [join(testHome, ".robinrun", "v2", "tasks-index.sqlite"), "0005_projects"],
-      [join(testHome, ".robinrun", "cli", "db", "db.sqlite"), "0023_session_soft_delete_outcome"],
+      [join(testHome, ".robindone", "v2", "tasks-index.sqlite"), "0005_projects"],
+      [join(testHome, ".robindone", "cli", "db", "db.sqlite"), "0023_session_soft_delete_outcome"],
     ] as const) {
       const db = new DatabaseSync(path, { readOnly: true });
       try {
@@ -461,15 +459,15 @@ describe("虚拟项目", () => {
   it("VP08：离线远端项目只显示缓存，移除入口后重载不复活", async function () {
     this.timeout(90_000);
     await openWorkspaceDraftFromSidebar(DEFAULT_WORKSPACE);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR;
     if (
       !testHome ||
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
       throw new Error("isolated temporary E2E HOME required");
-    const db = new DatabaseSync(join(testHome, ".robinrun", "v2", "tasks-index.sqlite"));
+    const db = new DatabaseSync(join(testHome, ".robindone", "v2", "tasks-index.sqlite"));
     try {
       // 只在隔离 HOME 注入离线缓存，不接触真实设备、网络或用户目录。
       db.prepare("INSERT INTO hosts(host_id,kind,target_json,membership_id) VALUES(?,?,?,?)").run(
@@ -528,7 +526,7 @@ describe("虚拟项目", () => {
       throw new Error(String(error) + JSON.stringify(geometry));
     }
     const readSettings = async () =>
-      JSON.parse(await readFile(join(testHome, ".robinrun/v2/setting.json"), "utf8"));
+      JSON.parse(await readFile(join(testHome, ".robindone/v2/setting.json"), "utf8"));
     await browser.waitUntil(async () =>
       (await readSettings()).lastWorkspaceSession.some(
         (entry: { workspacePath: string }) => entry.workspacePath === "/e2e/offline-root",
@@ -553,7 +551,7 @@ describe("虚拟项目", () => {
     ).toBe(false);
     await refreshVirtualProjectWorkspace();
     expect(await offline.isExisting()).toBe(false);
-    const check = new DatabaseSync(join(testHome, ".robinrun", "v2", "tasks-index.sqlite"), {
+    const check = new DatabaseSync(join(testHome, ".robindone", "v2", "tasks-index.sqlite"), {
       readOnly: true,
     });
     try {
@@ -571,16 +569,16 @@ describe("虚拟项目", () => {
   });
   it("VP08/VP17/VP18 URL：元数据无 tab，远端任务执行、重开与 CLI 冷恢复", async function () {
     this.timeout(120_000);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR;
     if (
       !testHome ||
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
       throw new Error("isolated E2E HOME required");
     const serverHome = join(testHome, "url-server");
-    await mkdir(join(serverHome, ".robinrun", "v2"), { recursive: true });
+    await mkdir(join(serverHome, ".robindone", "v2"), { recursive: true });
     const child = spawn(
       process.execPath,
       ["--import", "tsx", "test/e2e/fixtures/virtual-project/server.ts"],
@@ -590,8 +588,8 @@ describe("虚拟项目", () => {
           ...process.env,
           HOME: serverHome,
           USERPROFILE: serverHome,
-          ROBINRUN_DATA_BASE_DIR: serverHome,
-          ROBINRUN_DESKTOP_HOME_DIR: serverHome,
+          ROBINDONE_DATA_BASE_DIR: serverHome,
+          ROBINDONE_DESKTOP_HOME_DIR: serverHome,
         },
         stdio: ["pipe", "pipe", "pipe"],
       },
@@ -628,7 +626,7 @@ describe("虚拟项目", () => {
           }
         });
       });
-      const dbPath = join(testHome, ".robinrun/v2/tasks-index.sqlite");
+      const dbPath = join(testHome, ".robindone/v2/tasks-index.sqlite");
       const db = new DatabaseSync(dbPath);
       try {
         db.prepare("INSERT INTO hosts(host_id,kind,target_json,membership_id) VALUES(?,?,?,?)").run(
@@ -671,13 +669,13 @@ describe("虚拟项目", () => {
         browser.execute(() => {
           const state = (
             window as Window & {
-              __robinrunTabStoreE2E?: {
+              __robindoneTabStoreE2E?: {
                 getState(): {
                   tabs: { workspacePath?: string; workspaceIdentity?: string; kind?: string }[];
                 };
               };
             }
-          ).__robinrunTabStoreE2E?.getState();
+          ).__robindoneTabStoreE2E?.getState();
           return state?.tabs.map((tab) => tab.workspaceIdentity || tab.workspacePath || tab.kind);
         });
       const tabs = await readTabs();
@@ -732,7 +730,7 @@ describe("虚拟项目", () => {
       await $('[data-testid="virtual-project-save"]').click();
       const renamed = $('[data-project-name="E2E_VP08_URL_RENAMED"]');
       await renamed.waitForDisplayed();
-      const remoteDb = new DatabaseSync(join(serverHome, ".robinrun/v2/tasks-index.sqlite"), {
+      const remoteDb = new DatabaseSync(join(serverHome, ".robindone/v2/tasks-index.sqlite"), {
         readOnly: true,
       });
       try {
@@ -789,13 +787,13 @@ describe("虚拟项目", () => {
       await $(`[data-testid="${TID_V4_COMPOSER_INPUT}"]`).waitForDisplayed();
       const draftOwner = await browser.execute(() => {
         const testWindow = window as Window & {
-          __robinrunTabStoreE2E?: {
+          __robindoneTabStoreE2E?: {
             getState(): {
               activeWorkspacePath: string | null;
               activeWorkspaceIdentity?: string | null;
             };
           };
-          __robinrunSessionStoreE2E?: {
+          __robindoneSessionStoreE2E?: {
             getState(): {
               getWorkspaceState(
                 path: string,
@@ -804,9 +802,9 @@ describe("虚拟项目", () => {
             };
           };
         };
-        const tabs = testWindow.__robinrunTabStoreE2E?.getState();
+        const tabs = testWindow.__robindoneTabStoreE2E?.getState();
         const draft = tabs?.activeWorkspacePath
-          ? testWindow.__robinrunSessionStoreE2E
+          ? testWindow.__robindoneSessionStoreE2E
               ?.getState()
               .getWorkspaceState(
                 tabs.activeWorkspacePath,
@@ -821,7 +819,7 @@ describe("虚拟项目", () => {
         };
       });
       await writeFile(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-draft.json"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-draft.json"),
         JSON.stringify(draftOwner, null, 2),
       );
       expect(draftOwner.projectId).toBe(ready.projectId);
@@ -838,7 +836,7 @@ describe("虚拟项目", () => {
       expect(JSON.stringify(captured.requestJson).includes("E2E_VP17_REMOTE_EXTRA_SKILL")).toBe(
         true,
       );
-      const remoteFacts = new DatabaseSync(join(serverHome, ".robinrun/v2/tasks-index.sqlite"), {
+      const remoteFacts = new DatabaseSync(join(serverHome, ".robindone/v2/tasks-index.sqlite"), {
         readOnly: true,
       });
       let remoteTaskId: string;
@@ -883,7 +881,7 @@ describe("虚拟项目", () => {
       await renamed.$(`[data-testid="${testId(TID_TASK_ITEM, remoteTaskId)}"]`).click();
       await $('//*[normalize-space(.)="E2E_VP17_READY" and not(*)]').waitForDisplayed();
       await browser.saveScreenshot(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-remote-task.png"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-remote-task.png"),
       );
       const currentRuntime = () =>
         Array.from(output.matchAll(/E2E_VP18_RUNTIME ([^\n]+)\n/g))
@@ -916,7 +914,7 @@ describe("虚拟项目", () => {
       expect(currentRuntime()).toBeTruthy();
       expect(currentRuntime()).not.toBe(previousRuntime);
       await browser.saveScreenshot(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP18-remote-cold.png"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP18-remote-cold.png"),
       );
 
       // VP25：远端留存 activeTaskId 不能让离开的行继续高亮；归档当前任务后必须退出正文。
@@ -940,7 +938,7 @@ describe("虚拟项目", () => {
       await $('//*[normalize-space(.)="E2E_VP18_READY" and not(*)]').waitForDisplayed({
         reverse: true,
       });
-      const archiveFacts = new DatabaseSync(join(serverHome, ".robinrun/v2/tasks-index.sqlite"), {
+      const archiveFacts = new DatabaseSync(join(serverHome, ".robindone/v2/tasks-index.sqlite"), {
         readOnly: true,
       });
       try {
@@ -952,13 +950,13 @@ describe("虚拟项目", () => {
         archiveFacts.close();
       }
 
-      await $('[data-project-name="RobinRunProject"]')
+      await $('[data-project-name="RobinDoneProject"]')
         .$('[data-testid="virtual-project-create-task"]')
         .click();
       await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);
       await removeRemoteProjectEntryForRow('[data-project-name="E2E_VP08_URL_RENAMED"]');
       await renamed.waitForDisplayed({ reverse: true });
-      const cliDb = new DatabaseSync(join(serverHome, ".robinrun", "cli", "db", "db.sqlite"), {
+      const cliDb = new DatabaseSync(join(serverHome, ".robindone", "cli", "db", "db.sqlite"), {
         readOnly: true,
       });
       try {
@@ -977,16 +975,16 @@ describe("虚拟项目", () => {
     } finally {
       try {
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-final.png"),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-final.png"),
         );
         // 测试服务退出前回到本地，防止后续用例被已关闭 Source 的活动 tab 阻塞。
-        await $('[data-project-name="RobinRunProject"]')
+        await $('[data-project-name="RobinDoneProject"]')
           .$('[data-testid="virtual-project-create-task"]')
           .click();
         await waitForWorkspaceApp(DEFAULT_WORKSPACE, 30_000);
       } catch (error) {
         await writeFile(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-cleanup-error.log"),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-cleanup-error.log"),
           String(error),
         );
       } finally {
@@ -995,12 +993,12 @@ describe("虚拟项目", () => {
           await once(child, "exit");
         }
       }
-      const factsDb = new DatabaseSync(join(serverHome, ".robinrun/v2/tasks-index.sqlite"), {
+      const factsDb = new DatabaseSync(join(serverHome, ".robindone/v2/tasks-index.sqlite"), {
         readOnly: true,
       });
       try {
         await writeFile(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-facts.json"),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-facts.json"),
           JSON.stringify(
             factsDb
               .prepare(
@@ -1014,10 +1012,10 @@ describe("虚拟项目", () => {
       } finally {
         factsDb.close();
       }
-      await writeFile(join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-server.log"), output);
+      await writeFile(join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-server.log"), output);
       if (process.env.DEEPSEEK_E2E_CAPTURE_PATH)
         await writeFile(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "VP17-network.json"),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "VP17-network.json"),
           await readFile(process.env.DEEPSEEK_E2E_CAPTURE_PATH),
         );
     }
@@ -1032,13 +1030,13 @@ describe("虚拟项目", () => {
     const readDraft = () =>
       browser.execute(() => {
         const bridge = window as Window & {
-          __robinrunTabStoreE2E?: {
+          __robindoneTabStoreE2E?: {
             getState(): {
               activeWorkspacePath: string | null;
               activeWorkspaceIdentity?: string | null;
             };
           };
-          __robinrunSessionStoreE2E?: {
+          __robindoneSessionStoreE2E?: {
             getState(): {
               getWorkspaceState(
                 path: string,
@@ -1047,10 +1045,10 @@ describe("虚拟项目", () => {
             };
           };
         };
-        const tabs = bridge.__robinrunTabStoreE2E?.getState();
+        const tabs = bridge.__robindoneTabStoreE2E?.getState();
         const path = tabs?.activeWorkspacePath;
         const state = path
-          ? bridge.__robinrunSessionStoreE2E
+          ? bridge.__robindoneSessionStoreE2E
               ?.getState()
               .getWorkspaceState(path, tabs?.activeWorkspaceIdentity ?? undefined)
           : undefined;
@@ -1069,10 +1067,10 @@ describe("虚拟项目", () => {
     expect(second.projectId).toBeNull();
     expect(second.activeTaskId).toBeNull();
     expect(second.path).toBe(first.path);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR!;
     await browser.waitUntil(async () => {
       const settings = JSON.parse(
-        await readFile(join(testHome, ".robinrun/v2/setting.json"), "utf8"),
+        await readFile(join(testHome, ".robindone/v2/setting.json"), "utf8"),
       );
       return settings.lastActiveWorkspace?.workspacePath === second.path;
     });
@@ -1110,7 +1108,7 @@ describe("虚拟项目", () => {
     });
     // 从草稿新建项目会初始化主目录；恢复必须选回实际 roots，不能再次用空 roots 比较。
     const db = new DatabaseSync(
-      join(process.env.ROBINRUN_E2E_HOME_DIR!, ".robinrun/v2/tasks-index.sqlite"),
+      join(process.env.ROBINDONE_E2E_HOME_DIR!, ".robindone/v2/tasks-index.sqlite"),
       { readOnly: true },
     );
     let restoreRoots: string[];
@@ -1140,9 +1138,9 @@ describe("虚拟项目", () => {
   });
   it("VP11：设置目录来自去重 roots，未打开的目录可以选择", async function () {
     this.timeout(90_000);
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR!;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR!;
     if (
-      ![".e2e-home-", "robinrun-virtual-project-e2e-"].some((prefix) =>
+      ![".e2e-home-", "robindone-virtual-project-e2e-"].some((prefix) =>
         basename(testHome).startsWith(prefix),
       )
     )
@@ -1167,9 +1165,9 @@ describe("虚拟项目", () => {
       browser.execute(() => {
         const store = (
           window as Window & {
-            __robinrunTabStoreE2E?: { getState(): { tabs: Array<{ workspacePath?: string }> } };
+            __robindoneTabStoreE2E?: { getState(): { tabs: Array<{ workspacePath?: string }> } };
           }
-        ).__robinrunTabStoreE2E;
+        ).__robindoneTabStoreE2E;
         return (
           store
             ?.getState()
@@ -1272,9 +1270,9 @@ describe("虚拟项目", () => {
     );
     await clickTestIdByDom(TID_AUTOMATION_FORM_SUBMIT);
     await $(`[data-testid="${TID_AUTOMATIONS_LIST}"]`).waitForDisplayed({ timeout: 15_000 });
-    const testHome = process.env.ROBINRUN_E2E_HOME_DIR;
+    const testHome = process.env.ROBINDONE_E2E_HOME_DIR;
     if (!testHome) throw new Error("isolated E2E HOME required");
-    const db = new DatabaseSync(join(testHome, ".robinrun", "v2", "tasks-index.sqlite"), {
+    const db = new DatabaseSync(join(testHome, ".robindone", "v2", "tasks-index.sqlite"), {
       readOnly: true,
     });
     try {
@@ -1292,9 +1290,9 @@ describe("虚拟项目", () => {
         .prepare("SELECT root_path FROM project_roots WHERE project_id=? AND is_primary=1")
         .get(secondId);
       expect(row?.workspace_path).toBe(root?.root_path);
-      expect(String(row?.workspace_path).startsWith(join(testHome, ".robinrun", "workspace"))).toBe(
-        true,
-      );
+      expect(
+        String(row?.workspace_path).startsWith(join(testHome, ".robindone", "workspace")),
+      ).toBe(true);
     } finally {
       db.close();
     }
@@ -1368,7 +1366,7 @@ async function captureProjectDialogLayouts(stage: string) {
           expect(fit.inputSize).toBeGreaterThanOrEqual(16);
         await browser.saveScreenshot(
           join(
-            process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+            process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
             `VP19-${stage}-${width}-${dark ? "dark" : "light"}.png`,
           ),
         );

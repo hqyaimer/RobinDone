@@ -1,15 +1,15 @@
-import type { RobinRunContextCompactionTimelineMeta } from "@robinrun/shared";
+import type { RobinDoneContextCompactionTimelineMeta } from "@robindone/shared";
 
 const RUNNING_CONTEXT_COMPACTION_STATUSES = new Set(["started", "retrying"]);
 
 export function isRunningContextCompactionTimeline(
-  timeline: RobinRunContextCompactionTimelineMeta,
+  timeline: RobinDoneContextCompactionTimelineMeta,
 ): boolean {
   return RUNNING_CONTEXT_COMPACTION_STATUSES.has(timeline.status);
 }
 
 export function shouldContextCompactionTimelineCompleteTask(
-  timeline: RobinRunContextCompactionTimelineMeta,
+  timeline: RobinDoneContextCompactionTimelineMeta,
 ): boolean {
   if (isRunningContextCompactionTimeline(timeline)) {
     return false;

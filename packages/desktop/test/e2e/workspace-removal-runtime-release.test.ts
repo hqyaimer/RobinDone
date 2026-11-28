@@ -41,7 +41,7 @@ describe("项目软删除与应用退出 E2E", () => {
     await waitForWorkspaceApp(active, 30000);
     await waitForRestoredProjects(workspacePaths, 30000);
     await openWorkspaceDraftFromSidebar(removable);
-    // 本例使用两个专用目录，不能调用强制等待默认 RobinRunProject 的通用准备入口。
+    // 本例使用两个专用目录，不能调用强制等待默认 RobinDoneProject 的通用准备入口。
     await selectUpstreamModel();
     await selectUpstreamThoughtLevel();
     await sendV4Prompt(`${MARKER}: reply exactly ${REPLY}`);
@@ -86,7 +86,7 @@ describe("项目软删除与应用退出 E2E", () => {
         () => "所有跟踪进程已被回收",
       );
       await writeFile(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "quit-process-state.txt"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "quit-process-state.txt"),
         state,
       );
     }

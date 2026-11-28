@@ -12,8 +12,8 @@ const HISTORY_BODY = "E2E_MISSING_PRIMARY_HISTORY_BODY";
 const REASON = "该项目主文件夹已被删除或移动";
 type TestWindow = Window & {
   __testActions?: { setLocale(locale: "zh-CN" | "en-US"): void; setTheme(theme: string): void };
-  __robinrunTabStoreE2E?: { getState(): { activeWorkspacePath: string | null } };
-  __robinrunSessionStoreE2E?: {
+  __robindoneTabStoreE2E?: { getState(): { activeWorkspacePath: string | null } };
+  __robindoneSessionStoreE2E?: {
     getState(): {
       getWorkspaceState(path: string): {
         activeTaskId: string | null;
@@ -29,7 +29,7 @@ describe("项目主目录失效", () => {
     this.timeout(150_000);
     await waitForWorkspaceApp(DEFAULT_WORKSPACE, 45_000);
     await browser.execute(() => (window as TestWindow).__testActions!.setLocale("zh-CN"));
-    const root = join(DEFAULT_WORKSPACE, ".robinrun-e2e", "missing-primary");
+    const root = join(DEFAULT_WORKSPACE, ".robindone-e2e", "missing-primary");
     const primary = join(root, "primary");
     const extra = join(root, "extra");
     const moved = join(root, "moved");
@@ -65,7 +65,7 @@ describe("项目主目录失效", () => {
       afterElectronProcessExit: async () => {
         seedHistory(primary);
         const db = new DatabaseSync(
-          join(process.env.ROBINRUN_E2E_HOME_DIR!, ".robinrun/v2/tasks-index.sqlite"),
+          join(process.env.ROBINDONE_E2E_HOME_DIR!, ".robindone/v2/tasks-index.sqlite"),
         );
         try {
           db.prepare(
@@ -84,7 +84,7 @@ describe("项目主目录失效", () => {
     await empty.waitForDisplayed();
     const readActive = () =>
       browser.execute(
-        () => (window as TestWindow).__robinrunTabStoreE2E!.getState().activeWorkspacePath,
+        () => (window as TestWindow).__robindoneTabStoreE2E!.getState().activeWorkspacePath,
       );
     if ((await toggle.getAttribute("aria-expanded")) === "true") await toggle.click();
     const activeBefore = await readActive();
@@ -122,14 +122,14 @@ describe("项目主目录失效", () => {
         await toggle.parentElement().moveTo();
         await expectNoReason();
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `missing-primary-${theme}.png`),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `missing-primary-${theme}.png`),
         );
         await leaveTooltip();
         await create.parentElement().moveTo({ xOffset: -2 });
         await create.parentElement().moveTo({ xOffset: 2 });
         await waitForReason();
         await browser.saveScreenshot(
-          join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, `missing-primary-create-${theme}.png`),
+          join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, `missing-primary-create-${theme}.png`),
         );
         for (const [name, button] of [
           ["multi", files],
@@ -141,7 +141,7 @@ describe("项目主目录失效", () => {
           await waitForReason();
           await browser.saveScreenshot(
             join(
-              process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+              process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
               `missing-primary-files-${name}-${theme}.png`,
             ),
           );
@@ -189,7 +189,7 @@ describe("项目主目录失效", () => {
       expect(await create.isEnabled()).toBe(false);
       await expect(stat(primary)).rejects.toMatchObject({ code: "ENOENT" });
       await browser.saveScreenshot(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "missing-primary-history.png"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "missing-primary-history.png"),
       );
       // 旧 E2E 只验证项目行禁用；顶部按钮和原生菜单仍会请求创建，必须独立断言可见失败反馈。
       const beforeNewTask = await readTaskState(primary);
@@ -210,7 +210,7 @@ describe("项目主目录失效", () => {
             if (action === "button") await $('[data-testid="task-new-button"]').click();
             else await invokeNewTaskShortcut();
             await browser.waitUntil(
-              async () => (await $("#robinrun-toast-host").getText()).includes(reason),
+              async () => (await $("#robindone-toast-host").getText()).includes(reason),
               {
                 timeout: 5_000,
                 timeoutMsg: `VP-ROOT-03 ${locale}/${theme}/${action} 未显示目录失效提示`,
@@ -220,7 +220,7 @@ describe("项目主目录失效", () => {
             await expect(stat(primary)).rejects.toMatchObject({ code: "ENOENT" });
             await browser.saveScreenshot(
               join(
-                process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+                process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
                 `missing-primary-new-task-${locale}-${theme}-${action}.png`,
               ),
             );
@@ -370,7 +370,7 @@ describe("项目主目录失效", () => {
           expect(bounds.hintRight).toBeLessThanOrEqual(390);
           await browser.saveScreenshot(
             join(
-              process.env.ROBINRUN_E2E_ARTIFACT_DIR!,
+              process.env.ROBINDONE_E2E_ARTIFACT_DIR!,
               `missing-primary-390-${testId}-${theme}.png`,
             ),
           );
@@ -387,7 +387,7 @@ describe("项目主目录失效", () => {
 async function readTaskState(path: string) {
   return browser.execute((path) => {
     const state = (window as TestWindow)
-      .__robinrunSessionStoreE2E!.getState()
+      .__robindoneSessionStoreE2E!.getState()
       .getWorkspaceState(path);
     return {
       task: state.activeTaskId,
@@ -400,7 +400,7 @@ async function readTaskState(path: string) {
 async function waitForNewTaskToastToClose() {
   await browser.waitUntil(
     () =>
-      browser.execute(() => !document.getElementById("robinrun-toast-host")?.textContent?.trim()),
+      browser.execute(() => !document.getElementById("robindone-toast-host")?.textContent?.trim()),
     { timeout: 5_000 },
   );
 }
@@ -489,7 +489,7 @@ async function waitForReason() {
         PROJECT,
       );
       await browser.saveScreenshot(
-        join(process.env.ROBINRUN_E2E_ARTIFACT_DIR!, "tooltip-failure.png"),
+        join(process.env.ROBINDONE_E2E_ARTIFACT_DIR!, "tooltip-failure.png"),
       );
       throw new Error(JSON.stringify(state), { cause: error });
     });
@@ -506,10 +506,10 @@ async function leaveTooltip() {
 
 function seedHistory(workspacePath: string) {
   // 只写 runner 的隔离 HOME；复用真实 Host/CLI 两库数据合同，不 mock 消息或目录状态。
-  const home = process.env.ROBINRUN_E2E_HOME_DIR;
+  const home = process.env.ROBINDONE_E2E_HOME_DIR;
   if (!home || !DEFAULT_WORKSPACE.startsWith(home)) throw new Error("isolated HOME required");
-  const app = new DatabaseSync(join(home, ".robinrun/v2/tasks-index.sqlite"));
-  const cli = new DatabaseSync(join(home, ".robinrun/cli/db/db.sqlite"));
+  const app = new DatabaseSync(join(home, ".robindone/v2/tasks-index.sqlite"));
+  const cli = new DatabaseSync(join(home, ".robindone/cli/db/db.sqlite"));
   try {
     const projectId = app
       .prepare("SELECT project_id FROM project_roots WHERE root_path=? LIMIT 1")

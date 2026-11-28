@@ -1,13 +1,13 @@
 import {
-  ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID,
-  type RobinRunPluginsResolveSuggestedReferenceResult,
-} from "@robinrun/shared";
+  ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+  type RobinDonePluginsResolveSuggestedReferenceResult,
+} from "@robindone/shared";
 
 export interface DraftSuggestedPluginFlow {
   anchorItemId: string;
   operationId: string;
   plugin: { stableId: string; label: string };
-  result?: RobinRunPluginsResolveSuggestedReferenceResult;
+  result?: RobinDonePluginsResolveSuggestedReferenceResult;
   stage: "checking" | "missing" | "disabled" | "unavailable";
 }
 
@@ -40,12 +40,12 @@ export async function trackDraftSuggestedPluginOperation<T>(
 }
 
 export function resolveDraftSuggestedPluginFlowStage(
-  result: RobinRunPluginsResolveSuggestedReferenceResult,
+  result: RobinDonePluginsResolveSuggestedReferenceResult,
 ): DraftSuggestedPluginFlow["stage"] {
   const { status } = result;
   if (
     (status === "ready" || status === "disabled" || status === "missing") &&
-    (result.marketplace !== ROBINRUN_OFFICIAL_PLUGIN_MARKETPLACE_ID ||
+    (result.marketplace !== ROBINDONE_OFFICIAL_PLUGIN_MARKETPLACE_ID ||
       result.sourceTrust !== "official" ||
       !result.pluginName)
   ) {

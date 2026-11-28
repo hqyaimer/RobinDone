@@ -1,4 +1,4 @@
-import type { IProviderSettingsService, ProviderSettingsView } from "@robinrun/services";
+import type { IProviderSettingsService, ProviderSettingsView } from "@robindone/services";
 
 export async function persistPersonalProviderDeletion(params: {
   providerId: string;

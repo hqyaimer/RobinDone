@@ -2,7 +2,7 @@
 // 完全访问 > 全局显式选择（edit/guarded）；全局 yolo 未经项目确认不自动升级（门控）；
 // build/缺席 → undefined = CLI 缺省 build。解析链依据见 contract.ts 文件头。
 import { describe, expect, it } from "vitest";
-import { resolveAutoSessionDefaultMode } from "#src/robinrun-agent/auto-session-default-mode/contract.js";
+import { resolveAutoSessionDefaultMode } from "#src/robindone-agent/auto-session-default-mode/contract.js";
 
 const WORKSPACE = "E:\\ws\\proj";
 
@@ -14,7 +14,7 @@ function settings(overrides?: {
     ...(overrides?.globalComposerMode ? { globalComposerMode: overrides.globalComposerMode } : {}),
     ...(overrides?.confirmedPaths
       ? {
-          robinrunProjects: overrides.confirmedPaths.map((path) => ({
+          robindoneProjects: overrides.confirmedPaths.map((path) => ({
             id: "p-" + path,
             name: "p",
             path,

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ROBINRUN_AGENT_PROVIDER } from "@robinrun/shared";
+import { ROBINDONE_AGENT_PROVIDER } from "@robindone/shared";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
 import { logger } from "@/logger.js";
 import { loadPluginCreatorPrefill } from "@/settings/pluginCreatorPrefill.js";
@@ -16,7 +16,7 @@ export function usePluginCreator(
   onCreateTask: ((request?: CreateTaskRequest) => void) | undefined,
   isWebRemoteControl = false,
 ) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const tabStore = useTabStoreApi();
   const activeWorkspacePath = useTabStore((state) => state.activeWorkspacePath);
   const activeWorkspaceIdentity = useTabStore((state) => state.activeWorkspaceIdentity);
@@ -80,7 +80,7 @@ export function usePluginCreator(
           resolution.services.skillsService.list({
             workspacePath: target.workspacePath,
             workspaceIdentity: target.workspaceIdentity,
-            provider: ROBINRUN_AGENT_PROVIDER,
+            provider: ROBINDONE_AGENT_PROVIDER,
           }),
         isCurrent,
       );

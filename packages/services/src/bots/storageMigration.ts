@@ -3,9 +3,9 @@ import {
   migrateLegacyModelProviderId,
   migrateLegacyOfficialGlmModelId,
   modelSelectionSchema,
-  ROBINRUN_AGENT_PROVIDER,
+  ROBINDONE_AGENT_PROVIDER,
   type ModelSelection,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { normalizeBotCurrentOptions, normalizeBotDraftOptions } from "./config.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,7 +78,7 @@ export function importLegacyBotState(value: unknown): unknown {
       {
         ...state,
         draftOptions: normalizeBotDraftOptions({
-          provider: ROBINRUN_AGENT_PROVIDER,
+          provider: ROBINDONE_AGENT_PROVIDER,
           modelSelection: migrateSelection(options),
           ...(typeof options.mode === "string" ? { mode: options.mode } : {}),
         }),

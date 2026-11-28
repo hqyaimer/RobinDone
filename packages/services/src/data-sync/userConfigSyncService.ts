@@ -1,4 +1,4 @@
-import type { UserConfigSyncCategory, UserConfigSyncPayloadMap } from "@robinrun/shared";
+import type { UserConfigSyncCategory, UserConfigSyncPayloadMap } from "@robindone/shared";
 import { createCommandDataSyncMethods } from "./commandDataSync.js";
 import type { IDataSyncCategoryService, IUserConfigSyncService } from "./contract.js";
 import { createHookDataSyncMethods } from "./hookDataSync.js";

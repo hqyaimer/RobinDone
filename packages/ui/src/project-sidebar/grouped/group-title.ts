@@ -3,7 +3,7 @@ import {
   MAIN_AGENT_GROUP_TITLE,
   OFF_PEAK_DEFAULT_GROUP_ID,
   isMainAgentGroupId,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import { UNGROUPED_AGENT_ID } from "@/project-sidebar/grouped/ids.js";
 
 /**

@@ -1,10 +1,10 @@
 import type {
-  RobinRunPersistedFileChange,
-  RobinRunTaskChangeSummary,
-  RobinRunTaskChangedFileSummary,
-  RobinRunTaskMeta,
-} from "@robinrun/shared";
-import { computeLineChangeStat } from "@robinrun/shared";
+  RobinDonePersistedFileChange,
+  RobinDoneTaskChangeSummary,
+  RobinDoneTaskChangedFileSummary,
+  RobinDoneTaskMeta,
+} from "@robindone/shared";
+import { computeLineChangeStat } from "@robindone/shared";
 
 interface AggregatedFileChange {
   path: string;
@@ -19,9 +19,9 @@ interface AggregatedFileChange {
  * 每个轮次独立计算 diff，用于在每条 assistant 消息下方显示该轮的文件改动。
  */
 export function buildPerTurnChangeSummaries(
-  fileChanges: readonly RobinRunPersistedFileChange[] | undefined,
-): Map<number, RobinRunTaskChangeSummary> {
-  const result = new Map<number, RobinRunTaskChangeSummary>();
+  fileChanges: readonly RobinDonePersistedFileChange[] | undefined,
+): Map<number, RobinDoneTaskChangeSummary> {
+  const result = new Map<number, RobinDoneTaskChangeSummary>();
   if (!fileChanges || fileChanges.length === 0) {
     return result;
   }
@@ -53,7 +53,7 @@ export function buildPerTurnChangeSummaries(
 
     let added = 0;
     let removed = 0;
-    const files: RobinRunTaskChangedFileSummary[] = Array.from(turnFileMap.entries())
+    const files: RobinDoneTaskChangedFileSummary[] = Array.from(turnFileMap.entries())
       .map(([path, file]) => {
         const fileStat = computeLineChangeStat(file.beforeContent, file.afterContent);
         added += fileStat.added;
@@ -80,8 +80,8 @@ export function buildPerTurnChangeSummaries(
 }
 
 export function buildTaskChangeSummary(
-  fileChanges: readonly RobinRunPersistedFileChange[] | undefined,
-): RobinRunTaskChangeSummary | undefined {
+  fileChanges: readonly RobinDonePersistedFileChange[] | undefined,
+): RobinDoneTaskChangeSummary | undefined {
   if (!fileChanges || fileChanges.length === 0) {
     return undefined;
   }
@@ -114,7 +114,7 @@ export function buildTaskChangeSummary(
 
   let added = 0;
   let removed = 0;
-  const files: RobinRunTaskChangedFileSummary[] = Array.from(changedFileMap.values())
+  const files: RobinDoneTaskChangedFileSummary[] = Array.from(changedFileMap.values())
     .map((file) => {
       const fileStat = computeLineChangeStat(file.originalContent, file.finalContent);
       added += fileStat.added;

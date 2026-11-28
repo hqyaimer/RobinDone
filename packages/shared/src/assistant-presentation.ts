@@ -1,9 +1,9 @@
 import {
   getLatestAssistantContentPart,
-  type RobinRunAssistantMessagePart,
+  type RobinDoneAssistantMessagePart,
 } from "./assistant-message-parts.js";
 
-export interface RobinRunAssistantPresentationToolCall {
+export interface RobinDoneAssistantPresentationToolCall {
   toolId: string;
   parentToolUseId?: string | null;
   kind: string;
@@ -15,7 +15,7 @@ export interface RobinRunAssistantPresentationToolCall {
   raw?: unknown;
 }
 
-export type RobinRunAssistantPresentationBlock =
+export type RobinDoneAssistantPresentationBlock =
   | {
       type: "content";
       content: string;
@@ -26,21 +26,21 @@ export type RobinRunAssistantPresentationBlock =
     }
   | {
       type: "tool-call";
-      toolCall: RobinRunAssistantPresentationToolCall;
+      toolCall: RobinDoneAssistantPresentationToolCall;
     };
 
-export interface RobinRunAssistantPresentation {
-  messageParts: RobinRunAssistantMessagePart[];
-  blocks: RobinRunAssistantPresentationBlock[];
-  latestPart: Extract<RobinRunAssistantPresentationBlock, { type: "content" }> | null;
-  historyBlocks: RobinRunAssistantPresentationBlock[];
+export interface RobinDoneAssistantPresentation {
+  messageParts: RobinDoneAssistantMessagePart[];
+  blocks: RobinDoneAssistantPresentationBlock[];
+  latestPart: Extract<RobinDoneAssistantPresentationBlock, { type: "content" }> | null;
+  historyBlocks: RobinDoneAssistantPresentationBlock[];
 }
 
-export interface BuildRobinRunAssistantPresentationOptions {
+export interface BuildRobinDoneAssistantPresentationOptions {
   content: string;
   thought?: string;
-  toolCalls?: readonly RobinRunAssistantPresentationToolCall[];
-  parts?: readonly RobinRunAssistantMessagePart[];
+  toolCalls?: readonly RobinDoneAssistantPresentationToolCall[];
+  parts?: readonly RobinDoneAssistantMessagePart[];
   streaming?: boolean;
   interrupted?: boolean;
   settling?: boolean;
@@ -50,7 +50,7 @@ function buildFallbackAssistantParts({
   content,
   thought,
   toolCalls,
-}: Pick<BuildRobinRunAssistantPresentationOptions, "content" | "thought" | "toolCalls">) {
+}: Pick<BuildRobinDoneAssistantPresentationOptions, "content" | "thought" | "toolCalls">) {
   const rootToolCalls = (toolCalls ?? []).filter((toolCall) => {
     const parentToolUseId = toolCall.parentToolUseId ?? null;
     return (
@@ -73,7 +73,7 @@ function buildFallbackAssistantParts({
   ];
 }
 
-export function buildRobinRunAssistantPresentation({
+export function buildRobinDoneAssistantPresentation({
   content,
   thought,
   toolCalls = [],
@@ -81,14 +81,14 @@ export function buildRobinRunAssistantPresentation({
   streaming = false,
   interrupted = false,
   settling = false,
-}: BuildRobinRunAssistantPresentationOptions): RobinRunAssistantPresentation {
+}: BuildRobinDoneAssistantPresentationOptions): RobinDoneAssistantPresentation {
   const messageParts =
     parts && parts.length > 0
       ? [...parts]
       : buildFallbackAssistantParts({ content, thought, toolCalls });
   const toolCallById = new Map(toolCalls.map((toolCall) => [toolCall.toolId, toolCall]));
   const renderedToolCallIds = new Set<string>();
-  const blocks: RobinRunAssistantPresentationBlock[] = [];
+  const blocks: RobinDoneAssistantPresentationBlock[] = [];
 
   for (const part of messageParts) {
     if (part.type === "content") {
@@ -122,12 +122,12 @@ export function buildRobinRunAssistantPresentation({
       : getLatestAssistantContentPart(
           blocks
             .filter(
-              (block): block is Extract<RobinRunAssistantPresentationBlock, { type: "content" }> =>
+              (block): block is Extract<RobinDoneAssistantPresentationBlock, { type: "content" }> =>
                 block.type === "content",
             )
             .map((block) => ({ type: "content", content: block.content })),
         );
-  let latestPart: Extract<RobinRunAssistantPresentationBlock, { type: "content" }> | null = null;
+  let latestPart: Extract<RobinDoneAssistantPresentationBlock, { type: "content" }> | null = null;
   let latestBlockIndex = -1;
   if (latestContentPart) {
     latestBlockIndex = blocks.findLastIndex(
@@ -136,7 +136,7 @@ export function buildRobinRunAssistantPresentation({
     latestPart =
       latestBlockIndex >= 0
         ? (blocks[latestBlockIndex] as Extract<
-            RobinRunAssistantPresentationBlock,
+            RobinDoneAssistantPresentationBlock,
             { type: "content" }
           >)
         : null;

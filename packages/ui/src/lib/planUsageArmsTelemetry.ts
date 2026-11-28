@@ -4,8 +4,8 @@ import {
   sanitizeTelemetryModelValue,
   type ArmsCustomEventPayload,
   type IPlatformService,
-  type RobinRunTaskNetworkDebugStatus,
-} from "@robinrun/shared";
+  type RobinDoneTaskNetworkDebugStatus,
+} from "@robindone/shared";
 import { logger } from "@/logger.js";
 
 export const PLAN_USAGE_ARMS_GROUP = "plan_usage";
@@ -57,7 +57,7 @@ function nonNegativeInteger(value: number | undefined): number | undefined {
 }
 
 function networkRequestStatus(
-  statusType: RobinRunTaskNetworkDebugStatus["statusType"],
+  statusType: RobinDoneTaskNetworkDebugStatus["statusType"],
 ): PlanUsageRequestStatus {
   switch (statusType) {
     case "model_request_started":
@@ -166,7 +166,7 @@ export function reportPlanUsageRequestToArms(
 
 export function reportPlanUsageModelRequestStartedToArms(
   reporter: ArmsReporter | null | undefined,
-  event: RobinRunTaskNetworkDebugStatus,
+  event: RobinDoneTaskNetworkDebugStatus,
 ): void {
   if (!reporter) {
     return;

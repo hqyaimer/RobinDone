@@ -1,13 +1,13 @@
 // 由各 bundler 通过 define 注入，避免运行时 JSON import 的跨 bundler 兼容问题。
 // 非构建环境（如 e2e 测试的 mocha）下 define 不存在，
 // 用 typeof 检查 + fallback 避免 ReferenceError。
-declare const __ROBINRUN_VERSION__: string;
-declare const __ROBINRUN_COMMIT__: string;
-declare const __ROBINRUN_BUILD_TIME__: string;
+declare const __ROBINDONE_VERSION__: string;
+declare const __ROBINDONE_COMMIT__: string;
+declare const __ROBINDONE_BUILD_TIME__: string;
 
-export const ROBINRUN_VERSION: string =
-  typeof __ROBINRUN_VERSION__ !== "undefined" ? __ROBINRUN_VERSION__ : "0.0.0-dev";
-export const ROBINRUN_COMMIT: string =
-  typeof __ROBINRUN_COMMIT__ !== "undefined" ? __ROBINRUN_COMMIT__ : "unknown";
-export const ROBINRUN_BUILD_TIME: string =
-  typeof __ROBINRUN_BUILD_TIME__ !== "undefined" ? __ROBINRUN_BUILD_TIME__ : "unknown";
+export const ROBINDONE_VERSION: string =
+  typeof __ROBINDONE_VERSION__ !== "undefined" ? __ROBINDONE_VERSION__ : "0.0.0-dev";
+export const ROBINDONE_COMMIT: string =
+  typeof __ROBINDONE_COMMIT__ !== "undefined" ? __ROBINDONE_COMMIT__ : "unknown";
+export const ROBINDONE_BUILD_TIME: string =
+  typeof __ROBINDONE_BUILD_TIME__ !== "undefined" ? __ROBINDONE_BUILD_TIME__ : "unknown";

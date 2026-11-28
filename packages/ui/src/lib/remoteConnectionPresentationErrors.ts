@@ -1,5 +1,5 @@
 import {
-  isPublicRobinRunErrorCode,
+  isPublicRobinDoneErrorCode,
   REMOTE_BIND_CANCELED_ERROR_CODE,
   REMOTE_RECOVERY_BUDGET_EXHAUSTED_ERROR_CODE,
   REMOTE_WORKSPACE_BIND_SESSION_MISSING_ERROR_CODE,
@@ -19,10 +19,10 @@ import {
   WORKSPACE_MIGRATION_PLAN_DIVERGED_ERROR_CODE,
   WORKSPACE_SESSION_GENERATION_CHANGED_ERROR_CODE,
   WORKSPACE_TASK_IDENTITY_CONFLICT_ERROR_CODE,
-  type PublicRobinRunErrorCode,
-} from "@robinrun/shared";
+  type PublicRobinDoneErrorCode,
+} from "@robindone/shared";
 
-import type { RemoteTarget } from "@robinrun/shared";
+import type { RemoteTarget } from "@robindone/shared";
 import type { RemoteConnectionAction } from "@/lib/remoteConnectionPresentationTypes.js";
 
 export interface RemoteConnectionErrorPresentation {
@@ -35,7 +35,7 @@ export interface RemoteConnectionErrorPresentation {
   allowRemoteDownload: boolean;
 }
 
-const messageIdByCode: Record<PublicRobinRunErrorCode, string> = {
+const messageIdByCode: Record<PublicRobinDoneErrorCode, string> = {
   "remote-authentication-failed": "remote.error.authentication",
   "remote-authentication-unsupported": "remote.error.authenticationUnsupported",
   "remote-host-unreachable": "remote.error.hostUnreachable",
@@ -88,15 +88,15 @@ export function classifyRemoteConnectionError(input: {
   recoveryLimit?: number;
 }): RemoteConnectionErrorPresentation {
   const code = input.errorCode ?? "";
-  let titleId = isPublicRobinRunErrorCode(code) ? messageIdByCode[code] : "remote.error.unknown";
-  let category = isPublicRobinRunErrorCode(code) ? code : "unrecognized";
+  let titleId = isPublicRobinDoneErrorCode(code) ? messageIdByCode[code] : "remote.error.unknown";
+  let category = isPublicRobinDoneErrorCode(code) ? code : "unrecognized";
   let primaryAction: RemoteConnectionAction = "retry";
   switch (code) {
     case "remote-authentication-failed":
       category = "authentication";
       primaryAction = "edit-auth";
       break;
-    case "ROBINRUN_REMOTE_WORKSPACE_DISCONNECTED":
+    case "ROBINDONE_REMOTE_WORKSPACE_DISCONNECTED":
       category = "disconnected";
       titleId = "remote.conversation.sendUnavailable";
       primaryAction = "connect";

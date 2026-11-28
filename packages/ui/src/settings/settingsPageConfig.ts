@@ -9,9 +9,9 @@ import {
   Bot,
   Palette,
   Sun,
-  // RobinRun(2026-11-22): [hide-upstream-account] usage 分区已隐藏，图标随分区注释——恢复时取消
+  // RobinDone(2026-11-22): [hide-upstream-account] usage 分区已隐藏，图标随分区注释——恢复时取消
   // BarChart3,
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   Terminal,
   AlarmClock,
   Anchor,
@@ -81,7 +81,7 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     titleId: "settings.modelProviderTitle",
     groupId: "basics",
   },
-  // 个性化（用户自定义指令）是 Agent 能力组的第一项：编辑 ~/.robinrun/AGENTS.md，
+  // 个性化（用户自定义指令）是 Agent 能力组的第一项：编辑 ~/.robindone/AGENTS.md，
   // 对所有会话生效（spec：docs/ui/settings-personalization.md）。
   {
     id: "personalization",
@@ -138,7 +138,7 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     titleId: "settings.hooks.title",
     groupId: "agentCapabilities",
   },
-  // RobinRun 触发器（docs/trigger-system.md）：常驻脚本并发配额等引擎级配置，
+  // RobinDone 触发器（docs/trigger-system.md）：常驻脚本并发配额等引擎级配置，
   // 紧跟 hooks（同为 agent 感知/自动化能力域）。
   {
     id: "triggers",
@@ -175,7 +175,7 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     titleId: "settings.shortcuts.title",
     groupId: "basics",
   },
-  // 工作区搜索范围（.robinrunignore）：面向所有用户的基础工作区行为配置，收在基础设置末尾。
+  // 工作区搜索范围（.robindoneignore）：面向所有用户的基础工作区行为配置，收在基础设置末尾。
   {
     id: "workspaceFileSearch",
     icon: FileSearch,
@@ -190,7 +190,7 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     contentTitleId: "remoteSync.title",
     groupId: "dataAndStats",
   },
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区」——内容是上游 Coding Plan 套餐用量（依赖登录
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏「用量统计分区」——内容是上游 Coding Plan 套餐用量（依赖登录
   // entitlement），恢复时取消本段注释并同步移除 lib/settingsNavigation.ts HIDDEN_SETTINGS_SECTIONS 中的 "usage"
   // {
   //   id: "usage",
@@ -198,7 +198,7 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
   //   titleId: "settings.usageTitle",
   //   groupId: "dataAndStats",
   // },
-  // RobinRun(2026-11-22): [hide-upstream-account] 隐藏结束
+  // RobinDone(2026-11-22): [hide-upstream-account] 隐藏结束
   // 项目管理排在归档管理之前（docs/superpowers/specs/2026-10-24-project-management.md）。
   {
     id: "projects",

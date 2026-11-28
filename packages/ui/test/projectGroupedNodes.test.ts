@@ -59,7 +59,7 @@ describe("projectGroupedNodes trigger session filtering", () => {
           updatedAt: 1,
         },
         {
-          id: "robinrun-default-group-cron",
+          id: "robindone-default-group-cron",
           title: "cron",
           color: "blue",
           projectId: null,
@@ -72,7 +72,7 @@ describe("projectGroupedNodes trigger session filtering", () => {
         { groupId: "agent-1", workspaceKey: WORKSPACE, taskId: "sess-trg", sortOrder: 1 },
         // 真 cron automation 会话由数据层 systemKind 准入挂进 cron 系统组。
         {
-          groupId: "robinrun-default-group-cron",
+          groupId: "robindone-default-group-cron",
           workspaceKey: WORKSPACE,
           taskId: "sess-cron",
           sortOrder: 0,
@@ -80,7 +80,7 @@ describe("projectGroupedNodes trigger session filtering", () => {
       ],
       order: [
         { type: "group", key: "agent-1", sortOrder: 0 },
-        { type: "group", key: "robinrun-default-group-cron", sortOrder: 1 },
+        { type: "group", key: "robindone-default-group-cron", sortOrder: 1 },
         { type: "task", key: JSON.stringify([WORKSPACE, "sess-trg-legacy"]), sortOrder: 2 },
       ],
     });

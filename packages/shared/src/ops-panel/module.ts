@@ -6,7 +6,7 @@
  */
 export const opsPanelModule = {
   id: "ops-panel",
-  requires: ["shared", "services", "session", "robinrun-cli", "ui"],
+  requires: ["shared", "services", "session", "robindone-cli", "ui"],
   provides: ["ops-panel"],
   publicEntrypoints: ["index.ts", "contract.ts"],
 } as const;

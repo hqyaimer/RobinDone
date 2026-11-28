@@ -23,9 +23,9 @@ export async function prepareMcpFailureGuidanceFixture(options: {
     const marker = join(storageRoot, "mcp-diagnostic-recovered");
     const script = resolve("test/e2e/fixtures/mcp/startup-diagnostic-server.mjs");
     const pluginRoot = join(cliRoot, "e2e-fixtures", "e2e-startup-diagnostics");
-    await mkdir(join(pluginRoot, ".robinrun-plugin"), { recursive: true });
+    await mkdir(join(pluginRoot, ".robindone-plugin"), { recursive: true });
     await writeFile(
-      join(pluginRoot, ".robinrun-plugin", "plugin.json"),
+      join(pluginRoot, ".robindone-plugin", "plugin.json"),
       JSON.stringify({
         name: "e2e-startup-diagnostics",
         version: "0.0.0",

@@ -1,10 +1,10 @@
 /* eslint-disable max-lines -- task query cache 的 descriptor、membership 与 mutation 必须在同一 Zustand 事务里维护，拆散会增加缓存一致性风险。 */
 import { create } from "zustand";
-import type { RobinRunTaskListItem } from "@robinrun/services";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
-import { matchesTaskListMembershipKind } from "@robinrun/shared/robinrun-protocol-v4";
-import { mergeTaskMetaCandidates } from "@/lib/robinrunTaskMetaMerge.js";
-import { compareRobinRunTaskListItems } from "@/lib/taskListOrdering.js";
+import type { RobinDoneTaskListItem } from "@robindone/services";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
+import { matchesTaskListMembershipKind } from "@robindone/shared/robindone-protocol-v4";
+import { mergeTaskMetaCandidates } from "@/lib/robindoneTaskMetaMerge.js";
+import { compareRobinDoneTaskListItems } from "@/lib/taskListOrdering.js";
 import { getTaskListRowActivity, mergeTaskListMembershipFields } from "@/v4/taskListRowActivity.js";
 import {
   buildTaskEntityKey,
@@ -53,35 +53,35 @@ interface TaskQueryCacheState {
       expectedInvalidationVersion?: number;
     }>,
   ) => void;
-  upsertTaskMeta: (task: RobinRunTaskMeta) => void;
-  updateTaskMetaPreservingMembership: (task: RobinRunTaskMeta) => void;
+  upsertTaskMeta: (task: RobinDoneTaskMeta) => void;
+  updateTaskMetaPreservingMembership: (task: RobinDoneTaskMeta) => void;
   applyTaskMutation: (params: {
-    previousTask: RobinRunTaskMeta;
-    nextTask: RobinRunTaskMeta;
+    previousTask: RobinDoneTaskMeta;
+    nextTask: RobinDoneTaskMeta;
     previousState: TaskListMembershipState;
     nextState: TaskListMembershipState;
   }) => void;
   setTaskUnreadOverlay: (
-    task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+    task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
     unreadAt: number | undefined,
   ) => void;
   reconcileTaskUnread: (
-    task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+    task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
     unreadAt: number | undefined,
   ) => void;
   rollbackTaskUnread: (
-    task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+    task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
     unreadAt: number | undefined,
   ) => void;
   removeTask: (
-    task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+    task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
   ) => boolean;
   markWorkspaceKeysStale: (workspaceKeys: string[]) => void;
   invalidateWorkspaceKeys: (workspaceKeys: string[]) => void;
   clearAll: () => void;
 }
 
-type CachedTaskListItem = RobinRunTaskListItem & { searchSnippets?: string[] };
+type CachedTaskListItem = RobinDoneTaskListItem & { searchSnippets?: string[] };
 
 function buildCachedTaskListResult(params: {
   descriptor: TaskListCacheDescriptor;
@@ -121,7 +121,7 @@ function matchesTaskMembership(
   return matchesTaskListMembershipKind(membership, kind);
 }
 
-function matchesTaskSearch(descriptor: TaskListCacheDescriptor, task: RobinRunTaskMeta): boolean {
+function matchesTaskSearch(descriptor: TaskListCacheDescriptor, task: RobinDoneTaskMeta): boolean {
   if (!descriptor.search) {
     return true;
   }
@@ -131,7 +131,7 @@ function matchesTaskSearch(descriptor: TaskListCacheDescriptor, task: RobinRunTa
 
 function matchesTaskDescriptor(
   descriptor: TaskListCacheDescriptor,
-  task: RobinRunTaskMeta,
+  task: RobinDoneTaskMeta,
   membership: TaskListMembershipState,
 ): boolean {
   const workspaceKey = buildTaskWorkspaceKey(task.workspacePath, task.workspaceIdentity);
@@ -144,7 +144,7 @@ function matchesTaskDescriptor(
 
 function sortTaskKeysByDescriptor(params: {
   taskKeys: TaskEntityKey[];
-  taskMetaByEntityKey: Record<TaskEntityKey, RobinRunTaskListItem>;
+  taskMetaByEntityKey: Record<TaskEntityKey, RobinDoneTaskListItem>;
   descriptor: TaskListCacheDescriptor;
 }): TaskEntityKey[] {
   const uniqueTaskKeys = [...new Set(params.taskKeys)];
@@ -160,7 +160,7 @@ function sortTaskKeysByDescriptor(params: {
     if (!rightTask) {
       return -1;
     }
-    return compareRobinRunTaskListItems(leftTask, rightTask, params.descriptor.sortBy);
+    return compareRobinDoneTaskListItems(leftTask, rightTask, params.descriptor.sortBy);
   });
 }
 
@@ -956,17 +956,17 @@ export function markTaskQueryCacheScopesStale(
   useTaskQueryCacheStore.getState().markWorkspaceKeysStale(workspaceKeys);
 }
 
-export function upsertTaskQueryCacheTaskMeta(task: RobinRunTaskMeta): void {
+export function upsertTaskQueryCacheTaskMeta(task: RobinDoneTaskMeta): void {
   useTaskQueryCacheStore.getState().upsertTaskMeta(task);
 }
 
-export function updateTaskQueryCacheTaskMetaPreservingMembership(task: RobinRunTaskMeta): void {
+export function updateTaskQueryCacheTaskMetaPreservingMembership(task: RobinDoneTaskMeta): void {
   useTaskQueryCacheStore.getState().updateTaskMetaPreservingMembership(task);
 }
 
 export function applyTaskQueryCacheMutation(params: {
-  previousTask: RobinRunTaskMeta;
-  nextTask: RobinRunTaskMeta;
+  previousTask: RobinDoneTaskMeta;
+  nextTask: RobinDoneTaskMeta;
   previousState: TaskListMembershipState;
   nextState: TaskListMembershipState;
 }): void {
@@ -984,28 +984,28 @@ export function applyTaskQueryCacheMutation(params: {
 }
 
 export function setTaskQueryCacheUnreadOverlay(
-  task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+  task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
   unreadAt: number | undefined,
 ): void {
   useTaskQueryCacheStore.getState().setTaskUnreadOverlay(task, unreadAt);
 }
 
 export function reconcileTaskQueryCacheUnread(
-  task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+  task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
   unreadAt: number | undefined,
 ): void {
   useTaskQueryCacheStore.getState().reconcileTaskUnread(task, unreadAt);
 }
 
 export function rollbackTaskQueryCacheUnread(
-  task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+  task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
   unreadAt: number | undefined,
 ): void {
   useTaskQueryCacheStore.getState().rollbackTaskUnread(task, unreadAt);
 }
 
 export function removeTaskFromTaskQueryCaches(
-  task: Pick<RobinRunTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
+  task: Pick<RobinDoneTaskMeta, "taskId" | "workspacePath" | "workspaceIdentity">,
 ): boolean {
   const removed = useTaskQueryCacheStore.getState().removeTask(task);
   notifyTaskLifecycle({

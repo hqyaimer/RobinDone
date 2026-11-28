@@ -1,4 +1,4 @@
-import type { GitRepositorySummary, SystemInfo } from "@robinrun/shared";
+import type { GitRepositorySummary, SystemInfo } from "@robindone/shared";
 
 export interface GitAutoRefreshWatchPath {
   path: string;

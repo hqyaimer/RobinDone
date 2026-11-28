@@ -2,7 +2,7 @@
    contract.ts 拆出（2026-11-24：契约文件公开方法数上限 12，面板系统订阅唤醒
    dispatchSystemSubscriptionWakeup 入列后把本节挪家——类型经 contract.ts 原样
    再导出，消费面不变）。 */
-import type { PythonRuntimeSource } from "@robinrun/shared";
+import type { PythonRuntimeSource } from "@robindone/shared";
 
 /** python 供给解析结果：ok 分支带生效解释器（venv 就绪后的解释器绝对路径）。 */
 export type PythonRuntimeResolution =

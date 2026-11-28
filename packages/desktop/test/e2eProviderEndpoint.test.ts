@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resolveBigModelApiOrigin, resolveRuntimeRobinRunEndpointOrigin } from "@robinrun/shared";
+import { resolveBigModelApiOrigin, resolveRuntimeRobinDoneEndpointOrigin } from "@robindone/shared";
 import {
   getE2EProviderEndpointEnv,
   shouldUseProductionE2EProviderEndpoint,
@@ -22,14 +22,14 @@ afterEach(() => {
 describe("E2E provider endpoint ownership", () => {
   it.each([liveTeam, liveShare])("生产账号统一使用可沿 SSH 传递的生产环境：%s", (spec) => {
     const env = {
-      ROBINRUN_ENV: "test",
+      ROBINDONE_ENV: "test",
       ...getE2EProviderEndpointEnv([spec], "deepseek", "replay"),
     };
-    expect(resolveRuntimeRobinRunEndpointOrigin(env)).toBe("https://zcode.z.ai");
+    expect(resolveRuntimeRobinDoneEndpointOrigin(env)).toBe("https://zcode.z.ai");
     expect(resolveBigModelApiOrigin(env)).toBe("https://bigmodel.cn");
     // SSH 只透传环境档位，不透传 BIGMODEL_API_BASE_URL；远端仍必须解析到生产域。
-    expect(env.ROBINRUN_ENV).toBe("production");
-    expect(resolveBigModelApiOrigin({ ROBINRUN_ENV: env.ROBINRUN_ENV })).toBe(
+    expect(env.ROBINDONE_ENV).toBe("production");
+    expect(resolveBigModelApiOrigin({ ROBINDONE_ENV: env.ROBINDONE_ENV })).toBe(
       "https://bigmodel.cn",
     );
   });
@@ -38,9 +38,9 @@ describe("E2E provider endpoint ownership", () => {
     expect(getE2EProviderEndpointEnv([ordinary], "deepseek", "replay")).toEqual({});
     expect(shouldUseProductionE2EProviderEndpoint([ordinary], "deepseek", "replay")).toBe(false);
 
-    requestSecurityEnv.current = { ROBINRUN_BASE_URL: "https://config.example.com" };
+    requestSecurityEnv.current = { ROBINDONE_BASE_URL: "https://config.example.com" };
     expect(getE2EProviderEndpointEnv([ordinary], "example-preset", "capture")).toEqual({
-      ROBINRUN_BASE_URL: "https://config.example.com",
+      ROBINDONE_BASE_URL: "https://config.example.com",
     });
     expect(shouldUseProductionE2EProviderEndpoint([ordinary], "example-preset", "capture")).toBe(
       true,

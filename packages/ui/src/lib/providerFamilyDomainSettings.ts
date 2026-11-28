@@ -1,9 +1,9 @@
-import type { ISettingService } from "@robinrun/services";
+import type { ISettingService } from "@robindone/services";
 import {
   type AppSettings,
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 
 export function resolveLogoutProviderFamilyDomain(params: {
   currentDomain: ProviderFamilyDomain | null | undefined;

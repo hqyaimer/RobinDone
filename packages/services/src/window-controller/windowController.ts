@@ -1,6 +1,6 @@
-import type { Event } from "@robinrun/rpc";
-import { ServiceChannels } from "@robinrun/shared";
-import type { RobinRunTaskMeta } from "@robinrun/shared";
+import type { Event } from "@robindone/rpc";
+import { ServiceChannels } from "@robindone/shared";
+import type { RobinDoneTaskMeta } from "@robindone/shared";
 import type {
   ControllerResyncParams,
   ControllerResyncResult,
@@ -11,14 +11,14 @@ import type {
   WindowHostControllerTaskRow,
   WindowHostControllerWorkspaceFrame,
   WindowHostTaskAddress,
-} from "@robinrun/shared/robinrun-protocol-v4";
+} from "@robindone/shared/robindone-protocol-v4";
 import { createServiceDescriptor } from "../descriptors.js";
-import type { RobinRunArchivedTaskDeletionResult } from "#src/session/robinrunTaskService.js";
+import type { RobinDoneArchivedTaskDeletionResult } from "#src/session/robindoneTaskService.js";
 import type {
-  RobinRunTaskListItem,
-  RobinRunTaskListQuery,
-  RobinRunTaskListResult,
-} from "../session/robinrunTaskListTypes.js";
+  RobinDoneTaskListItem,
+  RobinDoneTaskListQuery,
+  RobinDoneTaskListResult,
+} from "../session/robindoneTaskListTypes.js";
 
 export type WindowHostControllerMutation =
   | { kind: "rename"; title: string }
@@ -31,7 +31,7 @@ export type WindowHostControllerMutation =
   | { kind: "open" }
   | { kind: "resume" };
 
-export type WindowHostControllerTaskListItem = RobinRunTaskListItem & {
+export type WindowHostControllerTaskListItem = RobinDoneTaskListItem & {
   sourceServerId?: string;
   serverDisplayName?: string;
   remoteSessionId?: string;
@@ -40,7 +40,7 @@ export type WindowHostControllerTaskListItem = RobinRunTaskListItem & {
   activity?: WindowHostControllerTaskRow["activity"];
 };
 
-export interface WindowHostControllerTaskListResult extends Omit<RobinRunTaskListResult, "items"> {
+export interface WindowHostControllerTaskListResult extends Omit<RobinDoneTaskListResult, "items"> {
   items: WindowHostControllerTaskListItem[];
 }
 
@@ -64,14 +64,14 @@ export interface IWindowControllerService {
   deleteArchivedTasks(params: {
     address: WindowHostTaskAddress;
     taskIds: string[];
-  }): Promise<RobinRunArchivedTaskDeletionResult>;
-  listTaskList(params: RobinRunTaskListQuery): Promise<WindowHostControllerTaskListResult>;
+  }): Promise<RobinDoneArchivedTaskDeletionResult>;
+  listTaskList(params: RobinDoneTaskListQuery): Promise<WindowHostControllerTaskListResult>;
   /** 直接读取所属 owner 的轻量 meta；未读 CAS 不得使用可能降级为旧快照的列表投影。 */
-  getTaskMeta(params: { address: WindowHostTaskAddress }): Promise<RobinRunTaskMeta | null>;
+  getTaskMeta(params: { address: WindowHostTaskAddress }): Promise<RobinDoneTaskMeta | null>;
   mutateTask(params: {
     address: WindowHostTaskAddress;
     mutation: WindowHostControllerMutation;
-  }): Promise<RobinRunTaskMeta | null>;
+  }): Promise<RobinDoneTaskMeta | null>;
   subscribeControllerV4(params: ControllerSubscribeParams): Promise<ControllerSubscribeResult>;
   resyncControllerV4(params: ControllerResyncParams): Promise<ControllerResyncResult>;
   unsubscribeControllerV4(params: ControllerUnsubscribeParams): Promise<void>;

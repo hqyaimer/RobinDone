@@ -1,6 +1,6 @@
-import type { FeedbackTicketStatus } from "@robinrun/shared";
+import type { FeedbackTicketStatus } from "@robindone/shared";
 import { cn } from "@/components/lib/utils.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 
 /**
  * 简化的工单流转进度（用户视角）：
@@ -47,7 +47,7 @@ export function FeedbackProgress({
   status: FeedbackTicketStatus;
   assigneeDisplay?: string | null;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const formatMessage = intl.formatMessage;
   const { current, rejected } = statusToStage(status);
   const currentIdx = STAGES.findIndex((item) => item.key === current);

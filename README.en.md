@@ -1,15 +1,15 @@
-# RobinRun
+# RobinDone
 
 <div align="center">
-  <img src="public/logo/icons/1024x1024.png" alt="RobinRun" width="128" height="128" />
+  <img src="public/logo/icons/1024x1024.png" alt="RobinDone" width="128" height="128" />
 </div>
 <p align="center">
   <a href="README.md">简体中文</a> | English
 </p>
 
-**RobinRun** is a **general-purpose always-on automation harness**: assemble a multi-agent team per project, driven by triggers and running around the clock — agents only start when triggered, state lives in files, and you can step in anytime.
+**RobinDone** is a **general-purpose always-on automation harness**: assemble a multi-agent team per project, driven by triggers and running around the clock — agents only start when triggered, state lives in files, and you can step in anytime.
 
-## What is RobinRun
+## What is RobinDone
 
 Hand a long-running project (monitoring, operations, development collaboration — any domain) to a team of agents:
 
@@ -18,25 +18,25 @@ Hand a long-running project (monitoring, operations, development collaboration �
 - **Triggers** (schedule / webhook / script) wake the right agent automatically when something happens;
 - You collaborate with all agents in a group-chat area — interject or interrupt anytime; major decisions are escalated to you by the main agent.
 
-| Concept | In one sentence |
-| --- | --- |
+| Concept             | In one sentence                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Project (workspace) | One entity / one long-term goal per project; data, agent roster, and triggers are isolated between projects |
-| Main agent (master) | The project manager: direction, planning, assignment, progress, acceptance — it covers it all |
-| worker | Resident executor agents (dev, ops, …) with independent sessions and state files |
-| subagent | A temporary helper any agent can spawn; destroyed when the task ends |
-| Trigger | Three event sources — schedule / local webhook / script — that wake agents automatically |
-| Ops panel | Requirements, approvals, feedback, and the project progress ledger |
+| Main agent (master) | The project manager: direction, planning, assignment, progress, acceptance — it covers it all               |
+| worker              | Resident executor agents (dev, ops, …) with independent sessions and state files                            |
+| subagent            | A temporary helper any agent can spawn; destroyed when the task ends                                        |
+| Trigger             | Three event sources — schedule / local webhook / script — that wake agents automatically                    |
+| Ops panel           | Requirements, approvals, feedback, and the project progress ledger                                          |
 
 ## How It Differs from Typical Agent Harnesses
 
-| | Typical single-agent harness | RobinRun |
-| --- | --- | --- |
-| Organization | One agent, one conversation at a time | Project-based, three-tier roster: master → resident workers → ephemeral subagents |
-| Driving force | Mostly human-initiated chats | Event-driven: triggers wake the right agent; humans step in anytime |
-| Lifecycle | Work stops when the session ends | The project keeps running; agents start only when triggered — no resident LLM loop |
-| State | Lives in conversation context | State files and knowledge bases on disk are the single source of truth across sessions |
-| Collaboration | — | Group-chat style: workers never talk directly, everything is routed via the main agent; you can interject or interrupt |
-| Delivery | Mostly CLI / editor plugins | Desktop app; all projects share one window |
+|               | Typical single-agent harness          | RobinDone                                                                                                              |
+| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Organization  | One agent, one conversation at a time | Project-based, three-tier roster: master → resident workers → ephemeral subagents                                      |
+| Driving force | Mostly human-initiated chats          | Event-driven: triggers wake the right agent; humans step in anytime                                                    |
+| Lifecycle     | Work stops when the session ends      | The project keeps running; agents start only when triggered — no resident LLM loop                                     |
+| State         | Lives in conversation context         | State files and knowledge bases on disk are the single source of truth across sessions                                 |
+| Collaboration | —                                     | Group-chat style: workers never talk directly, everything is routed via the main agent; you can interject or interrupt |
+| Delivery      | Mostly CLI / editor plugins           | Desktop app; all projects share one window                                                                             |
 
 ## Core Features
 
@@ -101,7 +101,7 @@ Sessions carry the process only — **files are the single source of truth acros
 
 ## Installation
 
-Download the installer for your platform from [GitHub Releases](https://github.com/hqyaimer/RobinRun/releases) (the latest version is whatever the Releases page shows). The builds are not code-signed yet, so each platform needs a one-time allow step described below.
+Download the installer for your platform from [GitHub Releases](https://github.com/hqyaimer/RobinDone/releases) (the latest version is whatever the Releases page shows). The builds are not code-signed yet, so each platform needs a one-time allow step described below.
 
 ### Windows 11 (win-x64)
 
@@ -113,18 +113,18 @@ Download the installer for your platform from [GitHub Releases](https://github.c
 
 ### macOS (Apple Silicon / Intel)
 
-1. Download the `.dmg` for your architecture, open it, and drag RobinRun into Applications;
+1. Download the `.dmg` for your architecture, open it, and drag RobinDone into Applications;
 2. The mac build is not signed/notarized yet, so remove the quarantine attribute in a terminal before first launch:
 
 ```bash
-sudo xattr -rd com.apple.quarantine /Applications/RobinRun.app
+sudo xattr -rd com.apple.quarantine /Applications/RobinDone.app
 ```
 
 > Auto-update is unavailable on macOS for now; download new versions manually from the Releases page.
 
 ### Linux (x64)
 
-- **AppImage**: `chmod +x RobinRun-*.AppImage`, then run it;
+- **AppImage**: `chmod +x RobinDone-*.AppImage`, then run it;
 - **deb / rpm / pacman packages**: install the usual way for your distribution.
 
 ### First Launch
@@ -133,7 +133,7 @@ sudo xattr -rd com.apple.quarantine /Applications/RobinRun.app
 2. Configure your model provider (API endpoint and key) in settings;
 3. Chat with the main agent: have it staff your worker roster and set up triggers, and the project starts running.
 
-All data is stored locally under `~/.robinrun`.
+All data is stored locally under `~/.robindone`.
 
 ## Building from Source
 
@@ -150,7 +150,7 @@ pnpm lint          # lint
 
 Dual licensing:
 
-- **RobinRun's original code and docs**: [MIT](LICENSE-MIT)
+- **RobinDone's original code and docs**: [MIT](LICENSE-MIT)
 - **Code derived from upstream open-source projects**: [Apache-2.0](LICENSE) (its legal grant cannot be changed)
 
 Third-party notices: [NOTICE.md](NOTICE.md) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

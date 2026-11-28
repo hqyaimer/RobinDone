@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GitChangeSourceId } from "@robinrun/shared";
+import type { GitChangeSourceId } from "@robindone/shared";
 import {
   buildTaskSidePaneMemoryKey,
   readTaskSidePaneMemoryState,

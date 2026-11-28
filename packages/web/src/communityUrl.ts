@@ -1,11 +1,11 @@
 import {
-  DEFAULT_ROBINRUN_ENDPOINT_ORIGIN,
-  ROBINRUN_VERSION,
+  DEFAULT_ROBINDONE_ENDPOINT_ORIGIN,
+  ROBINDONE_VERSION,
   buildHelpAppConfigUrl,
   createHelpAppConfigReader,
   resolveHelpAppConfig,
   type Locale,
-} from "@robinrun/shared";
+} from "@robindone/shared";
 import localDefaultAppConfig from "../../../config/default.json" with { type: "json" };
 
 interface ResolveWebCommunityUrlOptions {
@@ -22,11 +22,11 @@ export async function resolveWebHelpConfig(options: ResolveWebCommunityUrlOption
   const env = import.meta.env;
   const endpoint =
     options.endpointOrigin ??
-    (env?.VITE_ROBINRUN_BASE_URL?.trim() ||
-      env?.VITE_ROBINRUN_ENDPOINT_ORIGIN?.trim() ||
-      DEFAULT_ROBINRUN_ENDPOINT_ORIGIN);
+    (env?.VITE_ROBINDONE_BASE_URL?.trim() ||
+      env?.VITE_ROBINDONE_ENDPOINT_ORIGIN?.trim() ||
+      DEFAULT_ROBINDONE_ENDPOINT_ORIGIN);
   // 服务端拒绝 platform=web；浏览器省略可选平台参数，避免伪装桌面系统。
-  const url = buildHelpAppConfigUrl(endpoint, ROBINRUN_VERSION);
+  const url = buildHelpAppConfigUrl(endpoint, ROBINDONE_VERSION);
   let remote: unknown;
   try {
     remote = await (

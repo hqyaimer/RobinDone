@@ -1,11 +1,11 @@
-import type { Event } from "@robinrun/rpc";
+import type { Event } from "@robindone/rpc";
 import type {
   GenUiScope,
   GenUiStateChange,
   GenUiStateEntry,
   GenUiStateTarget,
   GenUiWidgetState,
-} from "@robinrun/shared/gen-ui";
+} from "@robindone/shared/gen-ui";
 export interface GenUiStateStorage {
   get(target: GenUiStateTarget): Promise<GenUiWidgetState | null>;
   set(target: GenUiStateTarget, state: GenUiWidgetState): Promise<void>;

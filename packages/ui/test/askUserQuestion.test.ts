@@ -10,10 +10,7 @@ import { readAskUserQuestionAnswers } from "../src/lib/askUserQuestion.js";
 const QUOTED_QUESTION =
   'APP-0001 的 acknowledge 是你在面板 UI 上操作的吗（那句"已按用户批准意见执行完毕..."的备注也是你写的）？';
 
-function harness(overrides: {
-  question?: string;
-  outputText?: string;
-}) {
+function harness(overrides: { question?: string; outputText?: string }) {
   const question = overrides.question ?? QUOTED_QUESTION;
   return {
     input: { questions: [{ question, options: ["是", "否"] }] },
@@ -36,9 +33,7 @@ describe("readAskUserQuestionAnswers", () => {
     const value = harness({
       outputText: `User has answered your questions: "${QUOTED_QUESTION}"="我说了"不是"然后继续。".`,
     });
-    expect(readAskUserQuestionAnswers(value)?.[QUOTED_QUESTION]).toBe(
-      '我说了"不是"然后继续。',
-    );
+    expect(readAskUserQuestionAnswers(value)?.[QUOTED_QUESTION]).toBe('我说了"不是"然后继续。');
   });
 
   it("常规无引号问题仍正确解析；多题按分隔拆分", () => {
@@ -54,7 +49,10 @@ describe("readAskUserQuestionAnswers", () => {
     });
     const answers = readAskUserQuestionAnswers({
       input: {
-        questions: [{ question: "第一题？", options: [] }, { question: "第二题？", options: [] }],
+        questions: [
+          { question: "第一题？", options: [] },
+          { question: "第二题？", options: [] },
+        ],
       },
       output: multi.output,
     });

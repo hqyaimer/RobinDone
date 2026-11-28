@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input.js";
-import { useRobinRunIntl } from "@/i18n/IntlProvider.js";
+import { useRobinDoneIntl } from "@/i18n/IntlProvider.js";
 import { SettingsGroupCard, SettingsRow } from "@/settings/SettingsPageParts.js";
 import {
   useTriggerPythonRuntimeStatus,
@@ -24,7 +24,7 @@ function formatMegabytes(bytes: number) {
 
 /** python 运行时供给状态文案（纯展示，不含操作；下载进度按字节实时刷新）。 */
 function PythonRuntimeStatusControl({ status }: { status: TriggerPythonRuntimeStatus }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   let text: string;
   switch (status.kind) {
     case "unknown":
@@ -49,14 +49,12 @@ function PythonRuntimeStatusControl({ status }: { status: TriggerPythonRuntimeSt
             );
       break;
     case "available":
-      text = intl.formatMessage(
-        {
-          id:
-            status.source === "system"
-              ? "settings.triggers.pythonRuntime.availableSystem"
-              : "settings.triggers.pythonRuntime.available",
-        },
-      );
+      text = intl.formatMessage({
+        id:
+          status.source === "system"
+            ? "settings.triggers.pythonRuntime.availableSystem"
+            : "settings.triggers.pythonRuntime.available",
+      });
       break;
     case "unavailable":
       text = intl.formatMessage(
@@ -90,7 +88,7 @@ function QuotaNumberInput({
   testId: string;
   onCommit: (next: number) => void;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const [draft, setDraft] = useState(String(value));
 
   // 外部值变化（如另一端修改）同步进草稿；仅在无编辑中草稿差异时覆盖，避免打断输入。
@@ -135,7 +133,7 @@ export function TriggersSettingsSection({
   onResidentPerWorkspaceChange: (next: number) => Promise<void>;
   onResidentGlobalMaxChange: (next: number) => Promise<void>;
 }) {
-  const { intl } = useRobinRunIntl();
+  const { intl } = useRobinDoneIntl();
   const pythonRuntimeStatus = useTriggerPythonRuntimeStatus();
   return (
     <SettingsGroupCard>
