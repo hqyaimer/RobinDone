@@ -1,26 +1,43 @@
-version: 0.0.3
+version: 0.0.4
 files:
-  - url: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.3/RobinRun-0.0.3-win-x64.exe
-    sha512: NBKL7UPnGGVii4PY55OflXBqsrXoioXq7xQ8eeAJnWJzJdc0OawBnysNqoyG64pmvJBoGWc9lWKXhrKAmhXKCQ==
-    size: 231872142
-path: https://github.com/hqyaimer/RobinRun/releases/download/v0.0.3/RobinRun-0.0.3-win-x64.exe
-sha512: NBKL7UPnGGVii4PY55OflXBqsrXoioXq7xQ8eeAJnWJzJdc0OawBnysNqoyG64pmvJBoGWc9lWKXhrKAmhXKCQ==
-releaseDate: '2026-11-26T12:04:22.652Z'
+  - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-win-x64.exe
+    sha512: eqFI+buIDVQXtMyzg7TQ9VGZdxNduPD07dfuTtBO8TwZER6MAcwKDdXMIbTCF8wZYt+udxUXSWzjQmDfI6LuGA==
+    size: 231883625
+path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-win-x64.exe
+sha512: eqFI+buIDVQXtMyzg7TQ9VGZdxNduPD07dfuTtBO8TwZER6MAcwKDdXMIbTCF8wZYt+udxUXSWzjQmDfI6LuGA==
+releaseDate: '2026-11-28T08:23:15.111Z'
 
 releaseNotes: |-
-  # v0.0.3 更新说明
+  # v0.0.4 更新说明
 
-  ## 修复
+  > 本版本是应用更名为 **RobinDone（知更鸟搞定了）** 后的第一个版本。知更鸟吉祥物与产品定位不变——
+  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
+  >
+  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
 
-  - 修复应用内更新下载完成后点击「重启以更新」无反应的问题（未签名安装包被更新安装门拦截）。
-  - 修复更新弹窗显示的下载大小与实际安装包不符的问题：增量下载时现在会同时显示完整安装包大小。
-  - 修复启动时短暂闪过旧品牌图标的问题（启动页、「关于」窗口、会话首页空态均已更换为知更鸟品牌图，会话首页不再持续闪烁）。
-  - 更新弹窗新增「更新说明」：每次发布的改动内容会直接展示在更新弹窗里（本页即首发示例）。
+  ## 本次更名你需要知道的
+
+  - **应用名 RobinRun → RobinDone**，安装后的程序名、数据目录、快捷方式随之更新。首次启动新版时，
+    旧版本的全部本地数据（项目、智能体、会话、触发器、设置）会**自动搬迁**到新数据目录，无需手动操作。
+  - 知更鸟图标与产品形态完全不变。
+  - **回滚提示**：升级后如退回 v0.0.3 及更早版本，旧版本会因找不到旧数据目录而当作全新安装
+    （数据并未丢失，仍保留在 RobinDone 数据目录中，重新升级即恢复）。
+
+  ## 重要变化（影响手动配置，请留意）
+
+  - **触发器脚本 API 更名**：Python 触发器脚本中的 `robinrun.emit(...)` / `robinrun.login_failed(...)`
+    更名为 `robindone.emit(...)` / `robindone.login_failed(...)`。旧写法在新版本会直接报错，
+    请更新你已编写的触发器脚本（引擎会把调用失败置为 error-paused 并通知，改完重启脚本即可恢复）。
+  - **环境变量前缀更名**：`ROBINRUN_*` 全部更名为 `ROBINDONE_*`。常用对照：
+    - `ROBINRUN_PYTHON_RUNTIME_MIRROR` → `ROBINDONE_PYTHON_RUNTIME_MIRROR`
+    - `ROBINRUN_DATA_BASE_DIR` → `ROBINDONE_DATA_BASE_DIR`（如你设置过旧名，新版首启会自动沿用旧值，无需操作）
+    - 其余 `ROBINRUN_DESKTOP_*` 等同理加前缀替换。
+  - **深链协议更名**：`robinrun://` → `robindone://`（仅影响通过外部方式拉起协议回调的高级用法；
+    应用内功能不依赖旧协议）。
 
   ## 改进
 
-  - **Python 环境开箱即用**：安装包已内置脚本触发器所需的 Python 运行时，首次创建脚本触发器不再需要联网下载 Python，也不会再因下载慢而回落到 Node 模式。
-  - 网络下载 Python 的兜底路径（仅安装包缺失时使用）支持失败重试与实时下载进度（设置 → 触发器中可见）。
-  - **默认主题改为浅色**：全新安装首次启动即为浅色主题；已在设置中选择过主题的用户不受影响。
-  - 更新源（updates 分支）清理了首次发布时误发布进来的仓库杂项文件。
-  - GitHub Release 页面与更新弹窗同步展示每次发布的更新说明。
+  - 数据迁移在启动加载屏内完成（「正在更新任务索引」），迁移期间智能体分组、worker 编制、
+    触发器注册表、会话历史与全部设置原样保留。
+  - 触发器附件、会话引用与已装插件在升级后继续可用（旧数据引用自动识别）。
+  - 仓库与发布渠道更名为 RobinDone（GitHub 仓库 hqyaimer/RobinDone，旧链接自动跳转）。
