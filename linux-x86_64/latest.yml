@@ -1,21 +1,21 @@
 version: 0.0.4
 files:
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.AppImage
-    sha512: xNkI2egIv4+Bm3NPyDkuy/44XIEFUbfX9C+HjqdHd3N9SBoIJjOPGNz/HzzwBiPtxERNdXFV59w4sgAUr6jpcw==
-    size: 311783974
-    blockMapSize: 324154
+    sha512: GKAohkHZJtRRnodqLHMwplA6/3Bb714WkdnRrHmw7iGnZ2MpDhJG46StOmF607ih9lb+puAPPOXOcmJlAk4WbA==
+    size: 311783312
+    blockMapSize: 323492
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-amd64.deb
-    sha512: DsSO70tlsDoYloFcS5VwbN2vkQf3K7VIBxVLWCzBvh8G0gOwqefh35keVJtn0qMfQ+fToskYsel0TGgAnQBT/g==
-    size: 285383092
+    sha512: YsxZKV7M0dUJUYM/+U51XLCW5YE5tQ0SCB1I/2o0ZnxPqhKdGX27tc0z+1lpMm5KSnuKm6vpuRlHQq8L2L28AQ==
+    size: 285380888
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.rpm
-    sha512: VKjp9zY9oj6ww0/nHb7d8L3WBh4PPkA/hDKofqKBiIj86y8mvILNHTM99NuI18hWGViuOu+AY42rSR1c0LzJoA==
-    size: 239769013
+    sha512: hsjQPi7ruOLOOS11F6UUVWQCMfOZ2Ehe0o5LqlC+i95ahG4IA6PGAsUmV5d+nJpjEQ8lAzR5+DSkFKKNRBssiA==
+    size: 239744181
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x64.pkg.tar.zst
-    sha512: uj9R3B9o0PLzbKCj0hcMPM1JBOiRQMEykjAaZx/ygrSbGs7T12bbOx7W0JQeKZDZchTrsgFZnLVRfcH7LaxF0g==
-    size: 255791488
+    sha512: ziM+5Pxz1i6enr9DmTL02AFMFT4uJSquQ+uMiUMZrNact8SRaLM4oa2e++//WsLv9ORDlCTCEjJkVjQN9UZ9gw==
+    size: 255811304
 path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.AppImage
-sha512: xNkI2egIv4+Bm3NPyDkuy/44XIEFUbfX9C+HjqdHd3N9SBoIJjOPGNz/HzzwBiPtxERNdXFV59w4sgAUr6jpcw==
-releaseDate: '2026-11-28T10:56:03.918Z'
+sha512: GKAohkHZJtRRnodqLHMwplA6/3Bb714WkdnRrHmw7iGnZ2MpDhJG46StOmF607ih9lb+puAPPOXOcmJlAk4WbA==
+releaseDate: '2026-11-28T16:13:46.316Z'
 
 releaseNotes: |-
   # v0.0.4 更新说明
@@ -27,14 +27,10 @@ releaseNotes: |-
 
   ## 修复
 
-  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（启动卡在「正在更新任务索引」）：
-    更名过程误改了一条历史迁移的匹配文本，本版本已还原并兼容更名期间产生的数据。
-    若你此前手动安装过短暂上架的初始 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
-
-  ## 本次更名你需要知道的
-  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
-  >
-  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
+  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（分别卡在「正在更新任务索引」
+    「正在更新聊天记录」）：更名过程误改了两处历史迁移的冻结内容，本版本已还原并兼容
+    更名期间产生的全部历史数据。
+    若你此前手动安装过更名初期的 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
 
   ## 本次更名你需要知道的
 

@@ -1,14 +1,14 @@
 version: 0.0.4
 files:
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.zip
-    sha512: z03bi3Ug0/B30AGkDmHT1nP1dD4ghjGOQqOYFxTcDpSKvythbeK2rNM3XDPOh4w3ygutZZBuHSPWceR4agNx4Q==
-    size: 272525458
+    sha512: 7xCz+yAFXdOTCMX16+8WTzqSZt4u96W+xyER4b/ZW2o0z0sXr4cl67ISdJatT0vIzNy2uTbkMSDIezwrljzrrg==
+    size: 272525958
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.dmg
-    sha512: R3xLL30xS5R11tp2Zy97V7daOFuAMTkKjte87ZsFK+2+6YAyS1e2PkPf9wFGtmoyxAl+8Ce/LhLddj5Kv3CT0Q==
-    size: 280608229
+    sha512: FF7aFs4KP1TWcp848PwxpYErzC6Nt5j7DMkbyya2T5sy1TS6Opg8UDlZ/FXhX/TfSyITM35wucdpOpm8Tb9LlA==
+    size: 280608673
 path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.zip
-sha512: z03bi3Ug0/B30AGkDmHT1nP1dD4ghjGOQqOYFxTcDpSKvythbeK2rNM3XDPOh4w3ygutZZBuHSPWceR4agNx4Q==
-releaseDate: '2026-11-28T11:10:28.953Z'
+sha512: 7xCz+yAFXdOTCMX16+8WTzqSZt4u96W+xyER4b/ZW2o0z0sXr4cl67ISdJatT0vIzNy2uTbkMSDIezwrljzrrg==
+releaseDate: '2026-11-28T16:24:05.070Z'
 minimumSystemVersion: 22.0.0
 
 releaseNotes: |-
@@ -21,14 +21,10 @@ releaseNotes: |-
 
   ## 修复
 
-  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（启动卡在「正在更新任务索引」）：
-    更名过程误改了一条历史迁移的匹配文本，本版本已还原并兼容更名期间产生的数据。
-    若你此前手动安装过短暂上架的初始 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
-
-  ## 本次更名你需要知道的
-  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
-  >
-  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
+  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（分别卡在「正在更新任务索引」
+    「正在更新聊天记录」）：更名过程误改了两处历史迁移的冻结内容，本版本已还原并兼容
+    更名期间产生的全部历史数据。
+    若你此前手动安装过更名初期的 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
 
   ## 本次更名你需要知道的
 

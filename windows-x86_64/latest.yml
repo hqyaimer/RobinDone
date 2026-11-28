@@ -1,11 +1,11 @@
 version: 0.0.4
 files:
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-win-x64.exe
-    sha512: 8HeYccLE9afAQYOa22RjrjwAskZaIVOfeWhFhtAU6JJxUaLDUtUoPszzt+FU/vHx6c8Da7UEPd3MSj4qFRJm5w==
-    size: 231881107
+    sha512: q6//AMMeg0zNg/lFIpAf5tYCiezWFxsKFZeGsweLE7Z5m60zG8EctbTS5Z2G9HwDiuPFARZxPWcCPnSOct0r3A==
+    size: 231881746
 path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-win-x64.exe
-sha512: 8HeYccLE9afAQYOa22RjrjwAskZaIVOfeWhFhtAU6JJxUaLDUtUoPszzt+FU/vHx6c8Da7UEPd3MSj4qFRJm5w==
-releaseDate: '2026-11-28T10:47:37.392Z'
+sha512: q6//AMMeg0zNg/lFIpAf5tYCiezWFxsKFZeGsweLE7Z5m60zG8EctbTS5Z2G9HwDiuPFARZxPWcCPnSOct0r3A==
+releaseDate: '2026-11-28T16:15:28.037Z'
 
 releaseNotes: |-
   # v0.0.4 更新说明
@@ -17,14 +17,10 @@ releaseNotes: |-
 
   ## 修复
 
-  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（启动卡在「正在更新任务索引」）：
-    更名过程误改了一条历史迁移的匹配文本，本版本已还原并兼容更名期间产生的数据。
-    若你此前手动安装过短暂上架的初始 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
-
-  ## 本次更名你需要知道的
-  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
-  >
-  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
+  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（分别卡在「正在更新任务索引」
+    「正在更新聊天记录」）：更名过程误改了两处历史迁移的冻结内容，本版本已还原并兼容
+    更名期间产生的全部历史数据。
+    若你此前手动安装过更名初期的 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
 
   ## 本次更名你需要知道的
 
