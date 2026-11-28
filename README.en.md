@@ -18,25 +18,25 @@ Hand a long-running project (monitoring, operations, development collaboration �
 - **Triggers** (schedule / webhook / script) wake the right agent automatically when something happens;
 - You collaborate with all agents in a group-chat area — interject or interrupt anytime; major decisions are escalated to you by the main agent.
 
-| Concept             | In one sentence                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Concept | In one sentence |
+| --- | --- |
 | Project (workspace) | One entity / one long-term goal per project; data, agent roster, and triggers are isolated between projects |
-| Main agent (master) | The project manager: direction, planning, assignment, progress, acceptance — it covers it all               |
-| worker              | Resident executor agents (dev, ops, …) with independent sessions and state files                            |
-| subagent            | A temporary helper any agent can spawn; destroyed when the task ends                                        |
-| Trigger             | Three event sources — schedule / local webhook / script — that wake agents automatically                    |
-| Ops panel           | Requirements, approvals, feedback, and the project progress ledger                                          |
+| Main agent (master) | The project manager: direction, planning, assignment, progress, acceptance — it covers it all |
+| worker | Resident executor agents (dev, ops, …) with independent sessions and state files |
+| subagent | A temporary helper any agent can spawn; destroyed when the task ends |
+| Trigger | Three event sources — schedule / local webhook / script — that wake agents automatically |
+| Ops panel | Requirements, approvals, feedback, and the project progress ledger |
 
 ## How It Differs from Typical Agent Harnesses
 
-|               | Typical single-agent harness          | RobinDone                                                                                                              |
-| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Organization  | One agent, one conversation at a time | Project-based, three-tier roster: master → resident workers → ephemeral subagents                                      |
-| Driving force | Mostly human-initiated chats          | Event-driven: triggers wake the right agent; humans step in anytime                                                    |
-| Lifecycle     | Work stops when the session ends      | The project keeps running; agents start only when triggered — no resident LLM loop                                     |
-| State         | Lives in conversation context         | State files and knowledge bases on disk are the single source of truth across sessions                                 |
-| Collaboration | —                                     | Group-chat style: workers never talk directly, everything is routed via the main agent; you can interject or interrupt |
-| Delivery      | Mostly CLI / editor plugins           | Desktop app; all projects share one window                                                                             |
+| | Typical single-agent harness | RobinDone |
+| --- | --- | --- |
+| Organization | One agent, one conversation at a time | Project-based, three-tier roster: master → resident workers → ephemeral subagents |
+| Driving force | Mostly human-initiated chats | Event-driven: triggers wake the right agent; humans step in anytime |
+| Lifecycle | Work stops when the session ends | The project keeps running; agents start only when triggered — no resident LLM loop |
+| State | Lives in conversation context | State files and knowledge bases on disk are the single source of truth across sessions |
+| Collaboration | — | Group-chat style: workers never talk directly, everything is routed via the main agent; you can interject or interrupt |
+| Delivery | Mostly CLI / editor plugins | Desktop app; all projects share one window |
 
 ## Core Features
 
