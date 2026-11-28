@@ -7,6 +7,26 @@ import { identifier } from "./table-snapshot.js";
 
 const flights = new Map<string, Promise<MigrationResult>>();
 
+// RobinDone(2026-11-28) 改名调和（specs/rename-robindone-migration.md 事故追记）：
+// 改名 sweep 曾改动冻结迁移 SQL 里的品牌字面量（0006_default_workspace_tasks 的
+// default-workspace GLOB），使 0.0.1-0.0.3 时代账本 checksum 与新定义不一致、启动卡死；
+// 反向地，装过 v0.0.4 的全新数据机器账本记的是 swept 文本的 checksum，文本回退后同样
+// mismatch。两批机器都靠这里调和：当账本 checksum 等于「当前 SQL 的品牌替换变体」哈希时，
+// 变体与当前文本语义等价（唯一差异是机械品牌替换，可证），接受为已应用并把账本 heal 到
+// 当前 checksum；其余 mismatch 仍拒绝，不放宽真实定义漂移的防护。
+const BRAND_RENAME_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["RobinRun", "RobinDone"],
+  ["Robinrun", "Robindone"],
+  ["ROBINRUN", "ROBINDONE"],
+  ["robinrun", "robindone"],
+];
+
+function brandRenameVariant(sql: string): string {
+  let out = sql;
+  for (const [from, to] of BRAND_RENAME_PAIRS) out = out.split(from).join(to);
+  return out;
+}
+
 export async function migrate(
   db: DatabaseSync,
   migrations: readonly SqliteMigration[],
@@ -68,8 +88,16 @@ async function migrateExclusive(
       const ids = [migration.id, ...(migration.previousIds ?? [])];
       const appliedIds = ids.filter((id) => {
         const applied = db.prepare(`select checksum from ${journal} where id=?`).get(id);
-        if (applied && applied.checksum !== checksum(migration.sql))
-          throw new MigrationChecksumError(id);
+        if (applied && applied.checksum !== checksum(migration.sql)) {
+          const reconciled =
+            applied.checksum === checksum(brandRenameVariant(migration.sql));
+          if (!reconciled) throw new MigrationChecksumError(id);
+          // 账本 heal 到当前 checksum：后续启动/交接预检直接匹配，调和只发生一次。
+          db.prepare(`update ${journal} set checksum=? where id=?`).run(
+            checksum(migration.sql),
+            id,
+          );
+        }
         return Boolean(applied);
       });
       if (!appliedIds.length) pending.push(migration);

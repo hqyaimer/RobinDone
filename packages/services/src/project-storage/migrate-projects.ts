@@ -146,10 +146,13 @@ export function migrateProjects(db: DatabaseSync, context: ProjectMigrationConte
         entry.workspacePurpose === "conversation" ? [entry.workspacePath] : [],
       ),
     );
+    // RobinDone(2026-11-28)：GLOB 保留 .robinrun 旧名——排除的是历史 default 工作区路径，
+    // 无账本旧库的 tasks 里可能仍是旧路径；改名 sweep 曾误改为 .robindone 使排除失效。
+    // 本函数体不在 0005 checksum 输入内，但语义须与 default-workspace 0006 纠正逻辑一致。
     for (const row of db
       .prepare(
         `SELECT root_path FROM tasks WHERE host_id=? AND project_id IS NULL AND deleted=0
-          AND replace(root_path, char(92), '/') NOT GLOB '*/.robindone/workspace/*'
+          AND replace(root_path, char(92), '/') NOT GLOB '*/.robinrun/workspace/*'
           GROUP BY root_path ORDER BY max(updated_at) DESC, root_path`,
       )
       .all(context.hostId!) as { root_path: string }[]) {

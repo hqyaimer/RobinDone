@@ -3,13 +3,19 @@ import type { ProjectMigrationContext } from "#src/project-storage/contract.js";
 
 // 原因：旧 settings 的 purpose 缺失/误标会把系统任务目录迁成项目。
 // 限定首次迁移创建且未编辑的单 root 自动项目，不能按名称隐藏用户项目或任务。
+// RobinDone(2026-11-28) 事故修复：本常量在 0006 的 checksum 输入里（project-storage/index.ts），
+// 改名 sweep 曾把 GLOB 模式改成 .robindone 导致 0.0.1-0.0.3 时代账本 checksum 不一致、
+// 启动卡死（specs/rename-robindone-migration.md 事故追记）；且 0006 的职责就是纠正指向
+// 旧 default 工作区路径的自动项目——旧数据里那些路径就是 .robinrun，改成新模式后纠正
+// 永远匹配不到。按「迁移 SQL 是历史事实」规约回退为 v0.0.3 原文；已装 v0.0.4 全新数据
+// 机器的账本（swept checksum）由 runner 的品牌改名调和兼容（shared/sqlite-migrations）。
 export const DEFAULT_WORKSPACE_CANDIDATES_SQL = `
 SELECT p.project_id FROM projects p JOIN project_roots r USING(project_id)
 WHERE p.host_id=? AND p.deleted=0 AND p.name_overridden=0
   AND p.updated_at=p.created_at
   AND p.created_at<=(SELECT applied_at FROM schema_migration WHERE id='0005_projects')
   AND (SELECT count(*) FROM project_roots other WHERE other.project_id=p.project_id)=1
-  AND replace(r.root_path, char(92), '/') GLOB '*/.robindone/workspace/default'
+  AND replace(r.root_path, char(92), '/') GLOB '*/.robinrun/workspace/default'
 `;
 
 export function migrateDefaultWorkspaceTasks(db: DatabaseSync, context: ProjectMigrationContext) {
