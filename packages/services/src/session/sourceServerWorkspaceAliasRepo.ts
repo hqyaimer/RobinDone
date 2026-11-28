@@ -176,6 +176,27 @@ function hasColumn(db: Database, table: string, column: string): boolean {
   ).some((row) => row.name === column);
 }
 
+// RobinDone(2026-11-28) 改名读兼容（specs/rename-robindone-migration.md 事故追记）：
+// 0024_session_database_identity 的冻结 SQL 在改名 sweep 中被换成新表名，RobinRun 时代
+// （≤v0.0.3）库里建的还是旧表名 robinrun_database_identity。收敛改名（见 shared
+// runSessionDatabaseIdentityMigration）发生之前直接打开旧库读取时双认表名——否则会误判为
+// 「无代际」而重铸 randomUUID，导致同一工作区代际漂移、别名失配。
+const SESSION_IDENTITY_TABLE = "robindone_database_identity";
+const LEGACY_SESSION_IDENTITY_TABLE = "robinrun_database_identity";
+
+export function readSessionDatabaseIdentity(db: Database): string | null {
+  const table = hasTable(db, SESSION_IDENTITY_TABLE)
+    ? SESSION_IDENTITY_TABLE
+    : hasTable(db, LEGACY_SESSION_IDENTITY_TABLE)
+      ? LEGACY_SESSION_IDENTITY_TABLE
+      : null;
+  if (!table) return null;
+  const row = db
+    .prepare(`SELECT identity FROM ${table} WHERE scope = 'session' LIMIT 1`)
+    .get() as { identity: string } | undefined;
+  return row?.identity?.trim() || null;
+}
+
 function openDatabase(path: string): Database {
   const db = new DatabaseSync(path);
   db.exec("PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");
@@ -924,11 +945,7 @@ export class SourceServerWorkspaceAliasRepo {
   }
 
   private readSessionDatabaseGeneration(db: Database): string | null {
-    if (!hasTable(db, "robindone_database_identity")) return null;
-    const row = db
-      .prepare("SELECT identity FROM robindone_database_identity WHERE scope = 'session' LIMIT 1")
-      .get() as { identity: string } | undefined;
-    return row?.identity?.trim() || null;
+    return readSessionDatabaseIdentity(db);
   }
 
   private async adoptLegacySessionDatabaseGeneration(

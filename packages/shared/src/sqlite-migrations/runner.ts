@@ -8,12 +8,13 @@ import { identifier } from "./table-snapshot.js";
 const flights = new Map<string, Promise<MigrationResult>>();
 
 // RobinDone(2026-11-28) 改名调和（specs/rename-robindone-migration.md 事故追记）：
-// 改名 sweep 曾改动冻结迁移 SQL 里的品牌字面量（0006_default_workspace_tasks 的
-// default-workspace GLOB），使 0.0.1-0.0.3 时代账本 checksum 与新定义不一致、启动卡死；
-// 反向地，装过 v0.0.4 的全新数据机器账本记的是 swept 文本的 checksum，文本回退后同样
-// mismatch。两批机器都靠这里调和：当账本 checksum 等于「当前 SQL 的品牌替换变体」哈希时，
-// 变体与当前文本语义等价（唯一差异是机械品牌替换，可证），接受为已应用并把账本 heal 到
-// 当前 checksum；其余 mismatch 仍拒绝，不放宽真实定义漂移的防护。
+// 改名 sweep 曾改动冻结迁移 SQL 里的品牌字面量，两个方向的账本错位都要调和：
+// ①正向（0006_default_workspace_tasks）：文本已回退为旧文案，装过首版 v0.0.4 的机器账本
+//   记的是 swept 文本 checksum —— 用「当前 SQL 的品牌替换变体」匹配；
+// ②反向（0024_session_database_identity）：文本保持 swept 文案（新表名），0.0.1-0.0.3
+//   时代账本记的是 sweep 前文本 checksum —— 用「当前 SQL 的反向品牌替换变体」匹配。
+// 两个方向的变体与当前文本语义等价（唯一差异是机械品牌替换，可证），接受为已应用并把
+// 账本 heal 到当前 checksum；其余 mismatch 仍拒绝，不放宽真实定义漂移的防护。
 const BRAND_RENAME_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["RobinRun", "RobinDone"],
   ["Robinrun", "Robindone"],
@@ -25,6 +26,18 @@ function brandRenameVariant(sql: string): string {
   let out = sql;
   for (const [from, to] of BRAND_RENAME_PAIRS) out = out.split(from).join(to);
   return out;
+}
+
+// 反向变体：把当前文本里的 RobinDone 系字面量还原成 RobinRun 系，得到 sweep 前的发布文本。
+function brandRenameLegacyVariant(sql: string): string {
+  let out = sql;
+  for (const [from, to] of [...BRAND_RENAME_PAIRS].reverse()) out = out.split(to).join(from);
+  return out;
+}
+
+/** 改名调和候选集：当前 checksum + 正向变体 + 反向变体（供各 runner 预检共用同一规则）。 */
+export function brandMigrationChecksumVariants(sql: string): string[] {
+  return [checksum(sql), checksum(brandRenameVariant(sql)), checksum(brandRenameLegacyVariant(sql))];
 }
 
 export async function migrate(
@@ -89,8 +102,9 @@ async function migrateExclusive(
       const appliedIds = ids.filter((id) => {
         const applied = db.prepare(`select checksum from ${journal} where id=?`).get(id);
         if (applied && applied.checksum !== checksum(migration.sql)) {
-          const reconciled =
-            applied.checksum === checksum(brandRenameVariant(migration.sql));
+          const reconciled = brandMigrationChecksumVariants(migration.sql).includes(
+            String(applied.checksum),
+          );
           if (!reconciled) throw new MigrationChecksumError(id);
           // 账本 heal 到当前 checksum：后续启动/交接预检直接匹配，调和只发生一次。
           db.prepare(`update ${journal} set checksum=? where id=?`).run(

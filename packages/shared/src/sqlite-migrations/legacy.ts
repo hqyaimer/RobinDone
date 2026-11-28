@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
+import { brandMigrationChecksumVariants } from "./runner.js";
 
 export interface SqliteSchemaMigration {
   id: string;
@@ -51,7 +52,12 @@ function isMigrationApplied(db: DatabaseSync, migration: SqliteSchemaMigration):
     .get(migration.id);
   if (!applied) return false;
   if (applied.checksum !== migrationChecksum(migration)) {
-    throw new SqliteSchemaMigrationChecksumError(migration.id);
+    // RobinDone(2026-11-28) 改名调和（specs/rename-robindone-migration.md 事故追记）：
+    // 0024_session_database_identity 的冻结 SQL 在改名 sweep 中被换成新表名，RobinRun 时代
+    // （≤v0.0.3）账本记的是 sweep 前文本 checksum。与 runner.ts 同规：变体匹配即视为已应用
+    // （此入口保持只读，账本 heal 由 Agent 链的 migrate() 在事务内完成）；其余 mismatch 仍拒绝。
+    if (!brandMigrationChecksumVariants(migration.sql).includes(String(applied.checksum)))
+      throw new SqliteSchemaMigrationChecksumError(migration.id);
   }
   return true;
 }
@@ -70,8 +76,24 @@ export const SESSION_DATABASE_IDENTITY_MIGRATION: SqliteSchemaMigration = {
   `,
 };
 
+// RobinDone(2026-11-28) 改名收敛（specs/rename-robindone-migration.md 事故追记）：
+// 0024 的冻结 SQL 在改名 sweep 中把 identity 表换成了新表名；RobinRun 时代（≤v0.0.3）库里
+// 建的表还是旧名 robinrun_database_identity。这是数据收敛不是重建：接管前把旧表原样 RENAME
+// 到新名（identity 行保留），0024 的 CREATE IF NOT EXISTS 随后自然幂等；已是新名的库
+// （含装过首版 v0.0.4 的机器）不动，避免覆盖既有 identity。
+const LEGACY_SESSION_IDENTITY_TABLE = "robinrun_database_identity";
+
+function convergeSessionDatabaseIdentityTable(db: DatabaseSync): void {
+  const hasIdentityTable = (name: string) =>
+    db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);
+  if (hasIdentityTable("robindone_database_identity") || !hasIdentityTable(LEGACY_SESSION_IDENTITY_TABLE))
+    return;
+  db.exec(`ALTER TABLE ${LEGACY_SESSION_IDENTITY_TABLE} RENAME TO robindone_database_identity`);
+}
+
 /** Source 可能先于 Agent 启动；只接管独立附加表，不代跑 Agent 的历史业务转换。 */
 export function runSessionDatabaseIdentityMigration(db: DatabaseSync): void {
+  convergeSessionDatabaseIdentityTable(db);
   // 修复原因：已有 alias 的解析也执行此入口，重复抢写锁会被 Agent 写入阻塞。
   // 只读校验已登记项；未登记时由下面事务内的应用原语重新检查并原子记账。
   if (

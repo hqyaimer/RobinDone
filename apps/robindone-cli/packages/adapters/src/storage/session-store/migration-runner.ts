@@ -1,5 +1,9 @@
 import { dirname, join, basename } from "node:path";
-import { sqliteMigrations, MigrationChecksumError } from "@robindone/shared/sqlite-migrations";
+import {
+  sqliteMigrations,
+  MigrationChecksumError,
+  brandMigrationChecksumVariants,
+} from "@robindone/shared/sqlite-migrations";
 import type { MigrationResult } from "@robindone/shared/sqlite-migrations";
 import {
   classifyDatabaseStartupError,
@@ -219,9 +223,19 @@ function inspectMigrationKind(db: DatabaseSync, dbPath: string): DatabaseMigrati
   let pending = false;
   for (const migration of SQLITE_MIGRATIONS) {
     const row = hasLedger ? readAppliedMigration(db, migration.id) : undefined;
-    if (row)
-      ensureMigrationChecksum(migration.id, row.checksum, migrationChecksum(migration.sql), dbPath);
-    else pending = true;
+    if (row) {
+      // RobinDone(2026-11-28) 改名调和（specs/rename-robindone-migration.md 事故追记）：
+      // 0024_session_database_identity 的冻结 SQL 在改名 sweep 中被换成新表名，RobinRun 时代
+      // （≤v0.0.3）账本记的是 sweep 前文本 checksum——预检若严格比对会在进入事务化的
+      // migrate()（那里负责调和并 heal 账本）之前直接卡死启动。此处保持只读：变体匹配放行，
+      // 其余 mismatch 仍拒绝。判断规则与 shared runner 共用同一候选集。
+      const current = migrationChecksum(migration.sql);
+      if (
+        row.checksum !== current &&
+        !brandMigrationChecksumVariants(migration.sql).includes(row.checksum)
+      )
+        ensureMigrationChecksum(migration.id, row.checksum, current, dbPath);
+    } else pending = true;
   }
   if (!pending) return "none";
   const hasDataTables = db

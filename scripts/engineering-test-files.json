@@ -157,6 +157,7 @@
   "packages/shared/test/brand-data-root-migration.test.ts",
   "packages/services/test/brandDefaultWorkspaceCorrection.test.ts",
   "packages/shared/test/sqliteMigrationsBrandReconcile.test.ts",
+  "packages/services/test/sessionIdentityBrandCompat.test.ts",
   "packages/services/test/taskIndexWorkerIdentityBackfill.test.ts",
   "packages/ui/test/projectGroupedNodes.test.ts",
   "packages/services/test/triggerEngineScheduling.test.ts",

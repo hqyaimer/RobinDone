@@ -1,7 +1,8 @@
 // 品牌改名 checksum 调和回归（2026-11-28，specs/rename-robindone-migration.md 事故追记）：
-// 改名 sweep 曾改动冻结迁移 SQL 的品牌字面量（0006_default_workspace_tasks），三批账本状态
-// 都必须正确处理——①0.0.3 旧账本（=回退后当前 checksum，直接匹配）；②0.0.4 新装账本
-// （swept 文本 checksum，调和 + heal）；③真实定义漂移（垃圾 checksum，仍然拒绝）。
+// 改名 sweep 曾改动冻结迁移 SQL 的品牌字面量，账本与文本的错位有两个方向，都必须调和：
+// ①正向（0006_default_workspace_tasks，文本已回退）：0.0.4 新装账本记 swept 文本 checksum；
+// ②反向（0024_session_database_identity，文本保持 swept 文案）：≤v0.0.3 账本记 sweep 前
+//   文本 checksum；③真实定义漂移（垃圾 checksum）仍然拒绝。
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -74,6 +75,19 @@ describe("sqliteMigrations brand-rename checksum reconciliation", () => {
       checksum: string;
     };
     expect(row.checksum).toBe(sha(SQL));
+  });
+
+  it("账本为 sweep 前旧文本 checksum（反向调和，0024 会话链场景）：接受并 heal 到当前 checksum", async () => {
+    // 当前定义保持 swept 文本（如 0024 的新表名），账本记的是 sweep 前文本的 checksum。
+    const sweptSql = brandVariant(SQL);
+    const sweptMigration = { ...migration, sql: sweptSql };
+    const db = newDbWithLedger(sha(SQL));
+    const result = await sqliteMigrations.migrate(db, [sweptMigration], options(backupDir()));
+    expect(result.applied).toEqual([]);
+    const row = db.prepare("SELECT checksum FROM schema_migration WHERE id='0006_fixture'").get() as {
+      checksum: string;
+    };
+    expect(row.checksum).toBe(sha(sweptSql));
   });
 
   it("账本为当前 checksum：直接通过，账本不变", async () => {

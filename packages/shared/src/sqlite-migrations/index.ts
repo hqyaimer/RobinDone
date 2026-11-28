@@ -1,6 +1,8 @@
 import type { SqliteMigrationsContract } from "./contract.js";
-import { migrate } from "./runner.js";
+import { brandMigrationChecksumVariants, migrate } from "./runner.js";
 import { restore } from "./restore.js";
+
+export { brandMigrationChecksumVariants } from "./runner.js";
 
 export type {
   MigrationBackup,

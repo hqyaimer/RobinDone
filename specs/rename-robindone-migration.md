@@ -1,9 +1,10 @@
 # RobinRun → RobinDone 改名与数据迁移（正身 spec）
 
 > 状态：批 1（sweep）+ 批 2（数据迁移）已落地并验证（2026-11-27，台账见 docs/progress.md
-> 第二十七批）；批 3（发布工程）部分准备就绪——v0.0.4 release notes 已预填，GitHub repo
-> rename / updates 分支 / min-version 抬版 / tag 发版待用户执行；真机目验（验收场景 1/8）
-> 待用户启动新版触发迁移后确认。批 3 完成前，涉及名称/路径/确定性 id 的改动仍以本文档为准。
+> 第二十七批）；批 3（发布工程）repo rename / updates 分支 / min-version 抬版已完成，
+> v0.0.4 发版遭遇两轮真机迁移事故（0.0.5 已按用户裁决撤号并入 v0.0.4），第二轮修复落地后
+> 待第三刀重切 v0.0.4 + 真机目验（验收场景 1/8）。批 3 完成前，涉及名称/路径/确定性 id 的
+> 改动仍以本文档为准；发版事故全记录见 §0.5。
 
 ## 0. 裁决记录（2026-11-27，与用户对齐）
 
@@ -32,6 +33,39 @@
      一律不删除、新目录改名让路）；
   3. **不做** python 薄别名模块，旧脚本 API（`robinrun.emit` 等）直接断裂；
   4. AGENTS.md / progress.md 历史正文**全文替换**为新名（用户显式推翻「追加为主」对本次的适用）。
+
+## 0.5 发版事故记录（2026-11-28；改名 sweep 误伤冻结迁移 SQL 的两轮真机卡死）
+
+> 共同根因：批 1 sweep 以「四变体全文替换」扫过了**冻结迁移 SQL**（历史事实，checksum 输入），
+> 违反上游「migration SQL is historical fact, append-only」纪律。教训：**全量 sweep 必须把
+> `migrations`/迁移链文件列为豁免区逐条人工过**；一旦已发布，只能调和（reconcile），不能再改文本。
+
+- **事故一（首轮 v0.0.4，tasks-index 链）**：0006_default_workspace_tasks 的 GLOB
+  （`*/.robinrun/workspace/default`）被 swept，≤v0.0.3 账本 checksum_mismatch，启动卡
+  「正在更新任务索引」。修复：①冻结文本回退（0006 与 migrate-projects 的 GLOB——它们语义上
+  本就指向旧路径）；②shared runner `migrate()` 增加**正向**调和（装过首轮 v0.0.4 的机器账本记
+  swept 文本 checksum，与回退后文本错位）；③语义锁回归测试
+  （`brandDefaultWorkspaceCorrection.test.ts` / `sqliteMigrationsBrandReconcile.test.ts`）。
+  处置：v0.0.5 短暂上架后按用户裁决撤号，修复版**以 v0.0.4 重发**（「0.0.4 必须是能用的更名版」）。
+- **事故二（修复版 v0.0.4 真机，session 链）**：0024_session_database_identity 的冻结 SQL
+  表名 `robinrun_database_identity` 被 swept 且**未回退**（首轮修复只覆盖了 host 链文本）。
+  会话库走 CLI 侧自有 runner，其**预检**（`inspectMigrationKind`）与 shared `legacy.ts` 的只读
+  快路径（`isMigrationApplied`）都在事务化 `migrate()`（内有调和）**之前**严格比对 →
+  checksum_mismatch 卡 `preparing_session_storage`。修复四件：
+  1. 调和扩为**双向**（`brandMigrationChecksumVariants`：当前文本 + 正向变体 + 反向变体，
+     shared runner 与 CLI 预检、legacy 快路径共用同一候选集；账本 heal 仍只在事务内做）；
+  2. CLI 预检品牌容忍（保持只读放行，heal 归事务内 `migrate()`）；
+  3. `isMigrationApplied` 同规容忍（快路径保持只读）；
+  4. **0024 的表名是结构不是文本**：RobinRun 时代库里的 identity 表叫旧名——接管入口
+     （`runSessionDatabaseIdentityMigration`）在 0024 之前把旧表 `ALTER RENAME` 收敛到新名
+     （identity 数据原样保留、幂等）；别名仓库（`sourceServerWorkspaceAliasRepo`）读取双认
+     表名，防止收敛前直读旧库误判「无代际」而重铸 randomUUID。
+  - **方法论沉淀**：冻结迁移 SQL 的 sweep 误伤有两个正交维度——**文本错位**（表现为
+    checksum_mismatch，可调和）与**结构错位**（新表名/列名进入运行时读路径，表现为迁移后
+    运行时故障，必须收敛改名或读兼容）。审查迁移链时两个维度都要过；本事故一中 0006 的
+    GLOB 恰好两者皆备（文本回退 + 语义保留旧路径），事故二中 0024 只有结构维度需收敛。
+  - 测试三层锁定：shared（双向调和 + 垃圾仍拒绝）、CLI adapters（RobinRun 时代旧账本整链
+    通过并 heal）、services（identity 表收敛/读兼容/只读容忍）。
 
 ## 1. 范围分层总表
 
@@ -145,6 +179,8 @@ main 启动（desktop）
   也列入旧名别名（与 `zcode-plugins-official` 同机制叠加），已装插件状态无需迁移。
 - **browser descriptor `provider: "robinrun-cli"`**：随 sweep 改 `robindone-cli`；存量 session
   metadata 中的旧值仅作展示来源标注，容错即可，不迁移。
+- **identity 表名 `robinrun_database_identity`**（2026-11-28 补，事故二）：0024 冻结 SQL 建的
+  表在 ≤v0.0.3 库里是旧表名；接管入口先 RENAME 收敛到新名，收敛前读路径双认（详见 §0.5）。
 
 ### 3.4 挂点 A2：项目工作区目录搬迁
 
