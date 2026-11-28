@@ -1,26 +1,37 @@
 version: 0.0.4
 files:
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.AppImage
-    sha512: RlbGQ3wXAzkkkxi8n/e0hzKQ3XrgfNJzenErYtCmXIvpWMhWgZx0RZ2YQkp+rv7UqlRGvfnExKDuPj/aOQMYGg==
-    size: 311784368
-    blockMapSize: 324548
+    sha512: xNkI2egIv4+Bm3NPyDkuy/44XIEFUbfX9C+HjqdHd3N9SBoIJjOPGNz/HzzwBiPtxERNdXFV59w4sgAUr6jpcw==
+    size: 311783974
+    blockMapSize: 324154
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-amd64.deb
-    sha512: 8wK/qj/OeZmWUK7l1rNNXsYwCH1ZUcRklWowZwlBft8kX3PESSfugySXZwtuC2no9IKwgzvHCLuSl6YxyZI+eg==
-    size: 285388876
+    sha512: DsSO70tlsDoYloFcS5VwbN2vkQf3K7VIBxVLWCzBvh8G0gOwqefh35keVJtn0qMfQ+fToskYsel0TGgAnQBT/g==
+    size: 285383092
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.rpm
-    sha512: 0nByLH1np2qz3fglmkt6X+aOlTp2XoQqpMsNg5g1wv66hWvc5e8xTmxRjT2JNZ5PqqVa0cLAVKOMekUQciSwlg==
-    size: 239710513
+    sha512: VKjp9zY9oj6ww0/nHb7d8L3WBh4PPkA/hDKofqKBiIj86y8mvILNHTM99NuI18hWGViuOu+AY42rSR1c0LzJoA==
+    size: 239769013
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x64.pkg.tar.zst
-    sha512: dFDQQv1fPdQFcTHbaU1eWKnCCIqn8ZbdLLHyRo17l7Dty02eZUd6CrI4kM8kIFL6gZ87PM0Ns4nsee1Itao4/A==
-    size: 255804684
+    sha512: uj9R3B9o0PLzbKCj0hcMPM1JBOiRQMEykjAaZx/ygrSbGs7T12bbOx7W0JQeKZDZchTrsgFZnLVRfcH7LaxF0g==
+    size: 255791488
 path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-linux-x86_64.AppImage
-sha512: RlbGQ3wXAzkkkxi8n/e0hzKQ3XrgfNJzenErYtCmXIvpWMhWgZx0RZ2YQkp+rv7UqlRGvfnExKDuPj/aOQMYGg==
-releaseDate: '2026-11-28T08:28:06.121Z'
+sha512: xNkI2egIv4+Bm3NPyDkuy/44XIEFUbfX9C+HjqdHd3N9SBoIJjOPGNz/HzzwBiPtxERNdXFV59w4sgAUr6jpcw==
+releaseDate: '2026-11-28T10:56:03.918Z'
 
 releaseNotes: |-
   # v0.0.4 更新说明
 
   > 本版本是应用更名为 **RobinDone（知更鸟搞定了）** 后的第一个版本。知更鸟吉祥物与产品定位不变——
+  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
+  >
+  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
+
+  ## 修复
+
+  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（启动卡在「正在更新任务索引」）：
+    更名过程误改了一条历史迁移的匹配文本，本版本已还原并兼容更名期间产生的数据。
+    若你此前手动安装过短暂上架的初始 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
+
+  ## 本次更名你需要知道的
   > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
   >
   > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。

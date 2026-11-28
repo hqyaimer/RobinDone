@@ -1,20 +1,31 @@
 version: 0.0.4
 files:
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.zip
-    sha512: 3/X0MJc5BhXgwHJgcaNDOsGKSY5PL8CuwSf2nx6uwvveob9oGc+eoidugHA+JRrwUanpiS7GUqzAzghizyaRRQ==
-    size: 272526014
+    sha512: z03bi3Ug0/B30AGkDmHT1nP1dD4ghjGOQqOYFxTcDpSKvythbeK2rNM3XDPOh4w3ygutZZBuHSPWceR4agNx4Q==
+    size: 272525458
   - url: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.dmg
-    sha512: s8AVKZFx9MDzNax+RsZfw57QF6k5LJwYBfxRMBPSa/Uok93izVjXRfdiTL7pxA6DoMK99aP413+bSshTOwgrow==
-    size: 280610581
+    sha512: R3xLL30xS5R11tp2Zy97V7daOFuAMTkKjte87ZsFK+2+6YAyS1e2PkPf9wFGtmoyxAl+8Ce/LhLddj5Kv3CT0Q==
+    size: 280608229
 path: https://github.com/hqyaimer/RobinDone/releases/download/v0.0.4/RobinDone-0.0.4-mac-x64.zip
-sha512: 3/X0MJc5BhXgwHJgcaNDOsGKSY5PL8CuwSf2nx6uwvveob9oGc+eoidugHA+JRrwUanpiS7GUqzAzghizyaRRQ==
-releaseDate: '2026-11-28T08:41:41.245Z'
+sha512: z03bi3Ug0/B30AGkDmHT1nP1dD4ghjGOQqOYFxTcDpSKvythbeK2rNM3XDPOh4w3ygutZZBuHSPWceR4agNx4Q==
+releaseDate: '2026-11-28T11:10:28.953Z'
 minimumSystemVersion: 22.0.0
 
 releaseNotes: |-
   # v0.0.4 更新说明
 
   > 本版本是应用更名为 **RobinDone（知更鸟搞定了）** 后的第一个版本。知更鸟吉祥物与产品定位不变——
+  > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
+  >
+  > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
+
+  ## 修复
+
+  - 修复从 v0.0.1–v0.0.3 升级后可能无法完成启动准备的问题（启动卡在「正在更新任务索引」）：
+    更名过程误改了一条历史迁移的匹配文本，本版本已还原并兼容更名期间产生的数据。
+    若你此前手动安装过短暂上架的初始 v0.0.4 安装包且遇到此问题，请重新下载本安装包覆盖安装。
+
+  ## 本次更名你需要知道的
   > 通用型常驻自动化 Harness：多智能体 + 触发器、事件驱动、项目全天候运转。
   >
   > **本次发布包含强制更新**：v0.0.1–v0.0.3 的存量安装会引导升级到本版本。
